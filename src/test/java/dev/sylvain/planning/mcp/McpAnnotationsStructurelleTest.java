@@ -83,6 +83,8 @@ class McpAnnotationsStructurelleTest {
             // template and the whole calendar (ADR 0032).
             "materialiser_journees_types",
             "reconnaitre_journees_types",
+            // The generator's write (ADR 0126) does all of the above, by source.
+            "appliquer_generateur_creneaux",
             "lancer_solveur",
             "resoudre_incremental",
             // Lifting a consigne removes the créneaux it added, with their seats.

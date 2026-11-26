@@ -6,7 +6,7 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.FenetreRepas;
-import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -109,12 +109,12 @@ public interface ReferenceData {
     ParametresSolveur getParametresSolveur();
 
     /** The day templates (ADR 0032); none by default, for the readers that predate them. */
-    default List<JourneeType> listJourneesTypes() {
+    default List<Gabarit> listGabarits() {
         return List.of();
     }
 
     /** Which date each template governs; empty when the edition assigns none. */
-    default List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes() {
+    default List<JourneesTypesMaterialisation.Affectation> calendrierGabarits() {
         return List.of();
     }
 

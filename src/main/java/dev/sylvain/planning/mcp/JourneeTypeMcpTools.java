@@ -1,31 +1,28 @@
 package dev.sylvain.planning.mcp;
 
-import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.RapportGrille;
-import dev.sylvain.planning.service.referentiel.JourneeTypeService.EtatJourneesTypes;
-import dev.sylvain.planning.service.referentiel.JourneeTypeService.RapportApplication;
+import dev.sylvain.planning.service.referentiel.GenerateurCreneaux;
+import dev.sylvain.planning.service.referentiel.GenerateurCreneaux.Demande;
+import dev.sylvain.planning.service.referentiel.GenerateurCreneaux.EtatGenerateur;
+import dev.sylvain.planning.service.referentiel.GenerateurCreneaux.RapportApplication;
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation.Affectation;
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation.Reconnaissance;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.VacationsLigne;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
- * MCP tools for the day templates of {@code JourneeTypeResource} (ADR 0032):
- * an assistant describes a kind of day once — « Nocturne : 09:00-12:00,
- * 12:00-13:00 R, 13:00-14:00 R, 14:00-00:00 » — assigns it to dates, previews
- * what applying would change on the grid, then applies. The same service as
- * the screen; a tool never re-implements a resource.
+ * The 3.x tools of the day templates (ADR 0032), kept until 5.0 under their
+ * names and their answers: the templates are the generator's « gabarits » since
+ * 4.0, and each tool delegates to it — {@link GenerateurCreneauxMcpTools} is
+ * where they went (ADR 0126, {@code mcp-renommages.tsv}).
  */
 @EditionCiblee
 @RefusMetier
@@ -33,17 +30,18 @@ import java.util.Set;
 @ApplicationScoped
 public class JourneeTypeMcpTools {
 
-    private final ReferenceDataService referenceDataService;
+    private final GenerateurCreneaux generateur;
 
     @Inject
-    JourneeTypeMcpTools(ReferenceDataService referenceDataService) {
-        this.referenceDataService = referenceDataService;
+    JourneeTypeMcpTools(GenerateurCreneaux generateur) {
+        this.generateur = generateur;
     }
 
     @Tool(
             name = "lister_journees_types",
             description =
-                    "Liste les journées types de l'édition, le calendrier (quelle date suit quelle journée "
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser lister_gabarits. "
+                            + "Liste les journées types de l'édition, le calendrier (quelle date suit quelle journée "
                             + "type) et les dates en écart : celles dont les créneaux ne correspondent plus à leur journée type.",
             annotations =
                     @Tool.Annotations(
@@ -51,14 +49,16 @@ public class JourneeTypeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @Deprecated
     EtatView listJourneeTypes(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return toView(referenceDataService.etatJourneesTypes());
+        return toView(generateur.etat());
     }
 
     @Tool(
             name = "definir_journee_type",
             description =
-                    "Crée ou remplace une journée type par son nom : ses vacations sur une ligne, « 09:00-12:00, "
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_gabarit. "
+                            + "Crée ou remplace une journée type par son nom : ses vacations sur une ligne, « 09:00-12:00, "
                             + "12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 », R marquant un relais repas (sièges divisés par deux). "
                             + "Rien n'est écrit sur la grille : appeler affecter_journee_type puis materialiser_journees_types.",
             annotations =
@@ -67,23 +67,25 @@ public class JourneeTypeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @Deprecated
     JourneeTypeView defineJourneeType(
             @ToolArg(description = "Nom de la journée type, ex. « Jour normal »") String nom,
             @ToolArg(description = "Vacations, ex. « 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 »")
                     String vacations,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        JourneeType journeeType = new JourneeType(null, nom, VacationsLigne.parse(vacations));
-        JourneeType existante = byName(nom);
+        Gabarit journeeType = new Gabarit(null, nom, VacationsLigne.parse(vacations));
+        Gabarit existante = byName(nom);
         if (existante == null) {
-            return toView(referenceDataService.createJourneeType(journeeType));
+            return toView(generateur.create(journeeType));
         }
         journeeType.setModifieLe(existante.getModifieLe());
-        return toView(referenceDataService.updateJourneeType(existante.getId(), journeeType));
+        return toView(generateur.update(existante.getId(), journeeType));
     }
 
     @Tool(
             name = "supprimer_journee_type",
-            description = "Supprime une journée type par son nom. Ses dates ne sont plus gouvernées ; les créneaux "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser supprimer_gabarit (nom). "
+                    + "Supprime une journée type par son nom. Ses dates ne sont plus gouvernées ; les créneaux "
                     + "qu'elle a produits restent.",
             annotations =
                     @Tool.Annotations(
@@ -91,16 +93,18 @@ public class JourneeTypeMcpTools {
                             destructiveHint = true,
                             idempotentHint = true,
                             openWorldHint = false))
+    @Deprecated
     EtatView deleteJourneeType(
             @ToolArg(description = "Nom de la journée type") String nom,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        referenceDataService.deleteJourneeType(exigee(nom).getId());
-        return toView(referenceDataService.etatJourneesTypes());
+        generateur.delete(exigee(nom).getId());
+        return toView(generateur.etat());
     }
 
     @Tool(
             name = "affecter_journee_type",
-            description = "Affecte des dates à une journée type : une plage (bornes incluses) et/ou des dates "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_gabarit (dates). "
+                    + "Affecte des dates à une journée type : une plage (bornes incluses) et/ou des dates "
                     + "précises. Les autres dates du calendrier sont conservées ; une date déjà affectée change de "
                     + "journée type. Rien n'est écrit sur la grille avant materialiser_journees_types.",
             annotations =
@@ -109,42 +113,22 @@ public class JourneeTypeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @Deprecated
     EtatView assignJourneeType(
             @ToolArg(description = "Nom de la journée type") String nom,
             @ToolArg(description = "Première date de la plage (AAAA-MM-JJ)", required = false) String dateDebut,
             @ToolArg(description = "Dernière date de la plage (AAAA-MM-JJ), incluse", required = false) String dateFin,
             @ToolArg(description = "Dates précises (AAAA-MM-JJ)", required = false) List<String> dates,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        JourneeType journeeType = exigee(nom);
-        Set<LocalDate> ciblees = McpArgs.dates(dates, "dates");
-        LocalDate debut = McpArgs.date(dateDebut, "dateDebut");
-        LocalDate fin = McpArgs.date(dateFin, "dateFin");
-        if (debut != null || fin != null) {
-            if (debut == null || fin == null || fin.isBefore(debut)) {
-                throw new BusinessError.Invalid("Une plage demande dateDebut et dateFin, dateFin après dateDebut");
-            }
-            for (LocalDate date = debut; !date.isAfter(fin); date = date.plusDays(1)) {
-                ciblees.add(date);
-            }
-        }
-        if (ciblees.isEmpty()) {
-            throw new BusinessError.Invalid("Aucune date : donnez une plage (dateDebut, dateFin) ou des dates");
-        }
-        Map<LocalDate, Long> calendrier = new LinkedHashMap<>();
-        for (Affectation affectation : referenceDataService.etatJourneesTypes().calendrier()) {
-            calendrier.put(affectation.date(), affectation.journeeTypeId());
-        }
-        for (LocalDate date : ciblees) {
-            calendrier.put(date, journeeType.getId());
-        }
-        List<Affectation> reecrit = new ArrayList<>();
-        calendrier.forEach((date, id) -> reecrit.add(new Affectation(date, id)));
-        return toView(referenceDataService.setCalendrierJourneesTypes(reecrit));
+        Set<LocalDate> ciblees = GenerateurCreneauxMcpTools.dates(dateDebut, dateFin, dates);
+        generateur.assign(exigee(nom).getId(), ciblees);
+        return toView(generateur.etat());
     }
 
     @Tool(
             name = "retirer_dates_journee_type",
-            description = "Retire des dates du calendrier : elles ne sont plus gouvernées par aucune journée type, "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser supprimer_gabarit (dates). "
+                    + "Retire des dates du calendrier : elles ne sont plus gouvernées par aucune journée type, "
                     + "leurs créneaux restent tels quels.",
             annotations =
                     @Tool.Annotations(
@@ -152,36 +136,37 @@ public class JourneeTypeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @Deprecated
     EtatView removeJourneeTypeDates(
             @ToolArg(description = "Dates à retirer (AAAA-MM-JJ)") List<String> dates,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        Set<LocalDate> retirees = McpArgs.dates(dates, "dates");
-        List<Affectation> reecrit = referenceDataService.etatJourneesTypes().calendrier().stream()
-                .filter(affectation -> !retirees.contains(affectation.date()))
-                .toList();
-        return toView(referenceDataService.setCalendrierJourneesTypes(reecrit));
+        return toView(generateur.withdraw(McpArgs.dates(dates, "dates")));
     }
 
     @Computes
     @Tool(
             name = "previsualiser_application_journees_types",
-            description = "Prévisualise ce qu'appliquer le calendrier changerait sur la grille — créneaux conservés, "
-                    + "mis à jour, créés, supprimés (avec les sièges du planning qu'ils portent) — et le contrôle de la "
-                    + "grille obtenue, sans RIEN écrire.",
+            description =
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser previsualiser_generateur_creneaux (source gabarits). "
+                            + "Prévisualise ce qu'appliquer le calendrier changerait sur la grille — créneaux conservés, "
+                            + "mis à jour, créés, supprimés (avec les sièges du planning qu'ils portent) — et le contrôle de la "
+                            + "grille obtenue, sans RIEN écrire.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @Deprecated
     RapportApplicationView previewJourneeTypesApplication(
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return toView(referenceDataService.previewJourneesTypes());
+        return toView(generateur.preview(Demande.gabarits()).application());
     }
 
     @Tool(
             name = "materialiser_journees_types",
-            description = "Applique le calendrier : un créneau identique garde son id et ses sièges, un créneau "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser appliquer_generateur_creneaux (source gabarits). "
+                    + "Applique le calendrier : un créneau identique garde son id et ses sièges, un créneau "
                     + "manquant est créé, un créneau que sa journée type ne nomme pas est supprimé AVEC ses sièges. Une "
                     + "date sans journée type n'est pas touchée. La grille est ensuite déclarée en VACATIONS. Appeler "
                     + "previsualiser_application_journees_types d'abord.",
@@ -191,30 +176,35 @@ public class JourneeTypeMcpTools {
                             destructiveHint = true,
                             idempotentHint = true,
                             openWorldHint = false))
+    @Deprecated
     RapportApplicationView materializeJourneeTypes(
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return toView(referenceDataService.applyJourneesTypes());
+        return toView(generateur.apply(Demande.gabarits()).application());
     }
 
     @Computes
     @Tool(
             name = "previsualiser_reconnaissance_journees_types",
-            description = "Montre les journées types que la grille actuelle implique — chaque date aux mêmes "
-                    + "vacations est le même type de jour — sans RIEN écrire.",
+            description =
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser previsualiser_generateur_creneaux (source grille). "
+                            + "Montre les journées types que la grille actuelle implique — chaque date aux mêmes "
+                            + "vacations est le même type de jour — sans RIEN écrire.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @Deprecated
     ReconnaissanceView previewJourneeTypesRecognition(
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return toView(referenceDataService.previewReconnaissanceJourneesTypes());
+        return toView(generateur.previewReconnaissance());
     }
 
     @Tool(
             name = "reconnaitre_journees_types",
-            description = "Reconnaît les journées types que la grille actuelle implique et REMPLACE les journées "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser appliquer_generateur_creneaux (source grille). "
+                    + "Reconnaît les journées types que la grille actuelle implique et REMPLACE les journées "
                     + "types et le calendrier par ce résultat. Les créneaux ne sont pas touchés. Appeler "
                     + "previsualiser_reconnaissance_journees_types d'abord pour voir sans écrire.",
             annotations =
@@ -223,49 +213,50 @@ public class JourneeTypeMcpTools {
                             destructiveHint = true,
                             idempotentHint = true,
                             openWorldHint = false))
+    @Deprecated
     ReconnaissanceView recognizeJourneeTypes(
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return toView(referenceDataService.reconnaitreJourneesTypes());
+        return toView(generateur.reconnaitre());
     }
 
     /* -------------------------------- Outils -------------------------------- */
 
-    private JourneeType byName(String nom) {
+    private Gabarit byName(String nom) {
         if (nom == null || nom.isBlank()) {
             throw new BusinessError.Invalid("nom est requis");
         }
-        return referenceDataService.listJourneesTypes().stream()
+        return generateur.list().stream()
                 .filter(journeeType -> journeeType.getNom().equalsIgnoreCase(nom.strip()))
                 .findFirst()
                 .orElse(null);
     }
 
-    private JourneeType exigee(String nom) {
-        JourneeType journeeType = byName(nom);
+    private Gabarit exigee(String nom) {
+        Gabarit journeeType = byName(nom);
         if (journeeType == null) {
             throw new BusinessError.NotFound("Journée type introuvable : " + nom);
         }
         return journeeType;
     }
 
-    static JourneeTypeView toView(JourneeType journeeType) {
+    static JourneeTypeView toView(Gabarit journeeType) {
         return new JourneeTypeView(
                 journeeType.getId(), journeeType.getNom(), VacationsLigne.format(journeeType.getVacations()));
     }
 
-    static EtatView toView(EtatJourneesTypes etat) {
+    static EtatView toView(EtatGenerateur etat) {
         return new EtatView(
-                etat.journeesTypes().stream().map(JourneeTypeMcpTools::toView).toList(),
-                etat.calendrier(),
+                etat.gabarits().stream().map(JourneeTypeMcpTools::toView).toList(),
+                AffectationView.of(etat.calendrier()),
                 etat.datesEnEcart());
     }
 
     static ReconnaissanceView toView(Reconnaissance reconnaissance) {
         return new ReconnaissanceView(
-                reconnaissance.journeesTypes().stream()
+                reconnaissance.gabarits().stream()
                         .map(JourneeTypeMcpTools::toView)
                         .toList(),
-                reconnaissance.calendrier());
+                AffectationView.of(reconnaissance.calendrier()));
     }
 
     static RapportApplicationView toView(RapportApplication rapport) {
@@ -286,8 +277,18 @@ public class JourneeTypeMcpTools {
     /** A template as a line an assistant can read back and resend. */
     public record JourneeTypeView(Long id, String nom, String vacations) {}
 
+    /** One date of the calendar, under its 3.x keys. */
+    public record AffectationView(LocalDate date, Long journeeTypeId) {
+
+        static List<AffectationView> of(List<Affectation> calendrier) {
+            return calendrier.stream()
+                    .map(affectation -> new AffectationView(affectation.date(), affectation.gabaritId()))
+                    .toList();
+        }
+    }
+
     public record EtatView(
-            List<JourneeTypeView> journeesTypes, List<Affectation> calendrier, List<LocalDate> datesEnEcart) {}
+            List<JourneeTypeView> journeesTypes, List<AffectationView> calendrier, List<LocalDate> datesEnEcart) {}
 
     public record RapportApplicationView(
             int conserves,
@@ -300,5 +301,5 @@ public class JourneeTypeMcpTools {
             boolean aucunChangement,
             RapportGrille controle) {}
 
-    public record ReconnaissanceView(List<JourneeTypeView> journeesTypes, List<Affectation> calendrier) {}
+    public record ReconnaissanceView(List<JourneeTypeView> journeesTypes, List<AffectationView> calendrier) {}
 }

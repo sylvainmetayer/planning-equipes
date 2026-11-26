@@ -65,15 +65,16 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("supprimer_stand", "StandService.delete"),
             Map.entry("supprimer_creneau", "CreneauService.delete"),
             Map.entry("supprimer_creneaux", "CreneauService.deleteInBulk"),
-            Map.entry("creer_creneaux_recurrents", "CreneauService.createInBulk"),
-            Map.entry("generer_creneaux_depuis_stands", "CreneauService.replace, CreneauService.createInBulk"),
+            Map.entry("creer_creneaux_recurrents", "GenerateurCreneaux.apply"),
+            Map.entry("generer_creneaux_depuis_stands", "GenerateurCreneaux.apply"),
+            Map.entry("appliquer_generateur_creneaux", "GenerateurCreneaux.apply"),
             Map.entry("modifier_creneau", "CreneauService.update"),
             Map.entry("affecter_poste", "PlanningPersistenceService.reaffecterPoste"),
             Map.entry(
                     "accepter_demande_echange",
                     "DemandeEchangeService.accept, PlanningPersistenceService.applyEchange,"
                             + " PlanningPersistenceService.applyDirectedEchange"),
-            Map.entry("materialiser_journees_types", "JourneeTypeService.apply"),
+            Map.entry("materialiser_journees_types", "GenerateurCreneaux.apply"),
             Map.entry("appliquer_consigne", "ConsigneService.poser"),
             Map.entry("lever_consigne", "ConsigneService.lever"),
             Map.entry("deplacer_affectation", "DeplacementService.apply"),
@@ -106,6 +107,12 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry(
                     "reconnaitre_journees_types",
                     "réécrit les journées types d'après la grille, sans toucher la grille"),
+            Map.entry(
+                    "modifier_gabarit",
+                    "un gabarit n'atteint la grille que par appliquer_generateur_creneaux, refusé pendant un calcul"),
+            Map.entry(
+                    "supprimer_gabarit",
+                    "un gabarit ou son calendrier n'atteint la grille que par appliquer_generateur_creneaux"),
             Map.entry("configurer_collecte_disponibilites", "la fenêtre de collecte n'est pas lue par le calcul"),
             Map.entry("refuser_declaration_disponibilite", "un refus ne modifie aucune fiche"),
             Map.entry("configurer_foire_echanges", "la fenêtre de la foire n'est pas lue par le calcul"),

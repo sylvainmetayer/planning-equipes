@@ -46,9 +46,9 @@ La pause se règle par `consulter_parametres` et `modifier_parametres` (section 
 
 ## Construire la grille et les horaires
 
-Une grille est faite de vacations et ne se demande plus en mode : un créneau est une vacation, et deux créneaux qui se chevauchent le même jour sont deux relèves décalées, jamais une anomalie ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). Le contrôle (`valider_creneaux`, `previsualiser_creneaux_recurrents`, `diagnostiquer_grille_creneaux`) signale toujours une vacation au-delà de `dureeVacationMaxMinutes` (6 h par défaut), une vacation que le repos quotidien rend intenable, un relais repas hors fenêtre, un doublon, un trou, une date isolée. `diagnostiquer_grille_creneaux` est le premier appel pour découvrir une édition.
+Une grille est faite de vacations et ne se demande plus en mode : un créneau est une vacation, et deux créneaux qui se chevauchent le même jour sont deux relèves décalées, jamais une anomalie ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). Le contrôle (`valider_creneaux`, `previsualiser_generateur_creneaux`, `diagnostiquer_grille_creneaux`) signale toujours une vacation au-delà de `dureeVacationMaxMinutes` (6 h par défaut), une vacation que le repos quotidien rend intenable, un relais repas hors fenêtre, un doublon, un trou, une date isolée. `diagnostiquer_grille_creneaux` est le premier appel pour découvrir une édition.
 
-Quand les stands ont leurs horaires, `previsualiser_derivation_creneaux` montre la grille qu'ils impliquent (une coupure à chaque heure où un stand ouvre ou ferme) et `generer_creneaux_depuis_stands` l'écrit, en ajout ou, avec `remplacer=true`, à la place de la grille et du plan avec elle. `creer_creneau` et `modifier_creneau` prennent un `couverturePause` facultatif : le relais repas garde le stand ouvert à la moitié de son effectif, arrondie au supérieur.
+Un seul générateur produit la grille en lot ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)) : `previsualiser_generateur_creneaux` montre ce qu'il produirait et contrôle la grille obtenue, `appliquer_generateur_creneaux` l'écrit, avec les mêmes arguments et une `source`. `stands` découpe la grille que les horaires des stands impliquent (une coupure à chaque heure où un stand ouvre ou ferme), en ajout ou, avec `remplacer=true`, à la place de la grille et du plan avec elle ; `recurrence` ajoute des fenêtres répétées sur des dates ; `gabarits` applique le calendrier des gabarits ; `grille` lit les gabarits que la grille implique. `creer_creneau` et `modifier_creneau` prennent un `couverturePause` facultatif : le relais repas garde le stand ouvert à la moitié de son effectif, arrondie au supérieur.
 
 Le modèle d'horaires d'un stand (ses règles récurrentes, ADR 0104) figure dans `consulter_stand` et `lister_stands` sous `horaires`. `creer_horaire_stand` d'une règle identique à une règle existante ne change rien ; `supprimer_horaires_stand` efface le modèle **et** les plages qu'il a dépliées, et garde les plages saisies à la main (`creer_plage_stand`).
 
@@ -56,7 +56,7 @@ Les plages datées d'un stand figurent dans `consulter_stand` et `lister_stands`
 
 Une fenêtre d'ouverture (`creer_horaire_stand`, `creer_stand_complet`, `creer_plage_stand`) peut nommer son effectif par le suffixe `@N` (`10:00-12:00@2,14:00-@4`) ou l'argument `effectif` d'une ouverture datée ; sans lui elle reprend le minimum du stand. Zéro est refusé (un stand sans personne est une fermeture) et le suffixe est rejeté sur la récurrence d'un créneau.
 
-`definir_journee_type` crée ou remplace une journée type par son nom et ses vacations sur une ligne (« 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 », `R` marquant un relais repas aux sièges divisés par deux), `affecter_journee_type` la pose sur une plage ou des dates. Rien de cela n'écrit un créneau : `previsualiser_application_journees_types` dit ce qu'appliquer changerait et `materialiser_journees_types` l'écrit. `reconnaitre_journees_types` fait le chemin inverse depuis les créneaux, et `lister_journees_types` rend les dates en écart ou sous consigne, que la matérialisation ne touche pas ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)).
+Les gabarits sont les journées types de la 3.x. `modifier_gabarit` crée ou remplace un gabarit par son nom et ses vacations sur une ligne (« 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 », `R` marquant un relais repas aux sièges divisés par deux), et le pose sur une plage ou des dates ; `supprimer_gabarit` retire un gabarit, ou seulement des dates du calendrier. Rien de cela n'écrit un créneau : `appliquer_generateur_creneaux` avec la source `gabarits` le fait, après l'aperçu. `lister_gabarits` rend les dates en écart ou sous consigne, que l'application ne touche pas ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)).
 
 ## Poser une consigne
 
@@ -98,11 +98,12 @@ Deux **ressources**, à attacher une fois pour informer tous les appels suivants
 
 ## Anciens noms d'outils
 
-La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n'est publié que sous son nom courant ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
+La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Quelques anciens noms restent publiés jusqu'en 5.0 à côté du nouveau, leur description commençant par « Ancien nom » : ceux de la relecture des journées et ceux des journées types, des créneaux récurrents et de la dérivation, que le générateur de créneaux a regroupés ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)). Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
 
 <!-- mcp-renommages:debut -->
 | Nom en 3.x | Nom en 4.0 |
 | --- | --- |
+| `affecter_journee_type` | `modifier_gabarit` |
 | `ajouter_fermeture_stand` | `creer_plage_stand` |
 | `ajouter_horaire_stand` | `creer_horaire_stand` |
 | `ajouter_ouverture_stand` | `creer_plage_stand` |
@@ -116,21 +117,33 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n
 | `consulter_parametres_notifications` | `consulter_parametres` |
 | `consulter_parametres_qualite` | `consulter_parametres` |
 | `consulter_parametres_solveur` | `consulter_parametres` |
+| `creer_creneaux_recurrents` | `appliquer_generateur_creneaux` |
+| `definir_journee_type` | `modifier_gabarit` |
 | `effacer_horaires_stand` | `supprimer_horaires_stand` |
 | `effacer_plages_stand` | `supprimer_plage_stand` |
 | `figer_referentiel` | `modifier_phase_edition` |
+| `generer_creneaux_depuis_stands` | `appliquer_generateur_creneaux` |
 | `lever_gel` | `modifier_phase_edition` |
 | `lister_instantanes` | `lister_versions` |
+| `lister_journees_types` | `lister_gabarits` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
 | `lister_validations_journee` | `consulter_etats_journee` |
+| `materialiser_journees_types` | `appliquer_generateur_creneaux` |
 | `modifier_parametres_legaux` | `modifier_parametres` |
 | `modifier_parametres_notifications` | `modifier_parametres` |
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
+| `previsualiser_application_journees_types` | `previsualiser_generateur_creneaux` |
+| `previsualiser_creneaux_recurrents` | `previsualiser_generateur_creneaux` |
+| `previsualiser_derivation_creneaux` | `previsualiser_generateur_creneaux` |
+| `previsualiser_reconnaissance_journees_types` | `previsualiser_generateur_creneaux` |
 | `realise_vs_planifie` | `comparer_realise_planifie` |
+| `reconnaitre_journees_types` | `appliquer_generateur_creneaux` |
 | `restaurer_instantane` | `restaurer_version` |
+| `retirer_dates_journee_type` | `supprimer_gabarit` |
 | `retirer_validation_journee` | `modifier_etat_journee` |
 | `supprimer_instantane` | `supprimer_version` |
+| `supprimer_journee_type` | `supprimer_gabarit` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |
 <!-- mcp-renommages:fin -->
 

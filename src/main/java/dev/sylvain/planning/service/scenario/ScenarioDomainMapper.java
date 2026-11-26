@@ -7,8 +7,8 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.FenetreRepas;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.HorairesRecurrents;
-import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
@@ -32,8 +32,8 @@ import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.scenario.dto.EmplacementDto;
 import dev.sylvain.planning.scenario.dto.FenetreConsigneDto;
 import dev.sylvain.planning.scenario.dto.FenetreHoraireDto;
+import dev.sylvain.planning.scenario.dto.GabaritDto;
 import dev.sylvain.planning.scenario.dto.HoraireStandDto;
-import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureConsigneDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
@@ -427,7 +427,7 @@ final class ScenarioDomainMapper {
                 typologies(scenario.typologies()),
                 edition(scenario),
                 contraintes(scenario.contraintes()),
-                journeesTypes(scenario.journeesTypes()),
+                gabarits(scenario.gabarits()),
                 prereglagesConsigne(scenario.prereglagesConsigne(), coupureRepasMinutes(scenario)),
                 consignes(scenario));
     }
@@ -633,26 +633,26 @@ final class ScenarioDomainMapper {
     }
 
     /**
-     * The {@code journeesTypes:} section: each template gets a provisional
+     * The {@code gabarits:} section: each template gets a provisional
      * negative id — the file has none — that its own dates name, and the
      * repository reassigns both when it writes them.
      */
-    static Optional<ScenarioYamlReader.JourneesTypesScenario> journeesTypes(List<JourneeTypeDto> dtos) {
+    static Optional<ScenarioYamlReader.GabaritsScenario> gabarits(List<GabaritDto> dtos) {
         if (dtos == null) {
             return Optional.empty();
         }
-        List<JourneeType> journeesTypes = new ArrayList<>();
+        List<Gabarit> gabarits = new ArrayList<>();
         List<JourneesTypesMaterialisation.Affectation> calendrier = new ArrayList<>();
         long provisoire = -1;
-        for (JourneeTypeDto dto : dtos) {
-            List<VacationType> vacations = required(dto.vacations(), "journeesTypes.vacations").stream()
+        for (GabaritDto dto : dtos) {
+            List<VacationType> vacations = required(dto.vacations(), "gabarits.vacations").stream()
                     .map(vacation -> new VacationType(
-                            required(vacation.heureDebut(), "journeesTypes.vacations.heureDebut"),
-                            required(vacation.heureFin(), "journeesTypes.vacations.heureFin"),
+                            required(vacation.heureDebut(), "gabarits.vacations.heureDebut"),
+                            required(vacation.heureFin(), "gabarits.vacations.heureFin"),
                             Boolean.TRUE.equals(vacation.couverturePause())))
                     .collect(Collectors.toCollection(ArrayList::new));
-            JourneeType journeeType = new JourneeType(provisoire, required(dto.nom(), "journeesTypes.nom"), vacations);
-            journeesTypes.add(journeeType);
+            Gabarit journeeType = new Gabarit(provisoire, required(dto.nom(), "gabarits.nom"), vacations);
+            gabarits.add(journeeType);
             if (dto.dates() != null) {
                 for (LocalDate date : dto.dates()) {
                     calendrier.add(new JourneesTypesMaterialisation.Affectation(date, provisoire));
@@ -660,7 +660,7 @@ final class ScenarioDomainMapper {
             }
             provisoire--;
         }
-        return Optional.of(new ScenarioYamlReader.JourneesTypesScenario(journeesTypes, calendrier));
+        return Optional.of(new ScenarioYamlReader.GabaritsScenario(gabarits, calendrier));
     }
 
     /** The {@code edition:} section, when the file names its target. */

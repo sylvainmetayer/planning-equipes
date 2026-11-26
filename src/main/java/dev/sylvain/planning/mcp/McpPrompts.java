@@ -229,23 +229,23 @@ public class McpPrompts {
                 1. etat_edition : la famille CRENEAUX est-elle figée (bloc gel) ? Si oui, toute \
                 création ou modification de créneau sera refusée : dis-le-moi et arrête-toi. \
                 modifier_phase_edition n'est à proposer que si je le demande.
-                2. diagnostiquer_grille_creneaux pour voir ce qui existe déjà, et lister_journees_types \
-                pour savoir si un calendrier de journées types est déjà en place.
-                3. Si les journées de l'évènement se ressemblent, propose-moi les journées types :
-                   - une grille existe déjà : previsualiser_reconnaissance_journees_types montre les \
-                types qu'elle implique, et reconnaitre_journees_types les enregistre après mon accord, \
-                sans toucher aux créneaux ;
-                   - sinon, definir_journee_type décrit une journée en une ligne, affecter_journee_type \
-                lui donne ses dates, et previsualiser_application_journees_types montre ce que la \
-                grille deviendrait. materialiser_journees_types seulement après mon accord explicite : \
-                un créneau que sa journée type ne nomme plus est supprimé AVEC les sièges du planning \
+                2. diagnostiquer_grille_creneaux pour voir ce qui existe déjà, et lister_gabarits \
+                pour savoir si un calendrier de gabarits (journées types) est déjà en place.
+                3. Si les journées de l'évènement se ressemblent, propose-moi des gabarits :
+                   - une grille existe déjà : previsualiser_generateur_creneaux (source grille) montre \
+                les gabarits qu'elle implique, et appliquer_generateur_creneaux (source grille) les \
+                enregistre après mon accord, sans toucher aux créneaux ;
+                   - sinon, modifier_gabarit décrit une journée en une ligne et lui donne ses dates, et \
+                previsualiser_generateur_creneaux (source gabarits) montre ce que la grille deviendrait. \
+                appliquer_generateur_creneaux (source gabarits) seulement après mon accord explicite : \
+                un créneau que son gabarit ne nomme plus est supprimé AVEC les sièges du planning \
                 qu'il porte — dis-moi combien avant.
-                4. Sans journées types : si les stands ont déjà leurs horaires (lister_stands), \
-                previsualiser_derivation_creneaux déduit la grille de leurs fenêtres sans saisie de plus ; \
-                sinon previsualiser_creneaux_recurrents montre ce que ta règle produirait — une règle \
+                4. Sans gabarits : si les stands ont déjà leurs horaires (lister_stands), \
+                previsualiser_generateur_creneaux (source stands) déduit la grille de leurs fenêtres sans \
+                saisie de plus ; sinon la source recurrence montre ce que ta règle produirait — une règle \
                 qui se trompe d'une heure crée des dizaines de lignes d'un coup. \
-                generer_creneaux_depuis_stands ou creer_creneaux_recurrents seulement après mon accord \
-                explicite, et jamais remplacer=true sans me dire qu'il efface le planning résolu.
+                appliquer_generateur_creneaux seulement après mon accord explicite, et jamais \
+                remplacer=true sans me dire qu'il efface le planning résolu.
                 5. valider_creneaux pour finir, et explique-moi chaque anomalie — doublon, vacation trop \
                 longue, trou dans une journée, date isolée, stand que personne ne pourra tenir, \
                 sous-effectif — en disant pour chacune si c'est une vraie erreur ou un choix légitime \
@@ -454,7 +454,7 @@ public class McpPrompts {
                 4. Relance analyser_ouvertures_stands et traite les trois erreurs habituelles : un \
                 stand finalement ouvert aucun jour, une fenêtre hors des heures du jour donc sans \
                 effet, une plage trop courte pour être une vraie vacation.
-                5. Si la grille de créneaux n'existe pas encore, previsualiser_derivation_creneaux la \
+                5. Si la grille de créneaux n'existe pas encore, previsualiser_generateur_creneaux (source stands) la \
                 déduit de ces fenêtres — une coupure à chaque heure où un stand ouvre ou ferme. Montre \
                 l'aperçu avant d'écrire quoi que ce soit.
 

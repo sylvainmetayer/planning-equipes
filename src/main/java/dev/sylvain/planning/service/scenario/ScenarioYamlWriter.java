@@ -5,7 +5,7 @@ import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -79,8 +79,8 @@ public final class ScenarioYamlWriter {
             Map<String, Boolean> etatsContraintes,
             Map<String, Integer> poidsContraintes,
             List<ContrainteAdHoc> contraintesAdHoc,
-            List<JourneeType> journeesTypes,
-            List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes,
+            List<Gabarit> gabarits,
+            List<JourneesTypesMaterialisation.Affectation> calendrierGabarits,
             List<ConsigneEdition> consignes,
             List<PrereglageConsigne> prereglagesConsigne,
             Map<String, Boolean> niveauxContraintes) {
@@ -98,8 +98,8 @@ public final class ScenarioYamlWriter {
                 Map<String, Boolean> etatsContraintes,
                 Map<String, Integer> poidsContraintes,
                 List<ContrainteAdHoc> contraintesAdHoc,
-                List<JourneeType> journeesTypes,
-                List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes,
+                List<Gabarit> gabarits,
+                List<JourneesTypesMaterialisation.Affectation> calendrierGabarits,
                 List<ConsigneEdition> consignes,
                 List<PrereglageConsigne> prereglagesConsigne) {
             this(
@@ -114,8 +114,8 @@ public final class ScenarioYamlWriter {
                     etatsContraintes,
                     poidsContraintes,
                     contraintesAdHoc,
-                    journeesTypes,
-                    calendrierJourneesTypes,
+                    gabarits,
+                    calendrierGabarits,
                     consignes,
                     prereglagesConsigne,
                     Map.of());
@@ -134,8 +134,8 @@ public final class ScenarioYamlWriter {
                 Map<String, Boolean> etatsContraintes,
                 Map<String, Integer> poidsContraintes,
                 List<ContrainteAdHoc> contraintesAdHoc,
-                List<JourneeType> journeesTypes,
-                List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes) {
+                List<Gabarit> gabarits,
+                List<JourneesTypesMaterialisation.Affectation> calendrierGabarits) {
             this(
                     animateurs,
                     stands,
@@ -148,8 +148,8 @@ public final class ScenarioYamlWriter {
                     etatsContraintes,
                     poidsContraintes,
                     contraintesAdHoc,
-                    journeesTypes,
-                    calendrierJourneesTypes,
+                    gabarits,
+                    calendrierGabarits,
                     List.of(),
                     List.of());
         }

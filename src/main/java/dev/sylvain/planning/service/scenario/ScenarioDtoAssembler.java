@@ -5,8 +5,8 @@ import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.HorairesRecurrents;
-import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlageStand;
@@ -25,8 +25,8 @@ import dev.sylvain.planning.scenario.dto.EmplacementDto;
 import dev.sylvain.planning.scenario.dto.FenetreConsigneDto;
 import dev.sylvain.planning.scenario.dto.FenetreHoraireDto;
 import dev.sylvain.planning.scenario.dto.FestivalDto;
+import dev.sylvain.planning.scenario.dto.GabaritDto;
 import dev.sylvain.planning.scenario.dto.HoraireStandDto;
-import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureConsigneDto;
 import dev.sylvain.planning.scenario.dto.ParametresDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
@@ -90,7 +90,7 @@ final class ScenarioDtoAssembler {
                 contraintes(export),
                 nullWhenEmpty(typologies(export.typologies())),
                 creneaux(creneaux),
-                nullWhenEmpty(journeesTypes(export.journeesTypes(), export.calendrierJourneesTypes())),
+                nullWhenEmpty(gabarits(export.gabarits(), export.calendrierGabarits())),
                 nullWhenEmpty(emplacements(export.emplacements())),
                 stands(export.stands()),
                 animateurs(export.animateurs()),
@@ -131,13 +131,13 @@ final class ScenarioDtoAssembler {
     }
 
     /** Each template with the dates the calendar gives it, in calendar order — what the import reads back. */
-    private static List<JourneeTypeDto> journeesTypes(
-            List<JourneeType> journeesTypes, List<JourneesTypesMaterialisation.Affectation> calendrier) {
-        if (journeesTypes == null) {
+    private static List<GabaritDto> gabarits(
+            List<Gabarit> gabarits, List<JourneesTypesMaterialisation.Affectation> calendrier) {
+        if (gabarits == null) {
             return List.of();
         }
-        return journeesTypes.stream()
-                .map(journeeType -> new JourneeTypeDto(
+        return gabarits.stream()
+                .map(journeeType -> new GabaritDto(
                         journeeType.getNom(),
                         journeeType.getVacations().stream()
                                 .map(vacation -> new VacationTypeDto(
@@ -149,7 +149,7 @@ final class ScenarioDtoAssembler {
                                 ? List.of()
                                 : calendrier.stream()
                                         .filter(affectation ->
-                                                affectation.journeeTypeId().equals(journeeType.getId()))
+                                                affectation.gabaritId().equals(journeeType.getId()))
                                         .map(JourneesTypesMaterialisation.Affectation::date)
                                         .sorted()
                                         .toList()))

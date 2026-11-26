@@ -58,6 +58,7 @@ class InstanceRoutesStructuralTest {
             "PlanningHoursResource",
             "StandResource",
             "JourneeTypeResource",
+            "GenerateurCreneauxResource",
             "KpiResource",
             "VerrouillageResource",
             "PauseResource",

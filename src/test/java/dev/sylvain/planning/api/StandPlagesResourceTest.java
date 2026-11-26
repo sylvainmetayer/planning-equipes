@@ -163,6 +163,44 @@ class StandPlagesResourceTest {
     }
 
     /**
+     * The generator creates its timeslots through the same door (ADR 0126): a recurrence that opens
+     * new days unfolds the stands' model on them, as a timeslot typed by hand does.
+     */
+    @Test
+    void theGeneratorUnfoldsTheModelOnTheDaysItOpens() {
+        String edition = createEdition("Modèle et générateur");
+        createTypologie(edition);
+        String stand = given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("""
+                        {"nom":"Avec modèle","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
+                         "horaires":[{"mode":"OUVERTURE","jours":"JOURS_SEMAINE","joursSemaine":["SATURDAY","SUNDAY"],
+                                      "fenetres":[{"heureDebut":"10:00","heureFin":"18:00"}]}]}""")
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
+
+        given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("""
+                        {"source":"RECURRENCE","recurrence":{"jours":"PLAGE","dateDebut":"2026-07-11",
+                         "dateFin":"2026-07-13","fenetres":[{"heureDebut":"10:00","heureFin":"12:00"}]}}""")
+                .when()
+                .post("/api/generateur-creneaux/application")
+                .then()
+                .statusCode(200)
+                .body("nombreGeneres", org.hamcrest.Matchers.is(3));
+
+        assertThat(readWindows(edition, stand, "ouvertures"))
+                .containsExactly("2026-07-11 10:00-18:00 x-", "2026-07-12 10:00-18:00 x-");
+        assertThat(readWindows(edition, stand, "indisponibilites"))
+                .containsExactly("2026-07-13 00:00- Jour non déclaré par le stand");
+    }
+
+    /**
      * In an edition that has days the rule is unfolded and also kept (the editor reads it back); editing
      * it withdraws what the previous one unfolded and unfolds the new one, a plage of the day's own staying.
      */

@@ -7,7 +7,7 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.FenetreRepas;
-import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -18,7 +18,6 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
-import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.TokenOwner;
@@ -33,7 +32,6 @@ import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -95,7 +93,7 @@ public class ReferenceDataService implements ReferenceData {
 
     private final CreneauGridService grille;
 
-    private final JourneeTypeService journeesTypes;
+    private final GabaritRepository gabarits;
 
     private final ReferentielCsvImportService referentielCsvImport;
 
@@ -120,7 +118,7 @@ public class ReferenceDataService implements ReferenceData {
             CoherenceService coherence,
             CurrentAction currentAction,
             CreneauGridService grille,
-            JourneeTypeService journeesTypes,
+            GabaritRepository gabarits,
             ReferentielCsvImportService referentielCsvImport,
             ReferentielCsvExportService referentielCsvExport,
             JdbcEditionScope scope) {
@@ -139,7 +137,7 @@ public class ReferenceDataService implements ReferenceData {
         this.coherence = coherence;
         this.currentAction = currentAction;
         this.grille = grille;
-        this.journeesTypes = journeesTypes;
+        this.gabarits = gabarits;
         this.referentielCsvImport = referentielCsvImport;
         this.referentielCsvExport = referentielCsvExport;
         this.scope = scope;
@@ -478,26 +476,6 @@ public class ReferenceDataService implements ReferenceData {
         return CreneauGridService.diagnose(listCreneaux());
     }
 
-    /**
-     * What a recurrence rule would add, and the verdict on the grid that would
-     * result — nothing written.
-     */
-    public RecurrenceGrille previewRecurrence(CreneauGridService.RegleRecurrence regle) {
-        List<Creneau> generes = CreneauGridService.generateRecurrence(regle);
-        List<Creneau> resultante = new ArrayList<>(listCreneaux());
-        resultante.addAll(generes);
-        return new RecurrenceGrille(generes, controlerGrille(resultante));
-    }
-
-    /** Adds the rule's créneaux to the grid — never replacing it — and reports the verdict on the whole. */
-    public RecurrenceGrille createRecurrence(CreneauGridService.RegleRecurrence regle) {
-        List<Creneau> crees = createCreneaux(CreneauGridService.generateRecurrence(regle));
-        return new RecurrenceGrille(crees, controlerGrille());
-    }
-
-    /** The créneaux a rule produced (or would produce), and the resulting grid's verdict. */
-    public record RecurrenceGrille(List<Creneau> creneaux, CreneauGridService.RapportGrille controle) {}
-
     /* ----------------------- Referential CSV exports ----------------------- */
 
     public java.util.Map<ReferentielCsvExportService.ExportTarget, Integer> volumesExportCsv() {
@@ -535,16 +513,17 @@ public class ReferenceDataService implements ReferenceData {
         return referentielCsvImport.apply(cible, request);
     }
 
-    /* ------------------------------ Day templates ------------------------------ */
+    /* ------------------------------ Templates ------------------------------ */
 
+    /** The generator's templates (ADR 0126), read for the export and the edition comparison. */
     @Override
-    public List<JourneeType> listJourneesTypes() {
-        return journeesTypes.list();
+    public List<Gabarit> listGabarits() {
+        return gabarits.list();
     }
 
     @Override
-    public List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes() {
-        return journeesTypes.calendrier();
+    public List<JourneesTypesMaterialisation.Affectation> calendrierGabarits() {
+        return gabarits.calendrier();
     }
 
     @Override
@@ -557,94 +536,20 @@ public class ReferenceDataService implements ReferenceData {
         return consignes.listPrereglages();
     }
 
-    public JourneeType createJourneeType(JourneeType journeeType) {
-        return journeesTypes.create(journeeType);
-    }
-
-    public JourneeType updateJourneeType(long id, JourneeType journeeType) {
-        return journeesTypes.update(id, journeeType);
-    }
-
-    public void deleteJourneeType(long id) {
-        journeesTypes.delete(id);
-    }
-
-    public JourneeTypeService.EtatJourneesTypes etatJourneesTypes() {
-        return journeesTypes.etat();
-    }
-
-    public JourneeTypeService.EtatJourneesTypes setCalendrierJourneesTypes(
-            List<JourneesTypesMaterialisation.Affectation> calendrier) {
-        journeesTypes.setCalendrier(calendrier);
-        return journeesTypes.etat();
-    }
-
-    /** What applying the calendar would do, and the verdict on the grid that would result — nothing written. */
-    public JourneeTypeService.RapportApplication previewJourneesTypes() {
-        JourneeTypeService.Application apercu = journeesTypes.previewApplication();
-        return apercu.rapport().withVerdict(controlerGrille(apercu.grilleResultante()));
-    }
-
-    /** Materialises the calendar, then reads the verdict on the grid as it now stands. */
-    public JourneeTypeService.RapportApplication applyJourneesTypes() {
-        JourneeTypeService.Application ecrit = journeesTypes.apply();
-        return ecrit.rapport().withVerdict(controlerGrille(ecrit.grilleResultante()));
-    }
-
-    public JourneesTypesMaterialisation.Reconnaissance previewReconnaissanceJourneesTypes() {
-        return journeesTypes.previewReconnaissance();
-    }
-
-    public JourneesTypesMaterialisation.Reconnaissance reconnaitreJourneesTypes() {
-        return journeesTypes.reconnaitre();
-    }
-
-    /** A scenario's own {@code journeesTypes:} section, applied after its créneaux landed. */
-    public void importJourneesTypes(
-            List<JourneeType> journeesTypesImportees, List<JourneesTypesMaterialisation.Affectation> calendrier) {
-        journeesTypes.importer(journeesTypesImportees, calendrier);
-    }
-
     /**
      * The templates the grid implies, written when the grid has just been
      * replaced wholesale — an import, a découpage — so that the screen and a
      * file describe the same edition (ADR 0032). Silent on an empty grid: there
      * is nothing to recognise, and the caller did not ask for templates.
      */
-    private void recogniseJourneesTypesIfAny() {
-        if (!listCreneaux().isEmpty()) {
-            journeesTypes.reconnaitre();
+    private void recogniseTemplatesIfAny() {
+        List<Creneau> grille = listCreneaux();
+        if (!grille.isEmpty()) {
+            JourneesTypesMaterialisation.Reconnaissance reconnaissance =
+                    JourneesTypesMaterialisation.reconnaitre(grille);
+            gabarits.replaceAll(reconnaissance.gabarits(), reconnaissance.calendrier());
         }
     }
-
-    /**
-     * The grid the stands' own hours imply, and the verdict on it — nothing
-     * written. {@code remplacer} says which grid is judged: the derived one
-     * alone, or the current grid plus the derived créneaux.
-     */
-    public DerivationGrille previewDerivation(GrilleDepuisFenetres.Parametres parametres, boolean remplacer) {
-        GrilleDepuisFenetres.Derivation derivation = GrilleDepuisFenetres.deriver(listStands(), parametres);
-        List<Creneau> resultante = remplacer ? new ArrayList<>() : new ArrayList<>(listCreneaux());
-        resultante.addAll(derivation.creneaux());
-        return new DerivationGrille(derivation, controlerGrille(resultante));
-    }
-
-    /** Writes the derived grid: added to the current one, or in its place (the persisted plan goes with it). */
-    public DerivationGrille applyDerivation(GrilleDepuisFenetres.Parametres parametres, boolean remplacer) {
-        GrilleDepuisFenetres.Derivation derivation = GrilleDepuisFenetres.deriver(listStands(), parametres);
-        if (derivation.creneaux().isEmpty()) {
-            throw new BusinessError.Invalid("Aucun stand n'a de fenêtre d'ouverture sur ces dates : rien à dériver");
-        }
-        List<Creneau> ecrits =
-                remplacer ? creneaux.replace(derivation.creneaux()) : createCreneaux(derivation.creneaux());
-        GrilleDepuisFenetres.Derivation persistee =
-                new GrilleDepuisFenetres.Derivation(ecrits, derivation.coupures(), derivation.joursSansFenetre());
-        return new DerivationGrille(persistee, controlerGrille());
-    }
-
-    /** What the derivation produced (or would), and the verdict on the resulting grid. */
-    public record DerivationGrille(
-            GrilleDepuisFenetres.Derivation derivation, CreneauGridService.RapportGrille controle) {}
 
     /* ------------------------------ Typologies ----------------------------- */
 
@@ -804,7 +709,7 @@ public class ReferenceDataService implements ReferenceData {
     public void importFromPlanning(PlanningEvenement planning) {
         checkImportable(planning);
         imports.importFromPlanning(planning);
-        recogniseJourneesTypesIfAny();
+        recogniseTemplatesIfAny();
         changeTracker.markModified();
     }
 

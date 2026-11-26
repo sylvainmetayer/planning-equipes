@@ -13,8 +13,8 @@ import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.GridAnomaly;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.GridAnomalyType;
-import dev.sylvain.planning.service.referentiel.CreneauGridService.RegleRecurrence;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.SeveriteGrille;
+import dev.sylvain.planning.service.referentiel.GenerateurCreneaux.RegleRecurrence;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -40,7 +40,7 @@ class CreneauGridServiceTest {
     @Test
     void deuxFenetresSurUneSemaineSansWeekEndDonnentDixCreneaux() {
         // 2026-07-06 is a Monday: the range covers two full weeks minus the weekends.
-        List<Creneau> creneaux = CreneauGridService.generateRecurrence(new RegleRecurrence(
+        List<Creneau> creneaux = GenerateurCreneaux.generateRecurrence(new RegleRecurrence(
                 TypeJoursHoraire.JOURS_SEMAINE,
                 LocalDate.of(2026, 7, 6),
                 LocalDate.of(2026, 7, 12),
@@ -59,7 +59,7 @@ class CreneauGridServiceTest {
 
     @Test
     void lesExclusionsRetirentUneDateQueLeSelecteurRetenait() {
-        List<Creneau> creneaux = CreneauGridService.generateRecurrence(new RegleRecurrence(
+        List<Creneau> creneaux = GenerateurCreneaux.generateRecurrence(new RegleRecurrence(
                 TypeJoursHoraire.TOUS,
                 LocalDate.of(2026, 7, 6),
                 LocalDate.of(2026, 7, 8),
@@ -75,7 +75,7 @@ class CreneauGridServiceTest {
 
     @Test
     void leJourNestPasRenseigneCarIlEstRecalculeALaLecture() {
-        List<Creneau> creneaux = CreneauGridService.generateRecurrence(regleSimple());
+        List<Creneau> creneaux = GenerateurCreneaux.generateRecurrence(regleSimple());
 
         assertThat(creneaux).extracting(Creneau::getJour).containsOnly(0);
     }
@@ -85,7 +85,7 @@ class CreneauGridServiceTest {
         RegleRecurrence withoutBounds = new RegleRecurrence(
                 TypeJoursHoraire.TOUS, null, null, Set.of(), Set.of(), Set.of(), List.of(fenetre("09:00", "12:00")));
 
-        assertThatThrownBy(() -> CreneauGridService.generateRecurrence(withoutBounds))
+        assertThatThrownBy(() -> GenerateurCreneaux.generateRecurrence(withoutBounds))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("dateDebut");
     }
@@ -101,7 +101,7 @@ class CreneauGridServiceTest {
                 Set.of(),
                 List.of(new FenetreHoraire(LocalTime.of(14, 0), null)));
 
-        assertThatThrownBy(() -> CreneauGridService.generateRecurrence(ouverte))
+        assertThatThrownBy(() -> GenerateurCreneaux.generateRecurrence(ouverte))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("heure de fin");
     }
@@ -117,7 +117,7 @@ class CreneauGridServiceTest {
                 Set.of(LocalDate.of(2026, 7, 6)),
                 List.of(fenetre("09:00", "12:00")));
 
-        assertThatThrownBy(() -> CreneauGridService.generateRecurrence(videe))
+        assertThatThrownBy(() -> GenerateurCreneaux.generateRecurrence(videe))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("aucune date");
     }

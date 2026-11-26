@@ -65,7 +65,7 @@
 .sections.contraintes.poids{appreciationIncompatible} = 15
 .sections.contraintes.poids{maxJoursConsecutifsTravailles} = 25
 .sections.edition = null
-.sections.journeesTypes = null
+.sections.gabarits = null
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
 .sections.prereglagesConsigne = null

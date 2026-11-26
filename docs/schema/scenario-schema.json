@@ -301,6 +301,29 @@
       },
       "required" : [ "dateDebut" ]
     },
+    "GabaritDto" : {
+      "type" : "object",
+      "properties" : {
+        "dates" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/LocalDate"
+          }
+        },
+        "nom" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "vacations" : {
+          "minItems" : 1,
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/VacationTypeDto"
+          }
+        }
+      },
+      "required" : [ "nom", "vacations" ]
+    },
     "HoraireStandDto" : {
       "type" : "object",
       "properties" : {
@@ -340,29 +363,6 @@
         }
       },
       "required" : [ "fenetres", "mode" ]
-    },
-    "JourneeTypeDto" : {
-      "type" : "object",
-      "properties" : {
-        "dates" : {
-          "type" : "array",
-          "items" : {
-            "$ref" : "#/$defs/LocalDate"
-          }
-        },
-        "nom" : {
-          "type" : "string",
-          "minLength" : 1
-        },
-        "vacations" : {
-          "minItems" : 1,
-          "type" : "array",
-          "items" : {
-            "$ref" : "#/$defs/VacationTypeDto"
-          }
-        }
-      },
-      "required" : [ "nom", "vacations" ]
     },
     "LocalDate" : {
       "type" : "string",
@@ -853,10 +853,10 @@
     "festival" : {
       "$ref" : "#/$defs/FestivalDto"
     },
-    "journeesTypes" : {
+    "gabarits" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/$defs/JourneeTypeDto"
+        "$ref" : "#/$defs/GabaritDto"
       }
     },
     "parametres" : {
@@ -881,7 +881,7 @@
       "type" : "integer",
       "format" : "int32",
       "minimum" : 1,
-      "maximum" : 5
+      "maximum" : 6
     },
     "stands" : {
       "type" : "array",

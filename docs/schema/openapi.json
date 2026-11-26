@@ -185,7 +185,7 @@
           "date" : {
             "$ref" : "#/components/schemas/LocalDate"
           },
-          "journeeTypeId" : {
+          "gabaritId" : {
             "type" : "integer",
             "format" : "int64"
           }
@@ -214,6 +214,18 @@
             "items" : {
               "$ref" : "#/components/schemas/ContrainteImpact"
             }
+          }
+        }
+      },
+      "AffectationJourneeType" : {
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "journeeTypeId" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -2600,8 +2612,8 @@
         }
       },
       "Coupure" : {
-        "required" : [ "nombreStands" ],
         "type" : "object",
+        "required" : [ "nombreStands" ],
         "properties" : {
           "date" : {
             "$ref" : "#/components/schemas/LocalDate"
@@ -3478,6 +3490,21 @@
           },
           "communiqueeLe" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "DemandeGeneration" : {
+        "required" : [ "source" ],
+        "type" : "object",
+        "properties" : {
+          "source" : {
+            "$ref" : "#/components/schemas/Source"
+          },
+          "recurrence" : {
+            "$ref" : "#/components/schemas/RecurrenceRequest"
+          },
+          "derivation" : {
+            "$ref" : "#/components/schemas/DerivationRequest"
           }
         }
       },
@@ -4706,6 +4733,40 @@
           }
         }
       },
+      "EtatGenerateur" : {
+        "required" : [ "gabarits", "calendrier", "datesEnEcart", "datesSousConsigne" ],
+        "type" : "object",
+        "properties" : {
+          "gabarits" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Gabarit"
+            }
+          },
+          "calendrier" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Affectation"
+            }
+          },
+          "datesEnEcart" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          },
+          "datesSousConsigne" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          }
+        }
+      },
       "EtatJour" : {
         "type" : "object",
         "required" : [ "absents", "date", "echangesAArbitrer", "numero", "placesVides", "standsOuverts" ],
@@ -4821,13 +4882,13 @@
           "journeesTypes" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/JourneeType"
+              "$ref" : "#/components/schemas/Gabarit"
             }
           },
           "calendrier" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/Affectation"
+              "$ref" : "#/components/schemas/AffectationJourneeType"
             }
           },
           "datesEnEcart" : {
@@ -5176,6 +5237,27 @@
           }
         }
       },
+      "Gabarit" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "nom" : {
+            "type" : "string"
+          },
+          "vacations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/VacationType"
+            }
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
       "GapCounts" : {
         "type" : "object",
         "required" : [ "absences", "addedSeats", "emptySeats", "keptSeats", "lostMinutes", "publishedMinutes", "publishedSeats", "realisedMinutes", "removedSeats", "replacements" ],
@@ -5242,6 +5324,45 @@
           },
           "counts" : {
             "$ref" : "#/components/schemas/GapCounts"
+          }
+        }
+      },
+      "Generation" : {
+        "required" : [ "source", "nombreGeneres" ],
+        "type" : "object",
+        "properties" : {
+          "source" : {
+            "$ref" : "#/components/schemas/Source"
+          },
+          "nombreGeneres" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "creneaux" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Creneau"
+            }
+          },
+          "application" : {
+            "$ref" : "#/components/schemas/RapportApplication"
+          },
+          "coupures" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Coupure"
+            }
+          },
+          "joursSansFenetre" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          },
+          "controle" : {
+            "$ref" : "#/components/schemas/RapportGrille"
           }
         }
       },
@@ -6095,27 +6216,6 @@
             "items" : {
               "$ref" : "#/components/schemas/FenetreIntendance"
             }
-          }
-        }
-      },
-      "JourneeType" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "nom" : {
-            "type" : "string"
-          },
-          "vacations" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/VacationType"
-            }
-          },
-          "modifieLe" : {
-            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -8413,8 +8513,8 @@
         }
       },
       "RapportApplication" : {
-        "required" : [ "conserves", "misAJour", "crees", "supprimes", "postesSupprimes", "aucunChangement" ],
         "type" : "object",
+        "required" : [ "conserves", "misAJour", "crees", "supprimes", "postesSupprimes", "aucunChangement" ],
         "properties" : {
           "conserves" : {
             "type" : "integer",
@@ -9109,16 +9209,33 @@
       "Reconnaissance" : {
         "type" : "object",
         "properties" : {
-          "journeesTypes" : {
+          "gabarits" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/JourneeType"
+              "$ref" : "#/components/schemas/Gabarit"
             }
           },
           "calendrier" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/Affectation"
+            }
+          }
+        }
+      },
+      "ReconnaissanceJourneesTypes" : {
+        "type" : "object",
+        "properties" : {
+          "journeesTypes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Gabarit"
+            }
+          },
+          "calendrier" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AffectationJourneeType"
             }
           }
         }
@@ -9488,6 +9605,21 @@
           },
           "verrouPose" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "RetraitDates" : {
+        "required" : [ "dates" ],
+        "type" : "object",
+        "properties" : {
+          "dates" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
           }
         }
       },
@@ -10035,6 +10167,10 @@
             "$ref" : "#/components/schemas/Instant"
           }
         }
+      },
+      "Source" : {
+        "type" : "string",
+        "enum" : [ "GABARITS", "STANDS", "RECURRENCE" ]
       },
       "SourceHoraire" : {
         "type" : "string",
@@ -13371,6 +13507,7 @@
     },
     "/api/creneaux/derivation" : {
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -13402,6 +13539,7 @@
     },
     "/api/creneaux/derivation/apercu" : {
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -13527,6 +13665,7 @@
     },
     "/api/creneaux/recurrence" : {
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -13558,6 +13697,7 @@
     },
     "/api/creneaux/recurrence/apercu" : {
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -15735,6 +15875,281 @@
         "tags" : [ "Fragilite Resource" ]
       }
     },
+    "/api/generateur-creneaux" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatGenerateur"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Etat",
+        "tags" : [ "Generateur Creneaux Resource" ]
+      }
+    },
+    "/api/generateur-creneaux/apercu" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DemandeGeneration"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Generation"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Preview",
+        "tags" : [ "Generateur Creneaux Resource" ]
+      }
+    },
+    "/api/generateur-creneaux/application" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DemandeGeneration"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Generation"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Apply",
+        "tags" : [ "Generateur Creneaux Resource" ]
+      }
+    },
+    "/api/generateur-creneaux/calendrier" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/Affectation"
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatGenerateur"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Set Calendrier",
+        "tags" : [ "Generateur Creneaux Resource" ]
+      }
+    },
+    "/api/generateur-creneaux/gabarits" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Gabarit"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Gabarit"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Create Gabarit",
+        "tags" : [ "Generateur Creneaux Resource" ]
+      }
+    },
+    "/api/generateur-creneaux/gabarits/{id}" : {
+      "put" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Gabarit"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Gabarit"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Gabarit",
+        "tags" : [ "Generateur Creneaux Resource" ]
+      },
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Delete Gabarit",
+        "tags" : [ "Generateur Creneaux Resource" ]
+      }
+    },
+    "/api/generateur-creneaux/reconnaissance" : {
+      "post" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Reconnaissance"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Reconnaitre",
+        "tags" : [ "Generateur Creneaux Resource" ]
+      }
+    },
+    "/api/generateur-creneaux/reconnaissance/apercu" : {
+      "post" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Reconnaissance"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Preview Reconnaissance",
+        "tags" : [ "Generateur Creneaux Resource" ]
+      }
+    },
+    "/api/generateur-creneaux/retrait" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RetraitDates"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatGenerateur"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Withdraw",
+        "tags" : [ "Generateur Creneaux Resource" ]
+      }
+    },
     "/api/historique" : {
       "get" : {
         "parameters" : [ {
@@ -16360,6 +16775,7 @@
     },
     "/api/journees-types" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -16376,11 +16792,12 @@
         "tags" : [ "Journee Type Resource" ]
       },
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/JourneeType"
+                "$ref" : "#/components/schemas/Gabarit"
               }
             }
           },
@@ -16392,7 +16809,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/JourneeType"
+                  "$ref" : "#/components/schemas/Gabarit"
                 }
               }
             }
@@ -16407,6 +16824,7 @@
     },
     "/api/journees-types/application" : {
       "post" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -16425,6 +16843,7 @@
     },
     "/api/journees-types/application/apercu" : {
       "post" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -16443,13 +16862,14 @@
     },
     "/api/journees-types/calendrier" : {
       "put" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
               "schema" : {
                 "type" : "array",
                 "items" : {
-                  "$ref" : "#/components/schemas/Affectation"
+                  "$ref" : "#/components/schemas/AffectationJourneeType"
                 }
               }
             }
@@ -16553,13 +16973,14 @@
     },
     "/api/journees-types/reconnaissance" : {
       "post" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Reconnaissance"
+                  "$ref" : "#/components/schemas/ReconnaissanceJourneesTypes"
                 }
               }
             }
@@ -16571,13 +16992,14 @@
     },
     "/api/journees-types/reconnaissance/apercu" : {
       "post" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Reconnaissance"
+                  "$ref" : "#/components/schemas/ReconnaissanceJourneesTypes"
                 }
               }
             }
@@ -16589,6 +17011,7 @@
     },
     "/api/journees-types/{id}" : {
       "put" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -16602,7 +17025,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/JourneeType"
+                "$ref" : "#/components/schemas/Gabarit"
               }
             }
           },
@@ -16614,7 +17037,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/JourneeType"
+                  "$ref" : "#/components/schemas/Gabarit"
                 }
               }
             }
@@ -16627,6 +17050,7 @@
         "tags" : [ "Journee Type Resource" ]
       },
       "delete" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "id",
           "in" : "path",

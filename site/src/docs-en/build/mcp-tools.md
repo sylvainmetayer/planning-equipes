@@ -49,9 +49,9 @@ The break is set by `consulter_parametres` and `modifier_parametres` (section `l
 
 ## Building the grid and the hours
 
-A grid is made of shifts and is no longer asked for in a mode: a timeslot is a shift, and two timeslots that overlap on the same day are two staggered handovers, never an anomaly ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). The check (`valider_creneaux`, `previsualiser_creneaux_recurrents`, `diagnostiquer_grille_creneaux`) always flags a shift beyond `dureeVacationMaxMinutes` (6 h by default), a shift that the daily rest makes untenable, a meal relay outside the window, a duplicate, a gap, an isolated date. `diagnostiquer_grille_creneaux` is the first call to discover an edition.
+A grid is made of shifts and is no longer asked for in a mode: a timeslot is a shift, and two timeslots that overlap on the same day are two staggered handovers, never an anomaly ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). The check (`valider_creneaux`, `previsualiser_generateur_creneaux`, `diagnostiquer_grille_creneaux`) always flags a shift beyond `dureeVacationMaxMinutes` (6 h by default), a shift that the daily rest makes untenable, a meal relay outside the window, a duplicate, a gap, an isolated date. `diagnostiquer_grille_creneaux` is the first call to discover an edition.
 
-When the stands have their hours, `previsualiser_derivation_creneaux` shows the grid they imply (a cut at each hour where a stand opens or closes) and `generer_creneaux_depuis_stands` writes it, as an addition or, with `remplacer=true`, in place of the grid and of the plan along with it. `creer_creneau` and `modifier_creneau` take an optional `couverturePause`: the meal relay keeps the stand open at half its headcount, rounded up.
+One generator produces the grid in bulk ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)): `previsualiser_generateur_creneaux` shows what it would produce and checks the resulting grid, `appliquer_generateur_creneaux` writes it, with the same arguments and a `source`. `stands` cuts the grid the stands' hours imply (a cut at each hour where a stand opens or closes), as an addition or, with `remplacer=true`, in place of the grid and of the plan along with it; `recurrence` adds windows repeated over dates; `gabarits` applies the templates' calendar; `grille` reads the templates the grid implies. `creer_creneau` and `modifier_creneau` take an optional `couverturePause`: the meal relay keeps the stand open at half its headcount, rounded up.
 
 A stand's schedule model (its recurring rules, ADR 0104) appears in `consulter_stand` and `lister_stands` under `horaires`. `creer_horaire_stand` with a rule identical to an existing one changes nothing; `supprimer_horaires_stand` clears the model **and** the plages it unfolded, and keeps the hand-entered ones (`creer_plage_stand`).
 
@@ -59,7 +59,7 @@ A stand's dated plages appear in `consulter_stand` and `lister_stands` under `pl
 
 An opening window (`creer_horaire_stand`, `creer_stand_complet`, `creer_plage_stand`) can name its headcount with the suffix `@N` (`10:00-12:00@2,14:00-@4`) or the `effectif` argument of a dated opening; without it, it takes the stand's minimum. Zero is refused (a stand with nobody is a closure) and the suffix is rejected on a timeslot's recurrence.
 
-`definir_journee_type` creates or replaces a day template by its name and its shifts on one line ("09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00", `R` marking a meal relay with seats halved), `affecter_journee_type` lays it over a range or dates. None of this writes a timeslot: `previsualiser_application_journees_types` says what applying would change and `materialiser_journees_types` writes it. `reconnaitre_journees_types` goes the other way from the timeslots, and `lister_journees_types` returns the dates out of line or under a consigne, which materialisation does not touch ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)).
+The templates (« gabarits ») are the day templates of 3.x. `modifier_gabarit` creates or replaces a template by its name and its shifts on one line ("09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00", `R` marking a meal relay with seats halved), and lays it over a range or dates; `supprimer_gabarit` removes a template, or only dates from the calendar. None of this writes a timeslot: `appliquer_generateur_creneaux` with the source `gabarits` does, after the preview. `lister_gabarits` returns the dates out of line or under a consigne, which applying does not touch ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)).
 
 ## Laying down a consigne
 
@@ -101,11 +101,12 @@ Two **resources**, to attach once to inform all following calls:
 
 ## Old tool names
 
-4.0 renames, groups or removes tools of 3.x, with no alias: a tool is published only under its current name ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
+4.0 renames, groups or removes tools of 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). A few old names stay published until 5.0 next to the new one, their description starting with « Ancien nom »: those of the day review, and those of the day templates, the recurring timeslots and the derivation, which the timeslot generator grouped ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)). This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
 
 <!-- mcp-renommages:debut -->
 | Name in 3.x | Name in 4.0 |
 | --- | --- |
+| `affecter_journee_type` | `modifier_gabarit` |
 | `ajouter_fermeture_stand` | `creer_plage_stand` |
 | `ajouter_horaire_stand` | `creer_horaire_stand` |
 | `ajouter_ouverture_stand` | `creer_plage_stand` |
@@ -113,27 +114,39 @@ Two **resources**, to attach once to inform all following calls:
 | `capturer_instantane` | `creer_version` |
 | `compacter_horaires_stands` | removed |
 | `comparer_instantanes` | `comparer_versions` |
-| `consulter_historique_ponderation` | retiré |
+| `consulter_historique_ponderation` | removed |
 | `consulter_instantane` | `consulter_version` |
 | `consulter_parametres_legaux` | `consulter_parametres` |
 | `consulter_parametres_notifications` | `consulter_parametres` |
 | `consulter_parametres_qualite` | `consulter_parametres` |
 | `consulter_parametres_solveur` | `consulter_parametres` |
+| `creer_creneaux_recurrents` | `appliquer_generateur_creneaux` |
+| `definir_journee_type` | `modifier_gabarit` |
 | `effacer_horaires_stand` | `supprimer_horaires_stand` |
 | `effacer_plages_stand` | `supprimer_plage_stand` |
 | `figer_referentiel` | `modifier_phase_edition` |
+| `generer_creneaux_depuis_stands` | `appliquer_generateur_creneaux` |
 | `lever_gel` | `modifier_phase_edition` |
 | `lister_instantanes` | `lister_versions` |
+| `lister_journees_types` | `lister_gabarits` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
 | `lister_validations_journee` | `consulter_etats_journee` |
+| `materialiser_journees_types` | `appliquer_generateur_creneaux` |
 | `modifier_parametres_legaux` | `modifier_parametres` |
 | `modifier_parametres_notifications` | `modifier_parametres` |
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
+| `previsualiser_application_journees_types` | `previsualiser_generateur_creneaux` |
+| `previsualiser_creneaux_recurrents` | `previsualiser_generateur_creneaux` |
+| `previsualiser_derivation_creneaux` | `previsualiser_generateur_creneaux` |
+| `previsualiser_reconnaissance_journees_types` | `previsualiser_generateur_creneaux` |
 | `realise_vs_planifie` | `comparer_realise_planifie` |
+| `reconnaitre_journees_types` | `appliquer_generateur_creneaux` |
 | `restaurer_instantane` | `restaurer_version` |
+| `retirer_dates_journee_type` | `supprimer_gabarit` |
 | `retirer_validation_journee` | `modifier_etat_journee` |
 | `supprimer_instantane` | `supprimer_version` |
+| `supprimer_journee_type` | `supprimer_gabarit` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |
 <!-- mcp-renommages:fin -->
 

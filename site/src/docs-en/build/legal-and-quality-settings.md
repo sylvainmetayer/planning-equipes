@@ -7,7 +7,7 @@ You will know what a shift is and what the grid checks about it, which settings 
 
 ## A grid is made of shifts
 
-A timeslot is a **shift**: a slice of real work on which someone is assigned. There is no other kind of timeslot. The **opening span** (the opening day from end to end) no longer exists as a timeslot: an event knows its opening hours and projects them into shifts through its [typical days](modele-des-donnees.md#les-journées-types-génèrent-les-créneaux), and the automatic splitting that used to slice an opening span is gone ([decision 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). Likewise, the "relay families" (several staggered variants of each shift) have been removed ([decision 0029](repo:docs/decisions/0029-retrait-des-familles-de-relais.md)): a grid carries a single variant of each shift and any stand sits on any open timeslot.
+A timeslot is a **shift**: a slice of real work on which someone is assigned. There is no other kind of timeslot. The **opening span** (the opening day from end to end) no longer exists as a timeslot: an event knows its opening hours and projects them into shifts through its [templates](modele-des-donnees.md#le-générateur-de-créneaux-et-ses-gabarits), and the automatic splitting that used to slice an opening span is gone ([decision 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). Likewise, the "relay families" (several staggered variants of each shift) have been removed ([decision 0029](repo:docs/decisions/0029-retrait-des-familles-de-relais.md)): a grid carries a single variant of each shift and any stand sits on any open timeslot.
 
 ### What the grid check reports
 

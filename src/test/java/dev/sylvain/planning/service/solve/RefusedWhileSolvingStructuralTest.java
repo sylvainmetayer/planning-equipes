@@ -180,22 +180,8 @@ class RefusedWhileSolvingStructuralTest {
                     "ReferenceDataService#deleteCreneaux(Connection,Collection)",
                     "CreneauService#deleteInBulk(Connection,Collection)"),
             Map.entry(
-                    "ReferenceDataService#createRecurrence(RegleRecurrence)",
-                    "ReferenceDataService#createCreneaux(List)"),
-            Map.entry("ReferenceDataService#applyDerivation(Parametres,boolean)", "CreneauService#replace(List)"),
-            Map.entry(
                     "ReferenceDataService#importCsvReferentiel(ImportTarget,ReferentielCsvImportRequest)",
                     "ReferentielCsvImportService#apply(ImportTarget,ReferentielCsvImportRequest)"),
-            Map.entry("ReferenceDataService#createJourneeType(JourneeType)", "JourneeTypeService#create(JourneeType)"),
-            Map.entry(
-                    "ReferenceDataService#updateJourneeType(long,JourneeType)",
-                    "JourneeTypeService#update(long,JourneeType)"),
-            Map.entry("ReferenceDataService#deleteJourneeType(long)", "JourneeTypeService#delete(long)"),
-            Map.entry(
-                    "ReferenceDataService#setCalendrierJourneesTypes(List)", "JourneeTypeService#setCalendrier(List)"),
-            Map.entry("ReferenceDataService#applyJourneesTypes()", "JourneeTypeService#apply()"),
-            Map.entry("ReferenceDataService#reconnaitreJourneesTypes()", "JourneeTypeService#reconnaitre()"),
-            Map.entry("ReferenceDataService#importJourneesTypes(List,List)", "JourneeTypeService#importer(List,List)"),
             Map.entry(
                     "ReferenceDataService#importTypologie(TypologieItem)", "TypologieService#importer(TypologieItem)"),
             Map.entry("ReferenceDataService#createTypologie(TypologieItem)", "TypologieService#create(TypologieItem)"),
@@ -298,13 +284,15 @@ class RefusedWhileSolvingStructuralTest {
                     "the freeze refuses the writes to come, it changes no data a solve reads"),
             Map.entry("GelReferentielService#lift(ReferentialFamily)", "same"),
             Map.entry(
-                    "JourneeTypeService#create(JourneeType)",
+                    "GenerateurCreneaux#create(Gabarit)",
                     "a day template reaches the grid only through apply(), which is refused"),
-            Map.entry("JourneeTypeService#update(long,JourneeType)", "same"),
-            Map.entry("JourneeTypeService#delete(long)", "same"),
-            Map.entry("JourneeTypeService#setCalendrier(List)", "same, for the calendar of the day templates"),
-            Map.entry("JourneeTypeService#reconnaitre()", "rewrites the templates from the grid, never the grid"),
-            Map.entry("JourneeTypeService#importer(List,List)", "templates and their calendar only, as above"),
+            Map.entry("GenerateurCreneaux#update(long,Gabarit)", "same"),
+            Map.entry("GenerateurCreneaux#delete(long)", "same"),
+            Map.entry("GenerateurCreneaux#setCalendrier(List)", "same, for the calendar of the day templates"),
+            Map.entry("GenerateurCreneaux#reconnaitre()", "rewrites the templates from the grid, never the grid"),
+            Map.entry("GenerateurCreneaux#importer(List,List)", "templates and their calendar only, as above"),
+            Map.entry("GenerateurCreneaux#assign(long,Set)", "same, for the calendar of the day templates"),
+            Map.entry("GenerateurCreneaux#withdraw(Set)", "same: a withdrawn date keeps its timeslots"),
             Map.entry(
                     "ReferentielCsvImportService#apply(ImportTarget,ReferentielCsvImportRequest)",
                     "hands each row to the write of its own family, classified here: a stand edit"

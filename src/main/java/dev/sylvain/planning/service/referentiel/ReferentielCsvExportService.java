@@ -3,7 +3,7 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
@@ -65,7 +65,7 @@ public class ReferentielCsvExportService {
 
     private final CreneauService creneaux;
 
-    private final JourneeTypeService journeesTypes;
+    private final GenerateurCreneaux journeesTypes;
 
     @Inject
     public ReferentielCsvExportService(
@@ -74,7 +74,7 @@ public class ReferentielCsvExportService {
             StandService stands,
             AnimateurService animateurs,
             CreneauService creneaux,
-            JourneeTypeService journeesTypes) {
+            GenerateurCreneaux journeesTypes) {
         this.typologies = typologies;
         this.emplacements = emplacements;
         this.stands = stands;
@@ -250,12 +250,12 @@ public class ReferentielCsvExportService {
         Map<Long, Set<LocalDate>> datesParJourneeType = new LinkedHashMap<>();
         for (Affectation affectation : journeesTypes.calendrier()) {
             datesParJourneeType
-                    .computeIfAbsent(affectation.journeeTypeId(), id -> new TreeSet<>())
+                    .computeIfAbsent(affectation.gabaritId(), id -> new TreeSet<>())
                     .add(affectation.date());
         }
         StringBuilder csv = new StringBuilder();
         ligne(csv, "nom", "vacations", "dates");
-        for (JourneeType journeeType : journeesTypes.list()) {
+        for (Gabarit journeeType : journeesTypes.list()) {
             ligne(
                     csv,
                     journeeType.getNom(),

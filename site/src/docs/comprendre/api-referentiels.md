@@ -64,31 +64,34 @@ Les autres écritures passent (typologies, emplacements, contraintes ad hoc, par
 
 ## La grille de créneaux
 
-Un créneau se crée seul ou en série : une règle (les créneaux d'une journée type et les jours qu'elle couvre) en ajoute des dizaines d'un coup, comme l'outil MCP `creer_creneaux_recurrents`.
+Un créneau se crée seul (`POST /api/creneaux`) ou en lot par **le générateur de créneaux** ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), qui produit des dizaines de créneaux d'un coup depuis l'une de trois sources : les gabarits (les journées types de la 3.x) appliqués à leurs dates, les horaires des stands, ou un motif récurrent. Trois gestes valent pour toutes : `POST /api/generateur-creneaux/apercu` n'écrit rien et rend le verdict sur la grille qui résulterait, `POST /api/generateur-creneaux/application` écrit, `POST /api/generateur-creneaux/retrait` retire des dates du calendrier des gabarits (leurs créneaux restent).
 
 ```json
-POST /api/creneaux/recurrence/apercu
-{ "jours": "JOURS_SEMAINE", "dateDebut": "2026-07-06", "dateFin": "2026-07-19",
-  "joursSemaine": ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY"],
-  "exclusions": ["2026-07-14"],
-  "fenetres": [ { "heureDebut": "09:00", "heureFin": "12:00" },
-                { "heureDebut": "14:00", "heureFin": "18:00" } ] }
-→ { "nombreGeneres": 18, "creneaux": [ … ], "controle": { … } }
+POST /api/generateur-creneaux/apercu
+{ "source": "RECURRENCE",
+  "recurrence": { "jours": "JOURS_SEMAINE", "dateDebut": "2026-07-06", "dateFin": "2026-07-19",
+    "joursSemaine": ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY"],
+    "exclusions": ["2026-07-14"],
+    "fenetres": [ { "heureDebut": "09:00", "heureFin": "12:00" },
+                  { "heureDebut": "14:00", "heureFin": "18:00" } ] } }
+→ { "source": "RECURRENCE", "nombreGeneres": 18, "creneaux": [ … ], "controle": { … } }
 ```
 
-`jours` reprend le sélecteur des horaires de stand (`TOUS`, `JOURS_SEMAINE`, `PLAGE`, `DATES`). L'aperçu n'écrit rien et rend le verdict sur la grille qui résulterait ; `POST /api/creneaux/recurrence` ajoute sans jamais remplacer. Une règle qui répète un créneau existant ressort en `DOUBLON` (`ERREUR`) ; `400` sur une règle mal formée. Un créneau est une vacation : un chevauchement le même jour est la forme normale de deux relèves décalées, jamais une anomalie ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)).
+`jours` reprend le sélecteur des horaires de stand (`TOUS`, `JOURS_SEMAINE`, `PLAGE`, `DATES`) ; une récurrence ajoute sans jamais remplacer. Une génération qui répète un créneau existant ressort en `DOUBLON` (`ERREUR`) ; `400` sur une demande mal formée. Un créneau est une vacation : un chevauchement le même jour est la forme normale de deux relèves décalées, jamais une anomalie ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). Les routes de la 3.x (`/api/creneaux/recurrence`, `/api/creneaux/derivation`, `/api/journees-types`) restent des alias déclarés obsolètes jusqu'en 5.0, avec leurs anciennes formes.
 
 `GET /api/creneaux/controle` rend les anomalies de la grille (`severite` `ERREUR` ou `AVERTISSEMENT`, `type`, `date`, `message`), celles d'ouverture des stands et le rapport de faisabilité (`null` sans stand ou sans créneau). Deux plafonds de durée s'y lisent : au-delà de `parametresLegaux.dureeVacationMaxMinutes` (6 h par défaut, seuil de l'art. L3121-16) un avertissement `VACATION_TROP_LONGUE`, au-delà de ce que laisse le repos quotidien une erreur `REPOS_QUOTIDIEN_IMPOSSIBLE`. `GET /api/creneaux/diagnostic` décrit la grille en place : nombre de vacations, dates, relais repas, `joursFeries`.
 
 **Jours fériés.** Le contrôle ajoute `VACATION_JOUR_FERIE` (une ligne par date) quand des vacations tombent un jour férié et que l'édition compte au moins un mineur disponible ce jour-là, car seuls les majeurs y siègent (art. L3164-6). Sans mineur disponible, il se tait : un festival ouvre légitimement le 14 juillet. Rien n'est bloqué, la contrainte dure existe déjà ; le message compte les mineurs sans les nommer. `GET /api/jours-feries?debut=AAAA-MM-JJ&fin=AAAA-MM-JJ` rend les fériés d'une plage (`[{ date, label }]`) pour les écrans de saisie. C'est un fait calendaire, aucune édition n'y est lue mais la connexion d'administration reste exigée ; deux ans au plus, `400` sur une plage inversée, trop longue ou une date illisible. Le périmètre est celui de `JoursFeries` (les onze jours de l'art. L3133-1, métropole hors Alsace-Moselle), et le client ne calcule jamais Pâques : le libellé voyage avec la date.
 
-**Dériver la grille des horaires de stands.** Quand les horaires existent déjà, la grille en découle : chaque heure où un stand ouvre ou ferme est une coupure, et chaque tranche entre deux coupures où un stand au moins est ouvert devient un créneau. `POST /api/creneaux/derivation/apercu` et `POST /api/creneaux/derivation` prennent `{ dateDebut, dateFin, heureFermeture, dureeMinimaleMinutes, remplacer }` :
+**La source `STANDS` : dériver la grille des horaires de stands.** Quand les horaires existent déjà, la grille en découle : chaque heure où un stand ouvre ou ferme est une coupure, et chaque tranche entre deux coupures où un stand au moins est ouvert devient un créneau. La demande porte `derivation: { dateDebut, dateFin, heureFermeture, dureeMinimaleMinutes, remplacer }` :
 
 - `heureFermeture` donne une fin aux fenêtres « jusqu'à la fermeture » (`00:00` pour minuit : le dernier créneau franchit minuit).
 - Une tranche plus courte que `dureeMinimaleMinutes` (15 par défaut) rejoint la suivante, ou la précédente à défaut ; un trou plus court est refermé plutôt que de couper le créneau en deux.
 - `remplacer` juge et, à l'écriture, remplace toute la grille, le plan résolu partant avec elle ; sinon les créneaux s'ajoutent.
 
 Seuls les jours qu'un stand déclare « ouvert sur ces fenêtres » participent : un stand muet sur un jour est ouvert quand les autres le sont. La réponse porte les créneaux, les `coupures`, les `joursSansFenetre` et le verdict `controle` ; `400` sans aucune fenêtre.
+
+**La source `GABARITS`.** Les gabarits se gèrent sous `/api/generateur-creneaux/gabarits` et leur calendrier sous `PUT /api/generateur-creneaux/calendrier` ; `GET /api/generateur-creneaux` rend les deux et les dates en écart. L'application matérialise le calendrier par différence (`application` : créneaux conservés, mis à jour, créés, supprimés avec leurs sièges) ; une date sans gabarit n'est jamais touchée. `POST /api/generateur-creneaux/reconnaissance` fait le chemin inverse et remplace les gabarits par ceux que la grille implique. Un créneau créé sur un jour que l'édition ne comptait pas déplie le modèle des stands, comme une saisie à la main ([ADR 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)).
 
 ## Imports par fichier
 

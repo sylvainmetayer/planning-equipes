@@ -11,7 +11,7 @@ import java.util.List;
  * are what the solver, the seats, the locks and the edition's bounds read, and
  * a date the calendar does not assign is left exactly as it is. See ADR 0032.
  */
-public class JourneeType {
+public class Gabarit {
 
     private Long id;
     private String nom;
@@ -19,9 +19,9 @@ public class JourneeType {
     /** Write stamp read back by the form and sent as the write's precondition (issue #362). */
     private Instant modifieLe;
 
-    public JourneeType() {}
+    public Gabarit() {}
 
-    public JourneeType(Long id, String nom, List<VacationType> vacations) {
+    public Gabarit(Long id, String nom, List<VacationType> vacations) {
         this.id = id;
         this.nom = nom;
         this.vacations = new ArrayList<>(vacations);

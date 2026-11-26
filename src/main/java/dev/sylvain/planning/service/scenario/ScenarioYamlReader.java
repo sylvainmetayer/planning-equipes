@@ -3,7 +3,7 @@ package dev.sylvain.planning.service.scenario;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -369,7 +369,7 @@ public final class ScenarioYamlReader {
             List<TypologieItem> typologies,
             Optional<EditionCibleDto> edition,
             Optional<ContraintesScenario> contraintes,
-            Optional<JourneesTypesScenario> journeesTypes,
+            Optional<GabaritsScenario> gabarits,
             Optional<List<PrereglageConsigne>> prereglagesConsigne,
             Optional<List<ConsigneScenario>> consignes) {}
 
@@ -383,11 +383,10 @@ public final class ScenarioYamlReader {
     public record ConsigneScenario(ConsigneEdition consigne, List<ConsigneService.VacationRef> creneauxAjoutes) {}
 
     /**
-     * The {@code journeesTypes:} section of a scenario, parsed: the templates
+     * The {@code gabarits:} section of a scenario, parsed: the templates
      * with provisional ids the calendar names, which the repository reassigns.
      */
-    public record JourneesTypesScenario(
-            List<JourneeType> journeesTypes, List<JourneesTypesMaterialisation.Affectation> calendrier) {}
+    public record GabaritsScenario(List<Gabarit> gabarits, List<JourneesTypesMaterialisation.Affectation> calendrier) {}
 
     /**
      * The {@code contraintes:} section of a scenario, parsed.

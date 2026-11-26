@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * One entry of the optional top-level {@code journeesTypes:} section: a named
+ * One entry of the optional top-level {@code gabarits:} section: a named
  * day template — its vacations — and the dates it governs (ADR 0032).
  *
  * <p>The section is applied <b>after</b> the créneaux landed and replaces the
@@ -18,5 +18,5 @@ import java.util.List;
  * the créneaux imply, so that an imported edition and a hand-entered one look
  * the same on the Créneaux screen.</p>
  */
-public record JourneeTypeDto(
+public record GabaritDto(
         @NotBlank String nom, @NotEmpty List<@Valid VacationTypeDto> vacations, List<LocalDate> dates) {}

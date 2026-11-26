@@ -232,7 +232,7 @@ class PlanningServiceScenarioFromTextTest {
                         base + "parametresDecoupage:\n  dureeVacationCibleMinutes: 240\n"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("parametresDecoupage")
-                .hasMessageContaining("journeesTypes");
+                .hasMessageContaining("gabarits");
         assertThatThrownBy(() -> service.buildFromScenarioText(base + "decoupageAuto: {}\n"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("decoupageAuto")
