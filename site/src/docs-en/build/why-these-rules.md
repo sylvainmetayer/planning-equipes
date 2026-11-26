@@ -3,7 +3,7 @@ twin: comprendre/pourquoi-ces-regles
 ---
 # The solver's rules and their catalogue
 
-You will know where to read the list of the 45 rules, how they are arranged by level, why the screen and the code do not use the same word for a breach, and what two fields of the record do not drive. The table at the end of the page is the complete list, kept up to date by a test.
+You will know where to read the list of the 44 rules, how they are arranged by level, why the screen and the code do not use the same word for a breach, and what two fields of the record do not drive. The table at the end of the page is the complete list, kept up to date by a test.
 
 A schedule is valid when no hard rule is breached, and good when the quality rules are barely penalised. The rules are arranged on the three levels of Timefold's `HardMediumSoftScore`: **hard** (blocking), **medium** (heavily penalised, flagged to the organiser) and **soft** (a preference that separates two valid schedules).
 
@@ -108,8 +108,7 @@ This table is the rendering of `ConstraintCatalog`. When the catalogue changes, 
 | `affectationForcee` | HARD | Ad hoc constraints | Assignment imposed by the administrator: the staff member must be present on the targeted timeslot or stand. |
 | `affiniteAdHoc` | SOFT | Ad hoc constraints | Pair of staff members to favour: every timeslot where both are assigned to the same stand is rewarded. A soft constraint: it favours co-assignment when possible, without ever forcing it. |
 | `arriveeGroupee` | SOFT | Ad hoc constraints | Arrival group (carpooling, 2 to 4 staff members): the members work the same days, arrive and leave together, within the tolerance (30 min by default, adjustable in Settings › Organisation). Each day and each pair of the group costs the minutes of gap beyond the tolerance, at arrival as at departure, and a flat two hours when one works and the other does not. No stand constraint: members may hold different stands. A soft constraint: it yields to the legal rules and to load balance. |
-| `animateurVerrouilleFige` | HARD | Schedule lock | The schedule of a locked staff member no longer moves: their validated seats are frozen and the solver can no longer assign them new ones. |
-| `animateurVerrouilleCreneauFige` | HARD | Schedule lock | A validated swap is frozen on its timeslot: what each of the two staff members holds there after the swap no longer moves, without freezing the rest of their schedule. |
+| `animateurVerrouilleCreneauFige` | HARD | Schedule lock | A staff member locked on a timeslot (for example after a validated swap) keeps what they hold there: the solver can neither take it from them nor give them another one, without freezing the rest of their schedule. |
 | `standComplexeAvecReferent` | MEDIUM | Organisation quality | Every stand should have at least one lead on each timeslot. |
 | `equilibrerCharge` | MEDIUM | Organisation quality | The workload should be spread fairly among staff members. |
 | `stabiliteDuPlanPublie` | MEDIUM | Organisation quality | Once a schedule is published, each person moved off a seat they held in the published plan costs: the solver disturbs people already notified only if the gain is worth the disturbance. Silent as long as nothing has been published; a shift the published plan did not have — another day, other hours or another stand — remains free. |

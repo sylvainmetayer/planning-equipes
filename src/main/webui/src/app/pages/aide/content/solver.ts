@@ -52,7 +52,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.verrous:Les verrouillages s'appliquent aux trois modes. Un animateur, un stand, une journée ou un créneau verrouillé n'est touché ni par un calcul complet ni par une correction.`,
+          text: $localize`:@@aide.calculer.verrous:Les verrouillages s'appliquent aux trois modes. Un animateur sur un créneau, un stand sur une journée ou une journée verrouillé n'est touché ni par un calcul complet ni par une correction.`,
         },
         {
           kind: 'definitions',
@@ -132,7 +132,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.verrouillages:Verrouillages`,
-              text: $localize`:@@aide.config.def.verrouillages:Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste. Une place non pourvue n'est jamais gelée, et les places gelées continuent d'être évaluées : un verrou laisse donc une alerte visible au lieu de masquer un problème. Quand ce que vous figez casse déjà une règle dure, l'enregistrement le dit, pour que le score dur négatif du prochain calcul ne soit pas une surprise. Ils se posent sur l'onglet Verrouillages de la page Règles du planning, sur un animateur par défaut ; avant d'enregistrer, l'aperçu compte les affectations que le verrou figera et mène à la Journée qui les montre. Ce n'est pas un ajustement manuel : voir l'encart « Ajustement manuel ou verrouillage ? ».`,
+              text: $localize`:@@aide.config.def.verrouillages:Geler un animateur sur un créneau, un stand sur une journée ou une journée entière pour que la prochaine résolution n'y touche plus et optimise le reste. Une place non pourvue n'est jamais gelée, et les places gelées continuent d'être évaluées : un verrou laisse donc une alerte visible au lieu de masquer un problème. Quand ce que vous figez casse déjà une règle dure, l'enregistrement le dit, pour que le score dur négatif du prochain calcul ne soit pas une surprise. Ils se posent sur l'onglet Verrouillages de la page Règles du planning, sur un animateur et un créneau par défaut ; avant d'enregistrer, l'aperçu compte les affectations que le verrou figera et mène à la Journée qui les montre. Ce n'est pas un ajustement manuel : voir l'encart « Ajustement manuel ou verrouillage ? ».`,
             },
           ],
         },

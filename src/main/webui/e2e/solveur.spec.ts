@@ -190,28 +190,40 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
   await page.context().close();
 });
 
-test('un animateur verrouillé garde exactement son planning après re-résolution', async () => {
+test('un animateur verrouillé sur chacun de ses créneaux garde exactement son planning après re-résolution', async () => {
   test.slow();
   // Continue from the previous state: solve once, freeze Paula, solve again.
   const avant = await lancerSolve(admin, 6);
   expect(avant.result?.diagnostic.hardScore).toBe(0);
   const planAvant = postesDe(await planningPersiste(admin), 'SOLV-P');
 
-  const verrou = await admin.post('/api/verrouillages', {
-    data: { type: 'ANIMATEUR', animateurId: 'SOLV-P', raison: 'E2E : Paula validée' },
-  });
-  expect(verrou.ok(), await verrou.text()).toBe(true);
-  // `{ verrouillage, avertissements }` since the lock write started warning:
-  // reading `.id` here left the cleanup deleting `undefined` — which answers
-  // 204 like any other id — and the ANIMATEUR lock leaking into the next test.
-  const verrouId = ((await verrou.json()) as { verrouillage: { id: string } }).verrouillage.id;
-  expect(verrouId, 'le POST doit rendre le verrou sous `verrouillage`').toBeTruthy();
+  // Paula's whole planning is one animateur+créneau lock per seat she holds.
+  const verrouIds: string[] = [];
+  for (const poste of planAvant) {
+    const verrou = await admin.post('/api/verrouillages', {
+      data: {
+        type: 'ANIMATEUR_CRENEAU',
+        animateurId: 'SOLV-P',
+        creneauId: Number(poste.split('@')[1]),
+        raison: 'E2E : Paula validée',
+      },
+    });
+    expect(verrou.ok(), await verrou.text()).toBe(true);
+    // `{ verrouillage, avertissements }` since the lock write started warning:
+    // reading `.id` here left the cleanup deleting `undefined` — which answers
+    // 204 like any other id — and the lock leaking into the next test.
+    const verrouId = ((await verrou.json()) as { verrouillage: { id: string } }).verrouillage.id;
+    expect(verrouId, 'le POST doit rendre le verrou sous `verrouillage`').toBeTruthy();
+    verrouIds.push(verrouId);
+  }
 
   const apres = await lancerSolve(admin, 6);
   expect(apres.result?.diagnostic.hardScore).toBe(0);
   expect(postesDe(await planningPersiste(admin), 'SOLV-P')).toEqual(planAvant);
 
-  await admin.delete(`/api/verrouillages/${verrouId}`);
+  for (const verrouId of verrouIds) {
+    await admin.delete(`/api/verrouillages/${verrouId}`);
+  }
 });
 
 test('un échange accepté survit à la régénération du planning', async ({ browser }) => {

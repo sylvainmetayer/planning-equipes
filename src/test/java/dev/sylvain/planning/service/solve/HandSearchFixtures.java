@@ -236,17 +236,18 @@ final class HandSearchFixtures {
         LocalDate splitDay = days.get(Math.min(6, last));
 
         List<VerrouillagePlanning> locks = new ArrayList<>();
-        Animateur locked = null;
+        Stand lockedStand = null;
         Animateur slotLocked = null;
         for (PosteAffectation poste : postes) {
             Animateur holder = poste.getAnimateur();
             LocalDate day = poste.getCreneau().getDate();
-            if (holder != null && day.equals(lockedDay) && locked == null) {
-                locked = holder;
-                VerrouillagePlanning lock = new VerrouillagePlanning("fixture-animateur", TypeVerrouillage.ANIMATEUR);
-                lock.setAnimateurId(holder.getId());
+            if (holder != null && day.equals(lockedDay) && lockedStand == null) {
+                lockedStand = poste.getStand();
+                VerrouillagePlanning lock = new VerrouillagePlanning("fixture-stand-jour", TypeVerrouillage.STAND_JOUR);
+                lock.setStandId(lockedStand.getId());
+                lock.setJour(lockedDay);
                 locks.add(lock);
-            } else if (holder != null && day.equals(slotDay) && slotLocked == null && !holder.equals(locked)) {
+            } else if (holder != null && day.equals(slotDay) && slotLocked == null && !day.equals(lockedDay)) {
                 slotLocked = holder;
                 poste.setVerrouille(true);
                 VerrouillagePlanning lock =
@@ -264,7 +265,9 @@ final class HandSearchFixtures {
             if (day.equals(pastDay)) {
                 poste.setPasse(true);
                 poste.setVerrouille(true); // what FrozenPast.pin does to a seat already started
-            } else if (holder != null && (holder.equals(locked) || (day.equals(pinnedDay) && random.nextInt(7) == 0))) {
+            } else if (holder != null
+                    && ((day.equals(lockedDay) && poste.getStand().equals(lockedStand))
+                            || (day.equals(pinnedDay) && random.nextInt(7) == 0))) {
                 poste.setVerrouille(true);
             }
             if (holder != null && dayIndex >= 1 && dayIndex <= 5 && random.nextInt(10) != 0) {

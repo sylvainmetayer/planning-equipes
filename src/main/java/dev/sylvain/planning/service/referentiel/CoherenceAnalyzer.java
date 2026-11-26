@@ -722,10 +722,10 @@ public final class CoherenceAnalyzer {
             ViolationFormatter.ViolationReference reference,
             Map<Long, LocalDate> joursParCreneau) {
         return switch (verrouillage.target().orElse(null)) {
-            case VerrouillageTarget.OnAnimateur(String animateurId) -> animateurId.equals(reference.animateurId());
-            case VerrouillageTarget.OnStand(String standId) -> standId.equals(reference.standId());
-            case VerrouillageTarget.OnCreneau(long creneauId) ->
-                Long.valueOf(creneauId).equals(reference.creneauId());
+            case VerrouillageTarget.OnStandAndJour(String standId, LocalDate jour) ->
+                standId.equals(reference.standId())
+                        && reference.creneauId() != null
+                        && jour.equals(joursParCreneau.get(reference.creneauId()));
             case VerrouillageTarget.OnJour(LocalDate jour) ->
                 reference.creneauId() != null && jour.equals(joursParCreneau.get(reference.creneauId()));
             case VerrouillageTarget.OnAnimateurAndCreneau(String animateurId, long creneauId) ->

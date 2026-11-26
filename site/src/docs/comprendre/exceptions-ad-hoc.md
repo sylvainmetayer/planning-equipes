@@ -79,12 +79,12 @@ Une `AFFECTATION_FORCEE` peut être intenable sans contredire aucune autre excep
 | --- | --- | --- |
 | `ForcedAssignmentOnDayOff` | **Tous** les animateurs nommés se sont déclarés indisponibles à **chaque** date du périmètre | `AFFECTATION_FORCEE_JOUR_INDISPONIBLE` |
 | `ForcedAssignmentOnExcludedSeats` | Aucune place du périmètre n'accepte l'un des animateurs nommés au titre d'une règle dure du couple place × animateur, les motifs d'`EligibleAnimateurMoveFilter` : mineur la nuit, jour férié, stand réservé aux majeurs, plafond quotidien dépassé | `AFFECTATION_FORCEE_MOTIF_LEGAL` ; le message nomme les règles du catalogue |
-| `ForcedAssignmentOnLockedSchedule` | L'emploi du temps de chacun des animateurs nommés est verrouillé (`ANIMATEUR` ou `ANIMATEUR_CRENEAU`) sur tout le périmètre, et aucun n'y tient déjà de place : le solveur ne peut ni bouger le verrou ni ignorer l'exception | `AFFECTATION_FORCEE_SIEGE_VERROUILLE` |
+| `ForcedAssignmentOnLockedSchedule` | L'emploi du temps de chacun des animateurs nommés est verrouillé (`ANIMATEUR_CRENEAU`, sur chaque créneau) sur tout le périmètre, et aucun n'y tient déjà de place : le solveur ne peut ni bouger le verrou ni ignorer l'exception | `AFFECTATION_FORCEE_SIEGE_VERROUILLE` |
 
 Les deux premières ne se doublent jamais : le jour déclaré indisponible est *aussi* un motif d'exclusion dur, donc la seconde se tait sur un cas que la première rapporte, parce que la lecture en termes de déclaration est celle que l'organisateur sait traiter, en parlant à la personne. La troisième peut s'ajouter aux deux autres, et c'est voulu : un verrou et une règle légale sont deux blocages indépendants, qui se lèvent par deux gestes différents.
 
 Deux précautions évitent d'inventer un conflit. Les places du périmètre sont construites comme `ProblemBuilder` les génère, une par (stand ouvert sur le créneau, créneau) : un périmètre qui n'ouvre nulle part, ou qui nomme un stand inconnu du référentiel, ne porte aucune place et ne dit rien. Et les plafonds de durée se lisent avec la lecture la plus permissive de la pause, de sorte qu'un conflit rapporté est un conflit que le solveur rencontrerait quoi qu'en dise l'édition.
 
-Seuls les verrous `ANIMATEUR` et `ANIMATEUR_CRENEAU` entrent dans la troisième lecture. Un verrou de stand, de créneau ou de journée épingle les places qui **tiennent quelqu'un** et laisse les places vides remplissables : il ne s'oppose jamais à l'affectation que l'exception réclame.
+Seuls les verrous `ANIMATEUR_CRENEAU` entrent dans la troisième lecture. Un verrou de stand et de journée, ou de journée, épingle les places qui **tiennent quelqu'un** et laisse les places vides remplissables : il ne s'oppose jamais à l'affectation que l'exception réclame.
 
 Enfin, le calcul garde le jour d'indisponibilité, le verrou et la règle légale : c'est l'exception qui n'est pas tenue. Elle est alors comptée en écart et nommée par `contraintesAdHocEnCause`.

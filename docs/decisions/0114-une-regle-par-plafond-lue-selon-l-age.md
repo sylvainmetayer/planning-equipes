@@ -75,7 +75,7 @@ lisaient dans `PlafondsLegauxMajeurs` ou `PlafondsLegauxMineurs`.
 
 ## Conséquences
 
-- Le catalogue passe de 47 à 45 règles. L'écran, `GET /api/constraints`, les
+- Le catalogue passe de 46 à 44 règles. L'écran, `GET /api/constraints`, les
   diagnostics et les outils MCP disent une règle avec son plafond par âge.
 - Un réglage porte désormais sur les deux âges à la fois : on ne peut plus
   éteindre le plafond des majeurs en laissant celui des mineurs, ni l'inverse.

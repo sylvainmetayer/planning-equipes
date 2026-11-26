@@ -85,9 +85,14 @@ class ReferenceUsageResourceTest {
         contrainte.getAnimateursConcernes().add(animateur);
         contrainteId = referenceData.createContrainteAdHoc(contrainte).getId();
 
-        lock("USAGE-V-STAND", TypeVerrouillage.STAND, verrou -> verrou.setStandId(STAND));
-        lock("USAGE-V-ANIM", TypeVerrouillage.ANIMATEUR, verrou -> verrou.setAnimateurId(ANIMATEUR));
-        lock("USAGE-V-CRENEAU", TypeVerrouillage.CRENEAU, verrou -> verrou.setCreneauId(CRENEAU));
+        lock("USAGE-V-STAND", TypeVerrouillage.STAND_JOUR, verrou -> {
+            verrou.setStandId(STAND);
+            verrou.setJour(JOUR);
+        });
+        lock("USAGE-V-ANIM", TypeVerrouillage.ANIMATEUR_CRENEAU, verrou -> {
+            verrou.setAnimateurId(ANIMATEUR);
+            verrou.setCreneauId(CRENEAU);
+        });
 
         // A consigne (issue #4) opening the stand on that day, and marking the
         // timeslot as the one it added — both cascade away with a delete.
@@ -111,7 +116,7 @@ class ReferenceUsageResourceTest {
         // and a failing delete here would report the wrong cause.
         persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
         consignes.delete(JOUR);
-        List.of("USAGE-V-STAND", "USAGE-V-ANIM", "USAGE-V-CRENEAU").forEach(referenceData::deleteVerrouillage);
+        List.of("USAGE-V-STAND", "USAGE-V-ANIM").forEach(referenceData::deleteVerrouillage);
         if (contrainteId != null) {
             referenceData.deleteContrainteAdHoc(contrainteId);
             contrainteId = null;

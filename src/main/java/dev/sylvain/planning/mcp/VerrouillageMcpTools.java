@@ -58,8 +58,8 @@ public class VerrouillageMcpTools {
     }
 
     /**
-     * One tool for the five {@link TypeVerrouillage} values rather than five
-     * tools: the target columns are mutually exclusive, so five near-identical
+     * One tool for the three {@link TypeVerrouillage} values rather than three
+     * tools: the target columns are mutually exclusive, so three near-identical
      * tools would only move the "which argument goes with which type" question
      * from the description to the tool list. The description carries the
      * mapping, and {@code VerrouillageService} refuses a mismatch with a
@@ -68,8 +68,9 @@ public class VerrouillageMcpTools {
     @Tool(
             name = "verrouiller",
             description = "Fige une partie du planning pour les prochaines résolutions. Le type détermine la cible "
-                    + "attendue : ANIMATEUR (animateurId), STAND (standId), CRENEAU (creneauId), JOUR (jour), "
-                    + "ANIMATEUR_CRENEAU (animateurId + creneauId). Verrouiller une cible déjà verrouillée ne crée pas "
+                    + "attendue : ANIMATEUR_CRENEAU (animateurId + creneauId), STAND_JOUR (standId + jour), "
+                    + "JOUR (jour). Pour figer tout un animateur ou tout un stand, poser un verrou par créneau "
+                    + "ou par jour. Verrouiller une cible déjà verrouillée ne crée pas "
                     + "de doublon. Répond aussi les codes d'avertissement du geste : "
                     + "VERROUILLAGE_SUR_VIOLATION_DURE quand les places figées cassent déjà une règle dure.",
             annotations =
@@ -80,13 +81,11 @@ public class VerrouillageMcpTools {
                             openWorldHint = false))
     @WarnsWhileSolving
     WrittenVerrouillageView lock(
-            @ToolArg(description = "ANIMATEUR | STAND | CRENEAU | JOUR | ANIMATEUR_CRENEAU") String type,
-            @ToolArg(description = "Id de l'animateur (types ANIMATEUR et ANIMATEUR_CRENEAU)", required = false)
-                    String animateurId,
-            @ToolArg(description = "Id du stand (type STAND)", required = false) String standId,
-            @ToolArg(description = "Id du créneau (types CRENEAU et ANIMATEUR_CRENEAU)", required = false)
-                    Long creneauId,
-            @ToolArg(description = "Jour à figer (AAAA-MM-JJ, type JOUR)", required = false) String jour,
+            @ToolArg(description = "ANIMATEUR_CRENEAU | STAND_JOUR | JOUR") String type,
+            @ToolArg(description = "Id de l'animateur (type ANIMATEUR_CRENEAU)", required = false) String animateurId,
+            @ToolArg(description = "Id du stand (type STAND_JOUR)", required = false) String standId,
+            @ToolArg(description = "Id du créneau (type ANIMATEUR_CRENEAU)", required = false) Long creneauId,
+            @ToolArg(description = "Jour à figer (AAAA-MM-JJ, types STAND_JOUR et JOUR)", required = false) String jour,
             @ToolArg(description = "Raison du verrouillage, libre", required = false) String raison,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         VerrouillagePlanning verrouillage = new VerrouillagePlanning();

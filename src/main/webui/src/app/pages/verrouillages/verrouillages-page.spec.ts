@@ -125,14 +125,14 @@ describe('VerrouillagesPage lock form', () => {
     const form = root.querySelector('form.form-grid');
     expect(form).not.toBeNull();
     const controls = Array.from(form!.querySelectorAll('mat-select, input[matInput]'));
-    // Type, the target field for the selected type, and the reason.
-    expect(controls).toHaveLength(3);
+    // Type, the two target fields of the default type, and the reason.
+    expect(controls).toHaveLength(4);
     for (const control of controls) {
       expect(accessibleName(root, control)).not.toBe('');
     }
   });
 
-  it('opens on the ANIMATEUR type and names its target field "Animateur"', async () => {
+  it('opens on the animateur-on-a-timeslot type and names its two target fields', async () => {
     const { fixture } = mount();
     await fixture.whenStable();
     const root = fixture.nativeElement as HTMLElement;
@@ -141,7 +141,7 @@ describe('VerrouillagesPage lock form', () => {
     // reaches this very select by its label.
     const selects = Array.from(root.querySelectorAll('form.form-grid mat-select'));
     const names = selects.map((select) => accessibleName(root, select));
-    expect(names).toEqual(['Type', 'Animateur']);
+    expect(names).toEqual(['Type', 'Animateur', 'Créneau']);
   });
 
   it('binds each control to a named form control, which is what makes the label render', async () => {
@@ -276,14 +276,14 @@ describe('VerrouillagesPage impact and list', () => {
     expect(boutonVerrouiller().disabled).toBe(false);
   });
 
-  it('counts per animateur, and ignores the empty seats', async () => {
+  it('counts one animateur on one timeslot, and ignores the empty seats', async () => {
     await rendre(planning());
 
-    await choisir('type', 'Animateur');
     await choisir('animateurId', 'Amélie Nothomb');
+    await choisir('creneauId', '2026-07-10 10:00–12:00');
 
-    // Two staffed seats for Amélie; the unstaffed one of day 2 counts for nobody.
-    expect(message()).toContain('2 affectation(s)');
+    // One staffed seat for Amélie on that timeslot; her seat of day 2 is not covered.
+    expect(message()).toContain('1 affectation(s)');
     // The count is a preview; who and when are read on Journée.
     const lien = racine().querySelector('.verrouillages-apercu a') as HTMLAnchorElement;
     expect(lien.getAttribute('href')).toMatch(/^\/journee\?animateur=/);
@@ -292,9 +292,10 @@ describe('VerrouillagesPage impact and list', () => {
   it('says plainly when the target covers nothing yet, instead of showing a bare zero', async () => {
     await rendre(planning());
 
-    await choisir('type', 'Stand');
+    await choisir('type', 'Stand sur une journée');
     await choisir('standId', 'Loup-Garou');
-    expect(message()).toContain('3 affectation(s)');
+    await choisir('jour', '2026-07-10');
+    expect(message()).toContain('2 affectation(s)');
 
     await rendre({ animateurs: [], postes: [], score: null });
     await choisir('type', 'Journée');
@@ -306,7 +307,7 @@ describe('VerrouillagesPage impact and list', () => {
   it('sends only the field matching the chosen type, and clears the reason on success', async () => {
     await rendre(planning());
 
-    await choisir('type', 'Créneau');
+    await choisir('animateurId', 'Amélie Nothomb');
     await choisir('creneauId', '2026-07-10 10:00–12:00');
     const raison = racine().querySelector('input[name="raison"]') as HTMLInputElement;
     raison.value = 'Équipe fixée avec le client';
@@ -317,8 +318,8 @@ describe('VerrouillagesPage impact and list', () => {
     await fixture.whenStable();
 
     expect(verrous.create).toHaveBeenCalledWith({
-      type: 'CRENEAU',
-      animateurId: null,
+      type: 'ANIMATEUR_CRENEAU',
+      animateurId: 'a1',
       standId: null,
       creneauId: 1,
       jour: null,
@@ -371,20 +372,23 @@ describe('VerrouillagesPage impact and list', () => {
     await rendre(planning(), [
       {
         id: '1',
-        type: 'ANIMATEUR',
+        type: 'ANIMATEUR_CRENEAU',
         animateurId: 'a1',
         standId: null,
-        creneauId: null,
+        creneauId: 1,
+        creneauDate: '2026-07-10',
+        creneauHeureDebut: '10:00',
+        creneauHeureFin: '12:00',
         jour: null,
         raison: null,
       },
       {
         id: '2',
-        type: 'STAND',
+        type: 'STAND_JOUR',
         animateurId: null,
         standId: 's1',
         creneauId: null,
-        jour: null,
+        jour: '2026-07-10',
         raison: 'Demande du client',
       },
       {
@@ -398,18 +402,6 @@ describe('VerrouillagesPage impact and list', () => {
       },
       {
         id: '4',
-        type: 'CRENEAU',
-        animateurId: null,
-        standId: null,
-        creneauId: 1,
-        creneauDate: '2026-07-10',
-        creneauHeureDebut: '10:00',
-        creneauHeureFin: '12:00',
-        jour: null,
-        raison: null,
-      },
-      {
-        id: '5',
         type: 'ANIMATEUR_CRENEAU',
         animateurId: 'a2',
         standId: null,
@@ -426,16 +418,14 @@ describe('VerrouillagesPage impact and list', () => {
       row.querySelectorAll('td')[2].textContent!.trim(),
     );
     expect(cibles).toEqual([
-      'Amélie Nothomb',
-      'Loup-Garou',
+      'Amélie Nothomb · 2026-07-10 10:00–12:00',
+      'Loup-Garou · 2026-07-10',
       '2026-07-10',
-      '2026-07-10 10:00–12:00',
       'Marcel Proust · 2026-07-10 10:00–12:00',
     ]);
-    // The type posed by an accepted échange is named too, not left blank.
     expect(
-      racine().querySelectorAll('tbody tr')[4].querySelectorAll('td')[1].textContent!,
-    ).toContain('Animateur sur un créneau');
+      racine().querySelectorAll('tbody tr')[1].querySelectorAll('td')[1].textContent!,
+    ).toContain('Stand sur une journée');
   });
 
   it('keeps a lock whose vacation the grid no longer holds, and says it is waiting', async () => {
@@ -445,8 +435,8 @@ describe('VerrouillagesPage impact and list', () => {
     await rendre(planning(), [
       {
         id: '9',
-        type: 'CRENEAU',
-        animateurId: null,
+        type: 'ANIMATEUR_CRENEAU',
+        animateurId: 'a1',
         standId: null,
         creneauId: null,
         creneauDate: '2026-07-11',
@@ -459,7 +449,7 @@ describe('VerrouillagesPage impact and list', () => {
     ]);
 
     const cellules = racine().querySelectorAll('tbody tr')[0].querySelectorAll('td');
-    expect(cellules[2].textContent!.trim()).toBe('2026-07-11 14:00–18:00');
+    expect(cellules[2].textContent!.trim()).toBe('Amélie Nothomb · 2026-07-11 14:00–18:00');
     expect(cellules[3].textContent!).toContain('En attente');
   });
 
@@ -467,11 +457,11 @@ describe('VerrouillagesPage impact and list', () => {
     await rendre(planning(), [
       {
         id: '1',
-        type: 'ANIMATEUR',
-        animateurId: 'disparu',
-        standId: null,
+        type: 'STAND_JOUR',
+        animateurId: null,
+        standId: 'disparu',
         creneauId: null,
-        jour: null,
+        jour: '2026-07-10',
         raison: null,
       },
     ]);
@@ -479,7 +469,7 @@ describe('VerrouillagesPage impact and list', () => {
     // A lock aimed at a deleted animateur must stay visible, and removable.
     expect(
       racine().querySelectorAll('tbody tr')[0].querySelectorAll('td')[2].textContent!.trim(),
-    ).toBe('disparu');
+    ).toBe('disparu · 2026-07-10');
   });
 
   it('never unlocks without an explicit confirmation', async () => {
@@ -633,7 +623,7 @@ describe('VerrouillagesPage impact and list', () => {
       expect(report.title).toBe("1 verrouillages n'ont pas pu être supprimés.");
       expect(report.message).toContain('Suppression de 1 verrouillages effectuée.');
       expect(report.message).toContain(
-        'Animateur a2 : Une résolution est en cours sur cette édition.',
+        'Animateur sur un créneau a2 · 1 : Une résolution est en cours sur cette édition.',
       );
       // The report outlives the logout in the notifications log: an id, never a name.
       expect(report.message).not.toContain('Proust');
@@ -688,10 +678,10 @@ describe('VerrouillagesPage impact and list', () => {
 function lock(id: string, animateurId: string | null): VerrouillagePlanning {
   return {
     id,
-    type: animateurId ? 'ANIMATEUR' : 'JOUR',
+    type: animateurId ? 'ANIMATEUR_CRENEAU' : 'JOUR',
     animateurId,
     standId: null,
-    creneauId: null,
+    creneauId: animateurId ? 1 : null,
     jour: animateurId ? null : '2026-07-10',
     raison: null,
   };

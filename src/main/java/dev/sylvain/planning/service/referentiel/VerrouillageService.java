@@ -9,6 +9,7 @@ import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -83,15 +84,10 @@ public class VerrouillageService {
      */
     private VerrouillageTarget validatedTarget(VerrouillagePlanning verrouillage) {
         return switch (verrouillage.getType()) {
-            case ANIMATEUR -> new VerrouillageTarget.OnAnimateur(animateurExistant(verrouillage.getAnimateurId()));
-            case STAND -> new VerrouillageTarget.OnStand(standExistant(verrouillage.getStandId()));
-            case CRENEAU -> new VerrouillageTarget.OnCreneau(creneauExistant(verrouillage.getCreneauId()));
-            case JOUR -> {
-                if (verrouillage.getJour() == null) {
-                    throw new BusinessError.Invalid("Missing jour");
-                }
-                yield new VerrouillageTarget.OnJour(verrouillage.getJour());
-            }
+            case STAND_JOUR ->
+                new VerrouillageTarget.OnStandAndJour(
+                        standExistant(verrouillage.getStandId()), requiredDay(verrouillage.getJour()));
+            case JOUR -> new VerrouillageTarget.OnJour(requiredDay(verrouillage.getJour()));
             case ANIMATEUR_CRENEAU ->
                 new VerrouillageTarget.OnAnimateurAndCreneau(
                         animateurExistant(verrouillage.getAnimateurId()), creneauExistant(verrouillage.getCreneauId()));
@@ -115,6 +111,13 @@ public class VerrouillageService {
         verrouillage.setCreneauDate(creneau.getDate());
         verrouillage.setCreneauHeureDebut(creneau.getHeureDebut());
         verrouillage.setCreneauHeureFin(creneau.getHeureFin());
+    }
+
+    private static LocalDate requiredDay(LocalDate jour) {
+        if (jour == null) {
+            throw new BusinessError.Invalid("Missing jour");
+        }
+        return jour;
     }
 
     private String animateurExistant(String animateurId) {

@@ -282,10 +282,19 @@ export class AnimateurFichePage implements OnInit {
     const token = this.profile()?.animateur.accessToken;
     return token ? espaceUrl(globalThis.location?.origin ?? '', token) : null;
   });
-  /** The whole planning locked on this person, the lock « Libérer tout » lifts. */
-  protected readonly wholeLock = computed<VerrouillagePlanning | null>(
-    () => this.profile()?.verrous.find((verrou) => verrou.type === 'ANIMATEUR') ?? null,
-  );
+  /**
+   * The locks on this person's timeslots, the ones « Libérer tout » lifts —
+   * offered once every seat they hold is frozen. Since the lock types went
+   * from five to three (ADR 0109), « their whole planning » is one
+   * animateur + créneau lock per seat.
+   */
+  protected readonly wholeLock = computed<VerrouillagePlanning[] | null>(() => {
+    const profile = this.profile();
+    const locks = profile?.verrous.filter((verrou) => verrou.type === 'ANIMATEUR_CRENEAU') ?? [];
+    return locks.length > 0 && profile!.affectations.every((seat) => seat.verrouille)
+      ? locks
+      : null;
+  });
 
   /* ----------------------------- availability ----------------------------- */
 
@@ -642,8 +651,14 @@ export class AnimateurFichePage implements OnInit {
   /** « Verrouiller tout son planning » : the next solve leaves every seat of this person as it is. */
   protected async lockAll(): Promise<void> {
     const animateurId = this.animateurId();
+    const seats = this.profile()?.affectations ?? [];
+    const creneauIds = [
+      ...new Set(seats.filter((seat) => !seat.verrouille).map((seat) => seat.creneauId)),
+    ];
     await this.run('verrouiller', async () => {
-      await this.verrous.create({ type: 'ANIMATEUR', animateurId });
+      for (const creneauId of creneauIds) {
+        await this.verrous.create({ type: 'ANIMATEUR_CRENEAU', animateurId, creneauId });
+      }
       this.notifications.notify({
         title: $localize`:@@fiche.verrouiller.fait:Planning verrouillé : le prochain calcul n'y touchera pas.`,
         variant: 'success',
@@ -655,12 +670,14 @@ export class AnimateurFichePage implements OnInit {
 
   /** « Libérer tout son planning » : the whole-planning lock lifted, the other locks kept. */
   protected async unlockAll(): Promise<void> {
-    const lock = this.wholeLock();
-    if (!lock) {
+    const locks = this.wholeLock();
+    if (!locks) {
       return;
     }
     await this.run('verrouiller', async () => {
-      await this.verrous.remove(lock.id);
+      for (const lock of locks) {
+        await this.verrous.remove(lock.id);
+      }
       this.notifications.notify({
         title: $localize`:@@fiche.deverrouiller.fait:Planning déverrouillé : le prochain calcul peut à nouveau le changer.`,
         variant: 'success',

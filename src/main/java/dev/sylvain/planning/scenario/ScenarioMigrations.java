@@ -1,12 +1,18 @@
 package dev.sylvain.planning.scenario;
 
 import dev.sylvain.planning.solver.ConstraintCatalog;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * The chain that turns an older scenario document into the shape this build
@@ -53,6 +59,7 @@ public final class ScenarioMigrations {
                 current = link.conversion().apply(current, warnings);
             }
         }
+        current = withRetiredLockTypesConverted(current, warnings);
         current = renameRetiredRules(current, warnings);
         current.put("schemaVersion", ScenarioBinder.SCHEMA_VERSION);
         return new Migrated(current, List.copyOf(warnings));
@@ -225,5 +232,170 @@ public final class ScenarioMigrations {
         Map<String, Object> result = new LinkedHashMap<>(document);
         result.put("typologies", converted);
         return result;
+    }
+
+    /**
+     * The {@code plan:} section's locks of a retired type (ADR 0109) rewritten
+     * as what they froze. Not a link of the chain: 4.0 is not released, and
+     * the unreleased builds wrote that section with the old types in version 3
+     * and in version 4 alike, so no version marks the change — the conversion
+     * applies to every document, and leaves one without such a lock as it is.
+     */
+    static Map<String, Object> withRetiredLockTypesConverted(Map<String, Object> document, List<String> warnings) {
+        if (!(document.get("plan") instanceof Map<?, ?> plan)
+                || !(plan.get("verrous") instanceof List<?> verrous)
+                || verrous.stream().noneMatch(ScenarioMigrations::isRetired)) {
+            return document;
+        }
+        Map<String, Object> converted = new LinkedHashMap<>();
+        plan.forEach((key, value) -> converted.put(String.valueOf(key), value));
+        converted.put(
+                "verrous",
+                convertRetiredLocks(
+                        plan.get("affectations") instanceof List<?> seats ? seats : List.of(), verrous, warnings));
+        Map<String, Object> result = new LinkedHashMap<>(document);
+        result.put("plan", converted);
+        return result;
+    }
+
+    private static final Set<String> RETIRED_LOCK_TYPES = Set.of("ANIMATEUR", "STAND", "CRENEAU");
+
+    private static boolean isRetired(Object lock) {
+        return lock instanceof Map<?, ?> map && RETIRED_LOCK_TYPES.contains(String.valueOf(map.get("type")));
+    }
+
+    /**
+     * The locks of a plan, a retired type (ANIMATEUR, STAND, CRENEAU) replaced
+     * by what it froze on that plan's seats — the conversion migration V151
+     * makes in the database, read here off a file or the plan column of a 3.x
+     * backup, which keep the shape both use: seats carry {@code standId},
+     * {@code date}, {@code heureDebut}, {@code heureFin}, {@code animateurId};
+     * a lock carries {@code type}, {@code animateurId}, {@code standId},
+     * {@code creneauDate}, {@code creneauHeureDebut}, {@code creneauHeureFin},
+     * {@code jour}, {@code raison}.
+     * <ul>
+     *   <li>ANIMATEUR → one ANIMATEUR_CRENEAU per timeslot the animateur holds a seat on;</li>
+     *   <li>STAND → one STAND_JOUR per day the stand has seats;</li>
+     *   <li>CRENEAU → one ANIMATEUR_CRENEAU per animateur holding a seat on that timeslot.</li>
+     * </ul>
+     * A lock no seat matches froze nothing and is dropped. Each conversion is
+     * said in {@code warnings}, naming ids only. Other locks pass unchanged.
+     */
+    public static List<Object> convertRetiredLocks(List<?> seats, List<?> locks, List<String> warnings) {
+        List<Map<?, ?>> places = seats.stream()
+                .filter(Map.class::isInstance)
+                .<Map<?, ?>>map(Map.class::cast)
+                .toList();
+        List<Object> result = new ArrayList<>();
+        for (Object item : locks) {
+            if (!isRetired(item)) {
+                result.add(item);
+                continue;
+            }
+            Map<?, ?> lock = (Map<?, ?>) item;
+            String type = String.valueOf(lock.get("type"));
+            Set<Map<String, Object>> replacements = new LinkedHashSet<>();
+            switch (type) {
+                case "ANIMATEUR" ->
+                    places.stream()
+                            .filter(sameAs(lock, "animateurId", "animateurId"))
+                            .forEach(seat -> replacements.add(lock(
+                                    "ANIMATEUR_CRENEAU",
+                                    lock.get("animateurId"),
+                                    null,
+                                    seat.get("date"),
+                                    seat.get("heureDebut"),
+                                    seat.get("heureFin"),
+                                    null,
+                                    lock.get("raison"))));
+                case "STAND" ->
+                    places.stream()
+                            .filter(sameAs(lock, "standId", "standId"))
+                            .forEach(seat -> replacements.add(lock(
+                                    "STAND_JOUR",
+                                    null,
+                                    lock.get("standId"),
+                                    null,
+                                    null,
+                                    null,
+                                    seat.get("date"),
+                                    lock.get("raison"))));
+                default ->
+                    places.stream()
+                            .filter(sameAs(lock, "creneauDate", "date")
+                                    .and(sameAs(lock, "creneauHeureDebut", "heureDebut"))
+                                    .and(sameAs(lock, "creneauHeureFin", "heureFin"))
+                                    .and(seat -> seat.get("animateurId") != null))
+                            .forEach(seat -> replacements.add(lock(
+                                    "ANIMATEUR_CRENEAU",
+                                    seat.get("animateurId"),
+                                    null,
+                                    lock.get("creneauDate"),
+                                    lock.get("creneauHeureDebut"),
+                                    lock.get("creneauHeureFin"),
+                                    null,
+                                    lock.get("raison"))));
+            }
+            result.addAll(replacements);
+            String cible = Objects.requireNonNullElse(
+                            lock.get("animateurId"),
+                            Objects.requireNonNullElse(
+                                    lock.get("standId"),
+                                    lock.get("creneauDate") + " " + lock.get("creneauHeureDebut") + "-"
+                                            + lock.get("creneauHeureFin")))
+                    .toString();
+            warnings.add(
+                    replacements.isEmpty()
+                            ? "Verrou " + type + " (" + cible
+                                    + ") : type retiré en 4.0, aucune place ne lui correspond dans"
+                                    + " le planning, il ne figeait rien et n'est pas repris."
+                            : "Verrou " + type + " (" + cible + ") : type retiré en 4.0, converti en "
+                                    + replacements.size()
+                                    + " verrou(s) " + ("STAND".equals(type) ? "stand + journée" : "animateur + créneau")
+                                    + ", les places qu'il figeait.");
+        }
+        return result;
+    }
+
+    private static Predicate<Map<?, ?>> sameAs(Map<?, ?> lock, String lockKey, String seatKey) {
+        Object wanted = comparable(lock.get(lockKey));
+        return seat -> wanted != null && wanted.equals(comparable(seat.get(seatKey)));
+    }
+
+    /** A date or an hour compared as what it means, whichever way the file wrote it. */
+    private static Object comparable(Object value) {
+        Object normalised = ScenarioYaml.normaliseDates(value);
+        if (!(normalised instanceof String text)) {
+            return normalised;
+        }
+        for (Function<String, Object> parser : List.<Function<String, Object>>of(LocalDate::parse, LocalTime::parse)) {
+            try {
+                return parser.apply(text);
+            } catch (DateTimeParseException _) {
+                // Not that kind of value.
+            }
+        }
+        return text;
+    }
+
+    private static Map<String, Object> lock(
+            String type,
+            Object animateurId,
+            Object standId,
+            Object creneauDate,
+            Object creneauHeureDebut,
+            Object creneauHeureFin,
+            Object jour,
+            Object raison) {
+        Map<String, Object> lock = new LinkedHashMap<>();
+        lock.put("type", type);
+        lock.put("animateurId", animateurId);
+        lock.put("standId", standId);
+        lock.put("creneauDate", creneauDate);
+        lock.put("creneauHeureDebut", creneauHeureDebut);
+        lock.put("creneauHeureFin", creneauHeureFin);
+        lock.put("jour", jour);
+        lock.put("raison", raison);
+        return lock;
     }
 }

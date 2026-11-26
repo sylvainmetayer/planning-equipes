@@ -213,4 +213,57 @@ class ScenarioMigrationsTest {
         assertThat(rulesOf(migrated.document()).get("desactivees")).isEqualTo(List.of("travailContinuMax"));
         assertThat(migrated.warnings()).hasSize(2);
     }
+
+    /**
+     * The {@code plan:} section of a file written before ADR 0109 — a copy
+     * taken before a wipe by an earlier 4.0 build — names locks of a retired
+     * type: they are read as what they froze on that plan, as migration V151
+     * converts the database, and each conversion is said.
+     */
+    @Test
+    void aPlanSectionLockOfARetiredTypeIsReadAsTheSeatsItFroze() {
+        String yaml = """
+                schemaVersion: 3
+                plan:
+                  affectations:
+                  - {posteId: P1, standId: S1, date: 2026-07-01, heureDebut: "09:00", heureFin: "12:00", animateurId: A1}
+                  - {posteId: P2, standId: S1, date: 2026-07-02, heureDebut: "09:00", heureFin: "12:00", animateurId: A1}
+                  - {posteId: P3, standId: S2, date: 2026-07-01, heureDebut: "14:00", heureFin: "17:00", animateurId: A2}
+                  - {posteId: P4, standId: S2, date: 2026-07-01, heureDebut: "09:00", heureFin: "12:00"}
+                  verrous:
+                  - {type: ANIMATEUR, animateurId: A1, raison: gardé}
+                  - {type: STAND, standId: S1}
+                  - {type: CRENEAU, creneauDate: 2026-07-01, creneauHeureDebut: "14:00", creneauHeureFin: "17:00"}
+                  - {type: ANIMATEUR, animateurId: A9}
+                  - {type: JOUR, jour: 2026-07-02}
+                """;
+
+        ScenarioBinder.Bound bound = ScenarioBinder.bindWithWarnings(yaml);
+
+        assertThat(bound.scenario().plan().verrous().stream()
+                        .map(v -> v.type() + "|" + v.animateurId() + "|" + v.standId() + "|" + v.creneauDate() + "|"
+                                + v.creneauHeureDebut() + "|" + v.jour() + "|" + v.raison()))
+                .containsExactly(
+                        "ANIMATEUR_CRENEAU|A1|null|2026-07-01|09:00|null|gardé",
+                        "ANIMATEUR_CRENEAU|A1|null|2026-07-02|09:00|null|gardé",
+                        "STAND_JOUR|null|S1|null|null|2026-07-01|null",
+                        "STAND_JOUR|null|S1|null|null|2026-07-02|null",
+                        "ANIMATEUR_CRENEAU|A2|null|2026-07-01|14:00|null|null",
+                        "JOUR|null|null|null|null|2026-07-02|null");
+        assertThat(bound.scenario().plan().affectations()).hasSize(4);
+        assertThat(bound.warnings())
+                .hasSize(4)
+                .anyMatch(w -> w.startsWith("Verrou ANIMATEUR (A9)") && w.contains("n'est pas repris"));
+    }
+
+    @Test
+    void aPlanSectionWithoutARetiredLockIsLeftAlone() {
+        Map<String, Object> document = document();
+        document.put("plan", Map.of("verrous", List.of(Map.of("type", "JOUR", "jour", "2026-07-02"))));
+        List<String> warnings = new java.util.ArrayList<>();
+
+        assertThat(ScenarioMigrations.withRetiredLockTypesConverted(document, warnings))
+                .isSameAs(document);
+        assertThat(warnings).isEmpty();
+    }
 }

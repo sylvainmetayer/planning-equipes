@@ -36,10 +36,9 @@ class ForcedAssignmentOnLockedScheduleTest {
         return contrainte;
     }
 
-    private static VerrouillagePlanning surAnimateur(String animateurId) {
-        VerrouillagePlanning verrouillage = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR);
-        verrouillage.setAnimateurId(animateurId);
-        return verrouillage;
+    /** What a whole animateur frozen used to be: a lock on each timeslot of the scope. */
+    private static List<VerrouillagePlanning> surAnimateur(String animateurId) {
+        return List.of(surAnimateurSurCreneau(animateurId, 1L), surAnimateurSurCreneau(animateurId, 2L));
     }
 
     private static VerrouillagePlanning surAnimateurSurCreneau(String animateurId, long creneauId) {
@@ -62,7 +61,7 @@ class ForcedAssignmentOnLockedScheduleTest {
 
     @Test
     void aFrozenAnimateurForcedOntoASeatTheyDoNotHoldIsADeadlock() {
-        assertThat(detect(forced(ALICE), List.of(surAnimateur("A1")), Set.of()))
+        assertThat(detect(forced(ALICE), surAnimateur("A1"), Set.of()))
                 .singleElement()
                 .satisfies(conflit -> {
                     assertThat(conflit.dates()).containsExactly(SAMEDI, DIMANCHE);
@@ -73,7 +72,7 @@ class ForcedAssignmentOnLockedScheduleTest {
     /** The exception is already satisfied by a seat the lock pins: nothing is asked of the solver. */
     @Test
     void aFrozenAnimateurAlreadySeatedInTheScopeIsNoDeadlock() {
-        assertThat(detect(forced(ALICE), List.of(surAnimateur("A1")), Set.of(new PlaceTenue("A1", "PLATEAU", 1L))))
+        assertThat(detect(forced(ALICE), surAnimateur("A1"), Set.of(new PlaceTenue("A1", "PLATEAU", 1L))))
                 .isEmpty();
     }
 
@@ -95,18 +94,18 @@ class ForcedAssignmentOnLockedScheduleTest {
 
     @Test
     void oneUnlockedAnimateurAmongThoseNamedIsEnough() {
-        assertThat(detect(forced(ALICE, BOB), List.of(surAnimateur("A1")), Set.of()))
-                .isEmpty();
+        assertThat(detect(forced(ALICE, BOB), surAnimateur("A1"), Set.of())).isEmpty();
     }
 
     /**
-     * A lock on a stand, a timeslot or a day pins the seats that hold somebody
+     * A lock on a stand and a day, or on a day, pins the seats that hold somebody
      * and leaves the empty ones fillable: it never blocks the assignment.
      */
     @Test
     void theOtherLockTypesNeverDeadlockAnException() {
-        VerrouillagePlanning surStand = new VerrouillagePlanning("V3", TypeVerrouillage.STAND);
+        VerrouillagePlanning surStand = new VerrouillagePlanning("V3", TypeVerrouillage.STAND_JOUR);
         surStand.setStandId("PLATEAU");
+        surStand.setJour(SAMEDI);
         VerrouillagePlanning surJour = new VerrouillagePlanning("V4", TypeVerrouillage.JOUR);
         surJour.setJour(SAMEDI);
 
@@ -119,8 +118,7 @@ class ForcedAssignmentOnLockedScheduleTest {
         incompatibilite.setAnimateursConcernes(List.of(ALICE));
 
         assertThat(detect(forced(ALICE), List.of(), Set.of())).isEmpty();
-        assertThat(detect(incompatibilite, List.of(surAnimateur("A1")), Set.of()))
-                .isEmpty();
+        assertThat(detect(incompatibilite, surAnimateur("A1"), Set.of())).isEmpty();
     }
 
     @Test
@@ -130,7 +128,7 @@ class ForcedAssignmentOnLockedScheduleTest {
                         List.of(ALICE),
                         List.of(plateau),
                         List.of(samediMatin, dimancheMatin),
-                        List.of(surAnimateur("A1")),
+                        surAnimateur("A1"),
                         Set.of(),
                         null))
                 .singleElement()
@@ -143,7 +141,7 @@ class ForcedAssignmentOnLockedScheduleTest {
     void aScopeEntirelyInThePastIsNotReproached() {
         assertThat(ForcedAssignmentOnLockedSchedule.detectAll(
                         List.of(forced(ALICE)),
-                        List.of(surAnimateur("A1")),
+                        surAnimateur("A1"),
                         List.of(plateau),
                         List.of(samediMatin, dimancheMatin),
                         Set.of(),
@@ -151,7 +149,7 @@ class ForcedAssignmentOnLockedScheduleTest {
                 .isEmpty();
         assertThat(ForcedAssignmentOnLockedSchedule.detectAll(
                         List.of(forced(ALICE)),
-                        List.of(surAnimateur("A1")),
+                        surAnimateur("A1"),
                         List.of(plateau),
                         List.of(samediMatin, dimancheMatin),
                         Set.of(),
