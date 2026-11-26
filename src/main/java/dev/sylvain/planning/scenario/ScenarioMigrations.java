@@ -39,8 +39,10 @@ public final class ScenarioMigrations {
     }
 
     /** Ordered by {@code from}; the last link must end at {@link ScenarioBinder#SCHEMA_VERSION}. */
-    static final List<Link> CHAIN =
-            List.of(new Link(1, ScenarioMigrations::v1ToV2), new Link(2, ScenarioParametresLink::convert));
+    static final List<Link> CHAIN = List.of(
+            new Link(1, ScenarioMigrations::v1ToV2),
+            new Link(2, ScenarioParametresLink::convert),
+            new Link(3, ScenarioMigrations::v3ToV4));
 
     private ScenarioMigrations() {}
 
@@ -62,6 +64,18 @@ public final class ScenarioMigrations {
     }
 
     public record Migrated(Map<String, Object> document, List<String> warnings) {}
+
+    /**
+     * 3 → 4: {@code contraintes.niveaux} (the level an edition chooses per
+     * organisation rule, ADR 0106) joins the file. Nothing to convert: a v3 file
+     * names no level, and a rule with none follows the catalogue's own — what
+     * every v3 edition scored under. The version is raised all the same, so that
+     * a file carrying levels is refused by a reader that does not know them
+     * (« format plus récent ») rather than read with them silently dropped.
+     */
+    static Map<String, Object> v3ToV4(Map<String, Object> document, List<String> warnings) {
+        return document;
+    }
 
     /**
      * 1 → 2, the version that opens the 4.x chain; the links of the model
@@ -98,10 +112,10 @@ public final class ScenarioMigrations {
 
     /**
      * The {@code plan:} section's locks of a retired type (ADR 0109) rewritten
-     * as what they froze. Not a link of the chain: that section only exists in
-     * version 3, and 4.0 is not released, so no version marks the change — the
-     * conversion applies to every document, and leaves one without such a
-     * lock as it is.
+     * as what they froze. Not a link of the chain: 4.0 is not released, and
+     * the unreleased builds wrote that section with the old types in version 3
+     * and in version 4 alike, so no version marks the change — the conversion
+     * applies to every document, and leaves one without such a lock as it is.
      */
     static Map<String, Object> withRetiredLockTypesConverted(Map<String, Object> document, List<String> warnings) {
         if (!(document.get("plan") instanceof Map<?, ?> plan)
@@ -128,7 +142,7 @@ public final class ScenarioMigrations {
 
     /**
      * The locks of a plan, a retired type (ANIMATEUR, STAND, CRENEAU) replaced
-     * by what it froze on that plan's seats — the conversion migration V149
+     * by what it froze on that plan's seats — the conversion migration V151
      * makes in the database, read here off a file or the plan column of a 3.x
      * backup, which keep the shape both use: seats carry {@code standId},
      * {@code date}, {@code heureDebut}, {@code heureFin}, {@code animateurId};

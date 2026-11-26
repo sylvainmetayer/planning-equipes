@@ -170,11 +170,12 @@ public class DatabaseDumpService {
             //
             // Last in the list because it depends on nothing: deletes are
             // issued in reverse, so it goes first, and nothing references it.
-            "kpi_historique",
-            // The frozen realised measure of finished editions (ADR 0070):
-            // no foreign key either, for the same reason — it outlives the
-            // edition it describes, and a restore must bring it back.
-            "kpi_realise");
+            //
+            // Since 4.0 (V148) it carries the realised measure of finished
+            // editions (ADR 0070, 0092) beside the indicators: no foreign key
+            // either, for the same reason — it outlives the edition it
+            // describes, and a restore must bring it back.
+            "mesure_edition");
 
     /**
      * The tables deliberately left out, and why each one stays out.
@@ -265,6 +266,10 @@ public class DatabaseDumpService {
      *   <li>{@code solve_budget_avant_4_0} — the solve budgets editions had
      *       set of their own, archived by V145 and dropped in 5.0: an archive
      *       nothing reads, the budget being the instance's now.</li>
+     *   <li>{@code kpi_historique_avant_4_0}, {@code kpi_realise_avant_4_0} —
+     *       the two tables {@code mesure_edition} replaced, kept by V148 and
+     *       dropped in 5.0: archives nothing reads, the measures being dumped
+     *       from {@code mesure_edition} now.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -293,7 +298,9 @@ public class DatabaseDumpService {
             "resolution_distante",
             "animateur_contact",
             "declaration_coequipier_avant_4_0",
-            "solve_budget_avant_4_0");
+            "solve_budget_avant_4_0",
+            "kpi_historique_avant_4_0",
+            "kpi_realise_avant_4_0");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 
@@ -312,10 +319,10 @@ public class DatabaseDumpService {
             "stand_horaire_fenetre",
             "journee_type",
             "journee_type_vacation",
-            // BIGSERIAL since V48: left unsynced, the first measurement
-            // written after an import would collide with an id the dump just
-            // replayed.
-            "kpi_historique",
+            // BIGSERIAL since V48 (kpi_historique, folded into mesure_edition by
+            // V148): left unsynced, the first measurement written after an
+            // import would collide with an id the dump just replayed.
+            "mesure_edition",
             // BIGSERIAL too, V40 and V54, for the same reason.
             "version_plan",
             "publication_destinataire",

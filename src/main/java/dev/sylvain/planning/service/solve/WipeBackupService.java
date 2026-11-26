@@ -851,7 +851,7 @@ public class WipeBackupService {
 
     /**
      * The plan column of a 3.x backup, never rewritten: its locks of a type
-     * retired in 4.0 are converted here, on reading, as migration V149
+     * retired in 4.0 are converted here, on reading, as migration V151
      * converted the ones of the database (ADR 0109) — said in {@code warnings}.
      */
     private PlanBackup readPlan(String json, List<String> warnings) {

@@ -13,7 +13,6 @@ import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDi
 import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
@@ -218,7 +217,7 @@ public class ValidationPrerequisService {
         Map<Long, LocalDate> datesByCreneau = datesByCreneau(plan);
         int ecarts = 0;
         for (ConstraintDiagnostic contrainte : diagnostic.contraintes()) {
-            if (!ConstraintCatalog.NOMS_DURS.contains(contrainte.name()) || contrainte.references() == null) {
+            if (!contrainte.hard() || contrainte.references() == null) {
                 continue;
             }
             for (var reference : contrainte.references()) {

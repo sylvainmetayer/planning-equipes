@@ -2220,6 +2220,15 @@
           }
         }
       },
+      "ConstraintNiveauUpdate" : {
+        "required" : [ "niveau" ],
+        "type" : "object",
+        "properties" : {
+          "niveau" : {
+            "$ref" : "#/components/schemas/NiveauRegle"
+          }
+        }
+      },
       "ConstraintParameter" : {
         "type" : "object",
         "properties" : {
@@ -2270,7 +2279,7 @@
         }
       },
       "ConstraintView" : {
-        "required" : [ "actif", "activeByDefault", "dosable", "legale", "poids", "protegee" ],
+        "required" : [ "actif", "activeByDefault", "dosable", "legale", "niveauReglable", "poids", "protegee" ],
         "type" : "object",
         "properties" : {
           "name" : {
@@ -2305,6 +2314,12 @@
           },
           "dosable" : {
             "type" : "boolean"
+          },
+          "niveauReglable" : {
+            "type" : "boolean"
+          },
+          "niveauChoisi" : {
+            "$ref" : "#/components/schemas/NiveauRegle"
           },
           "poids" : {
             "type" : "integer",
@@ -3727,7 +3742,7 @@
         }
       },
       "Dosage" : {
-        "required" : [ "weights", "instanceWeights", "disabled", "enabled" ],
+        "required" : [ "weights", "instanceWeights", "disabled", "enabled", "levels" ],
         "type" : "object",
         "properties" : {
           "weights" : {
@@ -3753,6 +3768,12 @@
           "enabled" : {
             "type" : "array",
             "items" : {
+              "type" : "string"
+            }
+          },
+          "levels" : {
+            "type" : "object",
+            "additionalProperties" : {
               "type" : "string"
             }
           }
@@ -6995,6 +7016,10 @@
       "NiveauEffort" : {
         "type" : "string",
         "enum" : [ "NORMAL", "EPUISANT" ]
+      },
+      "NiveauRegle" : {
+        "type" : "string",
+        "enum" : [ "OBLIGATOIRE", "PREFERENCE_FORTE", "PREFERENCE_NORMALE", "PREFERENCE_LEGERE" ]
       },
       "NouveauCompte" : {
         "type" : "object",
@@ -13240,6 +13265,45 @@
         "tags" : [ "Constraint Resource" ]
       }
     },
+    "/api/constraints/{name}/niveau" : {
+      "put" : {
+        "parameters" : [ {
+          "name" : "name",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConstraintNiveauUpdate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConstraintNiveauUpdate"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Set Niveau",
+        "tags" : [ "Constraint Resource" ]
+      }
+    },
     "/api/constraints/{name}/poids" : {
       "put" : {
         "parameters" : [ {
@@ -16643,6 +16707,7 @@
     },
     "/api/kpi/historique" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -16664,6 +16729,7 @@
     },
     "/api/kpi/historique/{id}" : {
       "delete" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -16863,6 +16929,133 @@
         },
         "summary" : "Get",
         "tags" : [ "Mentions Legales Resource" ]
+      }
+    },
+    "/api/mesures-edition/indicateurs" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/KpiHistoriqueEntry"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "List Indicators",
+        "tags" : [ "Mesures Edition Resource" ]
+      }
+    },
+    "/api/mesures-edition/indicateurs/{id}" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Delete Indicator",
+        "tags" : [ "Mesures Edition Resource" ]
+      }
+    },
+    "/api/mesures-edition/realise" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RealisedVsPlanned"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Report",
+        "tags" : [ "Mesures Edition Resource" ]
+      }
+    },
+    "/api/mesures-edition/realise/detail" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "jour",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "stand",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CellDetail"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Detail",
+        "tags" : [ "Mesures Edition Resource" ]
+      }
+    },
+    "/api/mesures-edition/realise/export" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Export Csv",
+        "tags" : [ "Mesures Edition Resource" ]
+      }
+    },
+    "/api/mesures-edition/realise/precedente" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PreviousEdition"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Previous Edition",
+        "tags" : [ "Mesures Edition Resource" ]
       }
     },
     "/api/mural/{token}" : {
@@ -18044,6 +18237,7 @@
     },
     "/api/planning/realise" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -18062,6 +18256,7 @@
     },
     "/api/planning/realise/detail" : {
       "get" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "jour",
           "in" : "query",
@@ -18093,6 +18288,7 @@
     },
     "/api/planning/realise/export" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -18107,6 +18303,7 @@
     },
     "/api/planning/realise/precedente" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",

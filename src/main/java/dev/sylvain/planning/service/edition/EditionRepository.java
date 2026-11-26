@@ -92,7 +92,7 @@ public class EditionRepository {
             // "nom, actif": since V82 a row carries the explicit state, and the
             // column is NOT NULL with no default — a copy leaving it out would fail.
             new TableToCopy("constraint_toggle", "nom, actif"),
-            new TableToCopy("ponderation_contrainte", "nom, poids"),
+            new TableToCopy("ponderation_contrainte", "nom, poids, obligatoire"),
             new TableToCopy(
                     "parametres_legaux",
                     "duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes, "

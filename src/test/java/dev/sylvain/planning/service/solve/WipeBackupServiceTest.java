@@ -251,7 +251,7 @@ class WipeBackupServiceTest {
 
     /**
      * A 3.x copy whose plan column carries locks of a type retired in 4.0
-     * (ADR 0109): converted on reading as V149 converts the database — one
+     * (ADR 0109): converted on reading as V151 converts the database — one
      * animateur + timeslot lock per seat the animateur held, one stand + day
      * lock per day of the stand — and the stored column is not rewritten.
      */

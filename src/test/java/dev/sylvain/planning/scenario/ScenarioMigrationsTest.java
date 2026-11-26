@@ -97,6 +97,15 @@ class ScenarioMigrationsTest {
     }
 
     @Test
+    void v3ToV4ChangesNothingAndAFileWithoutLevelsReadsAsTheCatalogue() {
+        Map<String, Object> document = document();
+        document.put("contraintes", Map.of("poids", Map.of("equilibrerCharge", 25)));
+
+        assertThat(ScenarioMigrations.v3ToV4(document, new java.util.ArrayList<>()))
+                .isEqualTo(document);
+    }
+
+    @Test
     void migrateStampsTheCurrentVersionAndLeavesTheInputUntouched() {
         Map<String, Object> input = document();
 
@@ -117,7 +126,7 @@ class ScenarioMigrationsTest {
     /**
      * The {@code plan:} section of a file written before ADR 0109 — a copy
      * taken before a wipe by an earlier 4.0 build — names locks of a retired
-     * type: they are read as what they froze on that plan, as migration V149
+     * type: they are read as what they froze on that plan, as migration V151
      * converts the database, and each conversion is said.
      */
     @Test

@@ -20,19 +20,19 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * V149 reduces the five lock types to three, each converted into what it froze
+ * V151 reduces the five lock types to three, each converted into what it froze
  * on the persisted plan. Played on a database filled the way 3.x filled it —
- * the migrations up to V147 in a schema of their own, then the rows and the
- * V149 file itself in a transaction rolled back afterwards.
+ * the migrations up to V149 in a schema of their own, then the rows and the
+ * V151 file itself in a transaction rolled back afterwards.
  */
 @QuarkusTest
 class LockTypesMigrationTest {
 
-    private static final String SCHEMA = "migration_v149";
-    private static final String V149 = "db/migration/V149__trois_types_de_verrou.sql";
+    private static final String SCHEMA = "migration_v151";
+    private static final String V151 = "db/migration/V151__trois_types_de_verrou.sql";
 
     @BeforeAll
-    static void migrateUpToV147() throws SQLException {
+    static void migrateUpToV149() throws SQLException {
         drop();
         Config config = ConfigProvider.getConfig();
         Flyway.configure()
@@ -43,7 +43,7 @@ class LockTypesMigrationTest {
                 .schemas(SCHEMA)
                 .createSchemas(true)
                 .locations("classpath:db/migration")
-                .target("147")
+                .target("149")
                 .load()
                 .migrate();
     }
@@ -124,8 +124,8 @@ class LockTypesMigrationTest {
     }
 
     private static void migrate(Statement sql) throws Exception {
-        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V149)) {
-            assertThat(file).as(V149).isNotNull();
+        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V151)) {
+            assertThat(file).as(V151).isNotNull();
             sql.execute(new String(file.readAllBytes(), StandardCharsets.UTF_8));
         }
     }

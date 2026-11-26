@@ -395,13 +395,9 @@ public class SolveurMcpTools {
         if (analysis == null) {
             return List.of();
         }
-        var hardNames = ConstraintCatalog.definitions().stream()
-                .filter(definition -> definition.niveau() == ConstraintCatalog.Niveau.HARD)
-                .map(ConstraintCatalog.ConstraintDefinition::name)
-                .toList();
         AnonymisationViolations anonymisation = AnonymisationViolations.of(referenceDataService);
         return analysis.diagnostic().contraintes().stream()
-                .filter(diagnostic -> hardNames.contains(diagnostic.name()) && diagnostic.matchCount() > 0)
+                .filter(diagnostic -> diagnostic.hard() && diagnostic.matchCount() > 0)
                 .map(diagnostic -> new ViolationHardView(
                         diagnostic.name(),
                         diagnostic.matchCount(),

@@ -336,7 +336,8 @@ public class ParametresRepository {
     public Map<String, Integer> getConstraintWeights() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(
-                        connection, "SELECT nom, poids FROM ponderation_contrainte WHERE edition_id = ?");
+                        connection,
+                        "SELECT nom, poids FROM ponderation_contrainte WHERE edition_id = ? AND poids IS NOT NULL");
                 ResultSet rs = ps.executeQuery()) {
             Map<String, Integer> ponderations = new LinkedHashMap<>();
             while (rs.next()) {
@@ -346,6 +347,64 @@ public class ParametresRepository {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load constraint weights", e);
         }
+    }
+
+    /**
+     * The level this edition explicitly chose per organisation rule (ADR 0106):
+     * {@code true} for obligatoire. The {@code obligatoire} column of the
+     * weights' table, where a row can hold a level and no weight.
+     */
+    public Map<String, Boolean> getNiveauxObligatoires() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(
+                        connection,
+                        "SELECT nom, obligatoire FROM ponderation_contrainte"
+                                + " WHERE edition_id = ? AND obligatoire IS NOT NULL");
+                ResultSet rs = ps.executeQuery()) {
+            Map<String, Boolean> niveaux = new LinkedHashMap<>();
+            while (rs.next()) {
+                niveaux.put(rs.getString("nom"), rs.getBoolean("obligatoire"));
+            }
+            return niveaux;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load constraint levels", e);
+        }
+    }
+
+    /**
+     * Records the level this edition chose for one rule, or forgets it when
+     * {@code obligatoire} is {@code null} (the catalogue's own level). The row
+     * goes away when it then holds neither a level nor a weight.
+     */
+    public void setNiveauObligatoire(String nom, Boolean obligatoire) {
+        scope.write("Failed to save constraint level", connection -> {
+            lockRule(connection, "ponderation_contrainte", nom);
+            if (obligatoire == null) {
+                // The row goes first when it holds no weight, or the update below would leave it empty.
+                try (PreparedStatement ps = scope.prepareScoped(connection, """
+                        DELETE FROM ponderation_contrainte
+                        WHERE edition_id = ? AND nom = ? AND poids IS NULL""")) {
+                    ps.setString(2, nom);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = scope.prepareScoped(connection, """
+                        UPDATE ponderation_contrainte SET obligatoire = NULL
+                        WHERE edition_id = ? AND nom = ?""")) {
+                    ps.setString(2, nom);
+                    ps.executeUpdate();
+                }
+            } else {
+                try (PreparedStatement ps = scope.prepareScoped(connection, """
+                        INSERT INTO ponderation_contrainte (edition_id, nom, obligatoire)
+                        VALUES (?, ?, ?)
+                        ON CONFLICT (edition_id, nom)
+                        DO UPDATE SET obligatoire = EXCLUDED.obligatoire""")) {
+                    ps.setString(2, nom);
+                    ps.setBoolean(3, obligatoire);
+                    ps.executeUpdate();
+                }
+            }
+        });
     }
 
     /**
@@ -369,12 +428,21 @@ public class ParametresRepository {
                     connection, "SELECT poids FROM ponderation_contrainte WHERE edition_id = ? AND nom = ?")) {
                 ps.setString(2, nom);
                 try (ResultSet rs = ps.executeQuery()) {
-                    stored = rs.next() ? rs.getInt("poids") : null;
+                    int value = rs.next() ? rs.getInt("poids") : 0;
+                    stored = value == 0 ? null : value; // a row holding only a level has no weight
                 }
             }
             if (poids == null) {
+                // The row may hold the level chosen for this rule: then only the weight goes.
                 try (PreparedStatement ps = scope.prepareScoped(
-                        connection, "DELETE FROM ponderation_contrainte WHERE edition_id = ? AND nom = ?")) {
+                        connection,
+                        "DELETE FROM ponderation_contrainte WHERE edition_id = ? AND nom = ? AND obligatoire IS NULL")) {
+                    ps.setString(2, nom);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = scope.prepareScoped(
+                        connection,
+                        "UPDATE ponderation_contrainte SET poids = NULL WHERE edition_id = ? AND nom = ?")) {
                     ps.setString(2, nom);
                     ps.executeUpdate();
                 }

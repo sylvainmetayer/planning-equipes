@@ -637,11 +637,22 @@ public final class ScoreReading {
                 diagnostic.contraintes() == null ? List.<ConstraintDiagnostic>of() : diagnostic.contraintes()) {
             ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(constraint.name());
             HardMediumSoftScore score = parse(constraint.score());
-            if (definition != null && definition.niveau() == niveau && score != null) {
+            if (definition != null && score != null && levelOf(definition, score) == niveau) {
                 rules.add(new Rule(definition, constraint, score));
             }
         }
         return rules;
+    }
+
+    /** The level a rule scored on: where its points sit when it bit (an edition may have moved it, ADR 0106), its own otherwise. */
+    private static Niveau levelOf(ConstraintDefinition definition, HardMediumSoftScore score) {
+        if (score.isZero()) {
+            return definition.niveau();
+        }
+        if (score.hardScore() != 0) {
+            return Niveau.HARD;
+        }
+        return score.mediumScore() != 0 ? Niveau.MEDIUM : Niveau.SOFT;
     }
 
     /** The score a plan was stored with, {@code null} when blank or unreadable. */

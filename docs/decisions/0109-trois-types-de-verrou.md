@@ -2,7 +2,7 @@
 
 - **Statut** : accepté, implémenté
 - **Date** : novembre 2026
-- **Portée** : domaine (`TypeVerrouillage`), solveur (catalogue, contraintes, moteur direct), schéma (migration `V149`), MCP, écran Verrouillages, guide de migration 4.0
+- **Portée** : domaine (`TypeVerrouillage`), solveur (catalogue, contraintes, moteur direct), schéma (migration `V151`), MCP, écran Verrouillages, guide de migration 4.0
 - **Remplace en partie** : [0003](0003-verrouillage-par-pin-natif.md) (la liste des cibles d'un verrou)
 - **Prolonge** : [0091](0091-refonte-fonctionnelle-4-0.md) (trois mécanismes de gel)
 
@@ -32,7 +32,7 @@ stand » est un verrou par créneau ou par journée.
   même règle, ce qui ramène le décompte de 47 à 46.
 - Stand + journée et journée n'ont pas de règle : elles épinglent les places
   tenues, comme avant.
-- La migration `V149` convertit chaque ancien verrou **en ce qu'il figeait sur le
+- La migration `V151` convertit chaque ancien verrou **en ce qu'il figeait sur le
   plan enregistré**, de sorte que le plan ne bouge pas à la prochaine résolution :
   animateur → un verrou animateur + créneau par créneau où il tient une place ;
   stand → un verrou stand + journée par jour où le stand a des places ; créneau →
@@ -58,7 +58,7 @@ stand » est un verrou par créneau ou par journée.
   avant, non verrouillables.
 - Une copie d'avant le vidage d'une édition (ADR 0084, 0112) peut porter un
   type retiré, dans la colonne `plan` d'une copie 3.x ou dans la section `plan:`
-  du fichier : il est converti **à la lecture**, comme `V149` convertit la base,
+  du fichier : il est converti **à la lecture**, comme `V151` convertit la base,
   sans réécrire la copie rangée ; chaque conversion est dite dans le compte
   rendu de la restauration.
 - L'outil MCP `verrouiller` garde son nom (déjà conforme à l'ADR 0100) ; seules

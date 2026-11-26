@@ -142,11 +142,11 @@ export class AnalysesApi {
   }
 
   kpiHistory(): Promise<KpiHistoriqueEntry[]> {
-    return this.api.get<KpiHistoriqueEntry[]>('/api/kpi/historique');
+    return this.api.get<KpiHistoriqueEntry[]>('/api/mesures-edition/indicateurs');
   }
 
   deleteKpiEntry(entryId: number | string): Promise<void> {
-    return this.api.delete(`/api/kpi/historique/${entryId}`);
+    return this.api.delete(`/api/mesures-edition/indicateurs/${entryId}`);
   }
 
   /**

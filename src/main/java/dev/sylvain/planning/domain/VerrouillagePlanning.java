@@ -65,7 +65,7 @@ public class VerrouillagePlanning {
      * the adapter.
      *
      * <p>Empty when the row describes nothing usable: the {@code CHECK} of
-     * `V30`/`V41`/`V149` forbids that case in the database, but a lock built in memory
+     * `V30`/`V41`/`V151` forbids that case in the database, but a lock built in memory
      * (a request body not validated yet, a test) may perfectly well carry
      * neither type nor target. Returning {@link Optional#empty()} rather than
      * throwing keeps the previous behaviour: an incomplete lock freezes

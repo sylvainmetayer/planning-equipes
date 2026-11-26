@@ -30,7 +30,7 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 
 /**
- * {@code realise_vs_planifie}: the screen's report, counts by stand and day,
+ * {@code comparer_realise_planifie}: the screen's report, counts by stand and day,
  * and never a person — neither a name nor an animateur id leaves over MCP.
  */
 @QuarkusTest
