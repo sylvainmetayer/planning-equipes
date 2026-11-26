@@ -147,6 +147,7 @@ public final class CatalogueActions {
     private static final String EXPORT_DELTA_EDITIONS = "EXPORT_DELTA_EDITIONS";
     private static final String SCENARIO_IMPORTE = "SCENARIO_IMPORTE";
     private static final String BASE_IMPORTEE = "BASE_IMPORTEE";
+    private static final String PARAMETRES_MODIFIES = "PARAMETRES_MODIFIES";
     private static final String PARAMETRES_LEGAUX_MODIFIES = "PARAMETRES_LEGAUX_MODIFIES";
     private static final String PARAMETRES_QUALITE_MODIFIES = "PARAMETRES_QUALITE_MODIFIES";
     private static final String PARAMETRES_SOLVEUR_MODIFIES = "PARAMETRES_SOLVEUR_MODIFIES";
@@ -417,6 +418,7 @@ public final class CatalogueActions {
         changesData(BASE_IMPORTEE, "Base de données restaurée depuis un fichier", Entite.SAUVEGARDE);
 
         /* ------------------------- Settings ------------------------- */
+        changesData(PARAMETRES_MODIFIES, "Paramètres modifiés", Entite.PARAMETRES);
         changesData(PARAMETRES_LEGAUX_MODIFIES, "Paramètres légaux modifiés", Entite.PARAMETRES);
         changesData(PARAMETRES_QUALITE_MODIFIES, "Paramètres de qualité modifiés", Entite.PARAMETRES);
         changesData(PARAMETRES_SOLVEUR_MODIFIES, "Paramètres du solveur modifiés", Entite.PARAMETRES);
@@ -653,6 +655,10 @@ public final class CatalogueActions {
         route("ParametresResource#updateParametresQualite", PARAMETRES_QUALITE_MODIFIES);
         route("ParametresResource#updateParametresSolveur", PARAMETRES_SOLVEUR_MODIFIES);
         route("ParametresResource#updateParametresNotifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
+        route("ParametresResource#updateLegal", PARAMETRES_LEGAUX_MODIFIES);
+        route("ParametresResource#updateOrganisation", PARAMETRES_QUALITE_MODIFIES);
+        route("ParametresResource#updateInstance", PARAMETRES_SOLVEUR_MODIFIES);
+        route("ParametresResource#updateNotifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
         route("WeatherResource#update", PARAMETRES_METEO_MODIFIES);
         route("ParametresResource#updateContactOrganisation", CONTACT_ORGANISATION_MODIFIE);
         route("ReglageResponsablesResource#put", REGLAGE_RESPONSABLES_MODIFIE);
@@ -805,10 +811,10 @@ public final class CatalogueActions {
         outil("importer_scenario", SCENARIO_IMPORTE);
         outil("importer_scenario_yaml", SCENARIO_IMPORTE);
 
-        outil("modifier_parametres_legaux", PARAMETRES_LEGAUX_MODIFIES);
-        outil("modifier_parametres_qualite", PARAMETRES_QUALITE_MODIFIES);
-        outil("modifier_parametres_solveur", PARAMETRES_SOLVEUR_MODIFIES);
-        outil("modifier_parametres_notifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
+        // The tool states its section's action (CurrentAction), as each REST
+        // section route has its own; this one only names a call refused on an
+        // unknown section.
+        outil("modifier_parametres", PARAMETRES_MODIFIES);
         outil("activer_contrainte", CONTRAINTE_ACTIVEE);
         outil("desactiver_contrainte", CONTRAINTE_DESACTIVEE);
         outil("modifier_poids_contrainte", CONTRAINTE_PONDEREE);

@@ -52,8 +52,8 @@ Le détail et un exemple sont dans [les variables d'environnement](variables-env
 ### Format du scénario YAML
 
 - **Avant** : l'application écrit `schemaVersion: 1`.
-- **Après** : elle écrit `schemaVersion: 2`. Elle lit toujours les fichiers v1 (clé absente ou égale à 1) : ils traversent une chaîne de conversions, maillon par maillon, au fil des changements de modèle de la 4.x. Ce que la chaîne ne peut pas convertir est ignoré, et chaque élément ignoré apparaît dans les avertissements du rapport d'import, jamais en silence. Le maillon 1 → 2 renomme déjà la clé `ninja` des typologies en `polyvalent`, sans rien perdre.
-- **Ce que vous faites** : rien pour relire vos anciens fichiers, archives de fin d'événement ou copies avant vidage. Un scénario v2 ne s'importe pas dans une application 3.x (« format plus récent ») : gardez un export v1 avant de monter, c'est votre retour arrière. Le lecteur v1 est retiré en 5.0.
+- **Après** : elle écrit `schemaVersion: 3`. Elle lit toujours les fichiers v1 (clé absente ou égale à 1) : ils traversent une chaîne de conversions, maillon par maillon, au fil des changements de modèle de la 4.x. Ce que la chaîne ne peut pas convertir est ignoré, et chaque élément ignoré apparaît dans les avertissements du rapport d'import, jamais en silence. Le maillon 1 → 2 renomme déjà la clé `ninja` des typologies en `polyvalent`, sans rien perdre.
+- **Ce que vous faites** : rien pour relire vos anciens fichiers, archives de fin d'événement ou copies avant vidage. Un scénario v2 ou v3 ne s'importe pas dans une application 3.x (« format plus récent ») : gardez un export v1 avant de monter, c'est votre retour arrière. Le lecteur v1 est retiré en 5.0.
 
 ### Noms des règles du planning
 
@@ -64,6 +64,12 @@ Le détail et un exemple sont dans [les variables d'environnement](variables-env
 **Avant** : 157 outils aux noms presque tous en verbe d'abord (`lister_stands`), avec une dizaine d'exceptions (`equite_planning`, `volumes`…). **Après** : les outils se nomment `<verbe>_<objet>`, le verbe pris dans un ensemble fermé ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)), certains sont regroupés ou retirés, et il n'existe **aucun alias** : un outil n'est publié que sous son nom courant. La correspondance, ancien nom puis nouveau nom ou « retiré », est dans [les anciens noms d'outils](../comprendre/mcp-outils.md#anciens-noms-doutils), remplie au fil des changements de la 4.0 (pour l'instant aucun outil n'est renommé).
 
 **Ce que vous faites** : si vous avez écrit des instructions, des invites ou des scripts qui nomment des outils, relisez-les avec cette table ; un assistant qui se reconnecte relit la liste des outils et n'a rien d'autre à changer.
+
+### Les paramètres de l'édition en quatre sections
+
+- **Avant (3.x)** : quatre racines d'API (`/api/parametres-legaux`, `-qualite`, `-solveur`, `-notifications`), huit outils MCP (`consulter_parametres_legaux`, `modifier_parametres_legaux`, et leurs trois équivalents) et, dans un scénario YAML, les clés `parametresLegaux`, `parametresQualite` et `parametresSolveur` au premier niveau.
+- **Après (4.0)** : les paramètres ont quatre sections, `legal`, `organisation` (les anciens « qualité »), `notifications` et `instance` (l'ancien « solveur », le budget de calcul). L'API les sert sous `GET /api/parametres` (les quatre) et `GET`/`PUT /api/parametres/<section>`, qui refuse en 400 un champ qui n'est pas de la section. Deux outils MCP les remplacent : `consulter_parametres` et `modifier_parametres`, chacun avec un argument `section` (même refus). Un scénario les range sous une seule clé, `parametres:` (`legal`, `organisation`, `instance` ; les notifications n'en font pas partie, comme avant). La base ne change pas : aucune migration SQL.
+- **Ce que vous faites** : rien pour vos données ni vos fichiers : les scénarios v1 et v2 sont convertis à la lecture. Les anciennes racines d'API répondent toujours, comme alias déclarés obsolètes (`deprecated` dans l'OpenAPI), pendant toute la 4.x, et ignorent comme avant un champ inconnu ; elles sont retirées en 5.0, comme l'ancien format. Si un script ou une invite nomme les anciens outils MCP, relisez-les avec la table des [outils MCP](../comprendre/mcp-outils.md#anciens-noms-doutils) ; aucun alias d'outil n'est publié.
 
 ### La typologie « ninja » devient « polyvalent »
 

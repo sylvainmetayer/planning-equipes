@@ -1,5 +1,6 @@
 package dev.sylvain.planning.scenario.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.sylvain.planning.scenario.ScenarioBinder;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -27,9 +28,7 @@ public record ScenarioDto(
         @Min(1) @Max(ScenarioBinder.SCHEMA_VERSION) Integer schemaVersion,
         @Valid EditionCibleDto edition,
         @NotNull @Valid FestivalDto festival,
-        @Valid ParametresSolveurDto parametresSolveur,
-        @Valid ParametresLegauxDto parametresLegaux,
-        @Valid ParametresQualiteDto parametresQualite,
+        @Valid ParametresDto parametres,
         @Valid ContraintesDto contraintes,
         List<@Valid TypologieDto> typologies,
         @NotNull List<@Valid CreneauDto> creneaux,
@@ -45,4 +44,21 @@ public record ScenarioDto(
         // the dated consignes, whose openings and added créneaux name entries of
         // the sections above.
         List<@Valid PrereglageConsigneDto> prereglagesConsigne,
-        List<@Valid ConsigneDto> consignes) {}
+        List<@Valid ConsigneDto> consignes) {
+
+    // Shortcuts for the readers that want one section; the file only knows « parametres ».
+    @JsonIgnore
+    public ParametresLegauxDto parametresLegaux() {
+        return parametres == null ? null : parametres.legal();
+    }
+
+    @JsonIgnore
+    public ParametresQualiteDto parametresQualite() {
+        return parametres == null ? null : parametres.organisation();
+    }
+
+    @JsonIgnore
+    public ParametresSolveurDto parametresSolveur() {
+        return parametres == null ? null : parametres.instance();
+    }
+}

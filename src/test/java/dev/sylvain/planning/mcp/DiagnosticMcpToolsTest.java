@@ -299,15 +299,21 @@ class DiagnosticMcpToolsTest {
     void thePauseDurationIsSetOverMcpAndKeepsItsFloor() {
         loadScenario();
 
-        ParametresMcpTools.ParametresLegauxView ecrit = parametresTools.updateParametresLegaux(
-                null, null, null, null, 45, null, null, null, null, null, null, "E1");
+        ParametresMcpTools.ParametresLegauxView ecrit = (ParametresMcpTools.ParametresLegauxView) parametresTools
+                .updateParametres(
+                        "legal", null, null, null, null, 45, null, null, null, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null, null, null, null, null, "E1")
+                .parametres();
 
         assertThat(ecrit.dureePauseMinutes()).isEqualTo(45);
-        assertThat(parametresTools.getParametresLegaux("E1").dureePauseMinutes())
+        assertThat(((ParametresMcpTools.ParametresLegauxView)
+                                parametresTools.getParametres("legal", "E1").parametres())
+                        .dureePauseMinutes())
                 .isEqualTo(45);
 
-        assertThatThrownBy(() -> parametresTools.updateParametresLegaux(
-                        null, null, null, null, 19, null, null, null, null, null, null, "E1"))
+        assertThatThrownBy(() -> parametresTools.updateParametres(
+                        "legal", null, null, null, null, 19, null, null, null, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null, null, null, null, null, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("L3121-16");
     }

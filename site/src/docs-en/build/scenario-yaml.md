@@ -51,7 +51,7 @@ Rule 1 means that a scenario exported then re-imported in the same edition updat
 
 ## What the export guarantees
 
-"Export current data as a scenario" writes all the sections the import can read back: the entities, but also `typologies`, `emplacements`, `parametresLegaux`, `parametresSolveur`, `journeesTypes`, `contraintes`, `contraintesAdHoc`, `prereglagesConsigne` and `consignes`. Re-importing the file reproduces exactly the same problem. That is the reason for the export to exist.
+"Export current data as a scenario" writes all the sections the import can read back: the entities, but also `typologies`, `emplacements`, `parametres` (legal, organisation, instance), `journeesTypes`, `contraintes`, `contraintesAdHoc`, `prereglagesConsigne` and `consignes`. Re-importing the file reproduces exactly the same problem. That is the reason for the export to exist.
 
 A field forgotten in a section is not "not overridable": the import writes a fresh object and the field falls back to the default. `heureDebutSoiree`, absent from the DTO at the start, thus brought an edition set to 22:00 back to 20:00 and shifted the fairness evening hours without a word. A file without these sections likewise falls back on the settings of the instance that imports it and replays a different problem. For whoever touches the format: every field read must also be written.
 
@@ -59,7 +59,7 @@ Timeslots always come out as they are, with `couverturePause: true` when they co
 
 ## `schemaVersion`
 
-A file written by the application starts with `schemaVersion: 2` (`ScenarioBinder.SCHEMA_VERSION`). On reading, the key is optional and is 1 when missing. A file older than the current version goes through a **chain of conversions** (`ScenarioMigrations`) before being bound: each link is a pure function from version *n* to *n + 1*, with its test, and each model change adds its own. What a link cannot convert is ignored **with a warning in the import report** (`avertissements`), never silently. The shipped scenarios, the end-of-event archives and the copies made before a wipe thus remain readable. The v1 reader is kept throughout 4.x and removed in 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). A number higher than the one the version reads is refused with a clear sentence ("produced by a more recent version") rather than with an "unknown field" on the first new key. A version of the application older than the key refuses any file that carries it, like any unknown key.
+A file written by the application starts with `schemaVersion: 3` (`ScenarioBinder.SCHEMA_VERSION`). On reading, the key is optional and is 1 when missing. A file older than the current version goes through a **chain of conversions** (`ScenarioMigrations`) before being bound: each link is a pure function from version *n* to *n + 1*, with its test, and each model change adds its own. What a link cannot convert is ignored **with a warning in the import report** (`avertissements`), never silently. The shipped scenarios, the end-of-event archives and the copies made before a wipe thus remain readable. The v1 reader is kept throughout 4.x and removed in 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). A number higher than the one the version reads is refused with a clear sentence ("produced by a more recent version") rather than with an "unknown field" on the first new key. A version of the application older than the key refuses any file that carries it, like any unknown key.
 
 ## `postes`: absent and empty do not say the same thing
 
@@ -98,8 +98,8 @@ Some keys are refused by name, with a message that says what to write instead. A
 
 | Refused key | Replacement |
 | --- | --- |
-| `parametresDecoupage`, `decoupageAuto` | automatic splitting no longer exists ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)); `dureeVacationMaxMinutes` joined `parametresLegaux` |
-| `pauseSurPoste`, `pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes`, `dureePauseMineurMinutes` (in `parametresLegaux`) | a single duration, `dureePauseMinutes`, and a single break rule ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)) |
+| `parametresDecoupage`, `decoupageAuto` | automatic splitting no longer exists ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)); `dureeVacationMaxMinutes` joined `parametres.legal` |
+| `pauseSurPoste`, `pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes`, `dureePauseMineurMinutes` (in `parametres.legal`) | a single duration, `dureePauseMinutes`, and a single break rule ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)) |
 
 ## Consignes and presets
 

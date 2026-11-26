@@ -47,7 +47,7 @@ La règle 1 fait qu'un scénario exporté puis réimporté dans la même éditio
 
 ## Ce que l'export garantit
 
-« Exporter les données actuelles en scénario » écrit toutes les sections que l'import sait relire : les entités, mais aussi `typologies`, `emplacements`, `parametresLegaux`, `parametresSolveur`, `journeesTypes`, `contraintes`, `contraintesAdHoc`, `prereglagesConsigne` et `consignes`. Réimporter le fichier reproduit exactement le même problème. C'est la raison d'être de l'export.
+« Exporter les données actuelles en scénario » écrit toutes les sections que l'import sait relire : les entités, mais aussi `typologies`, `emplacements`, `parametres` (légal, organisation, instance), `journeesTypes`, `contraintes`, `contraintesAdHoc`, `prereglagesConsigne` et `consignes`. Réimporter le fichier reproduit exactement le même problème. C'est la raison d'être de l'export.
 
 Un champ oublié dans une section n'est pas « non surchargeable » : l'import écrit un objet neuf et le champ retombe au défaut. `heureDebutSoiree`, absente du DTO à l'origine, ramenait ainsi une édition réglée à 22 h à 20 h et déplaçait les heures de soirée de l'équité sans un mot. Un fichier sans ces sections retombe de même sur les réglages de l'instance qui l'importe et rejoue un autre problème. Pour qui touche au format : chaque champ lu doit aussi être écrit.
 
@@ -55,7 +55,7 @@ Les créneaux sortent toujours tels quels, avec `couverturePause: true` quand il
 
 ## `schemaVersion`
 
-Un fichier écrit par l'application commence par `schemaVersion: 2` (`ScenarioBinder.SCHEMA_VERSION`). À la lecture, la clé est facultative et vaut 1 quand elle manque. Un fichier plus ancien que la version courante traverse une **chaîne de conversions** (`ScenarioMigrations`) avant d'être lié : chaque maillon est une fonction pure de la version *n* à la *n + 1*, avec son test, et chaque changement de modèle ajoute le sien. Ce qu'un maillon ne peut pas convertir est ignoré **avec un avertissement dans le rapport d'import** (`avertissements`), jamais en silence. Les scénarios livrés, les archives de fin d'événement et les copies faites avant un vidage restent ainsi lisibles. Le lecteur v1 est gardé pendant toute la 4.x et retiré en 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). Un numéro supérieur à celui que la version lit est refusé avec une phrase claire (« produit par une version plus récente ») plutôt qu'avec un « champ inconnu » sur la première clé nouvelle. Une version de l'application antérieure à la clé refuse tout fichier qui la porte, comme n'importe quelle clé inconnue.
+Un fichier écrit par l'application commence par `schemaVersion: 3` (`ScenarioBinder.SCHEMA_VERSION`). À la lecture, la clé est facultative et vaut 1 quand elle manque. Un fichier plus ancien que la version courante traverse une **chaîne de conversions** (`ScenarioMigrations`) avant d'être lié : chaque maillon est une fonction pure de la version *n* à la *n + 1*, avec son test, et chaque changement de modèle ajoute le sien. Ce qu'un maillon ne peut pas convertir est ignoré **avec un avertissement dans le rapport d'import** (`avertissements`), jamais en silence. Les scénarios livrés, les archives de fin d'événement et les copies faites avant un vidage restent ainsi lisibles. Le lecteur v1 est gardé pendant toute la 4.x et retiré en 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). Un numéro supérieur à celui que la version lit est refusé avec une phrase claire (« produit par une version plus récente ») plutôt qu'avec un « champ inconnu » sur la première clé nouvelle. Une version de l'application antérieure à la clé refuse tout fichier qui la porte, comme n'importe quelle clé inconnue.
 
 ## `postes` : absente et vide ne disent pas la même chose
 
@@ -94,8 +94,8 @@ Certaines clés sont refusées par leur nom, avec un message qui dit quoi écrir
 
 | Clé refusée | Remplacement |
 | --- | --- |
-| `parametresDecoupage`, `decoupageAuto` | le découpage automatique n'existe plus ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)) ; `dureeVacationMaxMinutes` a rejoint `parametresLegaux` |
-| `pauseSurPoste`, `pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes`, `dureePauseMineurMinutes` (dans `parametresLegaux`) | une seule durée, `dureePauseMinutes`, et une seule règle de pause ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)) |
+| `parametresDecoupage`, `decoupageAuto` | le découpage automatique n'existe plus ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)) ; `dureeVacationMaxMinutes` a rejoint `parametres.legal` |
+| `pauseSurPoste`, `pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes`, `dureePauseMineurMinutes` (dans `parametres.legal`) | une seule durée, `dureePauseMinutes`, et une seule règle de pause ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)) |
 
 ## Consignes et préréglages
 

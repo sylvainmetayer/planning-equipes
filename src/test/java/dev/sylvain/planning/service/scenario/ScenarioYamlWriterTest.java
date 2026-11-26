@@ -242,9 +242,10 @@ class ScenarioYamlWriterTest {
                 List.of()));
         Map<String, Object> parsed = new Yaml().load(yaml);
 
-        assertThat((Map<String, Object>) parsed.get("parametresSolveur"))
-                .containsEntry("dureeResolutionSecondes", 1800);
-        assertThat((Map<String, Object>) parsed.get("parametresLegaux"))
+        Map<String, Object> parametres = (Map<String, Object>) parsed.get("parametres");
+        assertThat((Map<String, Object>) parametres.get("instance")).containsEntry("dureeResolutionSecondes", 1800);
+        assertThat(parsed).doesNotContainKeys("parametresLegaux", "parametresSolveur", "parametresQualite");
+        assertThat((Map<String, Object>) parametres.get("legal"))
                 .containsEntry("dureeHebdomadaireMaxMinutes", 40 * 60)
                 .containsEntry("dureePauseMinutes", 45)
                 // The meal break travels with the legal parameters; times stay

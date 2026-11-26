@@ -63,6 +63,7 @@ api.MentionsLegalesResource$AccessibiliteView = contenusNonAccessibles, dateAudi
 api.MentionsLegalesResource$MentionsLegalesView = accessibilite, baseLegale, conservation, contact, demoInstance, directeurPublication, editeur, hebergeur, mesureAudience, responsableTraitement, suiviErreurs
 api.OuvertureStandsResource$RapportSaisieGrille = stands
 api.OuvertureStandsResource$SaisieGrille = stands
+api.ParametresResource$ParametresView = instance, legal, notifications, organisation
 api.ParametresResource$SolverSettingsView = dureeResolutionSecondes, instance, mailFinResolution, plateauSecondes
 api.PlanningResource$PersistenceStatus = assignments
 api.PlanningResource$PlanningResolutionView = derniereModificationDonnees, resoluLe, solved

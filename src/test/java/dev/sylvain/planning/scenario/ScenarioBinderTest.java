@@ -314,9 +314,9 @@ class ScenarioBinderTest {
         // Absent means 1; whatever the file declares, the bound scenario is the current one.
         assertThat(ScenarioBinder.bind(MINIMAL).schemaVersion()).isEqualTo(ScenarioBinder.SCHEMA_VERSION);
         assertThat(ScenarioBinder.bind("schemaVersion: 1\n" + MINIMAL).schemaVersion())
-                .isEqualTo(2);
+                .isEqualTo(3);
         assertThat(ScenarioBinder.bind("schemaVersion: 2\n" + MINIMAL).schemaVersion())
-                .isEqualTo(2);
+                .isEqualTo(3);
         assertThat(ScenarioBinder.bindWithWarnings("schemaVersion: 1\n" + MINIMAL)
                         .warnings())
                 .isEmpty();
@@ -324,7 +324,7 @@ class ScenarioBinderTest {
 
     @Test
     void aNewerSchemaVersionIsRefusedWithAClearMessage() {
-        assertThatThrownBy(() -> ScenarioBinder.bind("schemaVersion: 3\nclefDuFutur: 1\n" + MINIMAL))
+        assertThatThrownBy(() -> ScenarioBinder.bind("schemaVersion: 4\nclefDuFutur: 1\n" + MINIMAL))
                 .isInstanceOf(ScenarioFormatException.class)
                 .hasMessageContaining("plus récent")
                 .hasMessageNotContaining("Champ inconnu");
@@ -344,7 +344,7 @@ class ScenarioBinderTest {
             assertThatThrownBy(() -> ScenarioBinder.bind("schemaVersion: " + value + "\n" + MINIMAL))
                     .as(value)
                     .isInstanceOf(ScenarioFormatException.class)
-                    .hasMessageContaining("« schemaVersion » doit être un entier entre 1 et 2");
+                    .hasMessageContaining("« schemaVersion » doit être un entier entre 1 et 3");
         }
     }
 }
