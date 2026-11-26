@@ -54,6 +54,9 @@ import {
 } from './jour-j-wording';
 import { StatusMessage } from '../../shared/status-message';
 import { AujourdhuiTv } from './aujourdhui-tv';
+import { EditionInactiveNote } from '../../shared/edition-inactive-note';
+import { EditionStore } from '../../core/edition.store';
+import { isEditionInactive } from '../../core/edition-inactive';
 
 /** A hole of the day, labelled once: the template never calls a function per row. */
 interface Trou extends PosteAPourvoir {
@@ -80,6 +83,7 @@ interface Trou extends PosteAPourvoir {
 @Component({
   selector: 'app-jour-j-page',
   imports: [
+    EditionInactiveNote,
     AujourdhuiTv,
     StatusMessage,
     FormsModule,
@@ -99,6 +103,9 @@ interface Trou extends PosteAPourvoir {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JourJPage implements OnInit {
+  /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
+  protected readonly editionInactive = inject(EditionStore).inactive;
+
   private readonly jourJ = inject(JourJService);
   private readonly postesApi = inject(PostesApi);
   private readonly notifications = inject(NotificationService);
@@ -523,6 +530,10 @@ export class JourJPage implements OnInit {
       });
       await this.recharger();
     } catch (error) {
+      // An inactive edition is told by the interceptor, once.
+      if (isEditionInactive(error)) {
+        return;
+      }
       this.notifications.notify({
         title: $localize`:@@aujourdhui.prevenir.echec:Envoi impossible`,
         message: messageDe(error),

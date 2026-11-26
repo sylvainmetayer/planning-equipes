@@ -17,9 +17,12 @@ import { ConstraintsApi } from '../../core/api/constraints-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { PostesApi } from '../../core/api/postes-api';
 import { ApiError } from '../../core/api.service';
+import { CODE_EDITION_INACTIVE } from '../../core/edition-inactive';
 import { ConsignesStore } from '../../core/consignes.store';
 import { Animateur, AnimateurProfile } from '../../core/models';
+import { EditionStore } from '../../core/edition.store';
 import { fakeOf, provideFake } from '../../core/testing/fake';
+import { seedStore } from '../../core/testing/seed-store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
@@ -369,6 +372,48 @@ describe('AnimateurFichePage', () => {
         creneauId: profile().affectations[0].creneauId,
       }),
     );
+  });
+
+  it('greys out the two mails on an inactive edition and says why next to them', async () => {
+    api.profile.mockResolvedValue(
+      profile({
+        animateur: { ...profile().animateur, email: 'camille@exemple.org' },
+        dernierePublicationLe: '2026-07-01T10:00:00Z',
+      }),
+    );
+    await render();
+    expect(button('Envoyer son planning').disabled).toBe(false);
+
+    seedStore(TestBed.inject(EditionStore), 'courant', {
+      id: 'E1',
+      nom: 'Année 2025',
+      active: false,
+      creeLe: null,
+    });
+    fixture.detectChanges();
+
+    for (const label of ['Envoyer son planning', 'Relancer']) {
+      expect(button(label).disabled).toBe(true);
+      expect(button(label).getAttribute('aria-describedby')).toBe('fiche-edition-inactive');
+    }
+    expect(root().querySelector('#fiche-edition-inactive')!.textContent).toContain(
+      "Cette édition n'est pas active",
+    );
+  });
+
+  it('leaves an inactive-edition refusal to the interceptor: no second message', async () => {
+    api.profile.mockResolvedValue(
+      profile({ animateur: { ...profile().animateur, email: 'camille@exemple.org' } }),
+    );
+    planningApi.sendToAnimateur.mockRejectedValueOnce(
+      new ApiError(409, 'conflict', 'inactive', CODE_EDITION_INACTIVE),
+    );
+    await render();
+
+    button('Envoyer son planning').click();
+    await vi.waitFor(() => expect(planningApi.sendToAnimateur).toHaveBeenCalled());
+    await fixture.whenStable();
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('walks the list as the reader filtered and sorted it, its view kept in the links', async () => {

@@ -1,7 +1,9 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { Injector, inject } from '@angular/core';
 import { throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { clearStoredEditionId, getStoredEditionId } from './edition-courante';
+import { CODE_EDITION_INACTIVE, editionInactivePhrase } from './edition-inactive';
 
 /** The codes of a request refused because it names no edition, or a deleted one (ADR 0072). */
 const CODES_CHOIX_EDITION = new Set(['EDITION_REQUISE', 'EDITION_INCONNUE']);
@@ -19,8 +21,15 @@ const RELOAD_KEY = 'planning-equipes.editionReload';
  * reloaded once, so `editionChosenGuard` picks again before any screen
  * loads — at most once a minute, so a refusal that persists is shown rather
  * than looped on.
+ *
+ * `EDITION_INACTIVE` (409) is the third refusal: the buttons are greyed out
+ * upstream, so one that still gets here (a stale tab, a second window) is
+ * told to the user whatever screen sent it — several of them only wrote the
+ * error into a panel at the bottom of the page. The editions are read again
+ * too, so the buttons of a tab that missed the deactivation grey out now.
  */
 export const editionInterceptor: HttpInterceptorFn = (request, next) => {
+  const injector = inject(Injector);
   const editionId = getStoredEditionId();
   // A caller that set the header itself is deliberately reading ANOTHER
   // edition (e.g. the import-impact counts for a scenario's target edition):
@@ -39,10 +48,41 @@ export const editionInterceptor: HttpInterceptorFn = (request, next) => {
       ) {
         startOverEditionChoice();
       }
+      if (
+        error instanceof HttpErrorResponse &&
+        error.status === 409 &&
+        (error.error as { code?: unknown } | null)?.code === CODE_EDITION_INACTIVE
+      ) {
+        void tellEditionInactive(injector);
+      }
       return throwError(() => error);
     }),
   );
 };
+
+/**
+ * Says the refusal, then reads the editions again. Both loaded on the refusal
+ * only: this interceptor sits in the initial bundle, the snack bar behind
+ * NotificationService does not (its budget), and EditionStore reaches
+ * HttpClient, which runs this interceptor.
+ */
+async function tellEditionInactive(injector: Injector): Promise<void> {
+  const [{ NotificationService }, { EditionStore }] = await Promise.all([
+    import('./notification.service'),
+    import('./edition.store'),
+  ]);
+  injector.get(NotificationService).notify({
+    title: $localize`:@@edition.inactive.titre:Action refusée`,
+    message: editionInactivePhrase(),
+    variant: 'error',
+    timeout: 0,
+    lien: { route: '/editions', libelle: $localize`:@@edition.inactive.ouvrir:Éditions` },
+  });
+  await injector
+    .get(EditionStore)
+    .reload()
+    .catch(() => undefined);
+}
 
 function startOverEditionChoice(): void {
   clearStoredEditionId();

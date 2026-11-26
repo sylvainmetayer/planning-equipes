@@ -21,10 +21,11 @@
       <mat-button-toggle value="NOT_YET_INVITED" i18n="@@dispo.liens.nonInvites">Pas encore invités</mat-button-toggle>
       <mat-button-toggle value="NOT_YET_DECLARED" i18n="@@dispo.liens.nonDeclares">Tous ceux qui n'ont pas déclaré</mat-button-toggle>
     </mat-button-toggle-group>
-    <button matButton="filled" type="button" [disabled]="sending()" (click)="sendLinks()">
+    <button matButton="filled" type="button" [disabled]="sending() || editionInactive()" aria-describedby="liens-edition-inactive" (click)="sendLinks()">
       <mat-icon>forward_to_inbox</mat-icon>
       <span i18n="@@dispo.liens.envoyer">Envoyer les liens</span>
     </button>
+    <app-edition-inactive-note id="liens-edition-inactive" />
   </div>
 }
 

@@ -24,9 +24,10 @@
         </mat-form-field>
       </div>
       @if (collectionOpen() && !collecte()?.collecteOuverte) {
-        <mat-checkbox [checked]="prevenir()" (change)="prevenir.set($event.checked)">
+        <mat-checkbox [checked]="prevenir() && !editionInactive()" [disabled]="editionInactive()" aria-describedby="collecte-edition-inactive" (change)="prevenir.set($event.checked)">
           <ng-container i18n="@@dispo.fenetre.prevenir">Prévenir les animateurs par e-mail en ouvrant (lien vers leur espace)</ng-container>
         </mat-checkbox>
+        <app-edition-inactive-note id="collecte-edition-inactive" />
       }
       <mat-checkbox [checked]="collectionReminder()" [disabled]="collectionSaving() || collecte() === null"
                     (change)="collectionReminder.set($event.checked)">
