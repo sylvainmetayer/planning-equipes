@@ -18,7 +18,7 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
-test('poser un verrouillage de journée, mesurer son impact, le retirer', async ({ browser }) => {
+test('lays a day lock, measures its impact, removes it', async ({ browser }) => {
   test.slow();
   const page = await pageAdmin(browser, admin);
   // The old address lands on its tab of « Règles du planning ».
@@ -30,7 +30,7 @@ test('poser un verrouillage de journée, mesurer son impact, le retirer', async 
   // « Animateur sur un créneau » is the default type; a day is one choice away.
   await expect(page.getByLabel('Animateur', { exact: true })).toBeVisible();
   await page.getByLabel('Type').click();
-  await page.getByRole('option', { name: 'Journée' }).click();
+  await page.getByRole('option', { name: 'Journée', exact: true }).click();
   await page.getByLabel('Journée').click();
   await page.getByRole('option', { name: SEED.jour }).click();
   // The preview counts the already-assigned seats the lock would freeze, and
