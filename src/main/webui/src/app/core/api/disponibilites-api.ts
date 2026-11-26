@@ -3,7 +3,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
 import {
-  CarpoolCancellation,
   ConfigurationCollecte,
   DeclarationAdminView,
   DestinatairesInvitation,
@@ -60,22 +59,13 @@ export class DisponibilitesApi {
     return this.api.post<ValidatedCarpool>(`/api/disponibilites/coequipiers/${id}/validation`, {});
   }
 
-  /** Sets one pending covoiturage aside, with an optional reason the animateur reads. */
-  setCarpoolAside(id: string, reason: string | null): Promise<TeammateRequestView> {
-    return this.api.post<TeammateRequestView>(`/api/disponibilites/coequipiers/${id}/ecart`, {
-      reason,
-    });
+  /** Sets one pending covoiturage aside: the demand is deleted, nobody is mailed. */
+  async setCarpoolAside(id: string): Promise<void> {
+    await this.api.post<void>(`/api/disponibilites/coequipiers/${id}/ecart`, {});
   }
 
-  /**
-   * Cancels the validated grouped arrival of one covoiturage: its exception is
-   * deleted, every member is told by mail, with the optional reason.
-   */
-  cancelCarpool(id: string, reason: string | null): Promise<TeammateRequestView> {
-    const body: CarpoolCancellation = { reason };
-    return this.api.post<TeammateRequestView>(
-      `/api/disponibilites/coequipiers/${id}/annulation`,
-      body,
-    );
+  /** Cancels the validated grouped arrival of one covoiturage: its exception and demands are deleted. */
+  async cancelCarpool(id: string): Promise<void> {
+    await this.api.post<void>(`/api/disponibilites/coequipiers/${id}/annulation`, {});
   }
 }

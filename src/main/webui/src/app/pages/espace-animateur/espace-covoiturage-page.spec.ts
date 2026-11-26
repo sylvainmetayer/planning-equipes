@@ -1,6 +1,5 @@
 // The Covoiturage tab of the espace: open for input while the collection is,
-// read-only otherwise, and saying where the request stands — the reason of a
-// request set aside included, since that is what the animateur acts on.
+// read-only otherwise, and saying where the request stands: pending or validated.
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -20,7 +19,6 @@ function view(overrides: Partial<CarpoolEspaceView> = {}): CarpoolEspaceView {
     ],
     teammateIds: [],
     status: null,
-    reason: null,
     decidedAt: null,
     ...overrides,
   };
@@ -116,16 +114,6 @@ describe('EspaceCovoituragePage', () => {
     expect(text(fixture)).toContain("En attente de l'organisation — avec Bob Durand.");
   });
 
-  it('shows a request set aside with the reason the organisation gave', async () => {
-    const fixture = await render(
-      view({ teammateIds: ['A2'], status: 'ECARTEE', reason: 'Bob ne vient que le samedi.' }),
-    );
-
-    expect(text(fixture)).toContain('a été écartée');
-    expect(text(fixture)).toContain('Bob ne vient que le samedi.');
-    expect(text(fixture)).toContain('nouvelle demande');
-  });
-
   it('shows a validated car read-only, with no form', async () => {
     const fixture = await render(view({ teammateIds: ['A2'], status: 'VALIDEE' }));
 
@@ -133,32 +121,6 @@ describe('EspaceCovoituragePage', () => {
     expect(text(fixture)).toContain('Bob Durand');
     expect((fixture.nativeElement as HTMLElement).querySelector('input')).toBeNull();
     expect(button(fixture, 'Envoyer ma demande')).toBeUndefined();
-  });
-
-  it('shows a cancelled car with its reason and a blank picker while the collection is open', async () => {
-    const fixture = await render(
-      view({ teammateIds: ['A2'], status: 'ANNULEE', reason: 'La voiture est en panne.' }),
-    );
-
-    expect(text(fixture)).toContain(
-      "L'organisation a annulé cette arrivée groupée avec Bob Durand.",
-    );
-    expect(text(fixture)).toContain('La voiture est en panne.');
-    expect(text(fixture)).toContain('nouvelle demande');
-    // The picker is open, and starts from nobody: nothing chosen, nothing to send.
-    expect((fixture.nativeElement as HTMLElement).querySelector('input')).not.toBeNull();
-    expect(button(fixture, 'Envoyer ma demande')?.disabled).toBe(true);
-  });
-
-  it('sends to the organisation a car cancelled once the collection is closed', async () => {
-    const fixture = await render(
-      view({ collectionOpen: false, teammateIds: ['A2'], status: 'ANNULEE', reason: null }),
-    );
-
-    expect(text(fixture)).toContain("L'organisation a annulé cette arrivée groupée");
-    expect(text(fixture)).toContain("adressez-vous à l'organisation");
-    expect(text(fixture)).not.toContain('nouvelle demande ci-dessous');
-    expect((fixture.nativeElement as HTMLElement).querySelector('input')).toBeNull();
   });
 
   it('is read-only while the collection is closed', async () => {

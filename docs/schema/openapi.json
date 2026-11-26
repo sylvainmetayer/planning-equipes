@@ -1206,14 +1206,6 @@
           }
         }
       },
-      "CarpoolCancellation" : {
-        "type" : "object",
-        "properties" : {
-          "reason" : {
-            "type" : "string"
-          }
-        }
-      },
       "CarpoolDayView" : {
         "required" : [ "aligned" ],
         "type" : "object",
@@ -1254,19 +1246,8 @@
           "status" : {
             "type" : "string"
           },
-          "reason" : {
-            "type" : "string"
-          },
           "decidedAt" : {
             "$ref" : "#/components/schemas/Instant"
-          }
-        }
-      },
-      "CarpoolSetAside" : {
-        "type" : "object",
-        "properties" : {
-          "reason" : {
-            "type" : "string"
           }
         }
       },
@@ -10740,9 +10721,6 @@
           },
           "decidedAt" : {
             "$ref" : "#/components/schemas/Instant"
-          },
-          "reason" : {
-            "type" : "string"
           }
         }
       },
@@ -13913,29 +13891,14 @@
             "type" : "string"
           }
         } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CarpoolCancellation"
-              }
-            }
-          },
-          "required" : true
-        },
         "responses" : {
           "200" : {
             "description" : "OK",
             "content" : {
               "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/TeammateRequestView"
-                }
+                "schema" : { }
               }
             }
-          },
-          "400" : {
-            "description" : "Bad Request"
           }
         },
         "summary" : "Cancel Carpool",
@@ -13952,29 +13915,14 @@
             "type" : "string"
           }
         } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CarpoolSetAside"
-              }
-            }
-          },
-          "required" : true
-        },
         "responses" : {
           "200" : {
             "description" : "OK",
             "content" : {
               "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/TeammateRequestView"
-                }
+                "schema" : { }
               }
             }
-          },
-          "400" : {
-            "description" : "Bad Request"
           }
         },
         "summary" : "Set Carpool Aside",

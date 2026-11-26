@@ -44,12 +44,11 @@ During the collection, in the *Carpool* tab of their espace, a staff member name
 
 On the organisation side, *Staff*, *Availability* tab, then *Carpool*, lists these requests. If everyone has named the others, it says by how many days their unavailabilities differ. You decide each request separately:
 
-- **validate** the grouped arrival;
-- or **dismiss** it, with an optional reason that the staff member reads.
+- **validate** the grouped arrival: each member then receives an e-mail, the only one of this circuit;
+- or **dismiss** it: the request is deleted, with no e-mail, and the staff member may send another.
 
-Everyone is notified by e-mail.
 
-A validated request becomes a manual adjustment that only the organisation can cancel, from this same tab, notifying each member. The solve tries to give them the same days and close arrivals and departures (adjustable tolerance, 30 minutes by default), without imposing the same stand. The Rail marks the members, the Problems page lists the misaligned days, and the espace tells each person, day by day, whether their carpool holds.
+A validated request becomes a manual adjustment that only the organisation can cancel, from this same tab (the request disappears, with no e-mail: tell the group yourself). The solve tries to give them the same days and close arrivals and departures (adjustable tolerance, 30 minutes by default), without imposing the same stand. The Rail marks the members, the Problems page lists the misaligned days, and the espace tells each person, day by day, whether their carpool holds.
 
 ## Next
 

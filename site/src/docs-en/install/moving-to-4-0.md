@@ -60,6 +60,12 @@ Coming: mapping of old names, rules merged or removed.
 - **After**: it is called "all-rounder" (`polyvalent`). Migration `V140` renames the column and its index, and fixes the field names already recorded in the action journal. The rule's name (`preserverBufferPolyvalents`), its weights and its switch do not change. API responses, YAML and CSV exports and the MCP tools' field say `polyvalent`; the derived keys follow (`polyvalentConfigure` of the fragility and tension reports, `typologiePolyvalenteDefinie` of the staffing-need report). The screens say "All-rounder category". The stands' `premium` flag keeps its name and is displayed as "Premium stand".
 - **What you do**: nothing for your data or your files. The old names are still read throughout 4.x (`ninja` JSON and YAML key, `ninja` CSV header, the latter flagged line by line in the import report) and removed in 5.0. Only your scripts that *read* a `ninja` key from an API response or an export need to move to its new name.
 
+### Carpooling is reduced to validated or not
+
+- **Before (3.x)**: an "I'm coming with…" request went through four states (`EN_ATTENTE`, `VALIDEE`, `ECARTEE`, `ANNULEE`), the organisation could write a reason, and three e-mails went out: validation, request set aside, grouped arrival cancelled.
+- **After (4.0)**: a request is not validated (`EN_ATTENTE`) or validated (`VALIDEE`). Setting a request aside or cancelling a grouped arrival deletes the request, with no reason and no e-mail. One e-mail remains: the validation, sent to each member. The `arriveeGroupee` rule does not change, nor does the adjustment a validation creates. Migration `V142` deletes the requests already set aside or cancelled (they were only a trace) and the reason column; the API no longer returns `reason`, and the `.../ecart` and `.../annulation` routes answer `204` with no body. The status returned by `lister_demandes_covoiturage` has only two values.
+- **What you do**: nothing for your data. After a cancellation, tell the group yourself, since no e-mail goes out any more. A script that read `ECARTEE`, `ANNULEE` or `reason` must do without.
+
 ### Data and migrations
 
 Coming: the migrations that convert data, and what they do to your existing editions.

@@ -27,13 +27,11 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -158,8 +156,7 @@ public class TeammateRequestService {
 
     /**
      * Records the covoiturage {@code animateurId} asks for from their espace,
-     * replacing the pending one; an empty list withdraws it. A request set
-     * aside earlier stays as it was decided: this one is a new request.
+     * replacing the pending one; an empty list withdraws it.
      *
      * @throws BusinessError.Invalid   when the collection window is closed, or
      *                                 the teammates break a rule of
@@ -194,7 +191,6 @@ public class TeammateRequestService {
                 StatutDemandeCoequipier.EN_ATTENTE,
                 null,
                 Instant.now(),
-                null,
                 null));
     }
 
@@ -203,39 +199,24 @@ public class TeammateRequestService {
      *
      * @param teammateIds the others in the car, by id
      * @param status      {@code VALIDEE} when a grouped arrival holds it,
-     *                    {@code EN_ATTENTE} while it is a request,
-     *                    {@code ECARTEE} when the last request was set aside,
-     *                    {@code ANNULEE} when the last decision cancelled the
-     *                    grouped arrival they rode in
-     * @param reason      why it was set aside or cancelled, as the admin typed
-     *                    it for the animateur; {@code null} otherwise
+     *                    {@code EN_ATTENTE} while it is a request
      * @param decidedAt   when the organisation decided, {@code null} while
      *                    pending or when a grouped arrival written by hand
      *                    holds the animateur
      */
-    public record CarpoolState(
-            List<String> teammateIds, StatutDemandeCoequipier status, String reason, Instant decidedAt) {}
+    public record CarpoolState(List<String> teammateIds, StatutDemandeCoequipier status, Instant decidedAt) {}
 
     /**
      * The validated grouped arrival holding the animateur when there is one —
      * the exception itself, not the demand that led to it: an exception the
      * organisation removed frees the animateur, one it wrote by hand binds
-     * them all the same —, else their pending request, else the latest
-     * decision about them when it set their request aside or cancelled the
-     * car they rode in, so the espace can say so and why; {@code null} when
-     * none of those.
-     *
-     * <p>A cancellation reaches every member, the declarant and the
-     * teammates alike, so the demands naming the animateur count as well as
-     * their own; a set-aside concerns the one who asked alone.</p>
+     * them all the same —, else their pending request; {@code null} when
+     * neither.
      */
     public CarpoolState stateOf(String animateurId) {
         Optional<ContrainteAdHoc> groupe = validatedGroupOf(animateurId);
         List<DemandeCoequipier> covoiturages = repository.list().stream()
                 .filter(demande -> demande.nature() == NatureCoequipier.COVOITURAGE)
-                .toList();
-        List<DemandeCoequipier> siennes = covoiturages.stream()
-                .filter(demande -> demande.animateurId().equals(animateurId))
                 .toList();
         if (groupe.isPresent()) {
             Instant decideLe = covoiturages.stream()
@@ -249,32 +230,14 @@ public class TeammateRequestService {
                             .filter(membre -> !membre.equals(animateurId))
                             .toList(),
                     StatutDemandeCoequipier.VALIDEE,
-                    null,
                     decideLe);
         }
-        Optional<DemandeCoequipier> enAttente = siennes.stream()
-                .filter(demande -> demande.statut() == StatutDemandeCoequipier.EN_ATTENTE)
-                .findFirst();
-        if (enAttente.isPresent()) {
-            return new CarpoolState(enAttente.get().coequipiers(), StatutDemandeCoequipier.EN_ATTENTE, null, null);
-        }
-        // Only the latest decision speaks. A validated one whose exception was
-        // removed since, by an import or a reset, frees the animateur — no state.
-        return covoiturages.stream()
-                .filter(demande -> demande.decideLe() != null)
+        Optional<DemandeCoequipier> enAttente = covoiturages.stream()
                 .filter(demande -> demande.animateurId().equals(animateurId)
-                        || (demande.statut() != StatutDemandeCoequipier.ECARTEE
-                                && demande.members().contains(animateurId)))
-                .max(Comparator.comparing(DemandeCoequipier::decideLe))
-                .filter(demande -> demande.statut() == StatutDemandeCoequipier.ECARTEE
-                        || demande.statut() == StatutDemandeCoequipier.ANNULEE)
-                .map(demande -> new CarpoolState(
-                        demande.members().stream()
-                                .filter(membre -> !membre.equals(animateurId))
-                                .toList(),
-                        demande.statut(),
-                        demande.motif(),
-                        demande.decideLe()))
+                        && demande.statut() == StatutDemandeCoequipier.EN_ATTENTE)
+                .findFirst();
+        return enAttente
+                .map(demande -> new CarpoolState(demande.coequipiers(), StatutDemandeCoequipier.EN_ATTENTE, null))
                 .orElse(null);
     }
 
@@ -300,8 +263,7 @@ public class TeammateRequestService {
     /**
      * One demand as the Disponibilités screen shows it.
      *
-     * @param status         {@code EN_ATTENTE}, {@code VALIDEE},
-     *                       {@code ECARTEE} or {@code ANNULEE}
+     * @param status         {@code EN_ATTENTE} or {@code VALIDEE}
      * @param members        the declarant first, then the teammates they named
      * @param confirmedByAll every other member declared the very same group
      * @param divergentDays  days on which the members' declared
@@ -309,9 +271,6 @@ public class TeammateRequestService {
      *                       cannot hold there, whatever the solver does
      * @param contrainteId   the {@code ARRIVEE_GROUPEE} exception the
      *                       validation created or joined
-     * @param reason         why it was set aside or cancelled, as the admin
-     *                       typed it for the animateur; {@code null} when none
-     *                       was given
      */
     @Schema(requiredProperties = {"confirmedByAll", "divergentDayCount"})
     public record TeammateRequestView(
@@ -325,8 +284,7 @@ public class TeammateRequestService {
             List<LocalDate> divergentDays,
             String contrainteId,
             Instant createdAt,
-            Instant decidedAt,
-            String reason) {}
+            Instant decidedAt) {}
 
     /** Every covoiturage demand of the edition, most recent first. */
     public List<TeammateRequestView> list() {
@@ -396,7 +354,7 @@ public class TeammateRequestService {
         }
 
         Timestamp decideLe = Timestamp.from(Instant.now());
-        if (repository.decide(id, StatutDemandeCoequipier.VALIDEE, contrainteId, decideLe, null) == 0) {
+        if (repository.validate(id, contrainteId, decideLe) == 0) {
             if (existante.isEmpty()) {
                 referenceDataService.deleteContrainteAdHoc(contrainteId);
             }
@@ -407,8 +365,7 @@ public class TeammateRequestService {
                         && autre.nature() == NatureCoequipier.COVOITURAGE
                         && autre.statut() == StatutDemandeCoequipier.EN_ATTENTE
                         && new HashSet<>(autre.members()).equals(groupe))
-                .forEach(autre ->
-                        repository.decide(autre.id(), StatutDemandeCoequipier.VALIDEE, contrainteId, decideLe, null));
+                .forEach(autre -> repository.validate(autre.id(), contrainteId, decideLe));
         membres.forEach(membre -> notifications.fire(new Notification.CarpoolValidated(
                 membre.getId(),
                 membre.getEmail(),
@@ -422,95 +379,43 @@ public class TeammateRequestService {
     }
 
     /**
-     * Sets one pending demand aside: nothing is written but its statut and the
-     * reason, which the animateur reads in their espace — and then free to send
-     * a new request. The one who asked is told, best-effort.
-     *
-     * @param reason optional, at most {@link DemandeCoequipier#MOTIF_MAX}
-     *               characters; blank is none
+     * Sets one pending demand aside: it is deleted, nothing else is written
+     * and nobody is mailed — the animateur is free to send a new request.
      */
-    public TeammateRequestView setAside(String id, String reason) {
-        String motif = checkedReason(reason);
-        DemandeCoequipier demande = pendingOrFail(id);
-        if (repository.decide(id, StatutDemandeCoequipier.ECARTEE, null, Timestamp.from(Instant.now()), motif) == 0) {
+    public void setAside(String id) {
+        pendingOrFail(id);
+        if (repository.deletePendingById(id) == 0) {
             throw new BusinessError.Conflict("Cette demande a déjà été traitée");
         }
-        referenceDataService
-                .findAnimateur(demande.animateurId())
-                .ifPresent(animateur -> notifications.fire(new Notification.CarpoolSetAside(
-                        animateur.getId(),
-                        animateur.getEmail(),
-                        animateur.getPrenom(),
-                        motif,
-                        links.espaceCovoiturage(animateur.getAccessToken()).orElse(null))));
-        return view(repository.byId(id).orElseThrow());
     }
 
     /**
      * Cancels the validated grouped arrival demand {@code id} belongs to: the
-     * {@code ARRIVEE_GROUPEE} exception is deleted and every demand validated
-     * against it becomes {@code ANNULEE} with the reason, in one transaction.
-     * Every member is told, best-effort, with what is left to them: a new
-     * request while the collection window is open, the organisation
-     * otherwise. A request made after this one is an ordinary new request.
+     * {@code ARRIVEE_GROUPEE} exception and every demand validated against it
+     * are deleted, in one transaction. Nobody is mailed: the organisation
+     * tells the group itself, and each member may send a new request while
+     * the collection window is open.
      *
      * <p>Refused while a solve holds the edition ({@link
      * SolverJobService#refuseIfSolving}): the running solve still scores the
-     * grouped arrival it started with, and the group would be told of a
-     * change the plan it is about to receive does not reflect.</p>
+     * grouped arrival it started with.</p>
      *
-     * @param reason optional, at most {@link DemandeCoequipier#MOTIF_MAX}
-     *               characters; blank is none — never journalled
      * @throws BusinessError.NotFound when no demand of the edition has that id
      * @throws BusinessError.Conflict when the demand is not validated, or its
      *                                exception is already gone
      * @throws SolverJobService.SolverBusyException while a solve holds the edition
      */
     @RefusedWhileSolving
-    public TeammateRequestView cancel(String id, String reason) {
-        String motif = checkedReason(reason);
+    public void cancel(String id) {
         DemandeCoequipier demande =
                 repository.byId(id).orElseThrow(() -> new BusinessError.NotFound(UNKNOWN_REQUEST + id));
         if (demande.statut() != StatutDemandeCoequipier.VALIDEE || demande.contrainteId() == null) {
             throw new BusinessError.Conflict(NOT_VALIDATED);
         }
-        ContrainteAdHoc groupe = referenceDataService.listContraintesAdHoc().stream()
-                .filter(contrainte -> contrainte.getId().equals(demande.contrainteId()))
-                .findFirst()
-                .orElseThrow(() -> new BusinessError.Conflict(NOT_VALIDATED));
-        List<String> membreIds = GroupedArrivalAnalyzer.memberIds(groupe);
-        if (repository.cancelGroup(groupe.getId(), Timestamp.from(Instant.now()), motif) == 0) {
+        if (repository.cancelGroup(demande.contrainteId()) == 0) {
             throw new BusinessError.Conflict(NOT_VALIDATED);
         }
         changeTracker.markModified();
-
-        boolean collecteOuverte = declarationService.isCollecteOuverte();
-        Map<String, Animateur> animateurs = referenceDataService.listAnimateurs().stream()
-                .collect(Collectors.toMap(Animateur::getId, Function.identity()));
-        List<Animateur> membres =
-                membreIds.stream().map(animateurs::get).filter(Objects::nonNull).toList();
-        membres.forEach(membre -> notifications.fire(new Notification.CarpoolCancelled(
-                membre.getId(),
-                membre.getEmail(),
-                membre.getPrenom(),
-                membres.stream()
-                        .filter(autre -> !autre.getId().equals(membre.getId()))
-                        .map(Animateur::nomAffiche)
-                        .toList(),
-                motif,
-                collecteOuverte,
-                links.espaceCovoiturage(membre.getAccessToken()).orElse(null))));
-        return view(repository.byId(id).orElseThrow());
-    }
-
-    /** The reason an admin types for the animateur: blank is none, and a sentence at most. */
-    private static String checkedReason(String reason) {
-        String motif = reason == null || reason.isBlank() ? null : reason.strip();
-        if (motif != null && motif.length() > DemandeCoequipier.MOTIF_MAX) {
-            throw new BusinessError.Invalid(
-                    "Motif trop long : " + DemandeCoequipier.MOTIF_MAX + " caractères au plus.");
-        }
-        return motif;
     }
 
     private DemandeCoequipier pendingOrFail(String id) {
@@ -550,23 +455,18 @@ public class TeammateRequestService {
                 divergents,
                 demande.contrainteId(),
                 demande.creeLe(),
-                demande.decideLe(),
-                demande.motif());
+                demande.decideLe());
     }
 
     /**
-     * True when every other member stands behind the same group: their latest
-     * covoiturage demand that was neither set aside nor cancelled names
-     * exactly these people.
+     * True when every other member stands behind the same group: their
+     * covoiturage demand names exactly these people.
      */
     static boolean confirmedByAll(DemandeCoequipier demande, List<DemandeCoequipier> toutes) {
         Set<String> groupe = new HashSet<>(demande.members());
         for (String membre : demande.coequipiers()) {
             DemandeCoequipier sienne = toutes.stream()
-                    .filter(autre -> autre.animateurId().equals(membre)
-                            && autre.nature() == demande.nature()
-                            && autre.statut() != StatutDemandeCoequipier.ECARTEE
-                            && autre.statut() != StatutDemandeCoequipier.ANNULEE)
+                    .filter(autre -> autre.animateurId().equals(membre) && autre.nature() == demande.nature())
                     .findFirst()
                     .orElse(null);
             if (sienne == null || !new HashSet<>(sienne.members()).equals(groupe)) {

@@ -84,8 +84,6 @@ public class NotificationWriter {
             case Notification.AbsenceReportFiled n -> absenceReportFiled(n);
             case Notification.AbsenceReportAccepted n -> absenceReportAccepted(n);
             case Notification.CarpoolValidated n -> carpoolValidated(n);
-            case Notification.CarpoolSetAside n -> carpoolSetAside(n);
-            case Notification.CarpoolCancelled n -> carpoolCancelled(n);
             case Notification.ResolutionTerminee n -> resolutionTerminee(n);
             case Notification.RappelVeille n -> rappelVeille(n);
             case Notification.RelanceConfirmation n -> relanceConfirmation(n);
@@ -200,47 +198,6 @@ public class NotificationWriter {
                         blankToNull(n.prenom()),
                         "coequipiers",
                         String.join(", ", n.teammates()),
-                        KEY_LIEN_ESPACE,
-                        n.espaceLink())));
-    }
-
-    /** The one who asked hears it was set aside, and why when the admin said. */
-    private Optional<MailDraft> carpoolSetAside(Notification.CarpoolSetAside n) {
-        if (withoutRecipient(n.email())) {
-            return Optional.empty();
-        }
-        return Optional.of(draft(
-                n.email(),
-                "mail/covoiturage-ecarte",
-                productName.subject("votre demande de covoiturage n'a pas été retenue"),
-                MailTemplates.values(
-                        KEY_PRENOM, blankToNull(n.prenom()),
-                        KEY_MOTIF, blankToNull(n.reason()),
-                        KEY_LIEN_ESPACE, n.espaceLink())));
-    }
-
-    /**
-     * Each member hears the grouped arrival is cancelled, with whom it was,
-     * why when the admin said, and whether a new request is still theirs to
-     * send.
-     */
-    private Optional<MailDraft> carpoolCancelled(Notification.CarpoolCancelled n) {
-        if (withoutRecipient(n.email())) {
-            return Optional.empty();
-        }
-        return Optional.of(draft(
-                n.email(),
-                "mail/covoiturage-annule",
-                productName.subject("votre arrivée groupée est annulée"),
-                MailTemplates.values(
-                        KEY_PRENOM,
-                        blankToNull(n.prenom()),
-                        "coequipiers",
-                        String.join(", ", n.teammates()),
-                        KEY_MOTIF,
-                        blankToNull(n.reason()),
-                        "collecteOuverte",
-                        n.collectionOpen(),
                         KEY_LIEN_ESPACE,
                         n.espaceLink())));
     }

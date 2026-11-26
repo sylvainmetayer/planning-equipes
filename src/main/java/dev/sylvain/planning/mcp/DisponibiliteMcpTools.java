@@ -58,14 +58,14 @@ public class DisponibiliteMcpTools {
             name = "lister_demandes_covoiturage",
             description = "Liste les demandes de covoiturage (« Je viens avec… », un à trois coéquipiers) "
                     + "envoyées depuis l'onglet Covoiturage de l'espace animateur pendant la collecte, du plus "
-                    + "récent au plus ancien : les membres, le statut (EN_ATTENTE, VALIDEE, ECARTEE, ANNULEE), si chacun a "
+                    + "récent au plus ancien : les membres, le statut (EN_ATTENTE pour non validée, ou VALIDEE), si chacun a "
                     + "nommé les autres (confirmedByAll), les jours où leurs indisponibilités déclarées divergent, "
                     + "et l'ajustement ARRIVEE_GROUPEE créé par la validation. Une demande est distincte de la "
                     + "déclaration de disponibilités : appliquer ou refuser une déclaration ne la touche pas, et "
                     + "seule sa validation, depuis l'onglet Covoiturage de l'écran Disponibilités, crée "
-                    + "l'ajustement ; l'annulation d'une arrivée groupée validée se fait aussi depuis cet onglet, "
-                    + "qui prévient le groupe. Les animateurs y sont désignés par id seul ; le motif d'un écart ou "
-                    + "d'une annulation, texte libre, n'est pas rendu.",
+                    + "l'ajustement ; écarter une demande ou annuler une arrivée groupée validée se fait aussi depuis "
+                    + "cet onglet, et la supprime. Un seul mail part, à la validation. Les animateurs y sont "
+                    + "désignés par id seul.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,

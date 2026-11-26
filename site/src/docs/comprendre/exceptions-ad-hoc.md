@@ -22,14 +22,14 @@ Ces exceptions se posent **avant** le calcul : chaque résolution les honore, y 
 
 L'arrivée groupée naît le plus souvent d'une demande. Dans l'onglet Covoiturage de son espace, pendant la fenêtre de collecte des disponibilités, un animateur nomme jusqu'à trois coéquipiers (« Je viens avec… »). La demande est **indépendante de la déclaration de disponibilités** : son propre envoi, sa propre décision. Elle est rangée dans `declaration_coequipier`, une table générique (`nature` = `COVOITURAGE`, `BINOME` réservé), et appliquer ou refuser une déclaration ne la touche pas. Une seule demande reste en attente par animateur.
 
-L'administrateur la **valide** (onglet Covoiturage de la page Disponibilités), ce qui crée l'ajustement, ou l'**écarte** avec un `motif` facultatif que l'animateur relit dans son espace avant d'en envoyer une autre. Chaque décision est notifiée par e-mail, au mieux. Un groupe validé ne se change plus depuis l'espace : l'ajustement appartient à l'organisation, qui peut l'**annuler** depuis le même onglet. L'annulation supprime l'ajustement et fait passer, dans la même transaction, toutes les demandes validées avec lui (`contrainte_id`) à `ANNULEE` ; elles restent dans l'historique, chaque membre est prévenu, et une nouvelle demande obéit à la règle ordinaire (pendant la fenêtre de collecte seulement).
+L'administrateur la **valide** (onglet Covoiturage de la page Disponibilités), ce qui crée l'ajustement, ou l'**écarte**, ce qui supprime la demande : l'animateur peut en envoyer une autre. Seule la validation part par e-mail, au mieux, à chaque membre. Un groupe validé ne se change plus depuis l'espace : l'ajustement appartient à l'organisation, qui peut l'**annuler** depuis le même onglet. L'annulation supprime l'ajustement et, dans la même transaction, toutes les demandes validées avec lui (`contrainte_id`) ; personne n'est prévenu par e-mail, et une nouvelle demande obéit à la règle ordinaire (pendant la fenêtre de collecte seulement).
 
 | `statut` (`StatutDemandeCoequipier`) | Sens |
 | --- | --- |
 | `EN_ATTENTE` | Envoyée depuis l'espace, en attente de l'administrateur |
 | `VALIDEE` | Transformée en ajustement `ARRIVEE_GROUPEE` (`contrainte_id`) |
-| `ECARTEE` | Classée sans effet, rien n'a été écrit |
-| `ANNULEE` | Validée puis annulée : l'ajustement a été supprimé |
+
+Une demande écartée ou annulée n'a pas d'état : elle est supprimée.
 
 Tant qu'une demande `VALIDEE` pointe vers une arrivée groupée, **aucune autre écriture ne la modifie ni ne la supprime** : page Ajustements manuels, outils MCP, tout appel de `ContrainteAdHocService` répond `409` avec une phrase unique qui renvoie à l'onglet Covoiturage. Une arrivée groupée saisie à la main reste modifiable. L'import d'un scénario et la réinitialisation, qui remplacent les ajustements de toute l'édition, ne sont pas concernés. Une arrivée groupée compte 2 à 4 membres distincts, sans créneau ni stand : une forme mal remplie est refusée à la saisie comme à l'import.
 
