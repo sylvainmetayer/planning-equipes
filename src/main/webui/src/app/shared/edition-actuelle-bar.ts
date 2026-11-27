@@ -11,7 +11,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
 import { DateMockService } from '../core/date-mock.service';
-import { toDateKey } from '../core/date-utils';
 import {
   defaultPanelStorage,
   readPanelCollapsed,
@@ -26,7 +25,7 @@ import { EditionActivationActions } from './edition-activation-actions';
 import { PhaseEditionActions } from './phase-edition-actions';
 
 /** localStorage prefix of a dismissed situation (`type.edition`). */
-const CLE_MASQUE = 'planning.bandeau-edition-masque.';
+const DISMISSED_PREFIX = 'planning.bandeau-edition-masque.';
 
 /**
  * Persistent strip under the toolbar naming the edition every screen is
@@ -106,23 +105,27 @@ const CLE_MASQUE = 'planning.bandeau-edition-masque.';
       @for (ligne of lignes(); track ligne.cle) {
         <div class="edition-actuelle-bar edition-actuelle-bar-rappel" role="status" data-bandeau="situation">
           <mat-icon class="edition-actuelle-bar-icon">notification_important</mat-icon>
-          <span>{{ ligne.texte }}</span>
+          <span><strong i18n="@@editionActuelle.rappel">Action requise :</strong> {{ ligne.texte }}</span>
           <span class="edition-actuelle-bar-actions">
             @if (!lectureSeule()) {
               @if (ligne.situation.type === 'ACTIVE_TERMINEE') {
                 <button matButton type="button" [disabled]="busy()" (click)="agir(ligne.situation.edition, 'desactiver')"
+                        [attr.aria-label]="labelDesactiver(ligne.situation.edition)"
                         i18n="@@editionActuelle.desactiver">Désactiver</button>
                 @if (suivante(); as next) {
                   <button matButton type="button" [disabled]="busy()" (click)="agir(next, 'activer')"
+                          [attr.aria-label]="labelActiver(next)"
                           i18n="@@editionActuelle.activerSuivante">Activer la suivante</button>
                 }
               } @else {
                 <button matButton type="button" [disabled]="busy()" (click)="agir(ligne.situation.edition, 'activer')"
+                        [attr.aria-label]="labelActiver(ligne.situation.edition)"
                         i18n="@@editionActuelle.activer">Activer</button>
               }
             }
             <a matButton routerLink="/editions" i18n="@@editionActuelle.rappelLien">Voir les éditions</a>
             <button matButton type="button" (click)="masquer(ligne.cle)"
+                    [attr.aria-label]="labelDismiss(ligne.situation.edition)"
                     i18n="@@editionActuelle.neplusafficher">Ne plus afficher</button>
           </span>
         </div>
@@ -203,17 +206,16 @@ export class EditionActuelleBar {
   protected readonly busy = signal(false);
   /** One line per situation not dismissed: a dismissal is for one type on one edition. */
   protected readonly lignes = computed(() => {
-    const today = this.clock.dateDuJour() || toDateKey(new Date());
     return this.store
       .situations()
       .map((situation) => ({ situation, cle: `${situation.type}.${situation.edition.id}` }))
       .filter(
         ({ cle }) =>
-          !this.masquees().has(cle) && !readPanelCollapsed(this.storage, CLE_MASQUE + cle),
+          !this.masquees().has(cle) && !readPanelCollapsed(this.storage, DISMISSED_PREFIX + cle),
       )
       .map((ligne) => ({
         ...ligne,
-        texte: situationText(ligne.situation, this.locale, today, this.clock.actif()),
+        texte: situationText(ligne.situation, this.locale, this.clock.dateDuJour()),
       }));
   });
   /** The edition to start once the active one is over, when the state names one. */
@@ -221,7 +223,8 @@ export class EditionActuelleBar {
     () =>
       this.store
         .situations()
-        .find((s) => s.type === 'INACTIVE_IMMINENTE' || s.type === 'INACTIVE_EN_COURS')?.edition,
+        .filter((s) => s.type === 'INACTIVE_IMMINENTE' || s.type === 'INACTIVE_EN_COURS')
+        .sort((a, b) => (a.premierJour ?? '').localeCompare(b.premierJour ?? ''))[0]?.edition,
   );
   protected readonly phase = computed(() => {
     const phase = this.store.phase();
@@ -231,8 +234,23 @@ export class EditionActuelleBar {
   protected readonly lectureSeule = inject(SessionStore).lectureSeule;
   protected readonly actions = inject(PhaseEditionActions);
 
+  protected labelActiver(edition: Edition): string {
+    const nom = edition.nom;
+    return $localize`:@@editionActuelle.activerAria:Activer l'édition ${nom}:nom:`;
+  }
+
+  protected labelDesactiver(edition: Edition): string {
+    const nom = edition.nom;
+    return $localize`:@@editionActuelle.desactiverAria:Désactiver l'édition ${nom}:nom:`;
+  }
+
+  protected labelDismiss(edition: Edition): string {
+    const nom = edition.nom;
+    return $localize`:@@editionActuelle.neplusafficherAria:Ne plus afficher l'alerte sur l'édition ${nom}:nom:`;
+  }
+
   protected masquer(cle: string): void {
-    writePanelCollapsed(this.storage, CLE_MASQUE + cle, true);
+    writePanelCollapsed(this.storage, DISMISSED_PREFIX + cle, true);
     this.masquees.update((anciennes) => new Set(anciennes).add(cle));
   }
 

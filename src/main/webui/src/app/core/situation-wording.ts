@@ -18,16 +18,14 @@ export function dateLabel(date: string | null, locale: string): string {
 }
 
 /**
- * The sentence of one situation. `today` (`AAAA-MM-JJ`) is the application's
- * date — the simulated one when the clock is frozen — which tells an edition
- * about to start from one already under way. `simulated` appends it, since a
- * simulated clock is the usual reason for a surprising banner.
+ * The sentence of one situation. `simulatedDate` (`AAAA-MM-JJ`) is the frozen
+ * date of the application's clock, or `''` on the real one: it is appended,
+ * since a simulated clock is the usual reason for a surprising banner.
  */
 export function situationText(
   situation: EditionSituation,
   locale: string,
-  today: string,
-  simulated: boolean,
+  simulatedDate: string,
 ): string {
   const nom = situation.edition.nom;
   const debut = dateLabel(situation.premierJour, locale);
@@ -44,14 +42,11 @@ export function situationText(
       text = $localize`:@@editions.situation.inactiveEnCours:${nom}:nom: est en cours mais inactive : son espace animateur est fermé.`;
       break;
     case 'AUCUNE_ACTIVE':
-      text =
-        (situation.premierJour ?? '') <= today
-          ? $localize`:@@editions.situation.aucuneActiveEnCours:Aucune édition n'est active alors que ${nom}:nom: est en cours depuis le ${debut}:debut:.`
-          : $localize`:@@editions.situation.aucuneActive:Aucune édition n'est active alors que ${nom}:nom: commence le ${debut}:debut:.`;
+      text = $localize`:@@editions.situation.aucuneActive:Aucune édition n'est active alors que ${nom}:nom: est prévue à partir du ${debut}:debut:.`;
       break;
   }
-  if (simulated) {
-    const date = dateLabel(today, locale);
+  if (simulatedDate) {
+    const date = dateLabel(simulatedDate, locale);
     text += ' ' + $localize`:@@editions.situation.simulee:(date simulée : ${date}:date:)`;
   }
   return text;

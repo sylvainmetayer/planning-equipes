@@ -101,6 +101,7 @@ describe('EditionActuelleBar', () => {
       },
     ]);
     await fixture.whenStable();
+    expect(text()).toContain('Action requise');
     expect(text()).toContain('Année 2025 est terminée depuis le 12/07/2025 et reste active.');
     expect(text()).toContain('Désactiver');
     expect(text()).not.toContain('Activer la suivante');
@@ -125,6 +126,7 @@ describe('EditionActuelleBar', () => {
     ]);
     await fixture.whenStable();
     expect(text()).toContain('Activer la suivante');
+    expect(text()).toContain('Année 2026');
 
     fixture.componentInstance['masquer']('ACTIVE_TERMINEE.A');
     await fixture.whenStable();
@@ -144,6 +146,35 @@ describe('EditionActuelleBar', () => {
     await fixture.whenStable();
     expect(text()).toContain('est en cours mais inactive');
     localStorage.clear();
+  });
+
+  it('offers the earliest inactive edition as the next one', async () => {
+    seedStore(store, 'courant', edition('A', 'Année 2025', true));
+    seedStore(store, 'situations', [
+      {
+        type: 'ACTIVE_TERMINEE',
+        edition: edition('A', 'Année 2025', true),
+        premierJour: '2025-07-10',
+        dernierJour: '2025-07-12',
+      },
+      {
+        type: 'INACTIVE_IMMINENTE',
+        edition: edition('C', 'Année 2027'),
+        premierJour: '2027-07-10',
+        dernierJour: '2027-07-12',
+      },
+      {
+        type: 'INACTIVE_IMMINENTE',
+        edition: edition('B', 'Année 2026'),
+        premierJour: '2026-07-10',
+        dernierJour: '2026-07-12',
+      },
+    ]);
+    await fixture.whenStable();
+    const bouton = fixture.nativeElement.querySelector(
+      '[aria-label^="Activer l\'édition Année 2026"]',
+    );
+    expect(bouton?.textContent).toContain('Activer la suivante');
   });
 
   it('names the phase of the edition, and bannerises an unblocked structure', async () => {

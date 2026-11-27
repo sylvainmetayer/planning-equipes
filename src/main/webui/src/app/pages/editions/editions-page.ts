@@ -21,7 +21,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { EditionsApi } from '../../core/api/editions-api';
 import { DateMockService } from '../../core/date-mock.service';
-import { toDateKey } from '../../core/date-utils';
 import { situationText } from '../../core/situation-wording';
 import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
@@ -143,21 +142,20 @@ export class EditionsPage implements OnInit {
 
   /** Activation and deactivation, with their confirmation, are shared with the banner. */
   protected async activer(edition: Edition): Promise<void> {
-    await this.executer(() => this.activation.activate(edition), false);
+    await this.activation.activate(edition);
   }
 
   /** One line of the « Mise en service » card. */
   protected situationLabel(situation: EditionSituation): string {
-    return situationText(
-      situation,
-      this.locale,
-      this.clock.dateDuJour() || toDateKey(new Date()),
-      this.clock.actif(),
-    );
+    const hint =
+      situation.type === 'ACTIVE_TERMINEE'
+        ? $localize`:@@editions.situation.actionTerminee:Désactivez-la, ou activez l'édition suivante.`
+        : $localize`:@@editions.situation.actionActiver:Activez-la pour publier et ouvrir l'espace animateur.`;
+    return `${situationText(situation, this.locale, this.clock.dateDuJour())} ${hint}`;
   }
 
   protected async desactiver(edition: Edition): Promise<void> {
-    await this.executer(() => this.activation.deactivate(edition), false);
+    await this.activation.deactivate(edition);
   }
 
   protected basculer(edition: Edition): void {
@@ -207,13 +205,11 @@ export class EditionsPage implements OnInit {
     return true;
   }
 
-  private async executer(action: () => Promise<unknown>, reload = true): Promise<void> {
+  private async executer(action: () => Promise<unknown>): Promise<void> {
     this.enCours.set(true);
     try {
       await action();
-      if (reload) {
-        await this.store.reload();
-      }
+      await this.store.reload();
     } catch (error) {
       this.notifications.notify({
         title: errorMessage(error),
