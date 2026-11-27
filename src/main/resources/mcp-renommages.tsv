@@ -4,6 +4,7 @@
 accepter_demande_echange	modifier_demande_echange
 activer_contrainte	modifier_contrainte
 activer_edition	modifier_edition
+activer_edition	activer_edition
 affecter_journee_type	modifier_gabarit
 affecter_poste	modifier_affectation
 ajouter_fermeture_stand	creer_plage_stand
@@ -57,6 +58,7 @@ definir_prereglage_consigne	definir_prereglage_consigne
 deplacer_affectation	modifier_affectation
 desactiver_contrainte	modifier_contrainte
 desactiver_edition	modifier_edition
+desactiver_edition	desactiver_edition
 deverrouiller	deverrouiller
 diagnostiquer_grille_creneaux	diagnostiquer_grille_creneaux
 diagnostiquer_plan	diagnostiquer_plan
@@ -70,6 +72,10 @@ etat_edition	consulter_edition
 etat_planning	consulter_planning
 etat_publication	consulter_publication
 etat_sauvegardes	consulter_sauvegardes
+etat_edition	etat_edition
+etat_planning	consulter_planning
+etat_publication	etat_publication
+etat_sauvegardes	etat_sauvegardes
 expliquer_affectation	analyser_affectation
 expliquer_echec_contraintes_dures	diagnostiquer_plan
 figer_referentiel	modifier_phase_edition
@@ -77,6 +83,7 @@ generer_creneaux_depuis_stands	appliquer_generateur_creneaux
 heures_travaillees	heures_travaillees
 importer_scenario	importer_scenario
 importer_scenario_yaml	importer_scenario
+importer_scenario_yaml	importer_scenario_yaml
 lancer_solveur	lancer_calcul
 lever_consigne	lever_consigne
 lever_gel	modifier_phase_edition
@@ -128,6 +135,9 @@ refuser_demande_echange	modifier_demande_echange
 reinitialiser_donnees	supprimer_donnees_edition
 relancer_animateurs	publier_planning
 renommer_edition	modifier_edition
+reinitialiser_donnees	reinitialiser_donnees
+relancer_animateurs	relancer_animateurs
+renommer_edition	renommer_edition
 resoudre_incremental	lancer_correction
 restaurer_instantane	restaurer_version
 resultats_animateur	consulter_planning
@@ -154,6 +164,7 @@ supprimer_stand	supprimer_stand
 supprimer_typologie	supprimer_typologie
 synthese_affectations	consulter_planning
 synthese_confirmations	consulter_publication
+synthese_confirmations	synthese_confirmations
 valider_creneaux	valider_creneaux
 valider_scenario_yaml	diagnostiquer_scenario
 verrouiller	verrouiller

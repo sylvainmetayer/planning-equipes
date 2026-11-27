@@ -74,7 +74,7 @@ export class TensionTab {
     () => !this.persisted.hasValue() || (this.persisted.value()?.assignments ?? 0) > 0,
   );
 
-  protected readonly loading = this.tensionData.isLoading;
+  readonly loading = this.tensionData.isLoading;
   protected readonly error = errorText(this.tensionData);
   protected readonly rapport = computed<RapportTension | null>(() =>
     this.tensionData.hasValue() ? this.tensionData.value() : null,
