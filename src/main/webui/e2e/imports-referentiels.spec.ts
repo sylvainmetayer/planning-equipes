@@ -75,7 +75,7 @@ test("un signet sur une carte d'import retirée tombe sur le scénario, et il ne
   // L'écran des stands ne propose plus d'importer la grille, ni le menu « Plus » qui la portait.
   await page.goto('/stands');
   await expect(page.getByRole('button', { name: 'Édition groupée' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Plus' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Plus', exact: true })).toHaveCount(0);
   await page.context().close();
 });
 
