@@ -97,7 +97,13 @@ export class RepasPausesTab {
     keepViewInQueryParams(() => {
       const jours = this.jours();
       const demande = this.jourDemande();
-      return { jour: optionalParam(jours.length === 0 || jours.includes(demande) ? demande : '') };
+      const enCours =
+        this.pauses.isLoading() || this.walks.isLoading() || this.intendance.isLoading();
+      return {
+        jour: optionalParam(
+          enCours || jours.length === 0 || jours.includes(demande) ? demande : '',
+        ),
+      };
     });
   }
 

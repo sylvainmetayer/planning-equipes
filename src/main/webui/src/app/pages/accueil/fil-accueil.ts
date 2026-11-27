@@ -57,10 +57,9 @@ export class FilAccueil {
   private readonly alertesResource = resource({ loader: () => this.analysesApi.alerts() });
   protected readonly alertesErreur = errorText(this.alertesResource);
 
-  /** The last analysis's hard breaches; a failure only leaves them out of the feed. */
-  private readonly blocagesResource = resource({
-    loader: () => this.constraintsApi.catalogue().catch(() => null),
-  });
+  /** The last analysis's hard breaches; a failure is said, like the alerts'. */
+  private readonly blocagesResource = resource({ loader: () => this.constraintsApi.catalogue() });
+  protected readonly blocagesErreur = errorText(this.blocagesResource);
 
   /** The type the address asks for; `null` shows everything. */
   protected readonly type = computed(() => filType(this.queryParams().get('type')));
