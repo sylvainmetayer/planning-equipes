@@ -131,6 +131,7 @@ dev/sylvain/planning/api/WebhookResourceTest.java
 dev/sylvain/planning/mcp/CarpoolBackedAdHocMcpTest.java
 dev/sylvain/planning/mcp/DiagnosticMcpToolsTest.java
 dev/sylvain/planning/mcp/DiagnosticPlanMcpToolsTest.java
+dev/sylvain/planning/mcp/EchangeJournalMcpTest.java
 dev/sylvain/planning/mcp/EditionMcpToolsTest.java
 dev/sylvain/planning/mcp/GenerateurCreneauxMcpToolsTest.java
 dev/sylvain/planning/mcp/PhaseEditionMcpToolsTest.java

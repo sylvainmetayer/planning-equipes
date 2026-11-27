@@ -50,7 +50,7 @@ import org.junit.jupiter.api.Test;
  * </ul>
  *
  * <p>A new write method in none of them fails the build. And since an
- * interceptor is bypassed by a call on {@code this}, an annotated method is
+ * interceptor runs again on a call on {@code this}, an annotated method is
  * never called from inside its own class.</p>
  */
 class GelReferentielStructuralTest {
@@ -290,9 +290,9 @@ class GelReferentielStructuralTest {
     }
 
     /**
-     * A call on {@code this} bypasses the interceptor: an annotated method
-     * called from inside its own class would write a frozen family unrefused —
-     * unless the caller's own guard already covers every family the callee
+     * ArC intercepts a call on {@code this} like any other, so the guard runs a
+     * second time, and a private callee is not intercepted at all: an annotated
+     * method called from inside its own class is refused — unless the caller's own guard already covers every family the callee
      * names. An unguarded caller never does; an annotated one does when its
      * families include the callee's (every family, for an empty list).
      */

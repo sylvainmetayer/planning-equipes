@@ -162,7 +162,7 @@ public class SolveurMcpTools {
             @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false)
                     Boolean enFile,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return solveIncremental(animateurIds, jours, standIds, secondes, enFile, edition);
+        return incremental(animateurIds, jours, standIds, secondes, enFile);
     }
 
     @Tool(
@@ -176,7 +176,7 @@ public class SolveurMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     JobMcpView stopCalcul(@ToolArg(description = "Id du calcul à arrêter", required = false) String jobId) {
-        return stopSolver(jobId);
+        return stop(jobId);
     }
 
     @Tool(
@@ -208,7 +208,7 @@ public class SolveurMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     SuppressionResult deleteCalcul(@ToolArg(description = "Id du calcul") String jobId) {
-        return deleteJob(jobId);
+        return delete(jobId);
     }
 
     @Deprecated
@@ -283,6 +283,12 @@ public class SolveurMcpTools {
             @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false)
                     Boolean enFile,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return incremental(animateurIds, jours, standIds, secondes, enFile);
+    }
+
+    // Private on purpose: a tool called on `this` crosses the interceptors again and journals a second line.
+    private JobMcpView incremental(
+            List<String> animateurIds, List<String> jours, List<String> standIds, Long secondes, Boolean enFile) {
         ReplanificationScope scope = new ReplanificationScope(
                 animateurIds == null ? Set.of() : new LinkedHashSet<>(animateurIds),
                 McpArgs.dates(jours, "jours"),
@@ -371,6 +377,11 @@ public class SolveurMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     JobMcpView stopSolver(@ToolArg(description = "Id du job à arrêter", required = false) String jobId) {
+        return stop(jobId);
+    }
+
+    // Private on purpose: a tool called on `this` crosses the interceptors again and journals a second line.
+    private JobMcpView stop(String jobId) {
         String id = jobId != null
                 ? jobId
                 : visible(solverJobService.findActive())
@@ -506,6 +517,11 @@ public class SolveurMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     SuppressionResult deleteJob(@ToolArg(description = "Id du job") String jobId) {
+        return delete(jobId);
+    }
+
+    // Private on purpose: a tool called on `this` crosses the interceptors again and journals a second line.
+    private SuppressionResult delete(String jobId) {
         if (visible(solverJobService.find(jobId)).isEmpty()) {
             throw new BusinessError.NotFound("Job introuvable : " + jobId);
         }

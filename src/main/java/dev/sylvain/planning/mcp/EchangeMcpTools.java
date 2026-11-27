@@ -146,7 +146,7 @@ public class EchangeMcpTools {
             @ToolArg(description = "Début de la foire (AAAA-MM-JJ)", required = false) String debut,
             @ToolArg(description = "Fin de la foire (AAAA-MM-JJ)", required = false) String fin,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return configureFoireEchanges(ouverte, debut, fin, edition);
+        return openFoire(ouverte, debut, fin);
     }
 
     @Tool(
@@ -169,11 +169,11 @@ public class EchangeMcpTools {
             @ToolArg(description = "Commentaire pour le demandeur", required = false) String commentaire,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         if ("accepter".equals(McpArgs.choix(decision, "decision", null, "accepter", "refuser"))) {
-            return acceptDemandeEchange(id, commentaire, edition);
+            return accept(id, commentaire);
         }
         // The catalogue files the tool under the acceptance; a refusal is its own line.
         currentAction.action("ECHANGE_REFUSE");
-        return refuseDemandeEchange(id, commentaire, edition);
+        return refuse(id, commentaire);
     }
 
     @Deprecated
@@ -194,6 +194,10 @@ public class EchangeMcpTools {
             @ToolArg(description = "Début de la foire (AAAA-MM-JJ)", required = false) String debut,
             @ToolArg(description = "Fin de la foire (AAAA-MM-JJ)", required = false) String fin,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return openFoire(ouverte, debut, fin);
+    }
+
+    private FoireView openFoire(boolean ouverte, String debut, String fin) {
         demandeEchangeService.openFoire(
                 new FenetreFoire(ouverte, McpArgs.date(debut, "debut"), McpArgs.date(fin, "fin")));
         return foireView();
@@ -248,7 +252,7 @@ public class EchangeMcpTools {
             @ToolArg(description = "Id de la demande") String id,
             @ToolArg(description = "Commentaire pour le demandeur", required = false) String commentaire,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return view(demandeEchangeService.accept(id, commentaire));
+        return accept(id, commentaire);
     }
 
     @Deprecated
@@ -267,6 +271,15 @@ public class EchangeMcpTools {
             @ToolArg(description = "Id de la demande") String id,
             @ToolArg(description = "Commentaire pour le demandeur", required = false) String commentaire,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return refuse(id, commentaire);
+    }
+
+    // Private on purpose: a tool called on `this` crosses the interceptors again and journals a second line.
+    private DemandeView accept(String id, String commentaire) {
+        return view(demandeEchangeService.accept(id, commentaire));
+    }
+
+    private DemandeView refuse(String id, String commentaire) {
         return view(demandeEchangeService.refuse(id, commentaire));
     }
 
