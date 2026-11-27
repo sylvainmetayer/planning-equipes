@@ -69,14 +69,12 @@ class StaffingBoundEquivalenceTest {
      * the seats; a plan of that size, scored by the real constraints, proves that they can.
      *
      * <ul>
-     *   <li>10: 14 — 13 is infeasible once the meal break, the relayed continuous work and the ten
-     *       effective hours are taken together;</li>
      *   <li>11: 9 and 20: 105 — both met exactly by the daily-rest floor;</li>
      *   <li>18: 72 — a plan of 72 holds under the real rules, and 70 is proved infeasible, so the need
      *       is 71 or 72 (the search of the grid stopped at 82).</li>
      * </ul>
      */
-    static final Map<Integer, Integer> PROVEN_NEED = Map.of(10, 14, 11, 9, 18, 72, 20, 105);
+    static final Map<Integer, Integer> PROVEN_NEED = Map.of(11, 9, 18, 72, 20, 105);
 
     /**
      * The gap left between the bound and the need, rung by rung, where it is not nil (ADR 0098): 10 owes

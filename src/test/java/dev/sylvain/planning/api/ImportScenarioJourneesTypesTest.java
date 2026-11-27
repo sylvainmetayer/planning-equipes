@@ -124,7 +124,6 @@ class ImportScenarioJourneesTypesTest {
                 .body("journeesTypes", hasSize(1))
                 .body("journeesTypes[0].nom", equalTo("Jour normal"))
                 .body("journeesTypes[0].vacations", hasSize(2))
-                .body("journeesTypes[0].vacations[1].couverturePause", equalTo(true))
                 .body("calendrier", hasSize(1))
                 .body("calendrier[0].date", equalTo("2033-07-08"))
                 .body("datesEnEcart", hasSize(0));
@@ -136,7 +135,6 @@ class ImportScenarioJourneesTypesTest {
                 .statusCode(200)
                 .body("crees", equalTo(0))
                 .body("supprimes", equalTo(0))
-                .body("misAJour", equalTo(0))
                 .body("conserves", equalTo(2))
                 .body("aucunChangement", equalTo(true));
     }

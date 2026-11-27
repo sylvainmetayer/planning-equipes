@@ -61,12 +61,12 @@ public class Gabarit {
 
     /**
      * What this template says of a day, independent of its name: the sorted
-     * hours and relay flags. Two templates with the same signature describe the
+     * hours. Two templates with the same signature describe the
      * same kind of day, which is how the recognition groups dates.
      */
     public String signature() {
         return vacations.stream()
-                .map(vacation -> vacation.key() + (vacation.couverturePause() ? "R" : ""))
+                .map(VacationType::key)
                 .sorted()
                 .reduce((a, b) -> a + "," + b)
                 .orElse("");

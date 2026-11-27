@@ -135,7 +135,6 @@ class OuverturesEditionReelleTest {
                     LocalDate.parse(noeud.get("date").asText()),
                     LocalTime.parse(noeud.get("heureDebut").asText()),
                     LocalTime.parse(noeud.get("heureFin").asText()));
-            creneau.setCouverturePause(noeud.path("couverturePause").asBoolean(false));
             creneaux.add(creneau);
         }
         List<Stand> stands = new ArrayList<>();

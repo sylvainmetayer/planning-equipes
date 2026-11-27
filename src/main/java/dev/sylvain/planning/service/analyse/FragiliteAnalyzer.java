@@ -32,7 +32,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * <li><b>What collapses if one animateur withdraws.</b> Seats are grouped by
  * stand × timeslot × window — the very grouping seat generation uses, since
  * {@code ProblemBuilder.buildPostes} emits {@code max(1, effectifMin)} seats
- * per group (halved on a break-covering shift). The number of seats of a group
+ * per group. The number of seats of a group
  * <em>is</em> its effectif floor, so a group drops below it as soon as one of
  * its filled seats is vacated. Reported per animateur, together with the
  * qualifier that makes the figure discriminating: whether anybody else could
@@ -105,11 +105,6 @@ public class FragiliteAnalyzer {
      *                         when the window names none — for reference; not
      *                         this group's floor, which {@code siegesRequis}
      *                         carries
-     * @param couverturePause  true on a break-covering shift, where seat
-     *                         generation halves the headcount (rounded up):
-     *                         that, and nothing else, is why
-     *                         {@code siegesRequis} can be half
-     *                         {@code effectifMin}
      * @param siegesRequis     seats the group holds, which <b>is</b> the
      *                         effectif floor that applies to it
      * @param siegesPourvus    seats currently filled
@@ -119,7 +114,6 @@ public class FragiliteAnalyzer {
      */
     @Schema(
             requiredProperties = {
-                "couverturePause",
                 "creneauId",
                 "effectifMin",
                 "irremplacable",
@@ -138,7 +132,6 @@ public class FragiliteAnalyzer {
             LocalTime heureDebut,
             LocalTime heureFin,
             int effectifMin,
-            boolean couverturePause,
             int siegesRequis,
             int siegesPourvus,
             int siegesLiberes,
@@ -463,7 +456,6 @@ public class FragiliteAnalyzer {
                                 groupe.debut,
                                 groupe.fin,
                                 effectifConfigure(groupe),
-                                groupe.creneau.isCouverturePause(),
                                 groupe.sieges,
                                 groupe.pourvus,
                                 occupant.getValue(),

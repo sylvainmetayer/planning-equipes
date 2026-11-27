@@ -61,7 +61,7 @@ public final class ScenarioBinder {
      * converting older ones through {@link ScenarioMigrations}. A file may omit
      * the key, meaning 1.
      */
-    public static final int SCHEMA_VERSION = 6;
+    public static final int SCHEMA_VERSION = 7;
 
     private ScenarioBinder() {}
 
@@ -126,8 +126,7 @@ public final class ScenarioBinder {
         if (racine.containsKey("decoupageAuto")) {
             throw new ScenarioFormatException("La section « decoupageAuto » n'existe plus : il n'y a plus"
                     + " d'amplitudes à découper à l'import. Remplacez les amplitudes de « creneaux » par les"
-                    + " vacations attendues — un relais repas se marque « couverturePause: true » — ou passez"
-                    + " par « gabarits ».");
+                    + " vacations attendues, ou passez par « gabarits ».");
         }
     }
 

@@ -98,7 +98,6 @@ public final class ChampsModifies {
         map.put("date", Creneau::getDate);
         map.put("heureDebut", Creneau::getHeureDebut);
         map.put("heureFin", Creneau::getHeureFin);
-        map.put("couverturePause", Creneau::isCouverturePause);
     });
 
     public static List<String> surAnimateur(Animateur avant, Animateur apres) {

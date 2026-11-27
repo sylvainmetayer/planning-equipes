@@ -83,15 +83,14 @@ describe('GabaritDialog', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
-  it('creates a template from the name and the line, relay marker included', async () => {
+  it('creates a template from the name and the line', async () => {
     const { fixture, create, close } = monter(null);
     await fixture.whenStable();
 
     saisir(fixture, 'nom', 'Jour normal');
-    saisir(fixture, 'vacations', '09:00-12:00, 12:00-13:00 R, 14:00-20:00');
+    saisir(fixture, 'vacations', '09:00-12:00, 12:00-13:00, 14:00-20:00');
     await fixture.whenStable();
     expect(racine(fixture).querySelectorAll('.vacation-chip')).toHaveLength(3);
-    expect(racine(fixture).querySelectorAll('.vacation-chip-relais')).toHaveLength(1);
 
     submit(fixture);
     await fixture.whenStable();
@@ -100,9 +99,9 @@ describe('GabaritDialog', () => {
     expect(create.mock.calls[0][0]).toEqual({
       nom: 'Jour normal',
       vacations: [
-        { heureDebut: '09:00', heureFin: '12:00', couverturePause: false },
-        { heureDebut: '12:00', heureFin: '13:00', couverturePause: true },
-        { heureDebut: '14:00', heureFin: '20:00', couverturePause: false },
+        { heureDebut: '09:00', heureFin: '12:00' },
+        { heureDebut: '12:00', heureFin: '13:00' },
+        { heureDebut: '14:00', heureFin: '20:00' },
       ],
       modifieLe: null,
     });
@@ -131,7 +130,7 @@ describe('GabaritDialog', () => {
       id: 4,
       nom: 'Nocturne',
       modifieLe: '2026-09-12T10:00:00Z',
-      vacations: [{ heureDebut: '14:00:00', heureFin: '20:00:00', couverturePause: false }],
+      vacations: [{ heureDebut: '14:00:00', heureFin: '20:00:00' }],
     });
     await fixture.whenStable();
 

@@ -164,18 +164,6 @@ class CreneauSegmentOuvertTest {
     }
 
     @Test
-    void uneVacationDeCouverturePauseHalveLesSiegesEnArrondissantAuSuperieur() {
-        Creneau pause = new Creneau(2L, 1, JOUR, LocalTime.of(12, 0), LocalTime.of(13, 0));
-        pause.setCouverturePause(true);
-
-        assertThat(pause.siegesSegment(0)).isEqualTo(1);
-        assertThat(pause.siegesSegment(1)).isEqualTo(1);
-        assertThat(pause.siegesSegment(3)).isEqualTo(2);
-        assertThat(pause.siegesSegment(4)).isEqualTo(2);
-        assertThat(pause.siegesSegment(5)).isEqualTo(3);
-    }
-
-    @Test
     void lesSiegesSimultanesSuiventLEffectifMinSansFenetre() {
         assertThat(apresMidi.siegesSimultanes(stand(3))).isEqualTo(3);
         // A stand declared at zero still gets its one seat.
@@ -208,15 +196,6 @@ class CreneauSegmentOuvertTest {
                 List.of(PlageStand.fermeture(null, JOUR, LocalTime.of(14, 0), LocalTime.of(20, 0), null)));
 
         assertThat(apresMidi.siegesSimultanes(stand)).isZero();
-    }
-
-    @Test
-    void lesSiegesSimultanesDUneCouverturePauseSontHalves() {
-        Creneau pause = new Creneau(2L, 1, JOUR, LocalTime.of(14, 0), LocalTime.of(20, 0));
-        pause.setCouverturePause(true);
-
-        assertThat(pause.siegesSimultanes(standOuvert(1, ouverture(LocalTime.of(14, 0), LocalTime.of(20, 0), 5))))
-                .isEqualTo(3);
     }
 
     private static Stand stand(int effectifMin) {

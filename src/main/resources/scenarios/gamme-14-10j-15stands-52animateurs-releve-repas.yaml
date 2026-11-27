@@ -4,9 +4,8 @@ schemaVersion: 2
 # En semaine deux vacations qui se recouvrent d'un quart d'heure à la relève
 # (13 h-17 h, 16 h 45-19 h). Le week-end la journée ouvre plus tôt et se lit en
 # cinq vacations, dont la relève 12 h-12 h 45 posée dans la fenêtre repas
-# 12 h-14 h : elle n'est PAS marquée couverturePause, donc le stand y reste à
-# effectif plein — c'est une relève, pas un effectif réduit, et c'est ce que ce
-# barreau exerce. La coupure repas vaut 45 minutes.
+# 12 h-14 h : le stand y reste à effectif plein — c'est une relève, pas un
+# effectif réduit, et c'est ce que ce barreau exerce. La coupure repas vaut 45 minutes.
 # L'édition traverse un week-end et deux frontières de semaine.
 
 festival:

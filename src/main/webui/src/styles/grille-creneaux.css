@@ -25,7 +25,7 @@
 }
 
 /* The server's own reading of the grid, on one line above the list: how many
-   vacations, over which dates, how many meal relays. */
+   vacations, over which dates. */
 .grille-diagnostic {
   display: inline-flex;
   align-items: center;

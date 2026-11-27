@@ -55,7 +55,6 @@ class Creneau {
   date : LocalDate
   heureDebut : LocalTime
   heureFin : LocalTime
-  couverturePause : boolean
 }
 
 class ContrainteAdHoc {

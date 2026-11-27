@@ -89,7 +89,7 @@ export function buildReferenceDataSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.phase.creneaux.terme:Créneaux`,
-              text: $localize`:@@aide.phase.creneaux.def:Création, suppression, date, heures, relais repas, et ce qui génère la grille : gabarits appliqués, séries, dérivation. Les gabarits eux-mêmes restent modifiables.`,
+              text: $localize`:@@aide.phase.creneaux.def:Création, suppression, date, heures, et ce qui génère la grille : gabarits appliqués, séries, dérivation. Les gabarits eux-mêmes restent modifiables.`,
             },
             {
               term: $localize`:@@aide.phase.typologies.terme:Typologies et emplacements`,
@@ -212,7 +212,7 @@ export function buildReferenceDataSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.creneaux.term.journeesTypes:Les gabarits`,
-              text: $localize`:@@aide.creneaux.def.journeesTypes:Décrivez une fois chaque sorte de journée (« Jour normal », « Nocturne », « Montage ») par ses vacations sur une ligne : « 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 », un R marquant un relais repas où le stand ne tient que la moitié de ses sièges. Un calendrier pose ensuite un gabarit sur chaque date.`,
+              text: $localize`:@@aide.creneaux.def.journeesTypes:Décrivez une fois chaque sorte de journée (« Jour normal », « Nocturne », « Montage ») par ses vacations sur une ligne : « 09:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-20:00 ». Un calendrier pose ensuite un gabarit sur chaque date.`,
             },
             {
               term: $localize`:@@aide.creneaux.term.appliquer:Générer depuis les gabarits (appliquer le calendrier)`,
@@ -220,7 +220,7 @@ export function buildReferenceDataSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.creneaux.term.serie:Générer depuis un motif récurrent`,
-              text: $localize`:@@aide.creneaux.def.serie:Pour un besoin ponctuel, des fenêtres répétées sur les jours choisis (une plage de dates et des jours de la semaine, ou des dates une à une), après un aperçu, sans garder de gabarit. Elles s'ajoutent à la grille ; les relais repas ne suivent pas. Le même geste est offert depuis le dialogue d'un gabarit, « Appliquer sans mémoriser ».`,
+              text: $localize`:@@aide.creneaux.def.serie:Pour un besoin ponctuel, des fenêtres répétées sur les jours choisis (une plage de dates et des jours de la semaine, ou des dates une à une), après un aperçu, sans garder de gabarit. Elles s'ajoutent à la grille. Le même geste est offert depuis le dialogue d'un gabarit, « Appliquer sans mémoriser ».`,
             },
             {
               term: $localize`:@@aide.creneaux.term.deriver:Générer depuis les horaires des stands`,

@@ -282,10 +282,9 @@ public class GenerateurCreneaux {
      * @param supprimesAvecPostes among {@code aSupprimer}, those carrying seats of the persisted plan
      * @param postesSupprimes     how many seats those deletions take away
      */
-    @Schema(requiredProperties = {"conserves", "misAJour", "crees", "supprimes", "postesSupprimes", "aucunChangement"})
+    @Schema(requiredProperties = {"conserves", "crees", "supprimes", "postesSupprimes", "aucunChangement"})
     public record RapportApplication(
             int conserves,
-            int misAJour,
             int crees,
             int supprimes,
             List<Creneau> creneauxSupprimes,
@@ -298,7 +297,6 @@ public class GenerateurCreneaux {
         public RapportApplication withVerdict(RapportGrille verdict) {
             return new RapportApplication(
                     conserves,
-                    misAJour,
                     crees,
                     supprimes,
                     creneauxSupprimes,
@@ -387,7 +385,6 @@ public class GenerateurCreneaux {
             case GABARITS -> {
                 Plan plan = planCourant();
                 List<Creneau> resultante = new ArrayList<>(plan.conserves());
-                resultante.addAll(plan.misAJour());
                 resultante.addAll(plan.aCreer());
                 resultante.addAll(creneauxNonGouvernes(plan));
                 RapportGrille controle = referentiel.controlerGrille(resultante);
@@ -480,7 +477,7 @@ public class GenerateurCreneaux {
 
     /** The créneaux on dates the calendar leaves alone — part of the grid the verdict judges. */
     private List<Creneau> creneauxNonGouvernes(Plan plan) {
-        Set<Long> touches = Stream.of(plan.conserves(), plan.misAJour(), plan.aSupprimer())
+        Set<Long> touches = Stream.of(plan.conserves(), plan.aSupprimer())
                 .flatMap(List::stream)
                 .map(Creneau::getId)
                 .collect(Collectors.toSet());
@@ -502,7 +499,6 @@ public class GenerateurCreneaux {
         }
         return new RapportApplication(
                 plan.conserves().size(),
-                plan.misAJour().size(),
                 plan.aCreer().size(),
                 plan.aSupprimer().size(),
                 plan.aSupprimer(),

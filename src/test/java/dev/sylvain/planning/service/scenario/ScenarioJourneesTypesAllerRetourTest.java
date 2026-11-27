@@ -31,10 +31,10 @@ class ScenarioJourneesTypesAllerRetourTest {
                 7L,
                 "Nocturne",
                 List.of(
-                        new VacationType(LocalTime.of(14, 0), LocalTime.of(20, 0), false),
-                        new VacationType(LocalTime.of(20, 0), LocalTime.MIDNIGHT, false)));
-        Gabarit normal = new Gabarit(
-                8L, "Jour normal", List.of(new VacationType(LocalTime.of(12, 0), LocalTime.of(13, 0), true)));
+                        new VacationType(LocalTime.of(14, 0), LocalTime.of(20, 0)),
+                        new VacationType(LocalTime.of(20, 0), LocalTime.MIDNIGHT)));
+        Gabarit normal =
+                new Gabarit(8L, "Jour normal", List.of(new VacationType(LocalTime.of(12, 0), LocalTime.of(13, 0))));
         String yaml = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
                 List.of(animateur()),
                 List.of(stand()),
@@ -53,15 +53,14 @@ class ScenarioJourneesTypesAllerRetourTest {
                         new Affectation(LUNDI.plusDays(1), 7L),
                         new Affectation(LUNDI.plusDays(2), 8L))));
 
-        assertThat(yaml).contains("gabarits:").contains("Nocturne").contains("couverturePause: true");
+        assertThat(yaml).contains("gabarits:").contains("Nocturne").doesNotContain("couverturePause");
 
         ScenarioYamlReader.ScenarioImporte relu = ScenarioYamlReader.buildFromScenarioText(yaml, ParametresLegaux::new);
 
         ScenarioYamlReader.GabaritsScenario section = relu.sections().gabarits().orElseThrow();
         assertThat(section.gabarits()).extracting(Gabarit::getNom).containsExactly("Nocturne", "Jour normal");
         assertThat(section.gabarits().get(0).getVacations()).hasSize(2);
-        assertThat(section.gabarits().get(1).getVacations().get(0).couverturePause())
-                .isTrue();
+        assertThat(section.gabarits().get(1).getVacations()).hasSize(1);
         Long idNocturne = section.gabarits().get(0).getId();
         Long idNormal = section.gabarits().get(1).getId();
         assertThat(section.calendrier())

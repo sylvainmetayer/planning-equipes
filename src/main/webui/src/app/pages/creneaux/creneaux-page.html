@@ -181,9 +181,6 @@
           <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@creneaux.column.horaires">Horaires</th>
           <td mat-cell *matCellDef="let creneau">
             {{ creneau.heureDebut | hhmm }}–{{ creneau.heureFin | hhmm }}
-            @if (creneau.couverturePause) {
-              <mat-icon inline aria-hidden="false" class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
-            }
             @if (consignes.creneauxAjoutes().has(creneau.id)) {
               <span class="creneau-ajoute-consigne" i18n="@@creneaux.badge.ajouteParConsigne">ajouté par consigne</span>
             }

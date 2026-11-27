@@ -236,7 +236,7 @@ class PlanningServiceScenarioFromTextTest {
         assertThatThrownBy(() -> service.buildFromScenarioText(base + "decoupageAuto: {}\n"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("decoupageAuto")
-                .hasMessageContaining("couverturePause");
+                .hasMessageContaining("gabarits");
     }
 
     @Test

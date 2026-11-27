@@ -5,7 +5,6 @@
   } @else {
     <ul class="gabarits-bilan">
       <li><strong>{{ apercu.conserves }}</strong>&nbsp;<ng-container i18n="@@gabarits.application.conserves">créneau(x) conservé(s), avec leurs sièges</ng-container></li>
-      <li><strong>{{ apercu.misAJour }}</strong>&nbsp;<ng-container i18n="@@gabarits.application.misAJour">relais repas mis à jour</ng-container></li>
       <li><strong>{{ apercu.crees }}</strong>&nbsp;<ng-container i18n="@@gabarits.application.crees">créneau(x) créé(s)</ng-container></li>
       <li [class.gabarits-suppression]="apercu.supprimes > 0"><strong>{{ apercu.supprimes }}</strong>&nbsp;<ng-container i18n="@@gabarits.application.supprimes">créneau(x) supprimé(s)</ng-container></li>
     </ul>

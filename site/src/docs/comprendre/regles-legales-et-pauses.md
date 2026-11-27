@@ -75,7 +75,7 @@ La coupure vaut **une heure** par défaut (`coupureRepasMinutes`). Une fenêtre 
 
 ### La rotation et ce qu'elle coûte
 
-Offrir le choix entre 12-13 et 13-14 suppose deux créneaux distincts à midi, et que quelqu'un tienne le stand pendant que les autres mangent. `couverturePause` sur un créneau divise par deux, arrondi au supérieur, les sièges qu'un stand y ouvre ; le drapeau se pose sur le créneau ou sur la vacation d'un gabarit. Sans lui, une rotation réclame deux équipages complets. Une grille en blocs jointifs (11 h-12 h puis 12 h-13 h) ne demande aucun réglage d'écart entre vacations.
+Offrir le choix entre 12-13 et 13-14 suppose deux créneaux distincts à midi, et que quelqu'un tienne le stand pendant que les autres mangent. Pour que l'un tienne le stand à effectif réduit, la plage d'ouverture du stand à midi nomme son propre effectif ; sans cela, une rotation réclame deux équipages complets. Une grille en blocs jointifs (11 h-12 h puis 12 h-13 h) ne demande aucun réglage d'écart entre vacations.
 
 Le **repos quotidien** de 11 h reste dû entre la fin de soirée et le matin suivant. Le plancher de l'écran Besoin ne le voit pas (ses bornes l'ignorent) et peut annoncer une marge confortable pendant qu'une partie de l'effectif est inutilisable.
 
