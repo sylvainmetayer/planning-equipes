@@ -321,9 +321,9 @@ export class SeatPanel {
   }
 
   protected scores(preview: SeatPreview): string {
-    const avant = scoreLabel(preview.avant);
-    const apres = scoreLabel(preview.apres);
-    return $localize`:@@siege.simuler.scores:Score avant : ${avant}:avant: · après : ${apres}:apres:`;
+    const before = scoreLabel(preview.avant);
+    const after = scoreLabel(preview.apres);
+    return $localize`:@@siege.simuler.scores:Score avant : ${before}:before: · après : ${after}:after:`;
   }
 
   /* ----------------------------- gestures ----------------------------- */

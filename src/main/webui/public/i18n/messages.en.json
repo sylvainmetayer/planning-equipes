@@ -4392,7 +4392,7 @@
   "siege.simuler.placer": "Place {$nom} on this seat",
   "siege.simuler.refuse": "Refused: this change would break a hard rule.",
   "siege.simuler.regle": "Settled on this seat:",
-  "siege.simuler.scores": "Score before: {$avant} · after: {$apres}",
+  "siege.simuler.scores": "Score before: {$before} · after: {$after}",
   "siege.simuler.suggestion.label": "Simulate: {$nom} on this seat",
   "siege.simuler.titre": "Simulate a change",
   "siege.simuler.voir": "Simulate",
