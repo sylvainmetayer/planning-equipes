@@ -329,6 +329,21 @@ class DemandeEchangeFlowTest {
                 .statusCode(400);
     }
 
+    /** A batch holding an empty entry is refused like an incomplete one, never a 500. */
+    @Test
+    void aNullDemandeInTheBatchIsRefused() {
+        persistTwoSeatPlanning();
+        String token = tokenOf("ECH-A");
+
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body("[null]")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
+                .then()
+                .statusCode(400);
+    }
+
     @Test
     void unJetonInconnuRepondIntrouvable() {
         given().header("X-Edition-Id", "E1")
