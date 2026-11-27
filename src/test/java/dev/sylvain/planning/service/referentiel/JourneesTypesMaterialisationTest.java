@@ -29,14 +29,14 @@ class JourneesTypesMaterialisationTest {
             1L,
             "Jour normal",
             List.of(
-                    vacation("09:00", "12:00", false),
-                    vacation("12:00", "13:00", true),
-                    vacation("13:00", "14:00", true),
-                    vacation("14:00", "20:00", false)));
+                    vacation("09:00", "12:00"),
+                    vacation("12:00", "13:00"),
+                    vacation("13:00", "14:00"),
+                    vacation("14:00", "20:00")));
 
     @Test
     void unCreneauIdentiqueGardeSonIdEtUnCreneauManquantEstCree() {
-        Creneau matin = creneau(41L, LUNDI, "09:00", "12:00", false);
+        Creneau matin = creneau(41L, LUNDI, "09:00", "12:00");
 
         Plan plan = JourneesTypesMaterialisation.planifier(
                 List.of(JOUR_NORMAL), List.of(new Affectation(LUNDI, 1L)), List.of(matin));
@@ -45,44 +45,21 @@ class JourneesTypesMaterialisationTest {
         assertThat(plan.aCreer()).hasSize(3);
         assertThat(plan.aCreer()).extracting(Creneau::getId).containsOnlyNulls();
         assertThat(plan.aCreer())
-                .filteredOn(Creneau::isCouverturePause)
                 .extracting(creneau -> creneau.getHeureDebut().toString())
-                .containsExactly("12:00", "13:00");
+                .containsExactly("12:00", "13:00", "14:00");
         assertThat(plan.aSupprimer()).isEmpty();
         assertThat(plan.datesEnEcart()).containsExactly(LUNDI);
     }
 
     @Test
-    void unDrapeauDeRelaisDifferentEstMisAJourSansChangerDId() {
-        Creneau midi = creneau(42L, LUNDI, "12:00", "13:00", false);
-        List<Creneau> grille = List.of(
-                creneau(41L, LUNDI, "09:00", "12:00", false),
-                midi,
-                creneau(43L, LUNDI, "13:00", "14:00", true),
-                creneau(44L, LUNDI, "14:00", "20:00", false));
-
-        Plan plan = JourneesTypesMaterialisation.planifier(
-                List.of(JOUR_NORMAL), List.of(new Affectation(LUNDI, 1L)), grille);
-
-        assertThat(plan.misAJour()).singleElement().satisfies(corrige -> {
-            assertThat(corrige.getId()).isEqualTo(42L);
-            assertThat(corrige.isCouverturePause()).isTrue();
-        });
-        // The input row is never mutated: the preview reads it, only the write changes the database.
-        assertThat(midi.isCouverturePause()).isFalse();
-        assertThat(plan.conserves()).hasSize(3);
-        assertThat(plan.aCreer()).isEmpty();
-    }
-
-    @Test
     void unCreneauQueLaJourneeTypeNeNommePasEstSupprimeSurUneDateGouverneeSeulement() {
-        Creneau soiree = creneau(45L, LUNDI, "20:00", "00:00", false);
-        Creneau mardiLibre = creneau(46L, MARDI, "10:00", "11:00", false);
+        Creneau soiree = creneau(45L, LUNDI, "20:00", "00:00");
+        Creneau mardiLibre = creneau(46L, MARDI, "10:00", "11:00");
         List<Creneau> grille = List.of(
-                creneau(41L, LUNDI, "09:00", "12:00", false),
-                creneau(42L, LUNDI, "12:00", "13:00", true),
-                creneau(43L, LUNDI, "13:00", "14:00", true),
-                creneau(44L, LUNDI, "14:00", "20:00", false),
+                creneau(41L, LUNDI, "09:00", "12:00"),
+                creneau(42L, LUNDI, "12:00", "13:00"),
+                creneau(43L, LUNDI, "13:00", "14:00"),
+                creneau(44L, LUNDI, "14:00", "20:00"),
                 soiree,
                 mardiLibre);
 
@@ -98,10 +75,10 @@ class JourneesTypesMaterialisationTest {
     @Test
     void uneGrilleDejaConformeNeChangeRienEtNaAucuneDateEnEcart() {
         List<Creneau> grille = List.of(
-                creneau(41L, LUNDI, "09:00", "12:00", false),
-                creneau(42L, LUNDI, "12:00", "13:00", true),
-                creneau(43L, LUNDI, "13:00", "14:00", true),
-                creneau(44L, LUNDI, "14:00", "20:00", false));
+                creneau(41L, LUNDI, "09:00", "12:00"),
+                creneau(42L, LUNDI, "12:00", "13:00"),
+                creneau(43L, LUNDI, "13:00", "14:00"),
+                creneau(44L, LUNDI, "14:00", "20:00"));
 
         Plan plan = JourneesTypesMaterialisation.planifier(
                 List.of(JOUR_NORMAL), List.of(new Affectation(LUNDI, 1L)), grille);
@@ -113,8 +90,8 @@ class JourneesTypesMaterialisationTest {
     /** The grid's DOUBLON: the first row stands for the key, the repeat goes with the deletions. */
     @Test
     void unDoublonDeLaGrilleEstRameneAUnSeulCreneau() {
-        Creneau premier = creneau(41L, LUNDI, "09:00", "12:00", false);
-        Creneau doublon = creneau(47L, LUNDI, "09:00", "12:00", false);
+        Creneau premier = creneau(41L, LUNDI, "09:00", "12:00");
+        Creneau doublon = creneau(47L, LUNDI, "09:00", "12:00");
 
         Plan plan = JourneesTypesMaterialisation.planifier(
                 List.of(JOUR_NORMAL), List.of(new Affectation(LUNDI, 1L)), List.of(premier, doublon));
@@ -136,18 +113,18 @@ class JourneesTypesMaterialisationTest {
         LocalDate mercredi = LUNDI.plusDays(2);
         List<Creneau> grille = List.of(
                 // Monday: a normal day, typed out of order on purpose.
-                creneau(3L, LUNDI, "14:00", "20:00", false),
-                creneau(1L, LUNDI, "09:00", "12:00", false),
-                creneau(2L, LUNDI, "12:00", "13:00", true),
+                creneau(3L, LUNDI, "14:00", "20:00"),
+                creneau(1L, LUNDI, "09:00", "12:00"),
+                creneau(2L, LUNDI, "12:00", "13:00"),
                 // Tuesday: the evening opens too.
-                creneau(4L, MARDI, "09:00", "12:00", false),
-                creneau(5L, MARDI, "12:00", "13:00", true),
-                creneau(6L, MARDI, "14:00", "20:00", false),
-                creneau(7L, MARDI, "20:00", "00:00", false),
+                creneau(4L, MARDI, "09:00", "12:00"),
+                creneau(5L, MARDI, "12:00", "13:00"),
+                creneau(6L, MARDI, "14:00", "20:00"),
+                creneau(7L, MARDI, "20:00", "00:00"),
                 // Wednesday: a normal day again.
-                creneau(8L, mercredi, "09:00", "12:00", false),
-                creneau(9L, mercredi, "12:00", "13:00", true),
-                creneau(10L, mercredi, "14:00", "20:00", false));
+                creneau(8L, mercredi, "09:00", "12:00"),
+                creneau(9L, mercredi, "12:00", "13:00"),
+                creneau(10L, mercredi, "14:00", "20:00"));
 
         Reconnaissance reconnaissance = JourneesTypesMaterialisation.reconnaitre(grille);
 
@@ -172,13 +149,16 @@ class JourneesTypesMaterialisationTest {
                 .isTrue();
     }
 
-    /** The relay flag is part of the day's shape: a 12-13 at full headcount is another kind of day. */
+    /** Two days with the same hours are one kind of day; other hours are another. */
     @Test
-    void leDrapeauDeRelaisDistingueDeuxJourneesTypes() {
-        Reconnaissance reconnaissance = JourneesTypesMaterialisation.reconnaitre(
-                List.of(creneau(1L, LUNDI, "12:00", "13:00", true), creneau(2L, MARDI, "12:00", "13:00", false)));
+    void desHeuresDifferentesDistinguentDeuxJourneesTypes() {
+        Reconnaissance memes = JourneesTypesMaterialisation.reconnaitre(
+                List.of(creneau(1L, LUNDI, "12:00", "13:00"), creneau(2L, MARDI, "12:00", "13:00")));
+        Reconnaissance autres = JourneesTypesMaterialisation.reconnaitre(
+                List.of(creneau(1L, LUNDI, "12:00", "13:00"), creneau(2L, MARDI, "13:00", "14:00")));
 
-        assertThat(reconnaissance.gabarits()).hasSize(2);
+        assertThat(memes.gabarits()).hasSize(1);
+        assertThat(autres.gabarits()).hasSize(2);
     }
 
     /**
@@ -207,13 +187,12 @@ class JourneesTypesMaterialisationTest {
                 List.of(new Affectation(LUNDI, 1L), new Affectation(MARDI, 2L)), Set.of(1L, 2L));
     }
 
-    private static VacationType vacation(String debut, String fin, boolean relais) {
-        return new VacationType(LocalTime.parse(debut), LocalTime.parse(fin), relais);
+    private static VacationType vacation(String debut, String fin) {
+        return new VacationType(LocalTime.parse(debut), LocalTime.parse(fin));
     }
 
-    private static Creneau creneau(Long id, LocalDate date, String debut, String fin, boolean relais) {
+    private static Creneau creneau(Long id, LocalDate date, String debut, String fin) {
         Creneau creneau = new Creneau(id, 0, date, LocalTime.parse(debut), LocalTime.parse(fin));
-        creneau.setCouverturePause(relais);
         return creneau;
     }
 }

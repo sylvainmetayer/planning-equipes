@@ -520,10 +520,10 @@ const adminRoutes: Routes = [
     canActivate: [redirectFormerDebugTabs],
     loadComponent: () => import('./pages/debug/debug-page').then((m) => m.DebugPage),
   },
-  // The alerts of the night and the history of the application's messages
-  // live under « À traiter aujourd'hui » of the home screen now: the bell and
-  // the former address land there.
-  { path: 'notifications', redirectTo: () => '/#a-traiter' },
+  // The alerts, the anomalies of the referential and the history of the
+  // application's messages are one feed under « À traiter aujourd'hui » of the
+  // home screen: the bell lands there, the former address on its messages.
+  { path: 'notifications', redirectTo: () => '/?type=messages#a-traiter' },
   {
     // The event day's hub (ADR 0066): what « Mode jour J » became.
     path: 'aujourdhui',
@@ -709,7 +709,7 @@ const adminRoutes: Routes = [
     // written on the fiche stand.
     path: 'creneaux',
     title: () => $localize`:@@route.calendrier:Calendrier`,
-    data: { aide: 'creneaux-et-journees-types' },
+    data: { aide: 'calendrier' },
     // The stands' hours tab is gone: a bookmark on it lands on the fiche stand.
     canActivate: [retiredHorairesTab],
     loadComponent: () => import('./pages/creneaux/creneaux-page').then((m) => m.CreneauxPage),

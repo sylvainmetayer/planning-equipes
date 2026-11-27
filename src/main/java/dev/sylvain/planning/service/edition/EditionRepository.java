@@ -92,7 +92,7 @@ public class EditionRepository {
             // Day templates (V75): ids copied verbatim — one global sequence, so a
             // copied id never meets a generated one.
             new TableToCopy("gabarit", "id, nom"),
-            new TableToCopy("gabarit_vacation", "id, gabarit_id, position, heure_debut, heure_fin, couverture_pause"),
+            new TableToCopy("gabarit_vacation", "id, gabarit_id, position, heure_debut, heure_fin"),
             new TableToCopy("gabarit_date", "date_jour, gabarit_id"),
             // "nom, actif": since V82 a row carries the explicit state, and the
             // column is NOT NULL with no default — a copy leaving it out would fail.
@@ -433,8 +433,8 @@ public class EditionRepository {
             ps.executeUpdate();
         }
         try (PreparedStatement ps = connection.prepareStatement("""
-                INSERT INTO creneau (id, edition_id, date_creneau, heure_debut, heure_fin, couverture_pause)
-                SELECT r.nouvel_id, ?, c.date_creneau, c.heure_debut, c.heure_fin, c.couverture_pause
+                INSERT INTO creneau (id, edition_id, date_creneau, heure_debut, heure_fin)
+                SELECT r.nouvel_id, ?, c.date_creneau, c.heure_debut, c.heure_fin
                 FROM creneau c
                 JOIN creneau_remap r ON r.ancien_id = c.id
                 WHERE c.edition_id = ?""")) {

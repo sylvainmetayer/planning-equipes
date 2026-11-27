@@ -57,7 +57,7 @@ class RegroupementDiagnosticMcpToolsTest {
     /** The shipped scenario, two of its seats held: enough for every section to have something to read. */
     private Creneau loadScenarioWithAPlan() {
         scenarioTools.resetData("E1");
-        scenarioTools.importScenario("scenario.yml", "E1");
+        scenarioTools.importScenario("scenario.yml", null, "E1");
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         List<Stand> stands = referenceDataService.listStands();
         Creneau creneau = referenceDataService.listCreneaux().getFirst();

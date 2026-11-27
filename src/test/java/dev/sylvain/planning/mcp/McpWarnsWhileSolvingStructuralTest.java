@@ -85,6 +85,7 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("restaurer_version", "PlanSnapshotService.restaurer"),
             Map.entry("importer_scenario", "ReferenceDataService.importFromPlanning"),
             Map.entry("importer_scenario_yaml", "ReferenceDataService.importFromPlanning"),
+            Map.entry("supprimer_donnees_edition", "PlanningPersistenceService.clearDatabase"),
             Map.entry("reinitialiser_donnees", "PlanningPersistenceService.clearDatabase"));
 
     /** Writes a solve never reads, each with the reason it has nothing to warn about. */
@@ -133,6 +134,10 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("dupliquer_edition", "agit sur les éditions entières, pas dans celle qu'un calcul tient"),
             Map.entry("renommer_edition", "un nom d'édition n'est pas lu par le calcul"),
             Map.entry(
+                    "modifier_edition",
+                    "un nom d'édition n'est pas lu par le calcul, et l'activation refuse elle-même pendant un"
+                            + " calcul sur l'une des éditions"),
+            Map.entry(
                     "activer_edition",
                     "désigne l'édition active, n'en modifie aucune — et refuse elle-même pendant un calcul sur l'une"
                             + " des deux éditions"),
@@ -143,8 +148,11 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("supprimer_edition", "agit sur les éditions entières, pas dans celle qu'un calcul tient"),
             Map.entry("publier_planning", "publie le plan enregistré, n'écrit rien que le calcul lise"),
             Map.entry("envoyer_planning_animateur", "envoie le plan enregistré, n'écrit rien que le calcul lise"),
+            Map.entry("envoyer_relance_animateurs", "envoie des relances, n'écrit rien que le calcul lise"),
             Map.entry("relancer_animateurs", "envoie des relances, n'écrit rien que le calcul lise"),
             Map.entry("modifier_sauvegardes", "réglage de la base entière, jamais lu par le calcul"),
+            Map.entry(
+                    "modifier_parametres_notifications", "les délais des envois de nuit ne sont pas lus par le calcul"),
             Map.entry(
                     "modifier_phase_edition",
                     "la phase refuse les écritures à venir, elle ne change aucune donnée lue (ADR 0115)"));

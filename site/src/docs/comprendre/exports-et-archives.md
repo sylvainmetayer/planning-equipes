@@ -14,7 +14,7 @@ Un texte qu'un tableur exécuterait comme une formule (il commence par `=`, `+`,
 
 ### Les six référentiels
 
-`GET /api/reference-data/export-csv` réécrit les six référentiels de l'édition (animateurs, créneaux, emplacements, journées types, stands, typologies) dans un ZIP, un fichier par référentiel, chacun à cocher, pour un tableur. Seul celui des animateurs se réimporte, par l'[import CSV](imports-csv.md) : il reprend l'en-tête de `exemple-animateurs.csv` et exige une édition qui a déjà ses créneaux, puisque sans dates un jour d'indisponibilité serait refusé. Les cinq autres ne se relisent pas : le YAML de l'édition est leur chemin d'entrée.
+`GET /api/reference-data/export-csv` réécrit les six référentiels de l'édition (animateurs, créneaux, emplacements, gabarits, stands, typologies) dans un ZIP, un fichier par référentiel, chacun à cocher, pour un tableur. Seul celui des animateurs se réimporte, par l'[import CSV](imports-csv.md) : il reprend l'en-tête de `exemple-animateurs.csv` et exige une édition qui a déjà ses créneaux, puisque sans dates un jour d'indisponibilité serait refusé. Les cinq autres ne se relisent pas : le YAML de l'édition est leur chemin d'entrée.
 
 `ReferentielCsvExportServiceTest` rejoue le fichier des animateurs dans une autre édition (zéro ligne refusée) et vérifie que les fiches s'y retrouvent à l'identique, cellules à valeurs multiples comprises.
 

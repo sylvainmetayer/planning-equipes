@@ -1,6 +1,6 @@
 // The home page (issue #485): « État de l'édition » lists the twelve steps of
-// the cycle, each with a state and a link to the screen that moves it — or,
-// for the coherence of the referential, a detail unfolded in place. The
+// the cycle, each with a state and a link to the screen that moves it — the
+// coherence of the referential leading to the feed of alerts and messages. The
 // states are the server's; what a browser adds is that the lines render,
 // that a seeded edition reads as filled and published, and that a link
 // actually lands on the screen it names.
@@ -46,9 +46,8 @@ test('the home page lists the twelve steps of the cycle', async ({ browser }) =>
     await expect(page.locator(`li[data-ligne="${id}"]`), `ligne ${id}`).toBeVisible();
   }
   // Every line carries its state and a link: nothing is a dead end. The
-  // coherence alone may unfold in place instead, when it holds several
-  // subjects — each of its anomalies linking on. The phase unfolds its own
-  // control in place, so it has no link out either.
+  // coherence has none while it holds no anomaly, and the phase unfolds its
+  // own control in place, so it has no link out either.
   expect(await page.locator('li.accueil-ligne a.accueil-lien').count()).toBeGreaterThanOrEqual(
     LIGNES.length - 2,
   );
@@ -97,10 +96,11 @@ test('une édition amorcée lit ses référentiels et sa publication, et chaque 
 
 /**
  * The bell of the toolbar opens « À traiter aujourd'hui » on the home screen,
- * and the former Notifications page lands there too: the night's alerts and
- * the history of the messages are its « Messages récents ».
+ * and the former Notifications page lands there too: the plan's alerts, the
+ * anomalies of the referential and the history of the messages are one feed,
+ * which the type kept in the address narrows.
  */
-test("la cloche et l'ancienne page Notifications mènent à « À traiter aujourd'hui »", async ({
+test("la cloche et l'ancienne page Notifications mènent au fil d'alertes et de messages", async ({
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
@@ -108,11 +108,18 @@ test("la cloche et l'ancienne page Notifications mènent à « À traiter aujour
   await page.locator('a.notifications-toggle').click();
   await expect(page).toHaveURL(/\/#a-traiter$/);
   await expect(page.locator('#a-traiter')).toBeVisible();
-
-  await page.goto('/notifications');
-  await expect(page).toHaveURL(/\/#a-traiter$/);
-  await page.getByRole('button', { name: /Messages récents/ }).click();
-  await expect(page.locator('#alertes-nuit')).toBeVisible();
+  await expect(page.locator('#fil-accueil')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Tout marquer comme lu' })).toBeVisible();
+
+  // The former address opens the feed on its messages, the filter in the URL.
+  await page.goto('/notifications');
+  await expect(page).toHaveURL(/\/\?type=messages#a-traiter$/);
+  await expect(page.locator('#fil-accueil a[aria-current="true"]')).toContainText('Messages');
+
+  // Another type: the address follows, and "Tout" drops the filter.
+  await page.locator('#fil-accueil nav a', { hasText: 'Alertes du plan' }).click();
+  await expect(page).toHaveURL(/\/\?type=alertes#a-traiter$/);
+  await page.locator('#fil-accueil nav a', { hasText: 'Tout' }).click();
+  await expect(page).toHaveURL(/\/#a-traiter$/);
   await page.context().close();
 });

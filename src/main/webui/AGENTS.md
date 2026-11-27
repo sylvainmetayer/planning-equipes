@@ -152,11 +152,16 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   a banner while a published edition's structure is unblocked; during the event, the day under way first, opening
   `/aujourdhui`, and the checklist folded; after it, the archive first; on an
   empty edition, a « Démarrer » block. « À traiter aujourd'hui »
-  (`#a-traiter`, where the toolbar's bell lands) is always drawn, and folds
-  under it `pages/accueil/messages-recents` — the night's alerts (a weather
-  alert carrying its « Préparer la consigne » link, `lien` of the server) and
-  the local history of the application's messages, what `/notifications`, now a
-  redirect to `/#a-traiter`, used to show), `/solveur` (the solver page,
+  (`#a-traiter`, where the toolbar's bell lands) is always drawn, and carries
+  under it the single feed `pages/accueil/fil-accueil` over the pure `fil.ts`:
+  the plan's alerts (`AlerteView` — the night's, a weather alert carrying its
+  « Préparer la consigne » link, `lien` of the server), the anomalies of the
+  referential (the checklist's « Cohérence du référentiel » line leads to it
+  instead of unfolding) and the local history of the application's messages,
+  sorted by gravity — blocking, to check, message — then newest first, and
+  narrowed by `?type=alertes|coherence|messages` read from the address;
+  only the messages are read and cleared. `/notifications` redirects to
+  `/?type=messages#a-traiter`), `/solveur` (the solver page,
   the former home: feasibility first, then « Ce calcul tiendra compte de »
   read from `GET /api/solve/entrees`, each counter a link and a zero muted,
   the three ways to launch each with its sentence on the page, the result in
@@ -325,10 +330,16 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   who it is for; a screen of its own since issue #320, so the solver page only
   solves), `/export-csv`, `/creneaux` (« Calendrier » — the timeslots; the
   retired `?onglet=horaires`, the stands' hours tab, is sent by the route's
-  `retiredHorairesTab` guard to the fiche stand (`openingsToStandsUrl`); one path
-  first — day templates laid on the calendar, or applied without being kept;
-  a single timeslot, recognition and derivation from the stands' hours sit in
-  one « Autres façons de créer la grille » menu; the grid check is a band read
+  `retiredHorairesTab` guard to the fiche stand (`openingsToStandsUrl`); the
+  generator's gabarits first — templates (the former
+  journées types, ADR 0126) and their calendar, `pages/creneaux/gabarits-card`
+  over `GenerateurCreneauxApi` (`/api/generateur-creneaux`, the one client of
+  the generator: gabarits, calendar, `apercu`, `application`, `retrait`,
+  recognition); the « Générer des créneaux » menu offers its three sources
+  (gabarits, the stands' hours, a recurring pattern, each previewed before it
+  writes) and the recognition, a single timeslot typed by hand being the
+  « Ajouter un créneau » button beside it; withdrawing a date from the calendar
+  keeps its timeslots; the grid check is a band read
   by itself on every visit and after every write), `/typologies` (a redirect
   to `/stands?onglet=typologies`: every count
   links to the list it counts, the polyvalent category is ticked in the table, and

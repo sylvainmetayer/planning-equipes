@@ -126,9 +126,7 @@
   }
 }
 
-/* The coherence checklist, unfolded under its line: one group per family,
-   one row per anomaly — its severity, the source's sentence, the fiche that
-   fixes it. The severities reuse the line colours above. */
+/* The phase control, unfolded under its line. */
 .accueil-panneau {
   grid-column: 1 / -1;
   display: flex;
@@ -136,60 +134,6 @@
   gap: 0.75rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--mat-sys-outline-variant);
-}
-
-.accueil-panneau-titre {
-  margin: 0 0 0.25rem;
-  font: var(--mat-sys-title-small);
-}
-
-.accueil-panneau-compte {
-  font: var(--mat-sys-body-small);
-  color: var(--mat-sys-on-surface-variant);
-  margin-left: 0.5rem;
-}
-
-.accueil-panneau-liste {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.accueil-panneau-ligne {
-  display: grid;
-  grid-template-columns: 8rem 1fr auto;
-  gap: 0.25rem 0.75rem;
-  align-items: baseline;
-  font: var(--mat-sys-body-medium);
-}
-
-.accueil-gravite {
-  font: var(--mat-sys-label-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.accueil-gravite-bloquant .accueil-gravite,
-.accueil-gravite-a_verifier .accueil-gravite {
-  color: var(--mat-sys-error);
-}
-
-.accueil-gravite-information .accueil-gravite {
-  color: light-dark(#8a5000, #f0b357);
-}
-
-.accueil-panneau-lien {
-  white-space: nowrap;
-}
-
-@media (max-width: 640px) {
-  .accueil-panneau-ligne {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* « À traiter aujourd'hui »: above the checklist, drawn only when something
@@ -293,8 +237,7 @@
   margin: 0;
 }
 
-/* « Messages récents », folded under « À traiter aujourd'hui »: the day
-   headings of the former Notifications page, and the folding button. */
+/* The single feed under « À traiter aujourd'hui ». */
 .notification-jour {
   font: var(--mat-sys-title-small);
   color: var(--mat-sys-on-surface-variant);
@@ -302,8 +245,36 @@
   text-transform: capitalize;
 }
 
-.messages-recents {
+.fil-accueil {
   margin-top: 0.5rem;
+}
+
+.fil-filtres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.fil-filtre-actif {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.fil-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fil-gravite {
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+  text-transform: uppercase;
+}
+
+.fil-liste [data-gravite='blocage'] .fil-gravite,
+.fil-liste [data-gravite='avertissement'] .fil-gravite {
+  color: var(--mat-sys-error);
 }
 
 /* During the event: the day under way, first, one line that opens the mode

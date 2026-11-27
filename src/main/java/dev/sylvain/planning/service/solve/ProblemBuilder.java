@@ -645,8 +645,7 @@ public final class ProblemBuilder {
                 && segments.get(0).debutMinutes() == 0
                 && segments.get(0).finMinutes() == creneau.getDureeMinutes();
         for (Creneau.SegmentOuvert segment : segments) {
-            // At least one seat on an open stand, half on a
-            // break-covering shift: the rule lives on the slot so the
+            // At least one seat on an open stand: the rule lives on the slot so the
             // analyses count exactly what is generated here.
             int seats = creneau.siegesSegment(segment.effectif());
             for (int seat = 0; seat < seats; seat++) {

@@ -27,8 +27,8 @@ class GenerateurCreneauxResourceTest {
               "nom": "Jour normal (test)",
               "vacations": [
                 {"heureDebut":"09:00:00","heureFin":"12:00:00"},
-                {"heureDebut":"12:00:00","heureFin":"13:00:00","couverturePause":true},
-                {"heureDebut":"13:00:00","heureFin":"14:00:00","couverturePause":true},
+                {"heureDebut":"12:00:00","heureFin":"13:00:00"},
+                {"heureDebut":"13:00:00","heureFin":"14:00:00"},
                 {"heureDebut":"14:00:00","heureFin":"20:00:00"}
               ]
             }
@@ -105,11 +105,6 @@ class GenerateurCreneauxResourceTest {
                     .body("application.crees", equalTo(8))
                     .body("controle.nombreCreneaux", equalTo(avant + 8));
             assertThat(countCreneaux()).isEqualTo(avant + 8);
-            given().header("X-Edition-Id", "E1")
-                    .when()
-                    .get("/api/creneaux")
-                    .then()
-                    .body("findAll { it.date == '2033-05-02' && it.couverturePause }.size()", equalTo(2));
 
             // Applied twice: nothing moves, and the ids are the same rows.
             List<Integer> ids = creneauxOf("2033-05");

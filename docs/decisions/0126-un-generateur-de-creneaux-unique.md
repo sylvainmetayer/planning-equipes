@@ -1,6 +1,6 @@
 # 0126 — Un générateur de créneaux unique, dont les journées types deviennent les gabarits
 
-- **Statut** : accepté, implémenté (serveur, API, outils MCP ; l'écran suit)
+- **Statut** : accepté, implémenté (serveur, API, outils MCP, écran Calendrier)
 - **Date** : novembre 2026
 - **Portée** : schéma (migration `V169`), `domain/Gabarit`, `service/referentiel/GenerateurCreneaux` et `GabaritRepository`, API (`/api/generateur-creneaux`), outils MCP, scénario YAML (version 6) ; routes et outils des journées types, de la série récurrente et de la dérivation gardés en alias jusqu'en 5.0
 - **Remplace** : [0032](0032-journees-types-nommees-vacations-fixes.md) pour le nom et la place des journées types (devenues les gabarits du générateur) ; leur sémantique est gardée telle quelle

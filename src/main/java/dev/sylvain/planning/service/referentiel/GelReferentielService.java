@@ -95,7 +95,7 @@ public class GelReferentielService {
 
     /**
      * One family and whether it is frozen — the line the État de l'édition
-     * card, the Paramètres switches and {@code etat_edition} all read.
+     * card, the Paramètres switches and {@code consulter_edition} all read.
      *
      * @param libelle how the screens name the family
      * @param figeLe  since when the phase freezing it holds, {@code null} while it is open

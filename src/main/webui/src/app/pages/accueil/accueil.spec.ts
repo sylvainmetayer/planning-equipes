@@ -588,19 +588,22 @@ describe('statut rendering', () => {
     ).toBe(4);
   });
 
-  it('counts the coherence checklist and unfolds it in place rather than linking elsewhere', () => {
+  it('counts the coherence checklist and leads to its type in the feed', () => {
     const withIssues = etatComplet({
       coherence: { bloquants: 1, aVerifier: 3, informations: 2, statut: 'ATTENTION' },
     });
     const ligne = buildLignes(withIssues).find((each) => each.id === 'coherence')!;
     expect(ligne.titre).toBe('Cohérence du référentiel');
     expect(ligne.detail).toBe('1 bloquant(s) · 3 à vérifier · 2 pour information');
-    expect(ligne.panneau).toBe('coherence');
-    expect(ligne.lien).toBeUndefined();
+    expect(ligne.lien).toMatchObject({
+      route: '/',
+      queryParams: { type: 'coherence' },
+      fragment: 'a-traiter',
+    });
 
     const withoutIssue = buildLignes(etatComplet()).find((each) => each.id === 'coherence')!;
     expect(withoutIssue.detail).toBe('Aucune anomalie dans ce qui est saisi');
-    expect(withoutIssue.panneau).toBeUndefined();
+    expect(withoutIssue.lien).toBeUndefined();
   });
 });
 
@@ -726,7 +729,11 @@ describe('the alerts of the night', () => {
     const items = nuit({ rappelsNonEnvoyes: 2, relancesNonEnvoyees: 1 });
     expect(items.map((item) => item.id)).toEqual(['rappels', 'relances']);
     expect(items[0].sentence).toContain('2 rappel(s) de la veille non envoyé(s)');
-    expect(items[0].lien).toMatchObject({ route: '/', fragment: 'alertes-nuit' });
+    expect(items[0].lien).toMatchObject({
+      route: '/',
+      queryParams: { type: 'alertes' },
+      fragment: 'a-traiter',
+    });
     // A manual reminder writes the same alert: the sentence does not date it to the night.
     expect(items[1].sentence).toBe('1 relance(s) non partie(s) depuis la publication');
   });
@@ -796,22 +803,19 @@ describe('the coherence line', () => {
     ),
   };
 
-  it('counts a single subject once the detail is read, and still unfolds in place', () => {
+  it('counts a single subject once the report is read', () => {
     const ligne = buildLignes(etatComplet({ coherence }), report).find(
       (candidate) => candidate.id === 'coherence',
     )!;
     expect(ligne.detail).toBe('1 sujet(s) · 16 à vérifier');
-    expect(ligne.lien).toBeUndefined();
-    expect(ligne.panneau).toBe('coherence');
   });
 
-  it('counts its subjects, and unfolds, when there are several', () => {
+  it('counts its subjects when there are several', () => {
     const autre = { ...gap('2026-09-01'), message: '2026-09-01 : rien entre 18:00 et 19:00.' };
     const ligne = buildLignes(etatComplet({ coherence: { ...coherence, aVerifier: 17 } }), {
       ...report,
       anomalies: [...report.anomalies, autre],
     }).find((candidate) => candidate.id === 'coherence')!;
     expect(ligne.detail).toBe('2 sujet(s) · 17 à vérifier');
-    expect(ligne.panneau).toBe('coherence');
   });
 });

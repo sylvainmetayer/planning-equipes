@@ -90,11 +90,6 @@ public class CreneauMcpTools {
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
             @ToolArg(description = "Heure de fin (HH:MM)") String heureFin,
-            @ToolArg(
-                            description = "true pour un relais repas : chaque stand n'y reçoit que la moitié de ses "
-                                    + "sièges, arrondie au supérieur (omis : faux)",
-                            required = false)
-                    Boolean couverturePause,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         Creneau creneau = new Creneau(
                 null,
@@ -102,7 +97,6 @@ public class CreneauMcpTools {
                 McpArgs.date(date, "date"),
                 McpArgs.heure(heureDebut, ARG_HEURE_DEBUT),
                 McpArgs.heure(heureFin, "heureFin"));
-        creneau.setCouverturePause(Boolean.TRUE.equals(couverturePause));
         return written(referenceDataService.writeCreneau(creneau));
     }
 
@@ -120,8 +114,6 @@ public class CreneauMcpTools {
             @ToolArg(description = "Date (AAAA-MM-JJ)", required = false) String date,
             @ToolArg(description = "Heure de début (HH:MM)", required = false) String heureDebut,
             @ToolArg(description = "Heure de fin (HH:MM)", required = false) String heureFin,
-            @ToolArg(description = "Relais repas (sièges divisés par deux) ; omis, inchangé", required = false)
-                    Boolean couverturePause,
             @ToolArg(
                             description =
                                     "WriteStamp modifieLe lu avant la modification (précondition : refusé si la fiche a changé depuis ; omis, pas de contrôle)",
@@ -129,9 +121,6 @@ public class CreneauMcpTools {
                     String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         Creneau creneau = findCreneau(id);
-        if (couverturePause != null) {
-            creneau.setCouverturePause(couverturePause);
-        }
         if (modifieLe != null) {
             creneau.setModifieLe(McpArgs.instant(modifieLe, "modifieLe"));
         }
@@ -169,11 +158,10 @@ public class CreneauMcpTools {
     @Tool(
             name = "diagnostiquer_creneaux",
             description = "Lit la grille de créneaux en place, sous la section demandée, sans rien écrire. grille "
-                    + "(défaut) : combien de vacations, sur quelles dates, avec quelle durée médiane, combien sont des "
-                    + "relais repas (effectif divisé par deux), et quelles dates tombent un jour férié (joursFeries, "
+                    + "(défaut) : combien de vacations, sur quelles dates, avec quelle durée médiane, et quelles dates tombent un jour férié (joursFeries, "
                     + "avec leur libellé) ; le premier appel utile pour découvrir une édition. controle : ce qui cloche "
                     + "— doublons, trous dans une journée, vacations plus longues que le maximum légal, dates isolées, "
-                    + "relais repas hors fenêtre, stands que personne ne pourra tenir, sous-effectif, et, pour "
+                    + "stands que personne ne pourra tenir, sous-effectif, et, pour "
                     + "information, VACATION_JOUR_FERIE : des vacations un jour férié alors que l'édition compte un "
                     + "mineur ce jour-là (seuls les majeurs y siègent). Deux créneaux qui se chevauchent le même jour "
                     + "sont normaux : ce sont deux vacations décalées.",
@@ -203,7 +191,7 @@ public class CreneauMcpTools {
             name = "diagnostiquer_grille_creneaux",
             description = "Ancien nom, gardé jusqu'en 5.0 : utiliser diagnostiquer_creneaux (section grille). "
                     + "Décrit la grille de créneaux en place : combien de vacations, sur quelles dates, avec "
-                    + "quelle durée médiane, combien sont des relais repas (effectif divisé par deux), et quelles "
+                    + "quelle durée médiane, et quelles "
                     + "dates tombent un jour férié (joursFeries, avec leur libellé). Le premier "
                     + "appel utile pour découvrir une édition, avant de créer des créneaux.",
             annotations =
@@ -222,7 +210,7 @@ public class CreneauMcpTools {
             description = "Ancien nom, gardé jusqu'en 5.0 : utiliser diagnostiquer_creneaux (section controle). "
                     + "Contrôle la cohérence de la grille de créneaux actuelle et signale ce qui cloche : "
                     + "doublons, trous dans une journée, vacations plus longues que le maximum légal, dates isolées, "
-                    + "relais repas hors fenêtre, stands que personne ne pourra tenir, sous-effectif, et, pour "
+                    + "stands que personne ne pourra tenir, sous-effectif, et, pour "
                     + "information, VACATION_JOUR_FERIE : des vacations un jour férié alors que l'édition compte un "
                     + "mineur ce jour-là (seuls les majeurs y siègent). Deux créneaux "
                     + "qui se chevauchent le même jour sont normaux : ce sont deux vacations décalées.",
@@ -520,7 +508,6 @@ public class CreneauMcpTools {
                 creneau.getDate(),
                 creneau.getHeureDebut(),
                 creneau.getHeureFin(),
-                creneau.isCouverturePause(),
                 creneau.getModifieLe());
     }
 
@@ -535,13 +522,7 @@ public class CreneauMcpTools {
     }
 
     public record CreneauView(
-            Long id,
-            int jour,
-            LocalDate date,
-            LocalTime heureDebut,
-            LocalTime heureFin,
-            boolean couverturePause,
-            Instant modifieLe) {}
+            Long id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin, Instant modifieLe) {}
 
     /** What a recurrence rule produced (or would produce), plus the resulting grid's verdict. */
     public record PrevisualisationRecurrence(int nombreGeneres, List<CreneauView> creneaux, RapportGrille controle) {}

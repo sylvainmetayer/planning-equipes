@@ -51,11 +51,11 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.editions.comparer:« Comparer deux éditions », sur la page Éditions, dit ce qui a changé dans le référentiel de l'une à l'autre — l'an dernier et l'édition qu'on prépare, ou une édition et sa variante : stands, animateurs, typologies, emplacements, journées types, créneaux, paramètres et ajustements (comptés par type ; les verrous ne sont pas comparés), et la volumétrie des deux côte à côte. Aucun planning n'est lu, rien n'est modifié. « Comparer à l'édition consultée », sur une ligne de la table, ouvre la paire toute prête. Rien n'est rapproché par identifiant, deux éditions numérotant leurs fiches à partir du même compteur : un stand, une typologie ou un emplacement par son code, puis par son nom (signalé, à vérifier) ; un animateur par son e-mail, puis par prénom, nom et date de naissance ; une journée type par son nom ; les créneaux par rang du jour d'ouverture, puis par heure de début. Une édition sans aucun animateur, dupliquée sans les personnes, est signalée : tous ceux de l'autre y paraissent partis, et la liste reste repliée. « Ouvrir dans » mène à la fiche dans l'édition qui la porte et bascule le navigateur sur cette édition. L'export CSV ne nomme aucun animateur.`,
+          text: $localize`:@@aide.editions.comparer:« Comparer deux éditions », sur la page Éditions, dit ce qui a changé dans le référentiel de l'une à l'autre — l'an dernier et l'édition qu'on prépare, ou une édition et sa variante : stands, animateurs, typologies, emplacements, gabarits, créneaux, paramètres et ajustements (comptés par type ; les verrous ne sont pas comparés), et la volumétrie des deux côte à côte. Aucun planning n'est lu, rien n'est modifié. « Comparer à l'édition consultée », sur une ligne de la table, ouvre la paire toute prête. Rien n'est rapproché par identifiant, deux éditions numérotant leurs fiches à partir du même compteur : un stand, une typologie ou un emplacement par son code, puis par son nom (signalé, à vérifier) ; un animateur par son e-mail, puis par prénom, nom et date de naissance ; un gabarit par son nom ; les créneaux par rang du jour d'ouverture, puis par heure de début. Une édition sans aucun animateur, dupliquée sans les personnes, est signalée : tous ceux de l'autre y paraissent partis, et la liste reste repliée. « Ouvrir dans » mène à la fiche dans l'édition qui la porte et bascule le navigateur sur cette édition. L'export CSV ne nomme aucun animateur.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.editions.vider:« Vider cette édition », en bas de la page Éditions, supprime les stands, créneaux, animateurs, affectations, ajustements manuels, verrouillages, validations de journées, demandes d'échange, consignes et préréglages de consigne de l'édition consultée, après avoir fait recopier son nom. Restent ses typologies, emplacements, journées types, versions et paramètres, les autres éditions et les réglages de l'instance. Refusé pendant une résolution et tant qu'une famille est figée.`,
+          text: $localize`:@@aide.editions.vider:« Vider cette édition », en bas de la page Éditions, supprime les stands, créneaux, animateurs, affectations, ajustements manuels, verrouillages, validations de journées, demandes d'échange, consignes et préréglages de consigne de l'édition consultée, après avoir fait recopier son nom. Restent ses typologies, emplacements, gabarits, versions et paramètres, les autres éditions et les réglages de l'instance. Refusé pendant une résolution et tant qu'une famille est figée.`,
         },
       ],
       links: [
@@ -89,7 +89,7 @@ export function buildReferenceDataSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.phase.creneaux.terme:Créneaux`,
-              text: $localize`:@@aide.phase.creneaux.def:Création, suppression, date, heures, relais repas, et ce qui génère la grille : journées types appliquées, séries, dérivation. Les journées types elles-mêmes restent modifiables.`,
+              text: $localize`:@@aide.phase.creneaux.def:Création, suppression, date, heures, et ce qui génère la grille : gabarits appliqués, séries, dérivation. Les gabarits eux-mêmes restent modifiables.`,
             },
             {
               term: $localize`:@@aide.phase.typologies.terme:Typologies et emplacements`,
@@ -194,10 +194,10 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
     },
     {
-      id: 'creneaux-et-journees-types',
+      id: 'calendrier',
       icon: 'schedule',
-      title: $localize`:@@aide.creneaux.title:Créneaux et journées types`,
-      summary: $localize`:@@aide.creneaux.summary:Le découpage du temps que le solveur remplit, et comment l'écrire sans le taper jour par jour.`,
+      title: $localize`:@@aide.creneaux.title:Créneaux et gabarits`,
+      summary: $localize`:@@aide.creneaux.summary:Le découpage du temps que le solveur remplit, et le générateur qui l'écrit sans le taper jour par jour.`,
       blocks: [
         {
           kind: 'paragraph',
@@ -211,30 +211,30 @@ export function buildReferenceDataSections(): HelpSection[] {
           kind: 'definitions',
           items: [
             {
-              term: $localize`:@@aide.creneaux.term.journeesTypes:Les journées types`,
-              text: $localize`:@@aide.creneaux.def.journeesTypes:Décrivez une fois chaque sorte de journée (« Jour normal », « Nocturne », « Montage ») par ses vacations sur une ligne : « 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 », un R marquant un relais repas où le stand ne tient que la moitié de ses sièges. Un calendrier pose ensuite une journée type sur chaque date.`,
+              term: $localize`:@@aide.creneaux.term.journeesTypes:Les gabarits`,
+              text: $localize`:@@aide.creneaux.def.journeesTypes:Décrivez une fois chaque sorte de journée (« Jour normal », « Nocturne », « Montage ») par ses vacations sur une ligne : « 09:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-20:00 ». Un calendrier pose ensuite un gabarit sur chaque date.`,
             },
             {
-              term: $localize`:@@aide.creneaux.term.appliquer:Appliquer le calendrier`,
-              text: $localize`:@@aide.creneaux.def.appliquer:Écrit les créneaux, après un aperçu chiffré. Un créneau identique garde ses sièges, un créneau en trop sur une date gouvernée est supprimé, une date sans journée type n'est pas touchée. Une journée type modifiée après coup ne change rien tant qu'on ne réapplique pas : ses dates passent « en écart ».`,
+              term: $localize`:@@aide.creneaux.term.appliquer:Générer depuis les gabarits (appliquer le calendrier)`,
+              text: $localize`:@@aide.creneaux.def.appliquer:Écrit les créneaux, après un aperçu chiffré. Un créneau identique garde ses sièges, un créneau en trop sur une date gouvernée est supprimé, une date sans gabarit n'est pas touchée. Un gabarit modifié après coup ne change rien tant qu'on ne réapplique pas : ses dates passent « en écart ».`,
             },
             {
-              term: $localize`:@@aide.creneaux.term.serie:Appliquer sans mémoriser`,
-              text: $localize`:@@aide.creneaux.def.serie:La même chose sans mémoire, pour un besoin ponctuel : dans le dialogue d'une journée type, ce bouton pose ses créneaux sur les jours choisis, après un aperçu, sans garder la journée type. Les relais repas ne suivent pas.`,
+              term: $localize`:@@aide.creneaux.term.serie:Générer depuis un motif récurrent`,
+              text: $localize`:@@aide.creneaux.def.serie:Pour un besoin ponctuel, des fenêtres répétées sur les jours choisis (une plage de dates et des jours de la semaine, ou des dates une à une), après un aperçu, sans garder de gabarit. Elles s'ajoutent à la grille. Le même geste est offert depuis le dialogue d'un gabarit, « Appliquer sans mémoriser ».`,
             },
             {
-              term: $localize`:@@aide.creneaux.term.deriver:Dériver des horaires des stands`,
-              text: $localize`:@@aide.creneaux.def.deriver:Quand les stands ont déjà leurs horaires, la grille peut en découler : une coupure à chaque heure d'ouverture ou de fermeture, un créneau sur chaque tranche où au moins un stand est ouvert. Prévisualisé, puis ajouté à la grille ; « Remplacer la grille… » la met à la place de l'actuelle, après une confirmation qui dit que le planning calculé part avec elle. Avec la reconnaissance, il se trouve dans le menu « Autres façons de créer la grille », à côté de l'ajout d'un créneau isolé.`,
+              term: $localize`:@@aide.creneaux.term.deriver:Générer depuis les horaires des stands`,
+              text: $localize`:@@aide.creneaux.def.deriver:Quand les stands ont déjà leurs horaires, la grille peut en découler : une coupure à chaque heure d'ouverture ou de fermeture, un créneau sur chaque tranche où au moins un stand est ouvert. Prévisualisé, puis ajouté à la grille ; « Remplacer la grille… » la met à la place de l'actuelle, après une confirmation qui dit que le planning calculé part avec elle. Les trois sources et la reconnaissance sont dans le menu « Générer des créneaux », à côté de l'ajout d'un créneau isolé ; chacune montre un aperçu avant d'écrire. Retirer une date du calendrier ne supprime pas ses créneaux.`,
             },
             {
-              term: $localize`:@@aide.creneaux.term.reconnaitre:Reconnaître les journées types depuis les créneaux`,
-              text: $localize`:@@aide.creneaux.def.reconnaitre:Le chemin inverse, sur une grille déjà écrite : l'application en déduit les journées types et le calendrier qui les porte.`,
+              term: $localize`:@@aide.creneaux.term.reconnaitre:Reconnaître les gabarits depuis les créneaux`,
+              text: $localize`:@@aide.creneaux.def.reconnaitre:Le chemin inverse, sur une grille déjà écrite : l'application en déduit les gabarits et le calendrier qui les porte.`,
             },
           ],
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.creneaux.feries:Les jours fériés sont marqués avec leur nom (Fête nationale, Assomption…) partout où l'on pose une date : la table des créneaux, le calendrier des journées types, l'aperçu d'une série, le formulaire d'un créneau. Rien n'est interdit, un festival ouvre légitimement le 14 juillet. Mais un mineur ne travaille pas un jour férié : quand l'édition en compte un ce jour-là, le contrôle de la grille le rappelle, pour qu'on y pense avant le calcul plutôt qu'au diagnostic. Seuls les onze jours du Code du travail en métropole sont connus, sans les fériés d'Alsace-Moselle ni d'outre-mer.`,
+          text: $localize`:@@aide.creneaux.feries:Les jours fériés sont marqués avec leur nom (Fête nationale, Assomption…) partout où l'on pose une date : la table des créneaux, le calendrier des gabarits, l'aperçu d'une série, le formulaire d'un créneau. Rien n'est interdit, un festival ouvre légitimement le 14 juillet. Mais un mineur ne travaille pas un jour férié : quand l'édition en compte un ce jour-là, le contrôle de la grille le rappelle, pour qu'on y pense avant le calcul plutôt qu'au diagnostic. Seuls les onze jours du Code du travail en métropole sont connus, sans les fériés d'Alsace-Moselle ni d'outre-mer.`,
         },
         {
           kind: 'paragraph',
@@ -313,7 +313,7 @@ export function buildReferenceDataSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.importCsv.ecran.fichiers:Les fichiers qui remplissent une édition sont sur l'écran « Fichiers », onglet Importer : le scénario YAML, qui porte l'édition entière (typologies, emplacements, stands, créneaux, journées types), et l'import CSV des animateurs, seul CSV encore importable ; le bouton « Importer » de l'écran Animateurs ouvre la même carte, qui accepte aussi un collage depuis un tableur. Rien n'est écrit tant que vous n'avez pas validé l'aperçu.`,
+          text: $localize`:@@aide.importCsv.ecran.fichiers:Les fichiers qui remplissent une édition sont sur l'écran « Fichiers », onglet Importer : le scénario YAML, qui porte l'édition entière (typologies, emplacements, stands, créneaux, gabarits), et l'import CSV des animateurs, seul CSV encore importable ; le bouton « Importer » de l'écran Animateurs ouvre la même carte, qui accepte aussi un collage depuis un tableur. Rien n'est écrit tant que vous n'avez pas validé l'aperçu.`,
         },
         {
           kind: 'list',

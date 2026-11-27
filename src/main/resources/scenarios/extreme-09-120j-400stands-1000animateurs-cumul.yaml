@@ -211,13 +211,11 @@ creneaux:
     date: 2028-04-08
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J6-MIDI2
     jour: 6
     date: 2028-04-08
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J6-APREM
     jour: 6
     date: 2028-04-08
@@ -233,13 +231,11 @@ creneaux:
     date: 2028-04-09
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J7-MIDI2
     jour: 7
     date: 2028-04-09
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J7-APREM
     jour: 7
     date: 2028-04-09
@@ -285,13 +281,11 @@ creneaux:
     date: 2028-04-15
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J13-MIDI2
     jour: 13
     date: 2028-04-15
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J13-APREM
     jour: 13
     date: 2028-04-15
@@ -307,13 +301,11 @@ creneaux:
     date: 2028-04-16
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J14-MIDI2
     jour: 14
     date: 2028-04-16
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J14-APREM
     jour: 14
     date: 2028-04-16
@@ -359,13 +351,11 @@ creneaux:
     date: 2028-04-22
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J20-MIDI2
     jour: 20
     date: 2028-04-22
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J20-APREM
     jour: 20
     date: 2028-04-22
@@ -381,13 +371,11 @@ creneaux:
     date: 2028-04-23
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J21-MIDI2
     jour: 21
     date: 2028-04-23
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J21-APREM
     jour: 21
     date: 2028-04-23
@@ -433,13 +421,11 @@ creneaux:
     date: 2028-04-29
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J27-MIDI2
     jour: 27
     date: 2028-04-29
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J27-APREM
     jour: 27
     date: 2028-04-29
@@ -455,13 +441,11 @@ creneaux:
     date: 2028-04-30
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J28-MIDI2
     jour: 28
     date: 2028-04-30
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J28-APREM
     jour: 28
     date: 2028-04-30
@@ -507,13 +491,11 @@ creneaux:
     date: 2028-05-06
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J34-MIDI2
     jour: 34
     date: 2028-05-06
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J34-APREM
     jour: 34
     date: 2028-05-06
@@ -529,13 +511,11 @@ creneaux:
     date: 2028-05-07
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J35-MIDI2
     jour: 35
     date: 2028-05-07
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J35-APREM
     jour: 35
     date: 2028-05-07
@@ -581,13 +561,11 @@ creneaux:
     date: 2028-05-13
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J41-MIDI2
     jour: 41
     date: 2028-05-13
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J41-APREM
     jour: 41
     date: 2028-05-13
@@ -603,13 +581,11 @@ creneaux:
     date: 2028-05-14
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J42-MIDI2
     jour: 42
     date: 2028-05-14
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J42-APREM
     jour: 42
     date: 2028-05-14
@@ -655,13 +631,11 @@ creneaux:
     date: 2028-05-20
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J48-MIDI2
     jour: 48
     date: 2028-05-20
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J48-APREM
     jour: 48
     date: 2028-05-20
@@ -677,13 +651,11 @@ creneaux:
     date: 2028-05-21
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J49-MIDI2
     jour: 49
     date: 2028-05-21
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J49-APREM
     jour: 49
     date: 2028-05-21
@@ -729,13 +701,11 @@ creneaux:
     date: 2028-05-27
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J55-MIDI2
     jour: 55
     date: 2028-05-27
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J55-APREM
     jour: 55
     date: 2028-05-27
@@ -751,13 +721,11 @@ creneaux:
     date: 2028-05-28
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J56-MIDI2
     jour: 56
     date: 2028-05-28
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J56-APREM
     jour: 56
     date: 2028-05-28
@@ -803,13 +771,11 @@ creneaux:
     date: 2028-06-03
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J62-MIDI2
     jour: 62
     date: 2028-06-03
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J62-APREM
     jour: 62
     date: 2028-06-03
@@ -825,13 +791,11 @@ creneaux:
     date: 2028-06-04
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J63-MIDI2
     jour: 63
     date: 2028-06-04
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J63-APREM
     jour: 63
     date: 2028-06-04
@@ -877,13 +841,11 @@ creneaux:
     date: 2028-06-10
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J69-MIDI2
     jour: 69
     date: 2028-06-10
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J69-APREM
     jour: 69
     date: 2028-06-10
@@ -899,13 +861,11 @@ creneaux:
     date: 2028-06-11
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J70-MIDI2
     jour: 70
     date: 2028-06-11
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J70-APREM
     jour: 70
     date: 2028-06-11
@@ -951,13 +911,11 @@ creneaux:
     date: 2028-06-17
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J76-MIDI2
     jour: 76
     date: 2028-06-17
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J76-APREM
     jour: 76
     date: 2028-06-17
@@ -973,13 +931,11 @@ creneaux:
     date: 2028-06-18
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J77-MIDI2
     jour: 77
     date: 2028-06-18
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J77-APREM
     jour: 77
     date: 2028-06-18
@@ -1025,13 +981,11 @@ creneaux:
     date: 2028-06-24
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J83-MIDI2
     jour: 83
     date: 2028-06-24
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J83-APREM
     jour: 83
     date: 2028-06-24
@@ -1047,13 +1001,11 @@ creneaux:
     date: 2028-06-25
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J84-MIDI2
     jour: 84
     date: 2028-06-25
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J84-APREM
     jour: 84
     date: 2028-06-25
@@ -1099,13 +1051,11 @@ creneaux:
     date: 2028-07-01
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J90-MIDI2
     jour: 90
     date: 2028-07-01
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J90-APREM
     jour: 90
     date: 2028-07-01
@@ -1121,13 +1071,11 @@ creneaux:
     date: 2028-07-02
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J91-MIDI2
     jour: 91
     date: 2028-07-02
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J91-APREM
     jour: 91
     date: 2028-07-02
@@ -1173,13 +1121,11 @@ creneaux:
     date: 2028-07-08
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J97-MIDI2
     jour: 97
     date: 2028-07-08
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J97-APREM
     jour: 97
     date: 2028-07-08
@@ -1195,13 +1141,11 @@ creneaux:
     date: 2028-07-09
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J98-MIDI2
     jour: 98
     date: 2028-07-09
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J98-APREM
     jour: 98
     date: 2028-07-09
@@ -1247,13 +1191,11 @@ creneaux:
     date: 2028-07-15
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J104-MIDI2
     jour: 104
     date: 2028-07-15
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J104-APREM
     jour: 104
     date: 2028-07-15
@@ -1269,13 +1211,11 @@ creneaux:
     date: 2028-07-16
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J105-MIDI2
     jour: 105
     date: 2028-07-16
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J105-APREM
     jour: 105
     date: 2028-07-16
@@ -1321,13 +1261,11 @@ creneaux:
     date: 2028-07-22
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J111-MIDI2
     jour: 111
     date: 2028-07-22
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J111-APREM
     jour: 111
     date: 2028-07-22
@@ -1343,13 +1281,11 @@ creneaux:
     date: 2028-07-23
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J112-MIDI2
     jour: 112
     date: 2028-07-23
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J112-APREM
     jour: 112
     date: 2028-07-23
@@ -1395,13 +1331,11 @@ creneaux:
     date: 2028-07-29
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J118-MIDI2
     jour: 118
     date: 2028-07-29
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J118-APREM
     jour: 118
     date: 2028-07-29
@@ -1417,13 +1351,11 @@ creneaux:
     date: 2028-07-30
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J119-MIDI2
     jour: 119
     date: 2028-07-30
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J119-APREM
     jour: 119
     date: 2028-07-30
@@ -1540,10 +1472,8 @@ journeesTypes:
         heureFin: "12:00"
       - heureDebut: "12:00"
         heureFin: "13:00"
-        couverturePause: true
       - heureDebut: "13:00"
         heureFin: "14:00"
-        couverturePause: true
       - heureDebut: "14:00"
         heureFin: "18:30"
     dates:

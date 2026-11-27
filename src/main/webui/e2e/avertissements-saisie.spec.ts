@@ -136,10 +136,8 @@ test.describe('avertissements de saisie', () => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/creneaux');
 
-    // A single timeslot is the exception on this screen, which builds the grid
-    // from day templates: it sits in the menu of the other ways.
-    await page.getByRole('button', { name: 'Autres façons de créer la grille' }).click();
-    await page.getByRole('menuitem', { name: 'Ajouter un créneau' }).click();
+    // A single timeslot typed by hand sits next to the generator's menu.
+    await page.getByRole('button', { name: 'Ajouter un créneau' }).click();
     const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Date').fill(JOUR);
     await dialog.getByLabel('Début').fill('10:00');
@@ -165,10 +163,8 @@ test.describe('avertissements de saisie', () => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/creneaux');
 
-    // A single timeslot is the exception on this screen, which builds the grid
-    // from day templates: it sits in the menu of the other ways.
-    await page.getByRole('button', { name: 'Autres façons de créer la grille' }).click();
-    await page.getByRole('menuitem', { name: 'Ajouter un créneau' }).click();
+    // A single timeslot typed by hand sits next to the generator's menu.
+    await page.getByRole('button', { name: 'Ajouter un créneau' }).click();
     const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Date').fill(JOUR);
     await dialog.getByLabel('Début').fill('15:00');
@@ -275,12 +271,15 @@ test.describe('avertissements de saisie', () => {
     await expect(page.locator('#contenu')).toContainText(JOUR_HORS_BORNES);
 
     // Le journal du navigateur survit à la déconnexion et se relit dans les
-    // messages récents de l'accueil : la phrase qui dit qu'une personne est
+    // fil d'alertes et de messages de l'accueil : la phrase qui dit qu'une personne est
     // mineure n'y est pas écrite (site/src/docs/installer/rgpd.md §7).
     await page.goto('/');
-    await page.getByRole('button', { name: /Messages récents/ }).click();
     await expect(page.getByText(/point\(s\) à vérifier/).first()).toBeVisible();
-    await expect(page.getByText(/est mineur pendant tout l'événement/)).toHaveCount(0);
+    await expect(
+      page
+        .locator('#fil-accueil [data-type="messages"]')
+        .getByText(/est mineur pendant tout l'événement/),
+    ).toHaveCount(0);
 
     await page.context().close();
   });

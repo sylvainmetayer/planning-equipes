@@ -4,7 +4,7 @@
 
 import { formatHeure } from '../../core/time-of-day';
 import { normaliseHour, splitHourRange } from '../../core/horaire-stand';
-import { AffectationJourneeType, JourneeType, VacationType } from '../../core/models';
+import { AffectationGabarit, Gabarit, VacationType } from '../../core/models';
 import { compareCodeUnits } from '../../core/string-order';
 
 /**
@@ -18,34 +18,9 @@ export type SaisieVacations =
   | { readonly vacations: VacationType[]; readonly erreur: null; readonly morceau: null }
   | { readonly vacations: null; readonly erreur: ErreurVacations; readonly morceau: string };
 
-const LINE_TERMINATOR = /[\n\r\u2028\u2029]/;
-
 /**
- * What is left of a vacation once its meal-relay mark is taken off — a
- * trailing ` R` after a blank, or a trailing `(R)`, either case — or `null`
- * when it carries none. What precedes the mark stays on one line.
- */
-function withoutRelayMark(morceau: string): string | null {
-  const beforeLetter = morceau.slice(0, -1);
-  const bodyBeforeLetter = beforeLetter.trimEnd();
-  if (
-    /[rR]$/.test(morceau) &&
-    bodyBeforeLetter !== '' &&
-    bodyBeforeLetter.length < beforeLetter.length &&
-    !LINE_TERMINATOR.test(bodyBeforeLetter)
-  ) {
-    return bodyBeforeLetter;
-  }
-  const bodyBeforeParentheses = morceau.slice(0, -3).trimEnd();
-  if (/\([rR]\)$/.test(morceau) && !LINE_TERMINATOR.test(bodyBeforeParentheses)) {
-    return bodyBeforeParentheses;
-  }
-  return null;
-}
-
-/**
- * `09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00`: one vacation per
- * comma, a trailing `R` for a meal relay. Hours read as the stand windows do
+ * `09:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-20:00`: one vacation per
+ * comma. Hours read as the stand windows do
  * (`9h`, `9h30`, `09:30`). An end at or before the start crosses midnight,
  * as a créneau does.
  */
@@ -57,14 +32,7 @@ export function parseVacations(text: string): SaisieVacations {
     if (morceau === '') {
       continue;
     }
-    let corps = morceau;
-    let couverturePause = false;
-    const relais = withoutRelayMark(morceau);
-    if (relais !== null) {
-      couverturePause = true;
-      corps = relais.trim();
-    }
-    const plage = splitHourRange(corps);
+    const plage = splitHourRange(morceau);
     if (!plage || plage[1].trim() === '') {
       return { vacations: null, erreur: 'FORME', morceau };
     }
@@ -78,7 +46,7 @@ export function parseVacations(text: string): SaisieVacations {
       return { vacations: null, erreur: 'DOUBLON', morceau };
     }
     cles.add(cle);
-    vacations.push({ heureDebut, heureFin, couverturePause });
+    vacations.push({ heureDebut, heureFin });
   }
   if (vacations.length === 0) {
     return { vacations: null, erreur: 'VIDE', morceau: text.trim() };
@@ -89,14 +57,11 @@ export function parseVacations(text: string): SaisieVacations {
 /** The inverse of {@link parseVacations}, what the form shows when opened on a template. */
 export function formatVacations(vacations: readonly VacationType[]): string {
   return vacations
-    .map(
-      (vacation) =>
-        `${formatHeure(vacation.heureDebut)}-${formatHeure(vacation.heureFin)}${vacation.couverturePause ? ' R' : ''}`,
-    )
+    .map((vacation) => `${formatHeure(vacation.heureDebut)}-${formatHeure(vacation.heureFin)}`)
     .join(', ');
 }
 
-/** `12:00-13:00`, plus the relay marker the chip shows — the wording of one vacation. */
+/** `12:00–13:00`, the wording of one vacation. */
 export function libelleVacation(vacation: VacationType): string {
   return `${formatHeure(vacation.heureDebut)}–${formatHeure(vacation.heureFin)}`;
 }
@@ -143,37 +108,30 @@ export function datesDePlage(du: string, au: string): string[] {
 }
 
 /**
- * The calendar with `dates` now governed by `journeeTypeId`: a date already
+ * The calendar with `dates` now governed by `gabaritId`: a date already
  * there changes template, the others are kept, and the result is sorted so
  * the table reads top to bottom.
  */
 export function affecterDates(
-  calendrier: readonly AffectationJourneeType[],
+  calendrier: readonly AffectationGabarit[],
   dates: readonly string[],
-  journeeTypeId: number,
-): AffectationJourneeType[] {
+  gabaritId: number,
+): AffectationGabarit[] {
   const byDate = new Map(calendrier.map((affectation) => [affectation.date, affectation]));
   for (const date of dates) {
-    byDate.set(date, { date, journeeTypeId });
+    byDate.set(date, { date, gabaritId });
   }
   return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export function retirerDate(
-  calendrier: readonly AffectationJourneeType[],
-  date: string,
-): AffectationJourneeType[] {
-  return calendrier.filter((affectation) => affectation.date !== date);
-}
-
 /** Template id → name, for the calendar rows; an unknown id reads as its number. */
-export function nomJourneeType(journeesTypes: readonly JourneeType[], id: number): string {
-  return journeesTypes.find((journeeType) => journeeType.id === id)?.nom ?? String(id);
+export function nomGabarit(gabarits: readonly Gabarit[], id: number): string {
+  return gabarits.find((gabarit) => gabarit.id === id)?.nom ?? String(id);
 }
 
 /** The two bounds the calendar spans, or `null` when it is empty — the edition's dates, as typed here. */
 export function bornesCalendrier(
-  calendrier: readonly AffectationJourneeType[],
+  calendrier: readonly AffectationGabarit[],
 ): { du: string; au: string } | null {
   if (calendrier.length === 0) {
     return null;

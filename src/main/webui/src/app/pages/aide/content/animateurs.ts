@@ -180,7 +180,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.rappels.term.rappel:Le rappel de la veille`,
-              text: $localize`:@@aide.rappels.def.rappel.accueil:La veille au soir, chaque animateur affecté le lendemain reçoit la liste de ses créneaux. Elle est tirée du planning publié, jamais du plan de travail : personne n'est rappelé pour un créneau que vous ne lui avez pas communiqué. Un animateur sans adresse est sauté : « À traiter aujourd'hui » le compte tant que son jour est à venir, et « Messages récents » le nomme.`,
+              text: $localize`:@@aide.rappels.def.rappel.accueil:La veille au soir, chaque animateur affecté le lendemain reçoit la liste de ses créneaux. Elle est tirée du planning publié, jamais du plan de travail : personne n'est rappelé pour un créneau que vous ne lui avez pas communiqué. Un animateur sans adresse est sauté : « À traiter aujourd'hui » le compte tant que son jour est à venir, et le fil d'alertes et de messages l'indique.`,
             },
             {
               term: $localize`:@@aide.rappels.term.relance:Une relance, pas une série`,

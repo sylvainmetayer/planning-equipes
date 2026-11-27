@@ -237,7 +237,7 @@ export interface OuverturesCreneau {
  * Timeslot id → the stands open on it and the seats they generate, read off
  * the openings report (`GET /api/ouvertures-stands`) — the very seats a solve
  * would receive: every open segment of a stand asks its headcount, at least
- * one, halved and rounded up on a meal relay (`Creneau.siegesSegment`).
+ * one (`Creneau.siegesSegment`).
  *
  * A timeslot cut into several columns (a window of some stand ends inside it)
  * hands each column the stand's segment clipped to it, so one segment shows
@@ -245,19 +245,13 @@ export interface OuverturesCreneau {
  * headcount, which is how the server merges them too — and counted once.
  */
 export function openingsByCreneau(rapport: RapportOuvertures): Map<number, OuverturesCreneau> {
-  const relays = new Map<number, boolean>();
-  for (const jour of rapport.jours) {
-    for (const colonne of jour.creneaux) {
-      relays.set(colonne.id, colonne.couverturePause);
-    }
-  }
   const perCreneau = new Map<number, { stands: Set<string>; postes: number }>();
   for (const ligne of rapport.stands) {
     for (const jour of ligne.jours) {
       for (const [creneauId, cells] of openCellsByCreneau(jour.creneaux)) {
         const entry = perCreneau.get(creneauId) ?? { stands: new Set<string>(), postes: 0 };
         entry.stands.add(ligne.standId);
-        entry.postes += seatsOf(cells, relays.get(creneauId) ?? false);
+        entry.postes += seatsOf(cells);
         perCreneau.set(creneauId, entry);
       }
     }
@@ -283,12 +277,11 @@ function openCellsByCreneau(
   return cellsByCreneau;
 }
 
-/** The seats one stand asks on one timeslot: at least one per segment, halved on a meal relay. */
-function seatsOf(cells: readonly CelluleCreneauOuverture[], halved: boolean): number {
+/** The seats one stand asks on one timeslot: at least one per segment. */
+function seatsOf(cells: readonly CelluleCreneauOuverture[]): number {
   let postes = 0;
   for (const effectif of joinedSegments(cells)) {
-    const seats = Math.max(1, effectif);
-    postes += halved ? Math.ceil(seats / 2) : seats;
+    postes += Math.max(1, effectif);
   }
   return postes;
 }

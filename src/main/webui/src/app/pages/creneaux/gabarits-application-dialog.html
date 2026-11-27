@@ -1,19 +1,18 @@
-<h2 mat-dialog-title i18n="@@journeesTypes.application.title">Appliquer le calendrier des journées types</h2>
+<h2 mat-dialog-title i18n="@@gabarits.application.title">Appliquer le calendrier des gabarits</h2>
 <mat-dialog-content>
   @if (apercu.aucunChangement) {
-    <p class="empty-hint" i18n="@@journeesTypes.application.rien">La grille correspond déjà au calendrier : rien à changer.</p>
+    <p class="empty-hint" i18n="@@gabarits.application.rien">La grille correspond déjà au calendrier : rien à changer.</p>
   } @else {
-    <ul class="journees-types-bilan">
-      <li><strong>{{ apercu.conserves }}</strong>&nbsp;<ng-container i18n="@@journeesTypes.application.conserves">créneau(x) conservé(s), avec leurs sièges</ng-container></li>
-      <li><strong>{{ apercu.misAJour }}</strong>&nbsp;<ng-container i18n="@@journeesTypes.application.misAJour">relais repas mis à jour</ng-container></li>
-      <li><strong>{{ apercu.crees }}</strong>&nbsp;<ng-container i18n="@@journeesTypes.application.crees">créneau(x) créé(s)</ng-container></li>
-      <li [class.journees-types-suppression]="apercu.supprimes > 0"><strong>{{ apercu.supprimes }}</strong>&nbsp;<ng-container i18n="@@journeesTypes.application.supprimes">créneau(x) supprimé(s)</ng-container></li>
+    <ul class="gabarits-bilan">
+      <li><strong>{{ apercu.conserves }}</strong>&nbsp;<ng-container i18n="@@gabarits.application.conserves">créneau(x) conservé(s), avec leurs sièges</ng-container></li>
+      <li><strong>{{ apercu.crees }}</strong>&nbsp;<ng-container i18n="@@gabarits.application.crees">créneau(x) créé(s)</ng-container></li>
+      <li [class.gabarits-suppression]="apercu.supprimes > 0"><strong>{{ apercu.supprimes }}</strong>&nbsp;<ng-container i18n="@@gabarits.application.supprimes">créneau(x) supprimé(s)</ng-container></li>
     </ul>
     @if (apercu.postesSupprimes > 0) {
-      <p class="field-error" role="alert" i18n="@@journeesTypes.application.postes">
+      <p class="field-error" role="alert" i18n="@@gabarits.application.postes">
         {{ apercu.supprimesAvecPostes.length }} de ces créneaux portent {{ apercu.postesSupprimes }} siège(s) du planning enregistré : ils seront effacés.
       </p>
-      <ul class="journees-types-supprimes">
+      <ul class="gabarits-supprimes">
         @for (creneau of apercu.supprimesAvecPostes; track creneau.id) {
           <li>{{ creneau.date }} {{ creneau.heureDebut | hhmm }}–{{ creneau.heureFin | hhmm }}</li>
         }
@@ -50,6 +49,6 @@
     } @else {
       <mat-icon>event_available</mat-icon>
     }
-    <ng-container i18n="@@journeesTypes.application.submit">Appliquer</ng-container>
+    <ng-container i18n="@@gabarits.application.submit">Appliquer</ng-container>
   </button>
 </mat-dialog-actions>

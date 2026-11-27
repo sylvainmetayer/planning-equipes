@@ -103,9 +103,8 @@ class ReferentielMcpToolsTest {
         String animateurId = referenceDataService
                 .createAnimateur(new Animateur(null, "Grace", "Hopper", LocalDate.of(1990, 12, 9), false))
                 .getId();
-        CreneauView creneau = creneauTools
-                .createCreneau("2026-07-18", "09:00", "13:00", null, "E1")
-                .creneau();
+        CreneauView creneau =
+                creneauTools.createCreneau("2026-07-18", "09:00", "13:00", "E1").creneau();
         try {
             // An off day years outside the event: the one warning a screen
             // would show, and that the assistant used to be denied.
@@ -254,12 +253,11 @@ class ReferentielMcpToolsTest {
 
     @Test
     void createAndUpdateACreneau() {
-        CreneauView creneau = creneauTools
-                .createCreneau("2026-07-18", "09:00", "13:00", null, "E1")
-                .creneau();
+        CreneauView creneau =
+                creneauTools.createCreneau("2026-07-18", "09:00", "13:00", "E1").creneau();
 
         CreneauView modifie = creneauTools
-                .updateCreneau(creneau.id(), null, "10:00", null, null, null, "E1")
+                .updateCreneau(creneau.id(), null, "10:00", null, null, "E1")
                 .creneau();
         assertThat(modifie.heureDebut()).hasToString("10:00");
         assertThat(modifie.heureFin()).hasToString("13:00");
@@ -506,7 +504,7 @@ class ReferentielMcpToolsTest {
 
     @Test
     void aMalformedDateReportsAnActionableMessage() {
-        assertThatThrownBy(() -> creneauTools.createCreneau("18/07/2026", "09:00", "13:00", null, "E1"))
+        assertThatThrownBy(() -> creneauTools.createCreneau("18/07/2026", "09:00", "13:00", "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("AAAA-MM-JJ");
     }

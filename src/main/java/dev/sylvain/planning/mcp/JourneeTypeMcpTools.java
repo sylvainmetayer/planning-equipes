@@ -59,7 +59,7 @@ public class JourneeTypeMcpTools {
             description =
                     "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_gabarit. "
                             + "Crée ou remplace une journée type par son nom : ses vacations sur une ligne, « 09:00-12:00, "
-                            + "12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 », R marquant un relais repas (sièges divisés par deux). "
+                            + "12:00-13:00, 13:00-14:00, 14:00-20:00 ». "
                             + "Rien n'est écrit sur la grille : appeler affecter_journee_type puis materialiser_journees_types.",
             annotations =
                     @Tool.Annotations(
@@ -70,7 +70,7 @@ public class JourneeTypeMcpTools {
     @Deprecated
     JourneeTypeView defineJourneeType(
             @ToolArg(description = "Nom de la journée type, ex. « Jour normal »") String nom,
-            @ToolArg(description = "Vacations, ex. « 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 »")
+            @ToolArg(description = "Vacations, ex. « 09:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-20:00 »")
                     String vacations,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         Gabarit journeeType = new Gabarit(null, nom, VacationsLigne.parse(vacations));
@@ -262,7 +262,6 @@ public class JourneeTypeMcpTools {
     static RapportApplicationView toView(RapportApplication rapport) {
         return new RapportApplicationView(
                 rapport.conserves(),
-                rapport.misAJour(),
                 rapport.crees(),
                 rapport.supprimes(),
                 rapport.creneauxSupprimes().stream()
@@ -292,7 +291,6 @@ public class JourneeTypeMcpTools {
 
     public record RapportApplicationView(
             int conserves,
-            int misAJour,
             int crees,
             int supprimes,
             List<CreneauMcpTools.CreneauView> creneauxSupprimes,

@@ -7,18 +7,26 @@ You lay down the timeslots of the edition (the shifts the solve will fill) and s
 
 The calendar is kept on the *Calendar* page (*Prepare* group), a stand's hours on its fiche. A **shift** is a real slice of work: there is no other kind of timeslot.
 
-## Lay down timeslots with day templates
+## Lay down timeslots: the generator and timeslots by hand
 
-The shortest way is to name **day templates**: the shifts of a kind of day (an "R" marks a meal relay), laid onto a calendar of dates, which are those of the edition.
+The grid is produced by one **generator**, the *Generate timeslots* menu. It starts from one of three sources:
 
-1. Open *Calendar* and define your day templates ("weekday", "Saturday"...).
+| Source | What it writes |
+| --- | --- |
+| *From the templates* | the shifts of each template on the dates assigned to it |
+| *From the stands' opening hours* | a cut at every hour a stand opens or closes, a timeslot on every open stretch; added to the grid or in its place |
+| *From a recurring pattern* | windows repeated on chosen days, added to the grid |
+
+Whatever the source, the gesture is the same: a figures **preview** that writes nothing and says what the resulting grid would be worth, then the **application**. A **template** (« gabarit ») is what 3.x called a day template: the shifts of a kind of day, laid onto a calendar of dates, which are those of the edition.
+
+1. Open *Calendar* and define your templates ("weekday", "Saturday"...).
 2. Lay them onto the edition's dates.
-3. Read the figures preview: the day template is applied as a difference, destroying nothing.
+3. Read the figures preview: the template is applied as a difference, destroying nothing.
 4. Apply.
 
-A day template can also be applied without being saved, for a one-off need. The other ways of building the grid are gathered in a single menu: a single timeslot, recognising day templates in an existing grid, and deriving from the stand hours (added to the grid or in its place).
+Removing a date from a template's calendar does not delete its timeslots: they stay, the date is simply no longer governed. Templates can also be recognised in a grid that is already written (*Generate timeslots* menu). A single timeslot is added or edited by hand, in the list, as before.
 
-The page describes the grid in place and shows its consistency check as a banner, re-read on its own at each visit and after each write. Each timeslot counts the open stands and the seats it carries. Public holidays are marked on entry, and the check reminds you that a minor does not work on one when the edition has one that day.
+The page describes the grid in place and shows its consistency check as a banner, re-read on its own at each visit and after each write. Each timeslot counts the open stands and the seats it carries, with a link to the list of stands. Public holidays are marked on entry, and the check reminds you that a minor does not work on one when the edition has one that day.
 
 ## Set the stand opening hours
 

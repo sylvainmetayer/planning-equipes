@@ -328,9 +328,6 @@ describe('AccueilPage', () => {
       const page = createPage();
       await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
       await fixture.whenStable();
-      element()
-        .querySelector<HTMLButtonElement>('li[data-ligne="coherence"] button.accueil-lien')!
-        .click();
       await vi.waitFor(() => expect(text()).toContain('sera mineur pendant'));
       expect(setItem).not.toHaveBeenCalled();
     } finally {
@@ -351,9 +348,9 @@ describe('AccueilPage', () => {
     expect(ligne.querySelector('app-phase-edition-control')).not.toBeNull();
   });
 
-  // Several subjects: the coherence line unfolds its detail below itself; each
-  // anomaly links to the fiche that fixes it.
-  it('unfolds the coherence checklist under its line when it holds several subjects', async () => {
+  // The coherence line counts, and leads to the feed narrowed to its type;
+  // the feed lists each anomaly with the fiche that fixes it.
+  it('leads the coherence line to the feed, which lists the anomalies with their fiche', async () => {
     editionsApi.etat.mockResolvedValue(
       etat({ coherence: { bloquants: 0, aVerifier: 2, informations: 0, statut: 'ATTENTION' } }),
     );
@@ -370,48 +367,29 @@ describe('AccueilPage', () => {
       bloquants: 0,
       aVerifier: 2,
       informations: 0,
-      familles: [
-        { famille: 'STANDS', bloquants: 0, aVerifier: 0, informations: 0 },
-        { famille: 'CRENEAUX', bloquants: 0, aVerifier: 2, informations: 0 },
-      ],
+      familles: [{ famille: 'CRENEAUX', bloquants: 0, aVerifier: 2, informations: 0 }],
       anomalies: [horsOuverture, { ...horsOuverture, objetId: '8' }],
     });
     const page = createPage();
     await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     await fixture.whenStable();
-
-    const bouton = element().querySelector<HTMLButtonElement>(
-      'li[data-ligne="coherence"] button.accueil-lien',
-    )!;
-    expect(bouton.getAttribute('aria-expanded')).toBe('false');
-    // Nothing to point at while folded: the panel is not in the page.
-    expect(bouton.hasAttribute('aria-controls')).toBe(false);
-    // Nor read: the counts are in the state, the detail waits to be asked for.
-    expect(editionsApi.coherence).not.toHaveBeenCalled();
-    bouton.click();
-    await fixture.whenStable();
     await vi.waitFor(() => expect(editionsApi.coherence).toHaveBeenCalledOnce());
-    await fixture.whenStable();
 
-    const panneau = element().querySelector<HTMLElement>('#accueil-coherence-panneau')!;
-    await vi.waitFor(() =>
-      expect(panneau.textContent).toContain("n'est ouvert pendant le créneau"),
+    const lien = element().querySelector<HTMLAnchorElement>(
+      'li[data-ligne="coherence"] a.accueil-lien',
+    )!;
+    expect(lien.getAttribute('href')).toBe('/?type=coherence#a-traiter');
+    // The old unfolded panel is gone.
+    expect(element().querySelector('#accueil-coherence-panneau')).toBeNull();
+
+    const fil = element().querySelector<HTMLElement>('app-fil-accueil')!;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fil.textContent).toContain("n'est ouvert pendant le créneau");
+    });
+    expect(fil.querySelector('li[data-type="coherence"] a')!.getAttribute('href')).toBe(
+      '/creneaux?edit=7',
     );
-    expect(
-      element()
-        .querySelector('li[data-ligne="coherence"] button.accueil-lien')!
-        .getAttribute('aria-expanded'),
-    ).toBe('true');
-    expect(
-      element()
-        .querySelector('li[data-ligne="coherence"] button.accueil-lien')!
-        .getAttribute('aria-controls'),
-    ).toBe('accueil-coherence-panneau');
-    expect(panneau.querySelectorAll('section')).toHaveLength(1);
-    // Below the page's h1 and the h2 of « À traiter aujourd'hui ».
-    expect(panneau.querySelector('h3')!.textContent).toContain('Créneaux');
-    expect(panneau.querySelector('h2')).toBeNull();
-    expect(panneau.querySelector('a')!.getAttribute('href')).toBe('/creneaux?edit=7');
   });
 
   it("keeps « À traiter aujourd'hui » where the bell lands, its list only when something waits", async () => {
@@ -421,7 +399,7 @@ describe('AccueilPage', () => {
     expect(element().querySelector('#a-traiter')).not.toBeNull();
     expect(element().querySelector('.accueil-a-traiter-liste')).toBeNull();
     expect(text()).toContain("Rien n'attend de décision aujourd'hui.");
-    expect(element().querySelector('app-messages-recents')).not.toBeNull();
+    expect(element().querySelector('app-fil-accueil')).not.toBeNull();
 
     editionsApi.etat.mockResolvedValueOnce(
       etat({ aTraiter: { ...etat().aTraiter, echangesAArbitrer: 2, echangesEnAlerte: 1 } }),
@@ -522,8 +500,8 @@ describe('AccueilPage', () => {
     expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(12);
   });
 
-  /** Unfolded, the checklist of the referential follows a solve; folded, it is read when opened. */
-  it('reads the coherence detail again when a solve lands while it is shown', async () => {
+  /** The checklist of the referential is read with the page, and follows a solve. */
+  it('reads the coherence report again when a solve lands', async () => {
     editionsApi.etat.mockResolvedValue(
       etat({ coherence: { bloquants: 0, aVerifier: 1, informations: 0, statut: 'ATTENTION' } }),
     );
@@ -537,47 +515,37 @@ describe('AccueilPage', () => {
     const page = createPage();
     await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     await fixture.whenStable();
+    await vi.waitFor(() => expect(editionsApi.coherence).toHaveBeenCalledOnce());
     const [[, surSolve]] = jobs.onResult.mock.calls;
 
     surSolve();
     await vi.waitFor(() => expect(editionsApi.etat).toHaveBeenCalledTimes(2));
-    expect(editionsApi.coherence).not.toHaveBeenCalled();
-
-    element()
-      .querySelector<HTMLButtonElement>('li[data-ligne="coherence"] button.accueil-lien')!
-      .click();
-    await vi.waitFor(() => expect(editionsApi.coherence).toHaveBeenCalledOnce());
-    surSolve();
     await vi.waitFor(() => expect(editionsApi.coherence).toHaveBeenCalledTimes(2));
   });
 
   /**
-   * « Voir qui » while the address already names the alerts: the router goes
-   * nowhere, so the page unfolds them — folded by the reader meanwhile — and
-   * scrolls to them itself.
+   * « Voir qui » while the address already names the section: the router
+   * moves the feed to the alerts, and the page scrolls to it itself.
    */
-  it('unfolds and scrolls to the alerts of the night when their line is followed from there', async () => {
+  it("scrolls to the feed, narrowed to the alerts, when their line is followed from the bell's anchor", async () => {
     const scroll = vi.fn();
     Element.prototype.scrollIntoView = scroll;
-    await TestBed.inject(Router).navigateByUrl('/#alertes-nuit');
+    await TestBed.inject(Router).navigateByUrl('/#a-traiter');
     editionsApi.etat.mockResolvedValue(
       etat({ aTraiter: { ...etat().aTraiter, rappelsNonEnvoyes: 1 } }),
     );
     const page = createPage();
     await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     await fixture.whenStable();
-    expect(element().querySelector('#alertes-nuit')).not.toBeNull();
-
-    element().querySelector<HTMLButtonElement>('.messages-recents-bascule')!.click();
-    await fixture.whenStable();
-    expect(element().querySelector('#alertes-nuit')).toBeNull();
     scroll.mockClear();
 
-    element().querySelector<HTMLAnchorElement>('li[data-sujet="rappels"] a')!.click();
+    const lien = element().querySelector<HTMLAnchorElement>('li[data-sujet="rappels"] a')!;
+    expect(lien.getAttribute('href')).toBe('/?type=alertes#a-traiter');
+    lien.click();
     await fixture.whenStable();
 
-    expect(element().querySelector('#alertes-nuit')).not.toBeNull();
     await vi.waitFor(() => expect(scroll).toHaveBeenCalled());
+    expect(TestBed.inject(Router).url).toBe('/?type=alertes#a-traiter');
     await TestBed.inject(Router).navigateByUrl('/');
   });
 });

@@ -10,7 +10,7 @@ Votre point de départ est un tableur ? [Passer d'un tableur à un logiciel de p
 
 L'onglet *Importer* propose quatre cartes :
 
-1. le **scénario YAML**, le classeur complet d'une édition : typologies, emplacements, stands et leurs horaires, créneaux, journées types, animateurs, ajustements, paramètres. C'est **le seul qui remplace l'édition** au lieu de la compléter ;
+1. le **scénario YAML**, le classeur complet d'une édition : typologies, emplacements, stands et leurs horaires, créneaux, gabarits, animateurs, ajustements, paramètres. C'est **le seul qui remplace l'édition** au lieu de la compléter ;
 2. les **animateurs**, depuis un tableur CSV ;
 3. les **exemples** livrés avec l'application ;
 4. la **vérification d'un fichier** scénario, qui n'écrit rien.
@@ -47,7 +47,7 @@ Avant de remplacer une édition par un scénario, l'application en garde une cop
 
 L'onglet *Exporter* offre deux formes.
 
-- L'archive ZIP : un CSV par référentiel (typologies, emplacements, stands, créneaux, journées types, animateurs), chacun à cocher, à ouvrir dans un tableur. Seul le fichier des animateurs se réimporte.
+- L'archive ZIP : un CSV par référentiel (typologies, emplacements, stands, créneaux, gabarits, animateurs), chacun à cocher, à ouvrir dans un tableur. Seul le fichier des animateurs se réimporte.
 - Le fichier scénario : l'édition entière dans un seul fichier, celui que la carte Scénario des imports relit. C'est lui qui permet de recopier une édition sur l'autre, de rejouer le calendrier d'une année sur l'autre, ou de corriger en masse puis de réimporter.
 
 Chaque liste de référentiel offre aussi « Exporter cette liste », qui télécharge en CSV ce que le tableau montre.

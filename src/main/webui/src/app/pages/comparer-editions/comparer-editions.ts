@@ -49,7 +49,7 @@ export function familyTitle(family: DeltaFamily): string {
     case 'EMPLACEMENT':
       return $localize`:@@comparerEditions.famille.emplacements:Emplacements`;
     case 'JOURNEE_TYPE':
-      return $localize`:@@comparerEditions.famille.journeesTypes:Journées types`;
+      return $localize`:@@comparerEditions.famille.journeesTypes:Gabarits`;
     case 'CRENEAU':
       return $localize`:@@comparerEditions.famille.creneaux:Créneaux`;
     case 'PARAMETRE':
@@ -139,7 +139,6 @@ export function fieldLabel(field: string): string {
     souhaits: $localize`:@@comparerEditions.champ.souhaits:souhaits`,
     vacations: $localize`:@@comparerEditions.champ.vacations:vacations`,
     heureFin: $localize`:@@comparerEditions.champ.heureFin:heure de fin`,
-    couverturePause: $localize`:@@comparerEditions.champ.relais:relais repas`,
   };
   return labels[field] ?? field;
 }

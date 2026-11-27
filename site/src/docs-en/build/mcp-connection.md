@@ -110,7 +110,7 @@ A **hosted client** (Le Chat, Claude on the web) opens the connection from its s
 
 **A staff member's last name, first name and date of birth never leave over MCP.** What leaves is the id, the adult or minor status and under-16 status, derived from the date but never the date, and the non-identifying scheduling attributes.
 
-The id says nothing about the person, structurally: the application assigns it (`A1`, `A2`… within each edition, [ADR 0050](repo:docs/decisions/0050-identifiants-generes-par-edition.md)), never a caller or an import from the name, otherwise `marie.dupont` would make the person stand out in every response. The creation tools (`creer_animateur`, `creer_stand`, `creer_emplacement`, `creer_typologie`, `creer_contrainte_ad_hoc`, `creer_edition`, `dupliquer_edition`) therefore take no id and return the one they assigned. A stand, a game category or a location is created with an optional readable `code`, and the tools that cite a game category or a location accept the id as well as the code.
+The id says nothing about the person, structurally: the application assigns it (`A1`, `A2`… within each edition, [ADR 0050](repo:docs/decisions/0050-identifiants-generes-par-edition.md)), never a caller or an import from the name, otherwise `marie.dupont` would make the person stand out in every response. The creation tools (`creer_animateur`, `creer_stand`, `creer_emplacement`, `creer_typologie`, `creer_contrainte_ad_hoc`, `creer_edition`, with or without `source`) therefore take no id and return the one they assigned. A stand, a game category or a location is created with an optional readable `code`, and the tools that cite a game category or a location accept the id as well as the code.
 
 Four mechanisms hold the rule:
 

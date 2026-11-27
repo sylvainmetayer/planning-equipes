@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class GenerateurCreneauxMcpToolsTest {
 
-    private static final String JOUR = "09:00-12:00, 12:00-13:00 R, 14:00-18:00";
+    private static final String JOUR = "09:00-12:00, 12:00-13:00, 14:00-18:00";
 
     @Inject
     GenerateurCreneauxMcpTools tools;
@@ -41,7 +41,7 @@ class GenerateurCreneauxMcpToolsTest {
         EtatView etat = tools.modifyGabarit("Jour normal", JOUR, "2031-05-01", "2031-05-02", null, edition);
         assertThat(etat.gabarits())
                 .singleElement()
-                .satisfies(gabarit -> assertThat(gabarit.vacations()).contains("12:00-13:00 R"));
+                .satisfies(gabarit -> assertThat(gabarit.vacations()).contains("12:00-13:00"));
         assertThat(etat.calendrier())
                 .extracting(GenerateurCreneauxMcpTools.DateView::gabarit)
                 .containsExactly("Jour normal", "Jour normal");

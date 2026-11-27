@@ -255,7 +255,7 @@ class ScenarioYamlReaderTest {
      * newer file says to update, anything else says what the key accepts.
      */
     @ParameterizedTest
-    @ValueSource(strings = {"7", "abc", "1.5", "true", "0", "-18446744073709551615"})
+    @ValueSource(strings = {"8", "abc", "1.5", "true", "0", "-18446744073709551615"})
     void anUnreadableSchemaVersionIsABusinessRefusal(String value) {
         assertThatThrownBy(() -> ScenarioYamlReader.parseScenarioText(
                         "schemaVersion: " + value + "\nfestival:\n  dateDebut: 2026-07-08\n"))

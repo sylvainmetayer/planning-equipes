@@ -374,7 +374,7 @@ The organiser's browser keeps a log of what it was
 shown, and it is one more storage location, outside the database and outside the
 backups. Every info bubble is copied into a log of 200
 entries kept in the profile's `localStorage`, partitioned by edition but
-**not cleared at logout** and readable from the *Recent messages* of the home page
+**not cleared at logout** and readable from the feed of alerts and messages of the home page
 by anyone who reopens that profile, typically a shared control-room computer. Two
 bounds are set and recorded as they are: input warning messages
 **name a staff member by id only**,
@@ -382,7 +382,7 @@ never by first and last name or date of birth; and the sentence
 saying a person is a **minor** (the only one that, by naming the day they turn
 18, would let someone recompute their date of birth) is **displayed without being
 logged**. What does not bound it: the log does not expire on its own,
-it is emptied with the button from the *Recent messages* of the home page, and nothing stops
+it is emptied with the button from the feed of alerts and messages of the home page, and nothing stops
 another message of the application from writing a name in it. The operating rule
 that goes with it is that of a shared computer: empty the log, or close the
 browser session, when leaving the computer.

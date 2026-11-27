@@ -42,7 +42,7 @@ test("l'archive ne tient que les référentiels cochés, et part au clic", async
     .toBe(totalAvant - lignesAnimateurs);
 
   // Tout décocher n'offre rien à télécharger.
-  for (const libelle of ['Typologies', 'Emplacements', 'Stands', 'Créneaux', 'Journées types']) {
+  for (const libelle of ['Typologies', 'Emplacements', 'Stands', 'Créneaux', 'Gabarits']) {
     await page
       .locator('.export-csv-liste li')
       .filter({ hasText: libelle })
