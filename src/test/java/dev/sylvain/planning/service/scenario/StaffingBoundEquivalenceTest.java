@@ -69,12 +69,17 @@ class StaffingBoundEquivalenceTest {
      * the seats; a plan of that size, scored by the real constraints, proves that they can.
      *
      * <ul>
-     *   <li>11: 9 and 20: 105 — both met exactly by the daily-rest floor;</li>
+     *   <li>11: 9 — met exactly by the daily-rest floor;</li>
+     *   <li>20: 122 — it was 105 until the meal relay left the model (ADR 0129): the midday shifts,
+     *       half-staffed until then, now take the stand's full headcount, so the rung has more seats and the
+     *       need rose with them. A plan of 122 found by the model, scored by the real constraints, breaks no
+     *       hard rule; fewer rests on the bound's own floors, the model leaving 121 undecided after twenty
+     *       minutes (the search of the grid stops at 128);</li>
      *   <li>18: 72 — a plan of 72 holds under the real rules, and 70 is proved infeasible, so the need
      *       is 71 or 72 (the search of the grid stopped at 82).</li>
      * </ul>
      */
-    static final Map<Integer, Integer> PROVEN_NEED = Map.of(11, 9, 18, 72, 20, 105);
+    static final Map<Integer, Integer> PROVEN_NEED = Map.of(11, 9, 18, 72, 20, 122);
 
     /**
      * The gap left between the bound and the need, rung by rung, where it is not nil (ADR 0098): 10 owes
