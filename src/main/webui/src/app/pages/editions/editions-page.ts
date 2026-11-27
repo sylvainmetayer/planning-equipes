@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  LOCALE_ID,
   OnInit,
   signal,
   ViewEncapsulation,
@@ -19,10 +20,12 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { EditionsApi } from '../../core/api/editions-api';
+import { DateMockService } from '../../core/date-mock.service';
+import { situationText } from '../../core/situation-wording';
 import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
-import { ActivationPreview, Edition, EditionSituation } from '../../core/models';
-import { ConfirmService } from '../../shared/confirm-dialog';
+import { Edition, EditionSituation } from '../../core/models';
+import { EditionActivationActions } from '../../shared/edition-activation-actions';
 import { PromptDialog } from '../../shared/prompt-dialog';
 import { errorMessage } from '../../core/error-message';
 import { phaseLabel } from '../../core/phase-edition';
@@ -87,7 +90,9 @@ export class EditionsPage implements OnInit {
 
   private readonly editionsApi = inject(EditionsApi);
   private readonly notifications = inject(NotificationService);
-  private readonly confirm = inject(ConfirmService);
+  private readonly locale = inject(LOCALE_ID);
+  private readonly clock = inject(DateMockService);
+  private readonly activation = inject(EditionActivationActions);
   private readonly dialog = inject(MatDialog);
 
   ngOnInit(): void {
@@ -135,66 +140,22 @@ export class EditionsPage implements OnInit {
     await this.executer(() => this.editionsApi.rename(edition.id, nouveau));
   }
 
-  /**
-   * Makes `edition` the active one after a confirmation that says what the
-   * switch closes in the edition active today: links that stop working, swap
-   * requests left open, solves queued. A running solve refuses the switch,
-   * and the dialog says so before the click.
-   */
+  /** Activation and deactivation, with their confirmation, are shared with the banner. */
   protected async activer(edition: Edition): Promise<void> {
-    let apercu: ActivationPreview;
-    try {
-      apercu = await this.editionsApi.activationPreview(edition.id);
-    } catch (error) {
-      this.notifications.notify({ title: errorMessage(error), variant: 'error' });
-      return;
-    }
-    const confirme = await this.confirm.ask({
-      title: $localize`:@@editions.activer.title:Activer l'édition ${edition.nom}:nom: ?`,
-      message: activationMessage(apercu),
-      confirmLabel: $localize`:@@editions.activer.confirm:Activer`,
-    });
-    if (!confirme) {
-      return;
-    }
-    await this.executer(async () => {
-      await this.editionsApi.activate(edition.id);
-      this.notifications.notify({
-        title: $localize`:@@editions.activer.done:${edition.nom}:nom: est désormais l'édition active.`,
-        variant: 'success',
-        timeout: 4000,
-      });
-    });
+    await this.activation.activate(edition);
   }
 
   /** One line of the « Mise en service » card. */
   protected situationLabel(situation: EditionSituation): string {
-    const nom = situation.edition.nom;
-    const debut = situation.premierJour ?? '';
-    const fin = situation.dernierJour ?? '';
-    switch (situation.type) {
-      case 'ACTIVE_TERMINEE':
-        return $localize`:@@editions.situation.activeTerminee:${nom}:nom: est active, mais son dernier jour (${fin}:fin:) est passé : désactivez-la, ou activez l'édition suivante.`;
-      case 'INACTIVE_IMMINENTE':
-        return $localize`:@@editions.situation.inactiveImminente:${nom}:nom: commence le ${debut}:debut: mais n'est pas active : activez-la pour publier et ouvrir l'espace animateur.`;
-      case 'INACTIVE_EN_COURS':
-        return $localize`:@@editions.situation.inactiveEnCours:${nom}:nom: a commencé le ${debut}:debut: mais n'est pas active : son espace animateur est fermé et rien n'en part.`;
-      case 'AUCUNE_ACTIVE':
-        return $localize`:@@editions.situation.aucuneActive:Aucune édition n'est active, et ${nom}:nom: commence le ${debut}:debut: : activez-la pour publier et ouvrir l'espace animateur.`;
-    }
+    const hint =
+      situation.type === 'ACTIVE_TERMINEE'
+        ? $localize`:@@editions.situation.actionTerminee:Désactivez-la, ou activez l'édition suivante.`
+        : $localize`:@@editions.situation.actionActiver:Activez-la pour publier et ouvrir l'espace animateur.`;
+    return `${situationText(situation, this.locale, this.clock.dateDuJour())} ${hint}`;
   }
 
-  /** Leaves no edition active: between two events, nothing reaches outside. */
   protected async desactiver(edition: Edition): Promise<void> {
-    const confirme = await this.confirm.ask({
-      title: $localize`:@@editions.desactiver.title:Désactiver l'édition ${edition.nom}:nom: ?`,
-      message: $localize`:@@editions.desactiver.message:Plus aucune édition ne sera active : rien ne sera publié ni envoyé, et les liens d'espace, les calendriers et l'affichage mural cesseront de répondre.`,
-      confirmLabel: $localize`:@@editions.desactiver.confirm:Désactiver`,
-    });
-    if (!confirme) {
-      return;
-    }
-    await this.executer(() => this.editionsApi.deactivate(edition.id));
+    await this.activation.deactivate(edition);
   }
 
   protected basculer(edition: Edition): void {
@@ -269,40 +230,4 @@ export class EditionsPage implements OnInit {
       });
     }
   }
-}
-
-/**
- * The confirmation of an activation, in plain words: what stops in the
- * outgoing edition, and whether a running solve will refuse the switch.
- */
-export function activationMessage(apercu: ActivationPreview): string {
-  const lignes: string[] = [
-    $localize`:@@editions.activer.effet:Elle seule publiera, enverra des courriels et ouvrira l'espace animateur, les calendriers et l'affichage mural.`,
-  ];
-  if (apercu.sortante) {
-    const nom = apercu.sortante.nom;
-    const liens = apercu.liensAnimateurs;
-    const muraux = apercu.liensMuraux;
-    lignes.push(
-      $localize`:@@editions.activer.sortante:${nom}:nom: cessera de l'être : ${liens}:liens: lien(s) d'espace et de calendrier et ${muraux}:muraux: affichage(s) mural(aux) ne répondront plus.`,
-    );
-    if (apercu.demandesOuvertes > 0) {
-      const demandes = apercu.demandesOuvertes;
-      lignes.push(
-        $localize`:@@editions.activer.demandes:${demandes}:demandes: demande(s) d'échange y resteront sans réponse.`,
-      );
-    }
-  }
-  if (apercu.jobsEnFile > 0) {
-    const jobs = apercu.jobsEnFile;
-    lignes.push(
-      $localize`:@@editions.activer.jobs:${jobs}:jobs: résolution(s) en file sur ces éditions.`,
-    );
-  }
-  if (apercu.resolutionEnCours) {
-    lignes.push(
-      $localize`:@@editions.activer.refus:Une résolution est en cours sur l'une des deux éditions : l'activation sera refusée tant qu'elle n'est pas terminée.`,
-    );
-  }
-  return lignes.join(' ');
 }

@@ -25,7 +25,7 @@ Une seule édition est **active**. Elle seule publie, écrit aux animateurs, et 
 
 L'activation est refusée tant qu'une résolution tourne sur l'une des deux éditions.
 
-Un bandeau rappelle d'activer l'édition qui commence, ou de désactiver celle qui est finie. Désactiver une édition (même ligne, bouton « Désactiver ») ferme tout : plus aucune édition n'est active, rien n'est publié ni envoyé, et les liens d'espace, les calendriers et l'affichage mural cessent de répondre.
+Le bandeau « Action requise » porte une ligne par situation : il nomme l'édition et propose le geste (Activer, Désactiver, Activer la suivante), avec la confirmation de l'écran Éditions ; un lecteur n'a que le lien vers cet écran. Quand l'horloge simulée est active, la ligne le dit. « Ne plus afficher » masque une ligne, pour cette édition et cette situation, dans ce navigateur. Désactiver une édition (même ligne, bouton « Désactiver ») ferme tout : plus aucune édition n'est active, rien n'est publié ni envoyé, et les liens d'espace, les calendriers et l'affichage mural cessent de répondre.
 
 Pour travailler dans une autre édition sans l'activer, utilisez « Travailler dans cette édition » sur sa ligne : la barre d'édition indique celle que vous consultez.
 

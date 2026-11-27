@@ -28,7 +28,7 @@ Only one edition is **active**. Only it publishes, writes to staff, and opens th
 
 Activation is refused while a solve is running on either of the two editions.
 
-A banner reminds you to activate the edition that is starting, or to deactivate the one that is over. Deactivating an edition (same row, "Deactivate" button) closes everything: no edition is active any more, nothing is published or sent, and the espace links, calendars and wall display stop responding.
+The "Action required" banner carries one line per situation: it names the edition and offers the action (Activate, Deactivate, Activate the next one), with the confirmation of the Editions screen; a reader only gets the link to that screen. When the simulated clock is on, the line says so. "Don't show again" hides one line, for that edition and that situation, in this browser. Deactivating an edition (same row, "Deactivate" button) closes everything: no edition is active any more, nothing is published or sent, and the espace links, calendars and wall display stop responding.
 
 To work in another edition without activating it, use "Work in this edition" on its row: the edition bar shows the one you are viewing.
 
