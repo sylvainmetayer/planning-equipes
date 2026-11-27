@@ -170,6 +170,34 @@ class RegroupementEditionsMcpToolsTest {
                 () -> parametresTools.updateParametresNotificationsAlias("23:30", null, null, "E1"),
                 BusinessError.class,
                 "23:00");
+
+        // Each former name reads and writes the very section the grouped tool serves.
+        assertThat(parametresTools.getParametresQualiteAlias("E1"))
+                .isEqualTo(parametresTools.getParametres("organisation", "E1").parametres());
+        assertThat(parametresTools.getParametresNotificationsAlias("E1"))
+                .isEqualTo(parametresTools.getParametres("notifications", "E1").parametres());
+        assertThat(parametresTools.getParametresSolveurAlias("E1")).isNotNull();
+        assertThat(parametresTools.updateParametresLegauxAlias(
+                        null, null, null, null, null, null, null, null, null, null, null, "E1"))
+                .isEqualTo(legal);
+        assertThat(parametresTools.updateParametresQualiteAlias(
+                        null, null, null, null, null, null, null, null, null, null, "E1"))
+                .isEqualTo(parametresTools.getParametresQualiteAlias("E1"));
+        assertThat(parametresTools.updateParametresNotificationsAlias(null, null, null, "E1"))
+                .isEqualTo(parametresTools.getParametresNotificationsAlias("E1"));
+    }
+
+    @Test
+    void theFormerScenarioAndReminderNamesGoThroughTheSameDoors() throws Exception {
+        String yaml;
+        try (var in = getClass().getResourceAsStream("/scenarios/scenario.yml")) {
+            yaml = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        assertThat(scenarioTools.importScenario(null, yaml, "E1").importe()).isTrue();
+        assertThat(scenarioTools.importScenarioYaml(yaml, "E1").importe()).isTrue();
+
+        refused(() -> publicationTools.sendReminders(List.of("INCONNU"), "E1"), BusinessError.class, "");
+        refused(() -> publicationTools.remindAnimateurs(List.of("INCONNU"), "E1"), BusinessError.class, "");
     }
 
     private static void refused(ThrowingCallable call, Class<? extends BusinessError> cause, String phrase) {
