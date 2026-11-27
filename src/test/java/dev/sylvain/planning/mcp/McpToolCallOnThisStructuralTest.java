@@ -49,8 +49,6 @@ class McpToolCallOnThisStructuralTest {
                     "PlanningMcpTools.analyzeAffectation",
                     "PlanningMcpTools.consultLoad",
                     "PlanningMcpTools.consultPlanning",
-                    "PlanningMcpTools.explainAffectation",
-                    "PlanningMcpTools.listAffectations",
                     "PlanningMcpTools.simulateAffectation",
                     "PublicationMcpTools.consultPublication",
                     "ScenarioMcpTools.diagnoseScenario",
@@ -108,8 +106,10 @@ class McpToolCallOnThisStructuralTest {
     /** The braces of the tool's own declaration, read from the source. */
     private static String body(Method tool) throws Exception {
         String source = Files.readString(MCP.resolve(tool.getDeclaringClass().getSimpleName() + ".java"));
-        Matcher declaration = Pattern.compile("(?m)^\\s+(?:public |protected )?[\\w<>\\[\\], ?.]+\\s+"
-                        + Pattern.quote(tool.getName()) + "\\s*\\(")
+        // Anchored on the end of the @Tool annotation, so a call to the tool made earlier in the file
+        // (`return name(`, an argument of another call) is never taken for its declaration.
+        Matcher declaration = Pattern.compile("(?s)\\bopenWorldHint\\s*=\\s*\\w+\\)\\)\\s*(?:@\\w+\\s*)*"
+                        + "(?:public |protected )?[\\w<>\\[\\], ?.]+?\\s+" + Pattern.quote(tool.getName()) + "\\s*\\(")
                 .matcher(source);
         assertThat(declaration.find()).as("declaration of %s", tool.getName()).isTrue();
         int open = source.indexOf('{', declaration.end());

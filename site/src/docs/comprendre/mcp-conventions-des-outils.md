@@ -10,7 +10,7 @@ Une requête MCP n'est pas une requête JAX-RS : `EditionHeaderFilter` ne la voi
 
 Trois pièces s'en chargent. `@EditionArg` marque l'argument porteur (l'annotation fait le lien, le nom de l'argument n'y est pour rien). `@EditionCiblee` se pose sur la **classe** d'outils, si bien qu'un outil ajouté plus tard en hérite. `EditionCibleeInterceptor` lie l'édition autour de l'appel.
 
-> **Piège d'auto-invocation.** Un outil qui en appelle un autre sur `this` court-circuite l'intercepteur. Passez par un helper privé, jamais par l'outil voisin.
+> **Piège d'auto-invocation.** Un outil d'écriture qui en appelle un autre sur `this` repasse par l'intercepteur du second, qui journalise l'action une deuxième fois. Passez par un helper privé, jamais par l'outil voisin.
 
 `McpEditionStructurelleTest` échoue sur tout `@Tool` qui travaille dans une édition sans permettre de la désigner. Quelques exemptions, qui ne lisent ni n'écrivent rien dans une édition : `lister_scenarios` et `diagnostiquer_scenario` (fichiers livrés, validation pure, et l'ancien nom de celle-ci), les outils de pilotage des calculs (`consulter_calcul`, `arreter_calcul`, `supprimer_calcul`, et leurs anciens noms : le registre est global, chaque job portant l'édition pour laquelle il a été lancé), `lister_mesures_edition` et `supprimer_mesure_edition` (non cloisonnés pour qu'une édition se compare à la précédente) et les deux outils de sauvegarde. Tout autre outil sans édition est `@InstanceOnlyTool` (réservé à l'administrateur) ou justifié dans le test.
 
