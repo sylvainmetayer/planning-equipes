@@ -4973,7 +4973,7 @@
   "typologies.form.editTitle": "Edit category {$nom}",
   "typologies.form.newTitle": "New category",
   "typologies.grille.lien": "Enter the levels for {$typologie} in the grid",
-  "typologies.hint.description": "An organiser's note, for example « requires learning 45 games ». Read on this screen and in the plan-by-game category view, nowhere else.",
+  "typologies.hint.description": "An organiser's note, for example « requires learning 45 games ». Read on this screen and in the plan-by-game-category view, nowhere else.",
   "typologies.hint.maxCreneaux": "Over the whole edition, not per day. Empty: no cap. A hard constraint: the solver will not go past it.",
   "typologies.list.title": "Categories ({$INTERPOLATION})",
   "typologies.orphelines.bandeau": "Game categories offered by stands and mastered by nobody: {$INTERPOLATION}",

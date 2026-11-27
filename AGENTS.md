@@ -369,8 +369,9 @@ Single Quarkus service, no separate solver microservice. Package root:
   `GelReferentielStructuralTest` fails on a method of those services in neither
   case nor argued as open — and on an annotated method called on `this`: ArC
   intercepts that call too, so the guard would run a second time (see *ArC
-  intercepts a call on `this`* below). Consignes stay open: their grid write goes through
-  the in-transaction timeslot methods, which only `ConsigneService` calls. The
+  intercepts a call on `this`* below). Consignes stay open: their grid write
+  goes through the in-transaction timeslot methods, which only `ConsigneService`
+  calls. The
   3.x freeze routes are aliases of the phase until 5.0 (the MCP tools
   `figer_referentiel` / `lever_gel` are replaced by `modifier_phase_edition`),
   and the table `gel_referentiel` is read by nothing. The screen side is one
@@ -384,9 +385,10 @@ Single Quarkus service, no separate solver microservice. Package root:
   interceptors like a call from outside; a `private` one never does. So an
   annotated method called on `this` does **not** bypass its guard, it runs it
   again — which is the bug for a `@Tool`, where `JournalOutilInterceptor`
-  writes a second journal line (`EchangeJournalMcpTest`). A tool that
+  writes a second journal line (`EchangeJournalMcpTest`). A write tool that
   delegates (a grouped tool over its former name, a method shared by two
-  tools) calls a `private` method, never another `@Tool` or annotated method.
+  tools) calls a `private` method, never another `@Tool` or annotated method;
+  a read tool may still call another, since a read is never journalled.
 - **A write a running solve would undo is refused, by annotation too.** A
   solve's landing re-upserts the stands, timeslots and animateurs its problem
   names and rewrites every seat, so a service method writing them carries
@@ -562,7 +564,7 @@ Single Quarkus service, no separate solver microservice. Package root:
      names no edition is `@InstanceOnlyTool` — refused to an organiser who
      reaches `/mcp` by OAuth (ADR 0097) — or argued in that same test, with
      what keeps it inside the organiser's editions. A tool never calls
-     another `@Tool` on `this`: see the ArC paragraph below.
+     another `@Tool` on `this`: see the ArC paragraph above.
   3. every tool declares the four MCP hints, and only the tools that **send
      mail** (`publier_planning`, `envoyer_planning_animateur`,
      `configurer_collecte_disponibilites`, `relancer_animateurs`) may declare

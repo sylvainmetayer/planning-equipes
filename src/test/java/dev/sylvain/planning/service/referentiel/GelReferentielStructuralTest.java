@@ -290,11 +290,12 @@ class GelReferentielStructuralTest {
     }
 
     /**
-     * ArC intercepts a call on {@code this} like any other, so the guard runs a
-     * second time, and a private callee is not intercepted at all: an annotated
-     * method called from inside its own class is refused — unless the caller's own guard already covers every family the callee
-     * names. An unguarded caller never does; an annotated one does when its
-     * families include the callee's (every family, for an empty list).
+     * ArC intercepts a call on {@code this} like any other, so the callee's
+     * guard runs a second time: an annotated method called from inside its own
+     * class is refused — unless the caller's own guard already covers every
+     * family the callee names. An unguarded caller never does; an annotated one
+     * does when its families include the callee's (every family, for an empty
+     * list).
      */
     @Test
     void noAnnotatedMethodIsCalledOnThis() throws IOException {
@@ -324,7 +325,7 @@ class GelReferentielStructuralTest {
         }
         assertThat(selfCalls)
                 .as("annotated methods called on this from a method whose own guard does not cover their families,"
-                        + " where the interceptor never runs")
+                        + " where the callee's guard would run again")
                 .isEmpty();
     }
 

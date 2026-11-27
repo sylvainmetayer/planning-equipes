@@ -6,6 +6,7 @@ import static org.awaitility.Awaitility.await;
 
 import dev.sylvain.planning.mcp.EchangeMcpTools.DemandeView;
 import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationView;
+import dev.sylvain.planning.mcp.PlanningMcpTools.DeplacementView;
 import dev.sylvain.planning.mcp.SolveurMcpTools.JobMcpView;
 import dev.sylvain.planning.mcp.VerrouillageMcpTools.VerrouillageView;
 import dev.sylvain.planning.service.BusinessError;
@@ -240,6 +241,101 @@ class RegroupementPlanningMcpToolsTest {
         } finally {
             echangeTools.modifyFoireEchanges(ouverte, null, null, "E1");
         }
+    }
+
+    @Test
+    void theFormerSwapNamesStillDecideAndTheFoireStillOpens() {
+        AffectationView poste = firstFilledSeat();
+        String collegue = otherAnimateur(poste);
+        boolean ouverte = echangeTools.getFoireEchanges(null, null, null, "E1").ouverte();
+        try {
+            assertThat(echangeTools
+                            .configureFoireEchanges(true, null, null, "E1")
+                            .ouverte())
+                    .isTrue();
+
+            String aRefuser = submitSwap(poste, collegue);
+            assertThat(echangeTools.refuseDemandeEchange(aRefuser, null, "E1").statut())
+                    .isEqualTo("REFUSEE");
+
+            String aAccepter = submitSwap(poste, collegue);
+            editionContext.executeIn("E1", () -> demandes.acceptByTarget(collegue, aAccepter));
+            assertThat(echangeTools
+                            .decideDemandeEchange(aAccepter, "accepter", null, "E1")
+                            .statut())
+                    .isEqualTo("ACCEPTEE");
+        } finally {
+            echangeTools.modifyFoireEchanges(ouverte, null, null, "E1");
+        }
+    }
+
+    @Test
+    void aSeatMovesThroughTheGroupedToolAndItsFormerName() {
+        firstFilledSeat();
+
+        DeplacementView premier = validMove();
+        assertThat(planningTools
+                        .moveAffectation(premier.posteSourceId(), premier.posteCibleId(), null, null, "E1")
+                        .casseContrainteDure())
+                .isFalse();
+
+        DeplacementView second = validMove();
+        assertThat(planningTools
+                        .modifyAffectation(second.posteSourceId(), "deplacer", null, second.posteCibleId(), null, "E1")
+                        .deplacement())
+                .isNotNull();
+    }
+
+    @Test
+    void aRunningSolveIsStoppedByItsGroupedTool() {
+        firstFilledSeat();
+        awaitSolverIdle();
+        JobMcpView job = solveurTools.startCalcul(30L, null, null, null, "E1");
+
+        solveurTools.stopCalcul(job.id());
+
+        assertThat(awaitFinished(job.id()).status()).isIn(ETATS_TERMINAUX);
+    }
+
+    private String otherAnimateur(AffectationView poste) {
+        return planningTools.listAffectations(null, null, null, null, null, "E1").affectations().stream()
+                .map(AffectationView::animateurId)
+                .filter(id -> id != null && !id.equals(poste.animateurId()))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private String submitSwap(AffectationView poste, String collegue) {
+        return editionContext
+                .executeIn(
+                        "E1",
+                        () -> demandes.submit(
+                                poste.animateurId(),
+                                List.of(new NouvelleDemande(
+                                        poste.creneauId(), poste.standId(), collegue, null, null, null))))
+                .getFirst()
+                .getId();
+    }
+
+    /** The first pair of held seats whose swap the plan accepts, as the simulation the move will apply. */
+    private DeplacementView validMove() {
+        List<AffectationView> tenus =
+                planningTools.listAffectations(null, null, null, null, null, "E1").affectations().stream()
+                        .filter(vue -> vue.animateurId() != null)
+                        .limit(40)
+                        .toList();
+        for (AffectationView source : tenus) {
+            for (AffectationView cible : tenus) {
+                if (source.animateurId().equals(cible.animateurId())) {
+                    continue;
+                }
+                DeplacementView simulation = planningTools.simulateMove(source.posteId(), cible.posteId(), null, "E1");
+                if (!simulation.casseContrainteDure()) {
+                    return simulation;
+                }
+            }
+        }
+        throw new AssertionError("aucun déplacement de siège n'est accepté par le planning");
     }
 
     private static void refused(ThrowingCallable call, Class<? extends BusinessError> cause, String phrase) {
