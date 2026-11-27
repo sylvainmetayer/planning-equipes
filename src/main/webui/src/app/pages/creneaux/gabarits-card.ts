@@ -21,14 +21,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { JourneesTypesApi } from '../../core/api/journees-types-api';
+import { GenerateurCreneauxApi } from '../../core/api/generateur-creneaux-api';
 import { jourSemaineDe, libelleJour, libelleJourSemaine } from '../../core/horaire-stand';
-import {
-  AffectationJourneeType,
-  EtatJourneesTypes,
-  JourneeType,
-  RapportApplicationJourneesTypes,
-} from '../../core/models';
+import { AffectationGabarit, EtatGenerateur, Gabarit, RapportApplication } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -36,30 +31,26 @@ import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { JoursFeriesService } from '../../core/jours-feries.service';
 import { PastilleFerie } from '../../shared/pastille-ferie';
 import {
-  JourneeTypeDialog,
-  JourneeTypeDialogData,
-  JourneeTypeDialogResult,
+  GabaritDialog,
+  GabaritDialogData,
+  GabaritDialogResult,
   isOneOffSeries,
-} from './journee-type-dialog';
-import {
-  JourneesTypesApplicationData,
-  JourneesTypesApplicationDialog,
-} from './journees-types-application-dialog';
+} from './gabarit-dialog';
+import { GabaritsApplicationData, GabaritsApplicationDialog } from './gabarits-application-dialog';
 import {
   affecterDates,
   bornesCalendrier,
   datesDePlage,
   libelleVacation,
-  nomJourneeType,
-  retirerDate,
-} from './journees-types';
+  nomGabarit,
+} from './gabarits';
 
 /** One row of the calendar table, ready to render. */
 interface LigneCalendrier {
   date: string;
   libelle: string;
   jourSemaine: string;
-  journeeTypeId: number;
+  gabaritId: number;
   enEcart: boolean;
   /** Under a consigne (issue #4): the templates ignore the date, and it never reads « en écart ». */
   sousConsigne: boolean;
@@ -68,14 +59,14 @@ interface LigneCalendrier {
 }
 
 /**
- * « Journées types » : the templates on the left, the calendar on the right,
+ * « Gabarits » : the templates on the left, the calendar on the right,
  * and the two gestures that connect them to the grid — apply (previewed
  * first) and recognise (what the grid already implies). The card is where an
  * edition that types its vacations by hand starts: the dates it assigns are
  * the edition's dates, before a single créneau exists (ADR 0032).
  */
 @Component({
-  selector: 'app-journees-types',
+  selector: 'app-gabarits',
   imports: [
     FormsModule,
     MatButtonModule,
@@ -88,19 +79,19 @@ interface LigneCalendrier {
     MatTooltipModule,
     PastilleFerie,
   ],
-  templateUrl: './journees-types-card.html',
+  templateUrl: './gabarits-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class JourneesTypesCard implements OnInit {
+export class GabaritsCard implements OnInit {
   /** Editing is disabled while a solve runs, like the rest of the page. */
   readonly verrouille = input(false);
   /** The calendar was applied: the page reloads the grid, its verdict and its mode. */
-  readonly applique = output<RapportApplicationJourneesTypes>();
+  readonly applique = output<RapportApplication>();
   /** « Appliquer sans mémoriser » in a template's dialog: the page lays these timeslots as a series. */
   readonly serie = output<string>();
 
   private readonly destroyRef = inject(DestroyRef);
-  private readonly api = inject(JourneesTypesApi);
+  private readonly api = inject(GenerateurCreneauxApi);
   private readonly crud = inject(ReferenceCrudService);
   private readonly dialog = inject(MatDialog);
   private readonly confirm = inject(ConfirmService);
@@ -113,16 +104,16 @@ export class JourneesTypesCard implements OnInit {
    */
   private readonly gel = injectGelReferentiel();
 
-  protected readonly etat = signal<EtatJourneesTypes | null>(null);
+  protected readonly etat = signal<EtatGenerateur | null>(null);
   protected readonly chargement = signal(false);
   protected readonly ecriture = signal(false);
 
   /** The add-dates form: a range and a template. */
   protected readonly du = signal('');
   protected readonly au = signal('');
-  protected readonly journeeTypeChoisie = signal<number | null>(null);
+  protected readonly gabaritChoisie = signal<number | null>(null);
 
-  protected readonly journeesTypes = computed(() => this.etat()?.journeesTypes ?? []);
+  protected readonly gabarits = computed(() => this.etat()?.gabarits ?? []);
   protected readonly calendrier = computed(() => this.etat()?.calendrier ?? []);
   protected readonly datesSousConsigne = computed(
     () => new Set(this.etat()?.datesSousConsigne ?? []),
@@ -141,7 +132,7 @@ export class JourneesTypesCard implements OnInit {
       date: affectation.date,
       libelle: libelleJour(affectation.date),
       jourSemaine: libelleJourSemaine(jourSemaineDe(affectation.date)),
-      journeeTypeId: affectation.journeeTypeId,
+      gabaritId: affectation.gabaritId,
       enEcart: ecarts.has(affectation.date),
       sousConsigne: sousConsigne.has(affectation.date),
       ferie: feries.get(affectation.date) ?? null,
@@ -151,7 +142,7 @@ export class JourneesTypesCard implements OnInit {
   protected readonly peutAjouter = computed(
     () =>
       this.datesAAjouter().length > 0 &&
-      this.journeeTypeChoisie() !== null &&
+      this.gabaritChoisie() !== null &&
       !this.ecriture() &&
       !this.verrouille(),
   );
@@ -174,7 +165,7 @@ export class JourneesTypesCard implements OnInit {
   }
 
   protected nomDe(id: number): string {
-    return nomJourneeType(this.journeesTypes(), id);
+    return nomGabarit(this.gabarits(), id);
   }
 
   /** Read again after anything that changes the grid: the drift is computed against it. */
@@ -183,8 +174,8 @@ export class JourneesTypesCard implements OnInit {
     try {
       const etat = await this.api.etat();
       this.etat.set(etat);
-      if (this.journeeTypeChoisie() === null && etat.journeesTypes.length > 0) {
-        this.journeeTypeChoisie.set(etat.journeesTypes[0].id ?? null);
+      if (this.gabaritChoisie() === null && etat.gabarits.length > 0) {
+        this.gabaritChoisie.set(etat.gabarits[0].id ?? null);
       }
     } catch (error) {
       this.crud.reportError(error);
@@ -195,13 +186,13 @@ export class JourneesTypesCard implements OnInit {
 
   /* ------------------------------ Templates ------------------------------ */
 
-  protected ouvrir(journeeType: JourneeType | null): void {
+  protected open(gabarit: Gabarit | null): void {
     if (this.verrouille()) {
       return;
     }
-    const ref = this.dialog.open<JourneeTypeDialog, JourneeTypeDialogData, JourneeTypeDialogResult>(
-      JourneeTypeDialog,
-      { data: { journeeType }, width: '40rem', maxWidth: '95vw', autoFocus: 'first-tabbable' },
+    const ref = this.dialog.open<GabaritDialog, GabaritDialogData, GabaritDialogResult>(
+      GabaritDialog,
+      { data: { gabarit }, width: '40rem', maxWidth: '95vw', autoFocus: 'first-tabbable' },
     );
     ref
       .afterClosed()
@@ -212,24 +203,24 @@ export class JourneesTypesCard implements OnInit {
           return;
         }
         if (ecrit) {
-          if (this.journeeTypeChoisie() === null) {
-            this.journeeTypeChoisie.set(ecrit.id ?? null);
+          if (this.gabaritChoisie() === null) {
+            this.gabaritChoisie.set(ecrit.id ?? null);
           }
           void this.recharger();
         }
       });
   }
 
-  protected async supprimer(journeeType: JourneeType): Promise<void> {
-    if (this.verrouille() || journeeType.id == null) {
+  protected async remove(gabarit: Gabarit): Promise<void> {
+    if (this.verrouille() || gabarit.id == null) {
       return;
     }
     const dates = this.calendrier().filter(
-      (affectation) => affectation.journeeTypeId === journeeType.id,
+      (affectation) => affectation.gabaritId === gabarit.id,
     ).length;
     const confirme = await this.confirm.ask({
-      title: $localize`:@@journeesTypes.supprimer.title:Supprimer la journée type « ${journeeType.nom}:nom: »`,
-      message: $localize`:@@journeesTypes.supprimer.message:${dates}:count: date(s) ne seront plus gouvernées par aucune journée type. Les créneaux déjà écrits restent tels quels.`,
+      title: $localize`:@@gabarits.supprimer.title:Supprimer le gabarit « ${gabarit.nom}:nom: »`,
+      message: $localize`:@@gabarits.supprimer.message:${dates}:count: date(s) ne seront plus gouvernées par aucun gabarit. Les créneaux déjà écrits restent tels quels.`,
       confirmLabel: $localize`:@@common.delete:Supprimer`,
       danger: true,
     });
@@ -238,9 +229,9 @@ export class JourneesTypesCard implements OnInit {
     }
     this.ecriture.set(true);
     try {
-      await this.api.delete(journeeType.id);
-      if (this.journeeTypeChoisie() === journeeType.id) {
-        this.journeeTypeChoisie.set(null);
+      await this.api.delete(gabarit.id);
+      if (this.gabaritChoisie() === gabarit.id) {
+        this.gabaritChoisie.set(null);
       }
       await this.recharger();
     } catch (error) {
@@ -253,30 +244,35 @@ export class JourneesTypesCard implements OnInit {
   /* ------------------------------ Calendar ------------------------------ */
 
   protected async ajouterDates(): Promise<void> {
-    const journeeTypeId = this.journeeTypeChoisie();
-    if (!this.peutAjouter() || journeeTypeId === null) {
+    const gabaritId = this.gabaritChoisie();
+    if (!this.peutAjouter() || gabaritId === null) {
       return;
     }
-    await this.ecrireCalendrier(
-      affecterDates(this.calendrier(), this.datesAAjouter(), journeeTypeId),
-    );
+    await this.writeCalendar(affecterDates(this.calendrier(), this.datesAAjouter(), gabaritId));
   }
 
-  protected async changerJourneeType(date: string, journeeTypeId: number): Promise<void> {
+  protected async changerGabarit(date: string, gabaritId: number): Promise<void> {
     if (this.verrouille() || this.ecriture()) {
       return;
     }
-    await this.ecrireCalendrier(affecterDates(this.calendrier(), [date], journeeTypeId));
+    await this.writeCalendar(affecterDates(this.calendrier(), [date], gabaritId));
   }
 
   protected async retirer(date: string): Promise<void> {
     if (this.verrouille() || this.ecriture()) {
       return;
     }
-    await this.ecrireCalendrier(retirerDate(this.calendrier(), date));
+    this.ecriture.set(true);
+    try {
+      this.etat.set(await this.api.withdraw([date]));
+    } catch (error) {
+      this.crud.reportError(error);
+    } finally {
+      this.ecriture.set(false);
+    }
   }
 
-  private async ecrireCalendrier(calendrier: AffectationJourneeType[]): Promise<void> {
+  private async writeCalendar(calendrier: AffectationGabarit[]): Promise<void> {
     this.ecriture.set(true);
     try {
       this.etat.set(await this.api.setCalendrier(calendrier));
@@ -290,14 +286,27 @@ export class JourneesTypesCard implements OnInit {
   /* ------------------------------ Apply, recognise ------------------------------ */
 
   /** Previewed first, always: the dialog shows what the write will do and does it. */
-  protected async appliquer(): Promise<void> {
+  async apply(): Promise<void> {
+    // The page's menu item stays enabled on an empty calendar: say why nothing opens.
+    if (this.calendrier().length === 0 && !this.chargement()) {
+      this.notifications.notify({
+        title: $localize`:@@gabarits.appliquer.vide:Aucune date n'est affectée à un gabarit : posez d'abord des gabarits sur des dates du calendrier.`,
+        variant: 'warning',
+        timeout: 6000,
+      });
+      return;
+    }
     if (!this.peutAppliquer()) {
       return;
     }
-    let apercu: RapportApplicationJourneesTypes;
+    let apercu: RapportApplication;
     this.ecriture.set(true);
     try {
-      apercu = await this.api.previewApplication();
+      const generation = await this.api.preview({ source: 'GABARITS' });
+      if (!generation.application) {
+        return;
+      }
+      apercu = generation.application;
     } catch (error) {
       this.crud.reportError(error);
       return;
@@ -305,10 +314,10 @@ export class JourneesTypesCard implements OnInit {
       this.ecriture.set(false);
     }
     const ref = this.dialog.open<
-      JourneesTypesApplicationDialog,
-      JourneesTypesApplicationData,
-      RapportApplicationJourneesTypes | null
-    >(JourneesTypesApplicationDialog, {
+      GabaritsApplicationDialog,
+      GabaritsApplicationData,
+      RapportApplication | null
+    >(GabaritsApplicationDialog, {
       data: { apercu },
       width: '44rem',
       maxWidth: '95vw',
@@ -320,7 +329,7 @@ export class JourneesTypesCard implements OnInit {
       .subscribe((rapport) => {
         if (rapport) {
           this.notifications.notify({
-            title: $localize`:@@journeesTypes.application.done:Calendrier appliqué : ${rapport.crees}:crees: créneau(x) créé(s), ${rapport.supprimes}:supprimes: supprimé(s), ${rapport.conserves}:conserves: conservé(s).`,
+            title: $localize`:@@gabarits.application.done:Calendrier appliqué : ${rapport.crees}:crees: créneau(x) créé(s), ${rapport.supprimes}:supprimes: supprimé(s), ${rapport.conserves}:conserves: conservé(s).`,
             variant: 'success',
             timeout: 8000,
           });
@@ -332,8 +341,7 @@ export class JourneesTypesCard implements OnInit {
 
   /**
    * What the grid implies replaces the templates and the calendar — said
-   * before it is done. Public: the page offers it in « Autres façons de créer
-   * la grille ».
+   * before it is done. Public: the page offers it in « Générer des créneaux ».
    */
   async reconnaitre(): Promise<void> {
     if (this.verrouille() || this.ecriture()) {
@@ -350,10 +358,10 @@ export class JourneesTypesCard implements OnInit {
       this.ecriture.set(false);
     }
     const confirme = await this.confirm.ask({
-      title: $localize`:@@journeesTypes.reconnaitre.title:Reconnaître les journées types`,
-      message: $localize`:@@journeesTypes.reconnaitre.message:${apercu.journeesTypes.length}:count: journée(s) type(s) sur ${apercu.calendrier.length}:dates: date(s), lues dans les créneaux actuels. Elles remplacent les journées types et le calendrier existants ; les créneaux ne changent pas.`,
-      confirmLabel: $localize`:@@journeesTypes.reconnaitre.submit:Remplacer`,
-      danger: this.journeesTypes().length > 0,
+      title: $localize`:@@gabarits.reconnaitre.title:Reconnaître les gabarits`,
+      message: $localize`:@@gabarits.reconnaitre.message:${apercu.gabarits.length}:count: gabarit(s) sur ${apercu.calendrier.length}:dates: date(s), lues dans les créneaux actuels. Elles remplacent les gabarits et le calendrier existants ; les créneaux ne changent pas.`,
+      confirmLabel: $localize`:@@gabarits.reconnaitre.submit:Remplacer`,
+      danger: this.gabarits().length > 0,
     });
     if (!confirme) {
       return;
@@ -361,7 +369,7 @@ export class JourneesTypesCard implements OnInit {
     this.ecriture.set(true);
     try {
       await this.api.reconnaitre();
-      this.journeeTypeChoisie.set(null);
+      this.gabaritChoisie.set(null);
       await this.recharger();
     } catch (error) {
       this.crud.reportError(error);

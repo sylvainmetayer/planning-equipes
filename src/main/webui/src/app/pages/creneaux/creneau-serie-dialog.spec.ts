@@ -8,17 +8,20 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CreneauxApi } from '../../core/api/creneaux-api';
+import { GenerateurCreneauxApi } from '../../core/api/generateur-creneaux-api';
 import { JoursFeriesService } from '../../core/jours-feries.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { RapportRecurrence } from '../../core/models';
+import { Generation } from '../../core/models';
 import { fakeOf, provideFake } from '../../core/testing/fake';
 import { CreneauSerieDialog } from './creneau-serie-dialog';
 
-function apercu(patch: Partial<RapportRecurrence['controle']> = {}): RapportRecurrence {
+function apercu(patch: Partial<Generation['controle']> = {}): Generation {
   return {
+    source: 'RECURRENCE',
     nombreGeneres: 2,
+    coupures: [],
+    joursSansFenetre: [],
     creneaux: [
       { id: 0, jour: 0, date: '2026-07-06', heureDebut: '09:00', heureFin: '12:00' },
       { id: 0, jour: 0, date: '2026-07-06', heureDebut: '14:00', heureFin: '18:00' },
@@ -36,22 +39,22 @@ function apercu(patch: Partial<RapportRecurrence['controle']> = {}): RapportRecu
 function monter(
   options: {
     editingLocked?: boolean;
-    reponse?: RapportRecurrence;
-    controleActuel?: RapportRecurrence['controle'];
+    reponse?: Generation;
+    controleActuel?: Generation['controle'];
     feries?: Map<string, string>;
   } = {},
 ) {
   // Two stubs, not one: a test must tell a preview from a write.
-  const creneauxApi = fakeOf<CreneauxApi>({
-    previewRecurrence: () => Promise.resolve(options.reponse ?? apercu()),
-    createRecurrence: () => Promise.resolve(options.reponse ?? apercu()),
+  const generateur = fakeOf<GenerateurCreneauxApi>({
+    preview: () => Promise.resolve(options.reponse ?? apercu()),
+    apply: () => Promise.resolve(options.reponse ?? apercu()),
   });
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      provideFake(CreneauxApi, creneauxApi),
+      provideFake(GenerateurCreneauxApi, generateur),
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
       {
         provide: JoursFeriesService,
@@ -73,8 +76,8 @@ function monter(
   });
   return {
     fixture: TestBed.createComponent(CreneauSerieDialog),
-    preview: creneauxApi.previewRecurrence,
-    post: creneauxApi.createRecurrence,
+    preview: generateur.preview,
+    post: generateur.apply,
     close,
   };
 }
@@ -163,7 +166,8 @@ describe('CreneauSerieDialog', () => {
 
     expect(preview).toHaveBeenCalledOnce();
     const [body] = preview.mock.calls[0];
-    expect(body).toEqual({
+    expect(body.source).toBe('RECURRENCE');
+    expect(body.recurrence).toEqual({
       jours: 'TOUS',
       dateDebut: '2026-07-06',
       dateFin: '2026-07-07',

@@ -18,7 +18,7 @@ import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreneauxApi } from '../../core/api/creneaux-api';
 import { ConsignesStore } from '../../core/consignes.store';
-import { JourneesTypesApi } from '../../core/api/journees-types-api';
+import { GenerateurCreneauxApi } from '../../core/api/generateur-creneaux-api';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { ProblemesStore } from '../../core/problemes.store';
@@ -207,11 +207,11 @@ describe('CreneauxPage', () => {
         },
         // The day-templates card reads its own state; an empty one keeps it quiet here.
         {
-          provide: JourneesTypesApi,
+          provide: GenerateurCreneauxApi,
           useValue: {
             etat: vi.fn(() =>
               Promise.resolve({
-                journeesTypes: [],
+                gabarits: [],
                 calendrier: [],
                 datesEnEcart: [],
                 datesSousConsigne: [],
@@ -604,8 +604,9 @@ describe('CreneauxPage rendering', () => {
   it('counts the stands open on each timeslot and its seats', async () => {
     await renderAndRead([creneau({ id: 1, jour: 1, date: '2026-08-01' })]);
 
-    const cellule = racine().querySelector('tbody td span[aria-label*="stand(s) ouvert(s)"]')!;
-    expect(cellule.textContent!.trim()).toBe('2 · 3');
+    const lien = racine().querySelector('tbody td a[aria-label*="stand(s) ouvert(s)"]')!;
+    expect(lien.textContent!.trim()).toBe('2 · 3');
+    expect(lien.getAttribute('href')).toBe('/stands');
   });
 
   it('locks the writing actions, and says why, while a solve is running', async () => {
@@ -618,12 +619,12 @@ describe('CreneauxPage rendering', () => {
     expect((await rowMenuItem(fixture, ligne, 'Modifier')).disabled).toBe(true);
     expect((await rowMenuItem(fixture, ligne, 'Supprimer')).disabled).toBe(true);
     // The derivation can replace the whole grid: locked with the rest.
-    expect((await autreFacon('Dériver des horaires des stands')).disabled).toBe(true);
+    expect((await sourceGenerateur('Depuis les horaires des stands')).disabled).toBe(true);
   });
 
-  /** Opens « Autres façons de créer la grille » and hands back one of its items. */
-  async function autreFacon(libelle: string): Promise<HTMLButtonElement> {
-    bouton('Autres façons de créer la grille').click();
+  /** Opens « Générer des créneaux » and hands back one of its sources. */
+  async function sourceGenerateur(libelle: string): Promise<HTMLButtonElement> {
+    bouton('Générer des créneaux').click();
     await fixture.whenStable();
     const item = Array.from(
       Array.from(document.querySelectorAll('.mat-mdc-menu-panel'))
@@ -719,12 +720,40 @@ describe('CreneauxPage rendering', () => {
         creneau({ id: 2, jour: 2, date: '2026-08-03' }),
         creneau({ id: 1, jour: 1, date: '2026-08-01' }),
       ]);
-      (await autreFacon('Dériver des horaires des stands')).click();
+      (await sourceGenerateur('Depuis les horaires des stands')).click();
 
       expect(dialog.open).toHaveBeenCalledOnce();
       expect(dialog.open).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ data: { dateDebut: '2026-08-01', dateFin: '2026-08-03' } }),
+      );
+    });
+
+    it('offers the three sources of the generator and the recognition in one menu', async () => {
+      await renderAndRead([creneau({ id: 1, jour: 1, date: '2026-08-01' })]);
+      await sourceGenerateur('Depuis les gabarits');
+      const entrees = Array.from(
+        Array.from(document.querySelectorAll('.mat-mdc-menu-panel'))
+          .at(-1)!
+          .querySelectorAll('button'),
+      ).map((each) => each.textContent!.trim());
+
+      expect(entrees).toEqual([
+        expect.stringContaining('Depuis les gabarits'),
+        expect.stringContaining('Depuis les horaires des stands'),
+        expect.stringContaining('Depuis un motif récurrent'),
+        expect.stringContaining('Reconnaître les gabarits depuis les créneaux'),
+      ]);
+    });
+
+    it('opens the series dialog from the « motif récurrent » source', async () => {
+      await renderAndRead([creneau({ id: 1, jour: 1, date: '2026-08-01' })]);
+      (await sourceGenerateur('Depuis un motif récurrent')).click();
+
+      expect(dialog.open).toHaveBeenCalledOnce();
+      expect(dialog.open).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ data: expect.objectContaining({ fenetres: undefined }) }),
       );
     });
   });

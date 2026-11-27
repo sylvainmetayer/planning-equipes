@@ -3,16 +3,16 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { JourneesTypesApi } from '../../core/api/journees-types-api';
+import { GenerateurCreneauxApi } from '../../core/api/generateur-creneaux-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { RapportApplicationJourneesTypes } from '../../core/models';
+import { RapportApplication } from '../../core/models';
 import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux';
 import { HhmmPipe } from '../../shared/hhmm-pipe';
 
-export interface JourneesTypesApplicationData {
+export interface GabaritsApplicationData {
   /** The preview the card took before opening: what « Appliquer » will do. */
-  apercu: RapportApplicationJourneesTypes;
+  apercu: RapportApplication;
 }
 
 /**
@@ -22,19 +22,17 @@ export interface JourneesTypesApplicationData {
  * over, so what the user reads is exactly what was computed.
  */
 @Component({
-  selector: 'app-journees-types-application-dialog',
+  selector: 'app-gabarits-application-dialog',
   imports: [HhmmPipe, MatDialogModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
-  templateUrl: './journees-types-application-dialog.html',
+  templateUrl: './gabarits-application-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class JourneesTypesApplicationDialog {
+export class GabaritsApplicationDialog {
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
   protected readonly dialogRef =
-    inject<MatDialogRef<JourneesTypesApplicationDialog, RapportApplicationJourneesTypes | null>>(
-      MatDialogRef,
-    );
-  protected readonly data = inject<JourneesTypesApplicationData>(MAT_DIALOG_DATA);
-  private readonly api = inject(JourneesTypesApi);
+    inject<MatDialogRef<GabaritsApplicationDialog, RapportApplication | null>>(MatDialogRef);
+  protected readonly data = inject<GabaritsApplicationData>(MAT_DIALOG_DATA);
+  private readonly api = inject(GenerateurCreneauxApi);
   private readonly crud = inject(ReferenceCrudService);
 
   protected readonly application = signal(false);
@@ -51,7 +49,8 @@ export class JourneesTypesApplicationDialog {
     }
     this.application.set(true);
     try {
-      this.dialogRef.close(await this.api.apply());
+      const generation = await this.api.apply({ source: 'GABARITS' });
+      this.dialogRef.close(generation.application ?? null);
     } catch (error) {
       this.crud.reportError(error);
     } finally {

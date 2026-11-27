@@ -6,20 +6,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { JourneesTypesApi } from '../../core/api/journees-types-api';
+import { GenerateurCreneauxApi } from '../../core/api/generateur-creneaux-api';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { JourneeType } from '../../core/models';
-import {
-  ErreurVacations,
-  formatVacations,
-  libelleVacation,
-  parseVacations,
-} from './journees-types';
+import { Gabarit } from '../../core/models';
+import { ErreurVacations, formatVacations, libelleVacation, parseVacations } from './gabarits';
 
-export interface JourneeTypeDialogData {
-  journeeType: JourneeType | null;
+export interface GabaritDialogData {
+  gabarit: Gabarit | null;
 }
 
 /**
@@ -32,11 +27,9 @@ export interface OneOffSeries {
 }
 
 /** What the dialog closes with: the template written, a series to lay, or nothing. */
-export type JourneeTypeDialogResult = JourneeType | OneOffSeries | null;
+export type GabaritDialogResult = Gabarit | OneOffSeries | null;
 
-export function isOneOffSeries(
-  result: JourneeTypeDialogResult | undefined,
-): result is OneOffSeries {
+export function isOneOffSeries(result: GabaritDialogResult | undefined): result is OneOffSeries {
   return !!result && 'fenetres' in result;
 }
 
@@ -46,7 +39,7 @@ export function isOneOffSeries(
  * template changes nothing until the calendar is applied.
  */
 @Component({
-  selector: 'app-journee-type-dialog',
+  selector: 'app-gabarit-dialog',
   imports: [
     FormsModule,
     MatDialogModule,
@@ -56,10 +49,10 @@ export function isOneOffSeries(
     MatIconModule,
     MatTooltipModule,
   ],
-  templateUrl: './journee-type-dialog.html',
+  templateUrl: './gabarit-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class JourneeTypeDialog {
+export class GabaritDialog {
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
   private readonly gel = injectGelReferentiel();
   /**
@@ -68,21 +61,21 @@ export class JourneeTypeDialog {
    */
   protected readonly creneauxFrozen = computed(() => this.gel.isFrozen('CRENEAUX'));
   protected readonly dialogRef =
-    inject<MatDialogRef<JourneeTypeDialog, JourneeTypeDialogResult>>(MatDialogRef);
-  private readonly data = inject<JourneeTypeDialogData>(MAT_DIALOG_DATA);
-  private readonly api = inject(JourneesTypesApi);
+    inject<MatDialogRef<GabaritDialog, GabaritDialogResult>>(MatDialogRef);
+  private readonly data = inject<GabaritDialogData>(MAT_DIALOG_DATA);
+  private readonly api = inject(GenerateurCreneauxApi);
   private readonly crud = inject(ReferenceCrudService);
 
-  protected readonly editingId = this.data.journeeType?.id ?? null;
-  protected readonly nom = signal(this.data.journeeType?.nom ?? '');
+  protected readonly editingId = this.data.gabarit?.id ?? null;
+  protected readonly nom = signal(this.data.gabarit?.nom ?? '');
   protected readonly ligne = signal(
-    this.data.journeeType ? formatVacations(this.data.journeeType.vacations) : '',
+    this.data.gabarit ? formatVacations(this.data.gabarit.vacations) : '',
   );
   protected readonly enregistrement = signal(false);
 
   protected readonly formTitle = this.editingId
-    ? $localize`:@@journeesTypes.form.editTitle:Modifier la journée type`
-    : $localize`:@@journeesTypes.form.newTitle:Nouvelle journée type`;
+    ? $localize`:@@gabarits.form.editTitle:Modifier le gabarit`
+    : $localize`:@@gabarits.form.newTitle:Nouveau gabarit`;
 
   protected readonly saisie = computed(() => parseVacations(this.ligne()));
   protected readonly erreur = computed(() => {
@@ -121,17 +114,17 @@ export class JourneeTypeDialog {
     if (this.invalide() || !vacations || this.enregistrement()) {
       return;
     }
-    const journeeType: JourneeType = {
+    const gabarit: Gabarit = {
       nom: this.nom().trim(),
       vacations,
-      modifieLe: this.data.journeeType?.modifieLe ?? null,
+      modifieLe: this.data.gabarit?.modifieLe ?? null,
     };
     this.enregistrement.set(true);
     try {
       const ecrit =
         this.editingId != null
-          ? await this.api.update(this.editingId, journeeType)
-          : await this.api.create(journeeType);
+          ? await this.api.update(this.editingId, gabarit)
+          : await this.api.create(gabarit);
       this.dialogRef.close(ecrit);
     } catch (error) {
       this.crud.reportError(error);
@@ -143,13 +136,13 @@ export class JourneeTypeDialog {
   private message(erreur: ErreurVacations, morceau: string): string {
     switch (erreur) {
       case 'VIDE':
-        return $localize`:@@journeesTypes.form.error.vide:Indiquez les vacations de la journée, par exemple « 09:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-20:00 ».`;
+        return $localize`:@@gabarits.form.error.vide:Indiquez les vacations de la journée, par exemple « 09:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-20:00 ».`;
       case 'FORME':
-        return $localize`:@@journeesTypes.form.error.forme:« ${morceau}:morceau: » n'est pas une vacation : écrivez « début-fin ».`;
+        return $localize`:@@gabarits.form.error.forme:« ${morceau}:morceau: » n'est pas une vacation : écrivez « début-fin ».`;
       case 'HEURE':
-        return $localize`:@@journeesTypes.form.error.heure:« ${morceau}:morceau: » : une heure s'écrit 09:00 ou 9h30.`;
+        return $localize`:@@gabarits.form.error.heure:« ${morceau}:morceau: » : une heure s'écrit 09:00 ou 9h30.`;
       case 'DOUBLON':
-        return $localize`:@@journeesTypes.form.error.doublon:« ${morceau}:morceau: » est déjà dans la journée.`;
+        return $localize`:@@gabarits.form.error.doublon:« ${morceau}:morceau: » est déjà dans la journée.`;
     }
   }
 }

@@ -1629,7 +1629,7 @@ export interface DiagnosticGrille {
   joursFeries: PublicHoliday[];
 }
 
-/** A recurrence rule as `POST /api/creneaux/recurrence` reads it. */
+/** A recurrence rule as `POST /api/generateur-creneaux/apercu` reads it (source `RECURRENCE`). */
 export interface RegleRecurrence {
   jours: TypeJoursHoraire;
   dateDebut: string | null;
@@ -1640,7 +1640,7 @@ export interface RegleRecurrence {
   fenetres: FenetreHoraire[];
 }
 
-/** A derivation of the grid from the stands' hours, as `POST /api/creneaux/derivation` reads it. */
+/** A derivation of the grid from the stands' hours, as `POST /api/generateur-creneaux/apercu` reads it (source `STANDS`). */
 export interface DerivationRequest {
   dateDebut: string;
   dateFin: string;
@@ -1658,31 +1658,43 @@ export interface CoupureDerivation {
   nombreStands: number;
 }
 
-export interface RapportDerivation {
+/** Where a generation reads its timeslots from (ADR 0126). */
+export type SourceGeneration = 'GABARITS' | 'STANDS' | 'RECURRENCE';
+
+/** One generation to preview or apply: the source, and the part of the request that source reads. */
+export interface DemandeGeneration {
+  source: SourceGeneration;
+  /** For `RECURRENCE`. */
+  recurrence?: RegleRecurrence;
+  /** For `STANDS`; `remplacer` there puts the derived grid in place of the whole grid. */
+  derivation?: DerivationRequest;
+}
+
+/**
+ * What a generation produced (or would), and the verdict on the resulting
+ * grid. `application` is filled for the gabarits, `coupures` and
+ * `joursSansFenetre` for the stands.
+ */
+export interface Generation {
+  source: SourceGeneration;
   nombreGeneres: number;
   creneaux: Creneau[];
+  application?: RapportApplication | null;
   coupures: CoupureDerivation[];
   joursSansFenetre: string[];
   controle: RapportGrille;
 }
 
-/** What a rule produced (or would produce), and the verdict on the resulting grid. */
-export interface RapportRecurrence {
-  nombreGeneres: number;
-  creneaux: Creneau[];
-  controle: RapportGrille;
-}
+/* ------------------------------ Templates of the timeslot generator (ADR 0126, born as the templates of ADR 0032) ------------------------------ */
 
-/* ------------------------------ Day templates (ADR 0032) ------------------------------ */
-
-/** One vacation of a day template: its hours. */
+/** One vacation of a template: its hours. */
 export interface VacationType {
   heureDebut: string;
   heureFin: string;
 }
 
-/** A named day template — « Jour normal », « Nocturne » — the vacations of one kind of day. */
-export interface JourneeType {
+/** A named template (« gabarit ») — « Jour normal », « Nocturne » — the vacations of one kind of day. */
+export interface Gabarit {
   id?: number | null;
   nom: string;
   vacations: VacationType[];
@@ -1691,15 +1703,15 @@ export interface JourneeType {
 }
 
 /** One date governed by one template. */
-export interface AffectationJourneeType {
+export interface AffectationGabarit {
   date: string;
-  journeeTypeId: number;
+  gabaritId: number;
 }
 
 /** Templates, calendar, and the dates whose créneaux no longer match their template. */
-export interface EtatJourneesTypes {
-  journeesTypes: JourneeType[];
-  calendrier: AffectationJourneeType[];
+export interface EtatGenerateur {
+  gabarits: Gabarit[];
+  calendrier: AffectationGabarit[];
   datesEnEcart: string[];
   /**
    * Dates under a consigne (issue #4): the templates ignore them — neither
@@ -1710,7 +1722,7 @@ export interface EtatJourneesTypes {
 }
 
 /** What applying the calendar does or would do, and the verdict on the resulting grid. */
-export interface RapportApplicationJourneesTypes {
+export interface RapportApplication {
   conserves: number;
   crees: number;
   supprimes: number;
@@ -1723,9 +1735,9 @@ export interface RapportApplicationJourneesTypes {
 }
 
 /** The templates a grid implies, and the calendar mapping its dates onto them. */
-export interface ReconnaissanceJourneesTypes {
-  journeesTypes: JourneeType[];
-  calendrier: AffectationJourneeType[];
+export interface ReconnaissanceGabarits {
+  gabarits: Gabarit[];
+  calendrier: AffectationGabarit[];
 }
 
 /** The edition's solve settings, as a `PUT /api/parametres/calcul` sends them. */

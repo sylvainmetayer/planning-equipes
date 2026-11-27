@@ -4,7 +4,7 @@
 
 import { formatHeure } from '../../core/time-of-day';
 import { normaliseHour, splitHourRange } from '../../core/horaire-stand';
-import { AffectationJourneeType, JourneeType, VacationType } from '../../core/models';
+import { AffectationGabarit, Gabarit, VacationType } from '../../core/models';
 import { compareCodeUnits } from '../../core/string-order';
 
 /**
@@ -108,37 +108,30 @@ export function datesDePlage(du: string, au: string): string[] {
 }
 
 /**
- * The calendar with `dates` now governed by `journeeTypeId`: a date already
+ * The calendar with `dates` now governed by `gabaritId`: a date already
  * there changes template, the others are kept, and the result is sorted so
  * the table reads top to bottom.
  */
 export function affecterDates(
-  calendrier: readonly AffectationJourneeType[],
+  calendrier: readonly AffectationGabarit[],
   dates: readonly string[],
-  journeeTypeId: number,
-): AffectationJourneeType[] {
+  gabaritId: number,
+): AffectationGabarit[] {
   const byDate = new Map(calendrier.map((affectation) => [affectation.date, affectation]));
   for (const date of dates) {
-    byDate.set(date, { date, journeeTypeId });
+    byDate.set(date, { date, gabaritId });
   }
   return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export function retirerDate(
-  calendrier: readonly AffectationJourneeType[],
-  date: string,
-): AffectationJourneeType[] {
-  return calendrier.filter((affectation) => affectation.date !== date);
-}
-
 /** Template id → name, for the calendar rows; an unknown id reads as its number. */
-export function nomJourneeType(journeesTypes: readonly JourneeType[], id: number): string {
-  return journeesTypes.find((journeeType) => journeeType.id === id)?.nom ?? String(id);
+export function nomGabarit(gabarits: readonly Gabarit[], id: number): string {
+  return gabarits.find((gabarit) => gabarit.id === id)?.nom ?? String(id);
 }
 
 /** The two bounds the calendar spans, or `null` when it is empty — the edition's dates, as typed here. */
 export function bornesCalendrier(
-  calendrier: readonly AffectationJourneeType[],
+  calendrier: readonly AffectationGabarit[],
 ): { du: string; au: string } | null {
   if (calendrier.length === 0) {
     return null;

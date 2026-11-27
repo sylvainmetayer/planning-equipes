@@ -9,65 +9,65 @@
   color: var(--mat-sys-error);
 }
 
-/* ---------------------------- Journées types ---------------------------- */
+/* ---------------------------- Gabarits ---------------------------- */
 /* The card sits first on the page: templates on the left, calendar on the
    right, stacked on a narrow screen. */
-.journees-types-colonnes {
+.gabarits-colonnes {
   display: grid;
   grid-template-columns: minmax(16rem, 1fr) minmax(20rem, 2fr);
   gap: 1.5rem;
 }
 
 @media (max-width: 56rem) {
-  .journees-types-colonnes {
+  .gabarits-colonnes {
     grid-template-columns: 1fr;
   }
 }
 
-.journees-types-card h3 {
+.gabarits-card h3 {
   margin: 0 0 0.5rem;
   font: var(--mat-sys-title-small);
 }
 
-.journees-types-bornes {
+.gabarits-bornes {
   margin-left: 0.5rem;
   font: var(--mat-sys-body-small);
   color: var(--mat-sys-on-surface-variant);
 }
 
-.journees-types-items {
+.gabarits-items {
   list-style: none;
   margin: 0 0 0.75rem;
   padding: 0;
 }
 
-.journee-type-item {
+.gabarit-item {
   padding: 0.5rem 0;
   border-top: 1px solid var(--mat-sys-outline-variant);
 }
 
-.journee-type-item:first-child {
+.gabarit-item:first-child {
   border-top: 0;
 }
 
-.journee-type-entete {
+.gabarit-entete {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
 }
 
-.journee-type-actions {
+.gabarit-actions {
   display: inline-flex;
 }
 
-.journee-type-vacations,
-.journee-type-apercu {
+.gabarit-vacations,
+.gabarit-apercu {
   margin: 0.25rem 0 0;
   line-height: 1.9;
 }
 
-.journees-types-ajout {
+.gabarits-ajout {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -75,30 +75,30 @@
   margin-bottom: 0.5rem;
 }
 
-.journees-types-ajout .champ-date {
+.gabarits-ajout .champ-date {
   width: 10rem;
 }
 
-.journees-types-ajout .champ-journee {
+.gabarits-ajout .champ-journee {
   min-width: 12rem;
   flex: 1 1 12rem;
 }
 
-.journees-types-table {
+.gabarits-table {
   width: 100%;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
 }
 
-.journees-types-table th,
-.journees-types-table td {
+.gabarits-table th,
+.gabarits-table td {
   padding: 0.2rem 0.5rem;
   text-align: left;
   border-bottom: 1px solid var(--mat-sys-outline-variant);
   vertical-align: middle;
 }
 
-.journees-types-table .select-journee {
+.gabarits-table .select-journee {
   min-width: 10rem;
 }
 
@@ -142,24 +142,24 @@
   font-weight: 500;
 }
 
-.journees-types-ecarts {
+.gabarits-ecarts {
   color: var(--mat-sys-error);
   align-self: center;
 }
 
 /* The application dialog: the four counts, and the removals that cost seats. */
-.journees-types-bilan {
+.gabarits-bilan {
   list-style: none;
   margin: 0 0 0.75rem;
   padding: 0;
   line-height: 1.8;
 }
 
-.journees-types-suppression {
+.gabarits-suppression {
   color: var(--mat-sys-error);
 }
 
-.journees-types-supprimes {
+.gabarits-supprimes {
   margin: 0 0 0.75rem;
   padding-left: 1.25rem;
   font-variant-numeric: tabular-nums;

@@ -77,7 +77,7 @@ const EXCEPTIONS_ASSUMEES = {
     "une ligne de la liste d'anomalies de l'aperçu, lue avec le dialogue qui l'ouvre",
   'app/pages/creneaux/creneau-serie-dialog.html {{ anomalie.message }}':
     "une ligne de la liste d'anomalies de l'aperçu, lue avec le dialogue qui l'ouvre",
-  'app/pages/creneaux/journees-types-application-dialog.html {{ anomalie.message }}':
+  'app/pages/creneaux/gabarits-application-dialog.html {{ anomalie.message }}':
     "une ligne de la liste d'anomalies de l'aperçu, lue avec le dialogue qui l'ouvre",
   'app/pages/creneaux/creneaux-page.html {{ faisabilite.message }}':
     'une part du bilan du contrôle, annoncé en bloc par le role="status" de `.controle-bilan`',

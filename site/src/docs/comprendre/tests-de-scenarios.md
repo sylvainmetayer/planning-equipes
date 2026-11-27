@@ -20,7 +20,7 @@ La CI les joue seulement quand quelque chose qui peut casser la convergence chan
 
 ## La gamme de scénarios
 
-Les trente fichiers `gamme-…` sont rangés par taille : un jour, deux stands et trois animateurs au barreau 1 ; un mois, 150 stands et 320 animateurs au barreau 25. Chaque barreau exerce une partie de ce qu'un fichier sait dire : rotation du midi, stands premium, mineurs et jour férié, exceptions ad hoc, horaires récurrents sous toutes leurs portées, relève de repas à effectif plein, journées types, contraintes désactivées, effectifs portés par la fenêtre, édition cible. Les barreaux 26 à 30 ne doivent jamais se résoudre, chacun pour une raison nommée, et le test dit si l'analyse de faisabilité la voit.
+Les trente fichiers `gamme-…` sont rangés par taille : un jour, deux stands et trois animateurs au barreau 1 ; un mois, 150 stands et 320 animateurs au barreau 25. Chaque barreau exerce une partie de ce qu'un fichier sait dire : rotation du midi, stands premium, mineurs et jour férié, exceptions ad hoc, horaires récurrents sous toutes leurs portées, relève de repas à effectif plein, gabarits, contraintes désactivées, effectifs portés par la fenêtre, édition cible. Les barreaux 26 à 30 ne doivent jamais se résoudre, chacun pour une raison nommée, et le test dit si l'analyse de faisabilité la voit.
 
 Le nom d'un fichier est son index : `gamme-18-14j-35stands-132animateurs-effectifs-par-fenetre`. `ScenarioLadderCatalogTest` échoue si un nom ne dit plus les jours, stands et animateurs du fichier, si un fichier n'est joué par aucun test ou si la numérotation a un trou.
 

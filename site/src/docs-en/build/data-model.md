@@ -57,7 +57,7 @@ Everything downstream (seats, locks, `JoursEvenement`) keeps reading the timeslo
 
 Modifying a template afterwards propagates nothing: its dates become "out of line" and the organiser applies again. **Recognition** goes the opposite way: it reads the templates that a grid implies (each date with the same shifts and the same flags is the same day) and replaces templates and calendar. It follows every replacement of the grid (scenario import, derivation from the stands' hours), so that an imported edition and a typed edition read the same on the Timeslots screen.
 
-The timeslots that a [consigne](horaires-et-fenetres-des-stands.md#la-consigne-des-plages-écrites-sur-les-stands) (an official order relayed to the whole event) added to the grid are neither counted as out of line nor deleted on apply: a day template never names them, they belong to the consigne, which removes them when it is lifted. The card shows these dates as "under consigne" (`datesSousConsigne`).
+The timeslots that a [consigne](horaires-et-fenetres-des-stands.md#la-consigne-des-plages-écrites-sur-les-stands) (an official order relayed to the whole event) added to the grid are neither counted as out of line nor deleted on apply: a template never names them, they belong to the consigne, which removes them when it is lifted. The card shows these dates as "under consigne" (`datesSousConsigne`).
 
 ## Invariants not to break
 

@@ -32,7 +32,7 @@ export function buildGettingStartedSections(): HelpSection[] {
             $localize`:@@aide.start.step3:Ouvrir la collecte des disponibilités, case « prévenir » cochée : chacun reçoit le lien de son espace et y déclare ses absences et ses souhaits. Les fiches animateurs et les créneaux doivent donc déjà exister.`,
             $localize`:@@aide.start.step4:Appliquer ou refuser les déclarations reçues, puis fermer la collecte.`,
             $localize`:@@aide.start.step5:Vérifier les ouvertures des stands, puis le besoin en animateurs. Ces deux écrans répondent avant tout calcul.`,
-            $localize`:@@aide.start.step6:Si vos journées ne sont décrites que par une amplitude d'ouverture, générer le découpage en vacations. Avec des journées types, la grille est déjà prête.`,
+            $localize`:@@aide.start.step6:Si vos journées ne sont décrites que par une amplitude d'ouverture, générer le découpage en vacations. Avec des gabarits, la grille est déjà prête.`,
             $localize`:@@aide.start.step7:Lancer une résolution courte, lire la page Problèmes, corriger, puis relancer sur une durée longue. Ne changez qu'une chose à la fois entre deux essais.`,
             $localize`:@@aide.start.step8:Publier : seules les personnes dont l'emploi du temps a changé reçoivent un message. C'est aussi le seul moment où les agendas abonnés bougent.`,
             $localize`:@@aide.start.step9:Suivre les accusés de réception sur la page Animateurs : les envois de nuit de l'édition active relancent une fois les silencieux, et « Relancer » le fait à la main.`,

@@ -709,7 +709,7 @@ const adminRoutes: Routes = [
     // written on the fiche stand.
     path: 'creneaux',
     title: () => $localize`:@@route.calendrier:Calendrier`,
-    data: { aide: 'creneaux-et-journees-types' },
+    data: { aide: 'calendrier' },
     // The stands' hours tab is gone: a bookmark on it lands on the fiche stand.
     canActivate: [retiredHorairesTab],
     loadComponent: () => import('./pages/creneaux/creneaux-page').then((m) => m.CreneauxPage),

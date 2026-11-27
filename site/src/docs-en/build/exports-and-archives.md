@@ -17,7 +17,7 @@ A text that a spreadsheet would execute as a formula (it starts with `=`, `+`, `
 
 ### The six reference data sets
 
-`GET /api/reference-data/export-csv` rewrites the edition's six reference data sets (staff, timeslots, locations, day templates, stands, game categories) into a ZIP, one file per set, each one tickable, for a spreadsheet. Only the staff file reads back in, through the [CSV import](imports-csv.md): it reuses the header of `exemple-animateurs.csv` and needs an edition that already has its timeslots, since without dates a day of unavailability would be refused. The other five are not read back: the edition's YAML is their way in.
+`GET /api/reference-data/export-csv` rewrites the edition's six reference data sets (staff, timeslots, locations, templates, stands, game categories) into a ZIP, one file per set, each one tickable, for a spreadsheet. Only the staff file reads back in, through the [CSV import](imports-csv.md): it reuses the header of `exemple-animateurs.csv` and needs an edition that already has its timeslots, since without dates a day of unavailability would be refused. The other five are not read back: the edition's YAML is their way in.
 
 `ReferentielCsvExportServiceTest` replays the staff file into another edition (zero rejected lines) and checks that the records come out identical, multi-value cells included.
 
