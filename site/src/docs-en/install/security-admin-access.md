@@ -64,6 +64,19 @@ the scheme, `QUARKUS_OIDC_AUTHENTICATION_COOKIE_FORCE_SECURE=true`
 travels in clear. Password attempts on the closed emergency account are
 logged as failures (address only), without counting towards the lock.
 
+**The form session.** The `admin` account and local accounts open the same
+cookie, `planning-session`: encrypted, valid 8 h after its last use,
+`SameSite=Strict` and `HttpOnly`, so no script of the page can read it.
+"Log out" does more than erase it from the browser: the instance remembers
+that this session is closed, and a copy of the cookie (a shared computer, a
+stolen cookie) gets `403`, and `/api/auth/me` reports it signed out, until it
+expires. Only the session that logged out is closed: the account's other
+devices stay signed in. Each instance keeps this in memory, unshared with any other: a restart forgets
+it, and a copy logged out before the restart becomes valid again if
+`SESSION_ENCRYPTION_KEY` is kept, and a session opened before it can no longer
+be closed on the server. To close every session of a local account,
+change its password or deactivate it.
+
 ### The emergency account: never lock yourself out
 
 The threat: the `admin` account is a shared password, with no second

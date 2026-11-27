@@ -39,6 +39,9 @@ class AuthentificationAdminTest {
         }
     }
 
+    @jakarta.inject.Inject
+    dev.sylvain.planning.service.compte.SessionOpenings openings;
+
     /** The dev default of {@code ADMIN_PASSWORD} — not a secret. */
     private static final String MOT_DE_PASSE_DEV = "admin";
 
@@ -457,6 +460,67 @@ class AuthentificationAdminTest {
                 .then()
                 .statusCode(403)
                 .header("Access-Control-Allow-Origin", nullValue());
+    }
+
+    /** Out of reach of a script: the frontend never reads it, a cross-site script would. */
+    @Test
+    void theSessionCookieIsHttpOnly() {
+        java.util.List<String> setCookies = given().contentType("application/x-www-form-urlencoded")
+                .formParam("j_username", "admin")
+                .formParam("j_password", MOT_DE_PASSE_DEV)
+                .redirects()
+                .follow(false)
+                .when()
+                .post("/j_security_check")
+                .then()
+                .statusCode(302)
+                .extract()
+                .headers()
+                .getValues("Set-Cookie");
+        assertThat(setCookies)
+                .filteredOn(c -> c.startsWith("planning-session="))
+                .singleElement()
+                .satisfies(c -> assertThat(c.toLowerCase()).contains("httponly"));
+    }
+
+    /** The cookie is stateless: a copy kept past the logout must still be refused by the server. */
+    @Test
+    void aCookieKeptPastTheLogoutIsRefused() {
+        String cookie = given().header("X-Edition-Id", "E1")
+                .contentType("application/x-www-form-urlencoded")
+                .formParam("j_username", "admin")
+                .formParam("j_password", MOT_DE_PASSE_DEV)
+                .redirects()
+                .follow(false)
+                .when()
+                .post("/j_security_check")
+                .then()
+                .statusCode(302)
+                .extract()
+                .cookie("planning-session");
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", cookie)
+                .get("/api/constraints")
+                .then()
+                .statusCode(200);
+        assertThat(openings.openedAt(cookie)).as("the login noted its session").isPresent();
+
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", cookie)
+                .post("/api/auth/logout")
+                .then()
+                .statusCode(200);
+
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", cookie)
+                .get("/api/constraints")
+                .then()
+                .statusCode(403);
+        given().cookie("planning-session", cookie)
+                .get("/api/auth/me")
+                .then()
+                .statusCode(200)
+                .body("authentifie", equalTo(false));
     }
 
     @Test

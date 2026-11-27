@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.compte.CompteAccesService;
+import dev.sylvain.planning.service.compte.SessionOpenings;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.vertx.ext.web.RoutingContext;
@@ -13,6 +14,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
@@ -52,12 +55,15 @@ public class AuthResource {
     private final SecurityIdentity identity;
     private final CompteAccesService acces;
     private final AdminLoginLimiter limiteur;
+    private final SessionOpenings openings;
 
     @Inject
-    public AuthResource(SecurityIdentity identity, CompteAccesService acces, AdminLoginLimiter limiteur) {
+    public AuthResource(
+            SecurityIdentity identity, CompteAccesService acces, AdminLoginLimiter limiteur, SessionOpenings openings) {
         this.identity = identity;
         this.acces = acces;
         this.limiteur = limiteur;
+        this.openings = openings;
     }
 
     /**
@@ -191,7 +197,11 @@ public class AuthResource {
     }
 
     /**
-     * Drops the local session cookie. Idempotent: logging out twice is fine.
+     * Drops the local session cookie and logs its session out on the server:
+     * the cookie is stateless and stays readable until it expires, so a copy of
+     * it — this value or any other the session took — is refused from now on
+     * ({@link SessionOpenings#logOut}). Only this session: the account's other
+     * devices stay signed in. Idempotent: logging out twice is fine.
      *
      * <p>For an OIDC session that is <b>not</b> where a logout ends: Quarkus
      * owns that cookie. The answer names the route that ends the provider's
@@ -206,7 +216,10 @@ public class AuthResource {
             // Declared by hand: the method returns a Response (it has a cookie
             // to expire), which the schema generator cannot look inside.
             content = @Content(schema = @Schema(implementation = Deconnexion.class)))
-    public Response logout() {
+    public Response logout(@Context HttpHeaders headers) {
+        // The Cookie header as sent, not the jar: the form mechanism may already have put a renewed value there.
+        Cookie session = headers.getCookies().get(COOKIE_SESSION);
+        openings.logOut(session == null ? null : session.getValue());
         NewCookie expiration = new NewCookie.Builder(COOKIE_SESSION)
                 .value("")
                 .path("/")

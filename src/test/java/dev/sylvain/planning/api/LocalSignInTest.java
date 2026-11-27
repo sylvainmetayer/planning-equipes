@@ -266,6 +266,46 @@ class LocalSignInTest {
         assertThat(mailbox.getMailsSentTo(compte.email()).get(1).getText()).contains("vient d'être changé");
     }
 
+    /** A logout refuses the cookie on the server, not only in the browser; the account's other session stays. */
+    @Test
+    void aLogoutRefusesACopyOfItsCookieAndLeavesTheOtherSessionsOpen() {
+        Compte compte = withPassword(true);
+        String[] cookies = new String[2];
+        for (int i = 0; i < 2; i++) {
+            String challenge =
+                    passwordStep(compte.email(), PASSWORD).then().extract().path("challenge");
+            Matcher m = CODE.matcher(mailText(compte));
+            assertThat(m.find()).isTrue();
+            mailbox.clear();
+            Response login = formPost(compte.email(), challenge + ":" + m.group(1));
+            assertThat(login.getHeaders().getValues("Set-Cookie"))
+                    .filteredOn(c -> c.startsWith("planning-session="))
+                    .singleElement()
+                    .satisfies(c -> assertThat(c.toLowerCase()).contains("httponly"));
+            cookies[i] = login.getCookie("planning-session");
+        }
+
+        given().cookie("planning-session", cookies[0])
+                .post("/api/auth/logout")
+                .then()
+                .statusCode(200);
+
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", cookies[0])
+                .get("/api/animateurs")
+                .then()
+                .statusCode(403);
+        given().cookie("planning-session", cookies[0])
+                .get("/api/auth/me")
+                .then()
+                .body("authentifie", equalTo(false));
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", cookies[1])
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200);
+    }
+
     @Test
     void lesAccentsSontNormalises() {
         Compte compte = account(false);
