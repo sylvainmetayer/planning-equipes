@@ -168,6 +168,11 @@ public class PublicationMcpTools {
                     List<String> animateurIds,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         String choisi = McpArgs.choix(mode, "mode", PUBLIER, PUBLIER, RENVOYER, "relancer");
+        // The catalogue files the tool under the publication; each other gesture is its own line,
+        // stated before the checks so a refused call is journalled as the gesture it asked for.
+        if (!PUBLIER.equals(choisi)) {
+            currentAction.action(RENVOYER.equals(choisi) ? "PLANNING_ENVOYE" : "ANIMATEURS_RELANCES");
+        }
         boolean sansIds = animateurIds == null || animateurIds.isEmpty();
         if (PUBLIER.equals(choisi)) {
             if (!sansIds) {
@@ -190,8 +195,6 @@ public class PublicationMcpTools {
             if (sansIds || animateurIds.size() != 1) {
                 throw new BusinessError.Invalid("Le mode renvoyer prend un seul id dans animateurIds");
             }
-            // The catalogue files the tool under the publication; each other gesture is its own line.
-            currentAction.action("PLANNING_ENVOYE");
             currentAction.entiteId(animateurIds.get(0));
             return new PublicationEnvoiView(
                     choisi,
@@ -207,7 +210,6 @@ public class PublicationMcpTools {
         if (sansIds) {
             throw new BusinessError.Invalid("Le mode relancer prend au moins un id dans animateurIds");
         }
-        currentAction.action("ANIMATEURS_RELANCES");
         return new PublicationEnvoiView(
                 choisi, null, null, null, null, null, null, null, remindAnimateurs(animateurIds, edition));
     }

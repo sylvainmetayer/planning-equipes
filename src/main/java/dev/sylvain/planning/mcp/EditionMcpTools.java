@@ -417,6 +417,9 @@ public class EditionMcpTools {
         if ((nom == null) == (active == null)) {
             throw new BusinessError.Invalid("Donner « nom » ou « active », l'un des deux et pas les deux.");
         }
+        // An @EditionArg is skipped by the journal as « where », but here it is the subject: the
+        // renaming used to name its edition, and the activations never did.
+        currentAction.entiteId(requireEdition(edition, ARG_EDITION));
         if (nom != null) {
             return renameEdition(edition, nom);
         }
