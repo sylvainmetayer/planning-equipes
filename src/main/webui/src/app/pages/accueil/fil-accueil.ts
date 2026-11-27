@@ -84,8 +84,11 @@ export class FilAccueil {
 
   /**
    * The messages are traces of what happened, not things to do: folded by
-   * default (to confirm), the choice kept by this browser. `?type=messages`
-   * is an explicit request for them and always shows them.
+   * default, the choice kept by this browser. `?type=messages` is an explicit
+   * request for them and always shows them, and so does an unread alert-severity
+   * message: the bell flags it, the feed it leads to must not hide it. The helpers
+   * are named for a *collapsed* panel; here the stored `true` means *open*, so an
+   * unreadable store reads as folded.
    */
   protected readonly messagesOpen = signal(
     readPanelCollapsed(defaultPanelStorage(), MESSAGES_OPEN_STORAGE_KEY),
@@ -93,8 +96,13 @@ export class FilAccueil {
   protected readonly messagesCount = computed(
     () => this.tout().filter((item) => item.type === 'messages').length,
   );
+  private readonly unreadAlert = computed(() =>
+    this.notifications.notifications().some((n) => n.severity === 'alert' && !n.read),
+  );
   protected readonly messagesShown = computed(
-    () => this.type() === 'messages' || (this.type() === null && this.messagesOpen()),
+    () =>
+      this.type() === 'messages' ||
+      (this.type() === null && (this.messagesOpen() || this.unreadAlert())),
   );
   protected readonly items = computed(() =>
     filterFeed(this.tout(), this.type()).filter(

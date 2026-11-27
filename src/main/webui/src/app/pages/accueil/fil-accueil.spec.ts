@@ -110,6 +110,17 @@ describe('FilAccueil', () => {
     await TestBed.inject(Router).navigateByUrl('/');
   });
 
+  it('renders no empty actions bar under another filter, and keeps the controlled list in the page', async () => {
+    await TestBed.inject(Router).navigateByUrl('/?type=alertes');
+    const element = create();
+    await fixture.whenStable();
+    await vi.waitFor(() => expect(text()).toContain('Camille Dupont'));
+
+    expect(element.querySelector('.card-actions')).toBeNull();
+    expect(element.querySelector('#fil-liste')).not.toBeNull();
+    await TestBed.inject(Router).navigateByUrl('/');
+  });
+
   it('marks a message as read from its own line', async () => {
     localStorage.setItem(MESSAGES_OPEN_STORAGE_KEY, 'true');
     const notifications = TestBed.inject(NotificationService);
@@ -148,6 +159,13 @@ describe('FilAccueil', () => {
     fixture.detectChanges();
     expect(text()).not.toContain('Import terminé');
     expect(localStorage.getItem(MESSAGES_OPEN_STORAGE_KEY)).toBe('false');
+  });
+
+  it('keeps an unread alert-severity message visible even when the messages are folded', async () => {
+    TestBed.inject(NotificationService).push('alert', 'Résolution en échec');
+    create();
+    await fixture.whenStable();
+    await vi.waitFor(() => expect(text()).toContain('Résolution en échec'));
   });
 
   it('shows the messages under their own filter whatever the fold', async () => {
