@@ -154,20 +154,6 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-.regles-seuil-input {
-  font: var(--mat-sys-body-medium);
-  color: var(--mat-sys-on-surface);
-  background: var(--mat-sys-surface);
-  border: 1px solid var(--mat-sys-outline);
-  border-radius: 4px;
-  padding: 0.125rem 0.25rem;
-}
-
-.regles-seuil-nombre {
-  width: 4.5rem;
-  text-align: right;
-}
-
 .regles-ecarts {
   white-space: nowrap;
   color: var(--mat-sys-on-surface-variant);
@@ -222,6 +208,10 @@
   gap: 0.5rem;
   font: var(--mat-sys-body-small);
   color: var(--mat-sys-on-surface-variant);
+}
+
+.regles-poids-champ {
+  width: 7rem;
 }
 
 .regles-save-bar {

@@ -638,6 +638,11 @@ jobs:
       - name: Table headers check
         run: npm run table-headers-check
 
+      # Every <input>, <select> and <textarea> is a Material control inside a
+      # `mat-form-field`: Paramètres › Organisation shipped bare, unthemed ones.
+      - name: Form controls check
+        run: npm run form-controls-check
+
       # A link opening a new window says so (issue #45): its component imports
       # `NewWindowLink`, or its `aria-label` goes through `newWindowLabel`.
       - name: New window links check

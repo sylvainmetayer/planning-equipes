@@ -12,7 +12,9 @@ import {
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { RouterLink } from '@angular/router';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { ParametresLegaux, ParametresQualite, PlacementRepas } from '../../core/models';
@@ -135,7 +137,16 @@ function acceptable(descriptor: SeuilDescriptor, field: string, draft: SettingsR
 @Component({
   selector: 'app-parametres-section',
   // FormsModule for `ngSubmit`: without NgForm, « Enregistrer » or Enter would submit natively and reload the page.
-  imports: [FormsModule, MatButtonModule, MatCardModule, MatIconModule, RouterLink, StatusMessage],
+  imports: [
+    FormsModule,
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    RouterLink,
+    StatusMessage,
+  ],
   templateUrl: './parametres-section.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -282,9 +293,7 @@ export class ParametresSection implements OnInit {
       this.error.set(
         $localize`:@@parametres.section.invalide:Des valeurs sont à corriger : chacune est signalée sous son champ. Rien n'a été enregistré.`,
       );
-      this.host.nativeElement
-        .querySelector<HTMLInputElement>(`input[data-field="${first}"]`)
-        ?.focus();
+      this.host.nativeElement.querySelector<HTMLElement>(`[data-field="${first}"]`)?.focus();
       return;
     }
     this.attempted.set(false);

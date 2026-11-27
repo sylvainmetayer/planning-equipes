@@ -120,13 +120,16 @@
         }
         @if (!obligatoire(rule)) {
           <h3 i18n="@@regles.panneau.poids">Poids exact</h3>
-          <label class="regles-panneau-poids">
-            <input #poids type="number" class="regles-seuil-input regles-seuil-nombre" step="1"
-                   [min]="poidsMin" [max]="poidsMax" [value]="poidsOf(rule)"
-                   [disabled]="saving() || jobs.editingLocked()"
-                   (change)="onPoidsTyped(rule, poids)" />
-            <span i18n="@@regles.panneau.poidsHint">Faible 1, normale 5, forte 25 ; tout autre nombre, de 1 à 500, reste possible.</span>
-          </label>
+          <div class="regles-panneau-poids">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="regles-poids-champ">
+              <input matInput #poids type="number" step="1" aria-describedby="regles-poids-aide"
+                     i18n-aria-label="@@regles.panneau.poids" aria-label="Poids exact"
+                     [min]="poidsMin" [max]="poidsMax" [value]="poidsOf(rule)"
+                     [disabled]="saving() || jobs.editingLocked()"
+                     (change)="onPoidsTyped(rule, poids)" />
+            </mat-form-field>
+            <span id="regles-poids-aide" i18n="@@regles.panneau.poidsHint">Faible 1, normale 5, forte 25 ; tout autre nombre, de 1 à 500, reste possible.</span>
+          </div>
         } @else if (rule.niveau === 'HARD' && rule.poids !== poidsDur) {
           <h3 i18n="@@regles.panneau.poidsDur">Poids personnalisé</h3>
           <p class="regles-panneau-poids">

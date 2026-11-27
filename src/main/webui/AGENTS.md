@@ -826,6 +826,14 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   without CSS and would never see it — and a class no template or TypeScript
   literal uses: drop a rule with the markup it styled. Don't restyle what a Material component
   already themes.
+  A grid or flex rule on a Material host (`mat-card-content`, `mat-dialog-content`)
+  is qualified by the tag name: Material's own `display: block` is injected later
+  and wins at equal specificity.
+- **Every `<input>`, `<select>` and `<textarea>` is a Material control** in a
+  `mat-form-field` (`matInput`, or `matNativeControl` on a native list): nothing
+  themes a bare one. `scripts/check-form-controls.js` (`npm run
+  form-controls-check`, run in CI) refuses the others; a hidden file picker is
+  accepted, anything else is argued in its `EXCEPTIONS_ASSUMEES`.
 - **A screen answers, it does not explain** (issue #417): a subtitle is one
   sentence, a `mat-hint` twelve words at most, nothing repeats what the table
   or the form shows, and the *why* lives in the help page. `npm run i18n-check`

@@ -165,6 +165,21 @@ describe('ParametresSection', () => {
     expect(api['saveLegalParameters']).not.toHaveBeenCalled();
   });
 
+  it.each<SectionReglages>(['legal', 'organisation'])(
+    'draws every control of the %s section inside a labelled Material form field',
+    async (section) => {
+      await openSection(section);
+
+      const controls = (fixture.nativeElement as HTMLElement).querySelectorAll('input, select');
+      expect(controls.length).toBeGreaterThan(5);
+      for (const control of Array.from(controls)) {
+        const field = control.closest('mat-form-field');
+        expect(field, control.getAttribute('data-field') ?? '').not.toBeNull();
+        expect(field!.querySelector('mat-label')?.textContent?.trim()).toBeTruthy();
+      }
+    },
+  );
+
   it('offers the meal-break placement as a choice and saves the one picked', async () => {
     api['qualityParameters'].mockResolvedValue({
       placementRepas: 'FIN_MIDI_DEBUT_SOIR',
