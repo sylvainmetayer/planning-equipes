@@ -17,8 +17,10 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Collection;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Turns a scenario YAML document into a {@link ScenarioDto} — the single shape
@@ -184,12 +186,65 @@ public final class ScenarioBinder {
         }
     }
 
+    /**
+     * How many nodes a document may stand for once its aliases are resolved.
+     * SnakeYAML shares an aliased collection instead of copying it, so parsing
+     * is cheap; what is not is everything after it — the migrations, the date
+     * normalisation and Jackson walk the document as a tree, each alias as
+     * many times as it is named. Ten nested lists of ten aliases each stay far
+     * under the alias limit of {@link ScenarioYaml} and stand for 10^10 nodes:
+     * a few hundred bytes that exhaust the heap of the whole instance. The
+     * largest scenario shipped is about 85 000 nodes for 1.2 MB, and the HTTP
+     * body limit (10 MB) keeps a file without aliases near 700 000: the
+     * ceiling leaves that room nearly three times over.
+     */
+    static final long MAX_EXPANDED_NODES = 2_000_000;
+
     private static Object parse(String yamlContent) {
+        Object document;
         try {
-            return ScenarioYaml.parser().load(yamlContent);
+            document = ScenarioYaml.parser().load(yamlContent);
         } catch (RuntimeException e) {
             throw new ScenarioFormatException("YAML invalide : " + e.getMessage(), e);
         }
+        if (expandedSize(document, new IdentityHashMap<>()) > MAX_EXPANDED_NODES) {
+            throw new ScenarioFormatException("Le fichier de scénario représente plus de " + MAX_EXPANDED_NODES
+                    + " éléments une fois ses alias (« *nom ») résolus, ou un alias qui se contient lui-même :"
+                    + " il est refusé. Un scénario exporté par l'application n'en approche pas.");
+        }
+        return document;
+    }
+
+    /**
+     * The size of {@code node} with every alias counted as many times as it is
+     * named, each shared collection measured once ({@code sizes}, by
+     * identity). Stops counting past the ceiling, and a collection that
+     * contains itself is past it.
+     */
+    private static long expandedSize(Object node, Map<Object, Long> sizes) {
+        if (!(node instanceof Map<?, ?>) && !(node instanceof Collection<?>)) {
+            return 1;
+        }
+        Long known = sizes.get(node);
+        if (known != null) {
+            return known;
+        }
+        long beyond = MAX_EXPANDED_NODES + 1;
+        sizes.put(node, beyond);
+        Collection<?> children = node instanceof Map<?, ?> map
+                ? map.entrySet().stream()
+                        .flatMap(e -> Stream.of(e.getKey(), e.getValue()))
+                        .toList()
+                : (Collection<?>) node;
+        long size = 1;
+        for (Object child : children) {
+            size += expandedSize(child, sizes);
+            if (size > MAX_EXPANDED_NODES) {
+                return beyond;
+            }
+        }
+        sizes.put(node, size);
+        return size;
     }
 
     /**

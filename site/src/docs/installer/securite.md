@@ -124,6 +124,14 @@ kilo-octets, et un plafond commun avec celui des dumps SQL laisserait dix
 mégaoctets de marge à un import qui n'en a aucun besoin. Le fichier n'est
 jamais écrit sur disque : voir [`rgpd.md`](rgpd.md).
 
+L'**import d'un scénario YAML** borne aussi ce que le fichier représente, pas
+seulement ce qu'il pèse : un alias (`*nom`) répète une liste sans la recopier,
+et quelques centaines d'octets d'alias imbriqués peuvent représenter des
+milliards d'éléments, assez pour épuiser la mémoire de toute l'instance. Un
+fichier qui dépasse 2 000 000 d'éléments une fois ses alias résolus, ou dont un
+alias se contient lui-même, est refusé avant d'être lu plus loin. Le plus gros
+scénario livré en compte environ 85 000.
+
 Ces plafonds ne remplacent pas ceux du reverse proxy, qui doit rester la
 première ligne (limitation de débit par IP, plafond de connexions par client,
 délais d'attente).

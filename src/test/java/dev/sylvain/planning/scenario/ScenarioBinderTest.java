@@ -2,12 +2,14 @@ package dev.sylvain.planning.scenario;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.service.scenario.ScenariosLivres;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -245,6 +247,39 @@ class ScenarioBinderTest {
                 "animateurs:" + System.lineSeparator(), "animateurs:" + System.lineSeparator() + added);
 
         assertThat(ScenarioBinder.bind(withAliases).animateurs()).hasSize(63);
+    }
+
+    /**
+     * Seven nested lists of ten aliases each: 70 aliases, far under the alias
+     * limit, standing for ten million nodes once resolved. Walked as a tree it
+     * held six cores and the whole heap of a 2 GB instance for 25 seconds
+     * before an OutOfMemoryError; it is refused before anything walks it.
+     */
+    @Test
+    void anAliasExpansionBombIsRefusedBeforeBinding() {
+        StringBuilder bomb = new StringBuilder("a0: &a0 [lol]\n");
+        for (int i = 1; i <= 7; i++) {
+            bomb.append("a").append(i).append(": &a").append(i).append(" [");
+            for (int j = 0; j < 10; j++) {
+                bomb.append(j == 0 ? "" : ", ").append("*a").append(i - 1);
+            }
+            bomb.append("]\n");
+        }
+        bomb.append("animateurs: *a7\n");
+
+        assertTimeoutPreemptively(
+                Duration.ofSeconds(10),
+                () -> assertThatThrownBy(() -> ScenarioBinder.bind(bomb.toString()))
+                        .isInstanceOf(ScenarioFormatException.class)
+                        .hasMessageContaining("alias"));
+    }
+
+    /** A list that contains itself has no tree form at all: refused, not a stack overflow. */
+    @Test
+    void aSelfContainingAliasIsRefused() {
+        assertThatThrownBy(() -> ScenarioBinder.bind("schemaVersion: 7\nanimateurs: &a [*a]\n"))
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("alias");
     }
 
     /**
