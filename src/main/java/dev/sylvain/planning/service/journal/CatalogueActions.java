@@ -42,9 +42,6 @@ public final class CatalogueActions {
     private static final String ANIMATEUR_SUPPRIME = "ANIMATEUR_SUPPRIME";
     private static final String ANIMATEUR_JETON_REGENERE = "ANIMATEUR_JETON_REGENERE";
     private static final String ANIMATEURS_IMPORTES = "ANIMATEURS_IMPORTES";
-    private static final String TYPOLOGIES_IMPORTEES = "TYPOLOGIES_IMPORTEES";
-    private static final String EMPLACEMENTS_IMPORTES = "EMPLACEMENTS_IMPORTES";
-    private static final String STANDS_IMPORTES = "STANDS_IMPORTES";
     private static final String ANIMATEUR_COMPETENCES_GRILLE = "ANIMATEUR_COMPETENCES_GRILLE";
     private static final String ANIMATEURS_RELANCES = "ANIMATEURS_RELANCES";
     private static final String ANIMATEUR_JOUR_INDISPONIBLE = "ANIMATEUR_JOUR_INDISPONIBLE";
@@ -64,7 +61,6 @@ public final class CatalogueActions {
     private static final String CRENEAUX_RECURRENTS_CREES = "CRENEAUX_RECURRENTS_CREES";
     private static final String CRENEAUX_DERIVES = "CRENEAUX_DERIVES";
     private static final String CRENEAUX_GENERES = "CRENEAUX_GENERES";
-    private static final String CRENEAUX_IMPORTES = "CRENEAUX_IMPORTES";
     private static final String JOURNEE_TYPE_CREEE = "JOURNEE_TYPE_CREEE";
     private static final String JOURNEE_TYPE_MODIFIEE = "JOURNEE_TYPE_MODIFIEE";
     private static final String JOURNEE_TYPE_DEFINIE = "JOURNEE_TYPE_DEFINIE";
@@ -72,7 +68,6 @@ public final class CatalogueActions {
     private static final String CALENDRIER_JOURNEES_TYPES_MODIFIE = "CALENDRIER_JOURNEES_TYPES_MODIFIE";
     private static final String JOURNEES_TYPES_APPLIQUEES = "JOURNEES_TYPES_APPLIQUEES";
     private static final String JOURNEES_TYPES_RECONNUES = "JOURNEES_TYPES_RECONNUES";
-    private static final String JOURNEES_TYPES_IMPORTEES = "JOURNEES_TYPES_IMPORTEES";
     private static final String EMPLACEMENT_CREE = "EMPLACEMENT_CREE";
     private static final String EMPLACEMENT_MODIFIE = "EMPLACEMENT_MODIFIE";
     private static final String EMPLACEMENT_SUPPRIME = "EMPLACEMENT_SUPPRIME";
@@ -249,9 +244,6 @@ public final class CatalogueActions {
         changesData(ANIMATEUR_SUPPRIME, "Animateur supprimé", Entite.ANIMATEUR);
         action(ANIMATEUR_JETON_REGENERE, "Lien d'espace régénéré", Entite.ANIMATEUR);
         changesData(ANIMATEURS_IMPORTES, "Animateurs importés depuis un fichier", Entite.ANIMATEUR);
-        changesData(TYPOLOGIES_IMPORTEES, "Typologies importées depuis un fichier", Entite.TYPOLOGIE);
-        changesData(EMPLACEMENTS_IMPORTES, "Emplacements importés depuis un fichier", Entite.EMPLACEMENT);
-        changesData(STANDS_IMPORTES, "Stands importés depuis un fichier", Entite.STAND);
         changesData(ANIMATEUR_COMPETENCES_GRILLE, "Grille des compétences enregistrée", Entite.ANIMATEUR);
         action(ANIMATEURS_RELANCES, "Animateurs relancés à la main", Entite.ANIMATEUR);
         // The off day moves what a solve is given, and its seats of that day
@@ -270,7 +262,6 @@ public final class CatalogueActions {
         changesData(STAND_HORAIRES_EFFACES, "Horaires de stand effacés", Entite.STAND);
         changesData(STAND_PLAGE_AJOUTEE, "Plage d'ouverture ou de fermeture ajoutée", Entite.STAND);
         changesData(STAND_PLAGES_EFFACEES, "Plages d'un stand effacées", Entite.STAND);
-        changesData(STANDS_IMPORTES, "Grille de stands importée", Entite.STAND);
         changesData(OUVERTURES_SAISIES, "Grille des ouvertures enregistrée", Entite.STAND);
 
         /* ------------------------ Timeslots ------------------------- */
@@ -281,7 +272,6 @@ public final class CatalogueActions {
         changesData(CRENEAUX_RECURRENTS_CREES, "Créneaux récurrents générés", Entite.CRENEAU);
         changesData(CRENEAUX_DERIVES, "Créneaux dérivés des horaires des stands", Entite.CRENEAU);
         changesData(CRENEAUX_GENERES, "Créneaux générés (gabarits, horaires des stands ou récurrence)", Entite.CRENEAU);
-        changesData(CRENEAUX_IMPORTES, "Créneaux importés depuis un fichier", Entite.CRENEAU);
         // Day templates (ADR 0032): a template or its calendar changes nothing
         // the solver reads until applied; applying does, recognising does not.
         action(JOURNEE_TYPE_CREEE, "Journée type ajoutée", Entite.CRENEAU);
@@ -291,7 +281,6 @@ public final class CatalogueActions {
         action(CALENDRIER_JOURNEES_TYPES_MODIFIE, "Calendrier des journées types modifié", Entite.CRENEAU);
         changesData(JOURNEES_TYPES_APPLIQUEES, "Calendrier des journées types appliqué aux créneaux", Entite.CRENEAU);
         action(JOURNEES_TYPES_RECONNUES, "Journées types reconnues depuis les créneaux", Entite.CRENEAU);
-        action(JOURNEES_TYPES_IMPORTEES, "Journées types importées depuis un fichier", Entite.CRENEAU);
 
         /* -------------- Locations and game categories --------------- */
         changesData(EMPLACEMENT_CREE, "Emplacement ajouté", Entite.EMPLACEMENT);
@@ -560,7 +549,6 @@ public final class CatalogueActions {
         route("StandResource#addPlage", STAND_PLAGE_AJOUTEE);
         route("StandResource#removePlage", STAND_PLAGES_EFFACEES);
         route("StandResource#removePlagesOfDay", STAND_PLAGES_EFFACEES);
-        route("StandResource#importGrille", STANDS_IMPORTES);
         route("OuvertureStandsResource#saisir", OUVERTURES_SAISIES);
 
         route("CreneauResource#createCreneau", CRENEAU_CREE);
@@ -568,7 +556,6 @@ public final class CatalogueActions {
         route("CreneauResource#deleteCreneau", CRENEAU_SUPPRIME);
         route("CreneauResource#createRecurrence", CRENEAUX_RECURRENTS_CREES);
         route("CreneauResource#applyDerivation", CRENEAUX_DERIVES);
-        route("CreneauResource#importCsv", CRENEAUX_IMPORTES);
         route("GenerateurCreneauxResource#createGabarit", JOURNEE_TYPE_CREEE);
         route("GenerateurCreneauxResource#updateGabarit", JOURNEE_TYPE_MODIFIEE);
         route("GenerateurCreneauxResource#deleteGabarit", JOURNEE_TYPE_SUPPRIMEE);
@@ -582,11 +569,6 @@ public final class CatalogueActions {
         route("JourneeTypeResource#setCalendrier", CALENDRIER_JOURNEES_TYPES_MODIFIE);
         route("JourneeTypeResource#apply", JOURNEES_TYPES_APPLIQUEES);
         route("JourneeTypeResource#reconnaitre", JOURNEES_TYPES_RECONNUES);
-        route("JourneeTypeResource#importCsv", JOURNEES_TYPES_IMPORTEES);
-
-        route("TypologieResource#importCsv", TYPOLOGIES_IMPORTEES);
-        route("EmplacementResource#importCsv", EMPLACEMENTS_IMPORTES);
-        route("StandResource#importCsv", STANDS_IMPORTES);
 
         route("EmplacementResource#createEmplacement", EMPLACEMENT_CREE);
         route("EmplacementResource#updateEmplacement", EMPLACEMENT_MODIFIE);
@@ -903,12 +885,6 @@ public final class CatalogueActions {
         untracked("AffectationExplanationResource#simulateSwap", SIMULATION);
         untracked("AffectationExplanationResource#simulateDeplacement", SIMULATION);
         untracked("AnimateurResource#analyseCsvAnimateurs", ANALYSE_FICHIER);
-        untracked("StandResource#analyseGrille", ANALYSE_FICHIER);
-        untracked("TypologieResource#analyseCsv", ANALYSE_FICHIER);
-        untracked("EmplacementResource#analyseCsv", ANALYSE_FICHIER);
-        untracked("StandResource#analyseCsv", ANALYSE_FICHIER);
-        untracked("CreneauResource#analyseCsv", ANALYSE_FICHIER);
-        untracked("JourneeTypeResource#analyseCsv", ANALYSE_FICHIER);
         untracked(
                 "ResponsableResource#affichette",
                 "The responsable's own sheet: what their screen already shows them, to the same person, "
@@ -922,12 +898,6 @@ public final class CatalogueActions {
         untracked(
                 "RhResource#exportCsv",
                 "journalled by RhService in the edition of the report (EXPORT_CONFORMITE_CSV): the response filter files under the header's edition, which this route does not use");
-        untracked("TypologieResource#exempleCsv", FICHIER_EXEMPLE);
-        untracked("EmplacementResource#exempleCsv", FICHIER_EXEMPLE);
-        untracked("StandResource#exempleCsv", FICHIER_EXEMPLE);
-        untracked("StandResource#exempleGrille", FICHIER_EXEMPLE);
-        untracked("CreneauResource#exempleCsv", FICHIER_EXEMPLE);
-        untracked("JourneeTypeResource#exempleCsv", FICHIER_EXEMPLE);
         untracked("AnimateurResource#exempleCsvAnimateurs", "télécharge un fichier d'exemple, sans personne dedans");
         // A calendar client re-reads the feed every few hours on its own: one
         // line per sync would be noise, not a trace, and nobody chose to

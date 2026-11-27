@@ -14,7 +14,7 @@ Everywhere, a tool that reads a plan reads the **saved plan**, and a person come
 - The `coherence` block counts the input anomalies; `lister_anomalies_referentiel` gives the detail (family, severity, code, record concerned by `objet` and `objetId`) without the sentence or the date that the screen displays. This is the rule of `WarningCodes` applied to the whole list: the warning about a minor dates their coming of age.
 - The `aTraiter` block answers "what must I do this morning?": declarations and swaps pending, unreviewed days of the next seven days, silent staff to remind. "Today" is that of `JourJClock`, simulated date included.
 - `consulter_planning` says when the solver last ran, `consulter_publication` when the staff were notified. Only the second describes what people have under their eyes: a plan computed this morning and published last week is, for them, last week's. `consulter_publication` also says who would be concerned by the next publication, without sending anything.
-- `changements_journee` says what moved on a date, since the last publication (`reference=publication`) or since the plan before the last solve (`reference=resolution`), by seat and by staff member. A seat kept by the same person at other hours is a `HORAIRES` line. `referenceDisponible` false means "nothing to compare", never "no change".
+- `comparer_journee` says what moved on a date, since the last publication (`reference=publication`) or since the plan before the last solve (`reference=resolution`), by seat and by staff member. A seat kept by the same person at other hours is a `HORAIRES` line. `referenceDisponible` false means "nothing to compare", never "no change".
 - `comparer_realise_planifie` returns the screen of the same name for each stand and each **elapsed** day: seats published, held, absences, replacements, empty, removed (consigne, deleted timeslot: never an absence) or added, minutes published, done and lost. Each day is compared with the publication in force at its first timeslot; a day begun before any publication (`lateReference`) enters no total. `nature` is `DECLARED`: what was recorded, not a clock-in.
 - `consulter_planning`, view `synthese`, answers in a few dozen lines (seats filled in total, per stand and per day), where the `affectations` view would spend the assistant's context before it sees that a stand is understaffed on Saturday.
 
@@ -34,14 +34,11 @@ A setting made by `modifier_contrainte` is read in the application's action jour
 
 | Tool | What it returns |
 | --- | --- |
-| `heures_travaillees` | per staff member designated by id, hours per ISO week and total, maximum daily opening span, days beyond 12 h (a display, no rule). `source=persiste` by default, `source=publie` for the publication in force, refused as long as nothing is published; the response says which plan it read (`source`, `planDate`) |
-| `equite_planning` | one row per assigned staff member (total hours, per week, evening, weekend, public holiday, hard seats, runs) and, per column, median, minimum, maximum, standard deviation. `colonnesSolveur` says which columns a rule measures and whether it is active: a column that the solver does not weigh is information, not a defect |
-| `analyser_typologies` | the reading by game category of the Typologies tab of the Stands page: hours and seats held, `heuresParJour`, and four lists of people reduced to `nombre` and `animateurIds` (`affectes`, `competents`, `competentsJamaisAffectes`, `affectesSansCompetence`) |
+| `consulter_besoin` | the Need tab of Diagnosis, under a `section`: `borne` (default: the proven minimum team, what sets it and the bottleneck per game category), `marge` (per day and slice, `mode` `avant` by default or `apres`), `typologie` (hours and seats held, `heuresParJour`, and four lists of people reduced to `nombre` and `animateurIds`: `affectes`, `competents`, `competentsJamaisAffectes`, `affectesSansCompetence`), `volumetrie` (the size of the next solve's problem) or `faisabilite` (the blocking causes before solving). `mode` outside the `marge` section is refused |
+| `consulter_risques` | the Risks tab, under a `section`: `fragilite` (default: per assigned staff member, the seats a withdrawal would collapse and those nobody takes over, then the stand × timeslot pairs at most one specialist can hold; without the name or the sentence of the screen, which names the most fragile person), `former` (per game category that is short or held by a single specialist, the candidates ranked by available tension days, wish then level, `DEBUTANT` or `AUTONOME`, never `REFERENT`; with no saved plan, `planPersiste` is `false`) or `tension` (the `apres` margin crossed with the fragility, each cell carrying a `gravite` `CRITIQUE`, `ELEVEE`, `SURVEILLEE` or `CALME` and its `motifs`) |
+| `consulter_charge` | the Load report, under a `vue`: `equite` (default: one row per assigned staff member, total hours, per week, evening, weekend, public holiday, hard seats, runs, and per column median, minimum, maximum, standard deviation; `colonnesSolveur` says which columns a rule measures, a column the solver does not weigh being information, not a defect) or `heures` (hours per ISO week and total, maximum daily opening span, days beyond 12 h, a display with no rule; `source=persiste` by default, `source=publie` for the publication in force, refused as long as nothing is published, and the response says which plan it read). `source` outside the `heures` view is refused |
+| `consulter_repas_pauses` | the Meals and breaks report, under a `section`: `pauses` (default: per staff member and per day, where the due break falls, on which stand, who can relay; a break nobody can relay is a hard breach, `sansRelaisSeulement` returns only those) or `enchainements` (two consecutive seats on two geolocated locations whose gap leaves no time to walk, or only by taking it from the break, `walkOnBreak`; `geolocated=false` says that no trip could be computed, rather than an empty list that would read as "all is well"; speed, detour and tolerance are set by `modifier_parametres`, section `organisation`) |
 | `lister_typologies` | each game category with its counters (`competents`, `polyvalents`, `souhaits`, `stands`) and its `etat`: `ORPHELINE`, `FRAGILE`, `INUTILISEE`, `SANS_COMPETENT_INUTILISEE`, `NORMALE` |
-| `analyser_marge` | the margin per day and slice, in `avant` mode (default) or `apres`; the `tension` mode crosses it with the plan's fragility, each cell carrying a `gravite` (`CRITIQUE`, `ELEVEE`, `SURVEILLEE`, `CALME`) and its `motifs`, the irreplaceable seats all being counted there |
-| `plan_formation` | per game category that is short or held by a single specialist, the figures of the analyses and the ranked candidates (available tension days, then wish, then level); a candidate is `DEBUTANT` or `AUTONOME`, never `REFERENT`. With no saved plan, `planPersiste` is `false` and only the need part speaks |
-| `analyser_pauses` | per staff member and per day, where the due break falls, on which stand, who can relay (`relaisAnimateurIds`); a break that nobody can relay is a hard breach, the `sansRelais` filter returns only those |
-| `analyser_enchainements` | two consecutive seats of a staff member on two geolocated locations whose gap leaves no time to walk, or only by taking it from the break (`walkOnBreak`); `geolocated=false` says that no trip could be computed, rather than an empty list that would read as "all is well". Speed, detour and tolerance are set by `modifier_parametres` (section `organisation`) |
 | `analyser_arrivees_groupees` | for each group, day by day, who works, who is missing, the gap in arrivals and departures |
 | `comparer_editions` | the delta of the Editions view of the Compare two versions screen, with no name at all: a staff row carries its ids in each edition and the names of the fields that differ, never their values. Nothing is matched by id; `matching` says on what two rows were matched (`CODE`, `NOM`, `EMAIL`, `IDENTITE`, `POSITION`) |
 
@@ -107,7 +104,7 @@ Two **resources**, to attach once to inform all following calls:
 
 ## Old tool names
 
-4.0 renames, groups or removes tools of 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). A grouped tool does under one name, with an argument (`vue`, `mode`, `decision`), what several used to do ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)); its old names stay published until 5.0 next to the new one, their description starting with « Ancien nom »: those of the day review, those of the day templates, the recurring timeslots and the derivation, which the timeslot generator grouped ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), those of the plan, the solve, the rules and the swaps, and those of the parameters, the editions, the scenarios, the publication and the backups. The former solver settings tool is no longer published: the compute budget it set moved to the instance, and only the end-of-solve mail stays in `modifier_parametres` (section `calcul`). This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
+4.0 renames, groups or removes tools of 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). A grouped tool does under one name, with an argument (`vue`, `section`, `mode`, `decision`), what several used to do ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)); its old names stay published until 5.0 next to the new one, their description starting with « Ancien nom »: those of the day review, those of the day templates, the recurring timeslots and the derivation, which the timeslot generator grouped ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), those of the plan, the solve, the rules and the swaps, those of the diagnosis and its reports, and those of the parameters, the editions, the scenarios, the publication and the backups. The `tension` mode of `analyser_marge` became the `tension` section of `consulter_risques`. The former solver settings tool is no longer published: the compute budget it set moved to the instance, and only the end-of-solve mail stays in `modifier_parametres` (section `calcul`). This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
 
 <!-- mcp-renommages:debut -->
 | Name in 3.x | Name in 4.0 |
@@ -121,8 +118,15 @@ Two **resources**, to attach once to inform all following calls:
 | `ajouter_horaire_stand` | `creer_horaire_stand` |
 | `ajouter_ouverture_stand` | `creer_plage_stand` |
 | `ajouter_validation_journee` | `modifier_etat_journee` |
+| `analyser_effectifs` | `consulter_besoin` |
+| `analyser_enchainements` | `consulter_repas_pauses` |
+| `analyser_faisabilite` | `consulter_besoin` |
+| `analyser_marge` | `consulter_besoin` |
+| `analyser_pauses` | `consulter_repas_pauses` |
+| `analyser_typologies` | `consulter_besoin` |
 | `arreter_solveur` | `arreter_calcul` |
 | `capturer_instantane` | `creer_version` |
+| `changements_journee` | `comparer_journee` |
 | `compacter_horaires_stands` | removed |
 | `comparer_instantanes` | `comparer_versions` |
 | `configurer_foire_echanges` | `modifier_foire_echanges` |
@@ -141,6 +145,7 @@ Two **resources**, to attach once to inform all following calls:
 | `edition_courante` | `lister_editions` |
 | `effacer_horaires_stand` | `supprimer_horaires_stand` |
 | `effacer_plages_stand` | `supprimer_plage_stand` |
+| `equite_planning` | `consulter_charge` |
 | `etat_edition` | `consulter_edition` |
 | `etat_planning` | `consulter_planning` |
 | `etat_publication` | `consulter_publication` |
@@ -149,6 +154,7 @@ Two **resources**, to attach once to inform all following calls:
 | `expliquer_echec_contraintes_dures` | `diagnostiquer_plan` |
 | `figer_referentiel` | `modifier_phase_edition` |
 | `generer_creneaux_depuis_stands` | `appliquer_generateur_creneaux` |
+| `heures_travaillees` | `consulter_charge` |
 | `importer_scenario_yaml` | `importer_scenario` |
 | `lancer_solveur` | `lancer_calcul` |
 | `lever_gel` | `modifier_phase_edition` |
@@ -165,6 +171,7 @@ Two **resources**, to attach once to inform all following calls:
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
 | `modifier_poids_contrainte` | `modifier_contrainte` |
+| `plan_formation` | `consulter_risques` |
 | `previsualiser_application_journees_types` | `previsualiser_generateur_creneaux` |
 | `previsualiser_creneaux_recurrents` | `previsualiser_generateur_creneaux` |
 | `previsualiser_derivation_creneaux` | `previsualiser_generateur_creneaux` |
@@ -191,6 +198,7 @@ Two **resources**, to attach once to inform all following calls:
 | `synthese_affectations` | `consulter_planning` |
 | `synthese_confirmations` | `consulter_publication` |
 | `valider_scenario_yaml` | `diagnostiquer_scenario` |
+| `volumes` | `consulter_besoin` |
 <!-- mcp-renommages:fin -->
 
 ## What has no tool

@@ -110,11 +110,6 @@
         <span i18n="@@journeesTypes.reconnaitre.action">Reconnaître les journées types depuis les créneaux</span>
       </button>
     </mat-menu>
-    <!-- On an empty grid the empty state below carries « Importer »: one
-         button of that name on the screen. -->
-    @if (store.creneaux().length > 0) {
-      <app-import-button card="creneaux" [disabled]="gridLocked()" />
-    }
     <button matButton type="button" [disabled]="creneauxAffiches().length === 0" (click)="exportList()">
       <mat-icon>download</mat-icon>
       <ng-container i18n="@@referentiel.exporterListe">Exporter cette liste</ng-container>
@@ -226,7 +221,6 @@
     @if (store.creneaux().length === 0) {
       <app-empty-state [addDisabled]="gridLocked()" (add)="openCreate()">
         <ng-container i18n="@@creneaux.empty">Les créneaux donnent ses dates à l'édition : commencez ici, par une journée type posée sur le calendrier ci-dessus.</ng-container>
-        <app-import-button empty-state-import card="creneaux" [disabled]="gridLocked()" />
       </app-empty-state>
     } @else if (creneauxAffiches().length === 0) {
       <p class="empty-hint" i18n="@@filter.noMatch">Aucune ligne ne correspond au filtre.</p>

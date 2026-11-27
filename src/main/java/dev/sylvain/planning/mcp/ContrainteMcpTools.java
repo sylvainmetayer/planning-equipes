@@ -101,7 +101,7 @@ public class ContrainteMcpTools {
                     + "lister_contraintes donne niveauReglable : OBLIGATOIRE (le plan qui la viole n'est pas livrable, "
                     + "comme une règle légale) ou PREFERENCE_FORTE, PREFERENCE_NORMALE, PREFERENCE_LEGERE (le poids de "
                     + "cette position, 25, 5 ou 1) ; une règle rendue obligatoire que l'édition ne peut pas tenir "
-                    + "donne un plan infaisable : lancer analyser_faisabilite avant le calcul. Rend la ligne de la "
+                    + "donne un plan infaisable : lire consulter_besoin (section faisabilite) avant le calcul. Rend la ligne de la "
                     + "règle telle que lister_contraintes la lit après le changement.",
             annotations =
                     @Tool.Annotations(

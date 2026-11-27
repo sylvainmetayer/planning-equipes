@@ -35,7 +35,7 @@ import java.util.Set;
 public class CompetencesGrilleService {
 
     /** One row per animateur, well under the roster cap: the ceiling a submit is held to. */
-    static final int MAX_ROWS = StandGrilleImportService.MAX_ROWS;
+    static final int MAX_ROWS = 2_000;
 
     private final AnimateurService animateurs;
 

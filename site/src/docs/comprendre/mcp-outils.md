@@ -11,7 +11,7 @@ Partout, un outil qui lit un plan lit le **plan enregistré**, et une personne s
 - Le bloc `coherence` compte les anomalies de saisie ; `lister_anomalies_referentiel` en donne le détail (famille, gravité, code, fiche concernée par `objet` et `objetId`) sans la phrase ni la date que l'écran affiche. C'est la règle de `WarningCodes` appliquée à la liste entière : l'avertissement sur un mineur date sa majorité.
 - Le bloc `aTraiter` répond à « que dois-je faire ce matin ? » : déclarations et échanges en attente, journées non relues des sept jours à venir, silencieux à relancer. « Aujourd'hui » est celui de `JourJClock`, la date simulée comprise.
 - `consulter_planning` dit quand le solveur a tourné pour la dernière fois, `consulter_publication` quand les animateurs ont été prévenus. Seule la seconde décrit ce que les gens ont sous les yeux : un plan calculé ce matin et publié la semaine dernière est, pour eux, celui de la semaine dernière. `consulter_publication` dit aussi qui serait concerné par la prochaine publication, sans rien envoyer.
-- `changements_journee` dit ce qui a bougé sur une date, depuis la dernière publication (`reference=publication`) ou depuis le plan d'avant la dernière résolution (`reference=resolution`), par siège et par animateur. Un siège gardé par la même personne à d'autres heures est une ligne `HORAIRES`. `referenceDisponible` faux veut dire « rien à comparer », jamais « aucun changement ».
+- `comparer_journee` dit ce qui a bougé sur une date, depuis la dernière publication (`reference=publication`) ou depuis le plan d'avant la dernière résolution (`reference=resolution`), par siège et par animateur. Un siège gardé par la même personne à d'autres heures est une ligne `HORAIRES`. `referenceDisponible` faux veut dire « rien à comparer », jamais « aucun changement ».
 - `comparer_realise_planifie` rend l'écran du même nom pour chaque stand et chaque journée **écoulée** : sièges publiés, tenus, absences, remplacements, vides, retirés (consigne, créneau supprimé : jamais une absence) ou ajoutés, minutes publiées, réalisées et perdues. Chaque journée est comparée à la publication en vigueur à son premier créneau ; une journée commencée avant toute publication (`lateReference`) n'entre dans aucun total. `nature` vaut `DECLARED` : ce qui a été enregistré, pas un pointage.
 - `consulter_planning`, vue `synthese`, répond en quelques dizaines de lignes (postes pourvus au total, par stand et par jour), là où la vue `affectations` dépenserait le contexte de l'assistant avant qu'il voie qu'un stand est en sous-effectif le samedi.
 
@@ -31,14 +31,11 @@ Un réglage fait par `modifier_contrainte` se lit dans le journal des actions de
 
 | Outil | Ce qu'il rend |
 | --- | --- |
-| `heures_travaillees` | par animateur désigné par id, heures par semaine ISO et total, amplitude journalière maximale, journées au-delà de 12 h (un affichage, aucune règle). `source=persiste` par défaut, `source=publie` pour la publication en vigueur, refusé tant que rien n'est publié ; la réponse dit quel plan elle a lu (`source`, `planDate`) |
-| `equite_planning` | une ligne par animateur affecté (heures totales, par semaine, de soirée, de week-end, de jour férié, postes pénibles, séries) et, par colonne, médiane, minimum, maximum, écart-type. `colonnesSolveur` dit quelles colonnes une règle mesure et si elle est active : une colonne que le solveur ne pèse pas est une information, pas un défaut |
-| `analyser_typologies` | la lecture par typologie de l'onglet Typologies de la page Stands : heures et postes tenus, `heuresParJour`, et quatre listes de personnes réduites à `nombre` et `animateurIds` (`affectes`, `competents`, `competentsJamaisAffectes`, `affectesSansCompetence`) |
+| `consulter_besoin` | l'onglet Besoin du Diagnostic, sous une `section` : `borne` (défaut : l'effectif minimum prouvé, ce qui le fixe et le goulot par typologie), `marge` (par jour et tranche, `mode` `avant` par défaut ou `apres`), `typologie` (heures et postes tenus, `heuresParJour`, et quatre listes de personnes réduites à `nombre` et `animateurIds` : `affectes`, `competents`, `competentsJamaisAffectes`, `affectesSansCompetence`), `volumetrie` (la taille du problème du prochain calcul) ou `faisabilite` (les causes bloquantes avant calcul). `mode` hors de la section `marge` est refusé |
+| `consulter_risques` | l'onglet Risques, sous une `section` : `fragilite` (défaut : par animateur affecté, les postes qu'un désistement effondrerait et ceux que personne ne reprend, puis les couples stand × créneau qu'au plus un spécialiste tient ; sans le nom ni la phrase de l'écran, qui nomme la personne la plus fragile), `former` (par typologie en manque ou tenue par un spécialiste unique, les candidats classés par jours de tension disponibles, souhait puis niveau, `DEBUTANT` ou `AUTONOME`, jamais `REFERENT` ; sans plan enregistré, `planPersiste` vaut `false`) ou `tension` (la marge `apres` croisée avec la fragilité, chaque case portant une `gravite` `CRITIQUE`, `ELEVEE`, `SURVEILLEE` ou `CALME` et ses `motifs`) |
+| `consulter_charge` | le rapport Charge, sous une `vue` : `equite` (défaut : une ligne par animateur affecté, heures totales, par semaine, de soirée, de week-end, de jour férié, postes pénibles, séries, et par colonne médiane, minimum, maximum, écart-type ; `colonnesSolveur` dit quelles colonnes une règle mesure, une colonne que le solveur ne pèse pas étant une information, pas un défaut) ou `heures` (heures par semaine ISO et total, amplitude journalière maximale, journées au-delà de 12 h, un affichage sans règle ; `source=persiste` par défaut, `source=publie` pour la publication en vigueur, refusé tant que rien n'est publié, et la réponse dit quel plan elle a lu). `source` hors de la vue `heures` est refusé |
+| `consulter_repas_pauses` | le rapport Repas et pauses, sous une `section` : `pauses` (défaut : par animateur et par jour, où tombe la pause due, sur quel stand, qui peut relayer ; une pause que personne ne peut relayer est un écart dur, `sansRelaisSeulement` ne rend que celles-là) ou `enchainements` (deux postes consécutifs sur deux emplacements géolocalisés dont le battement ne laisse pas le temps de marcher, ou seulement en prenant sur la pause, `walkOnBreak` ; `geolocated=false` dit qu'aucun trajet n'était calculable, plutôt qu'une liste vide qui se lirait « tout va bien » ; vitesse, détour et tolérance se règlent par `modifier_parametres`, section `organisation`) |
 | `lister_typologies` | chaque typologie avec ses compteurs (`competents`, `polyvalents`, `souhaits`, `stands`) et son `etat` : `ORPHELINE`, `FRAGILE`, `INUTILISEE`, `SANS_COMPETENT_INUTILISEE`, `NORMALE` |
-| `analyser_marge` | la marge par jour et tranche, en mode `avant` (défaut) ou `apres` ; le mode `tension` la croise avec la fragilité du plan, chaque case portant une `gravite` (`CRITIQUE`, `ELEVEE`, `SURVEILLEE`, `CALME`) et ses `motifs`, les sièges irremplaçables y étant tous comptés |
-| `plan_formation` | par typologie en manque ou tenue par un spécialiste unique, les chiffres des analyses et les candidats classés (jours de tension disponibles, puis souhait, puis niveau) ; un candidat est `DEBUTANT` ou `AUTONOME`, jamais `REFERENT`. Sans plan enregistré, `planPersiste` vaut `false` et seule la partie besoin parle |
-| `analyser_pauses` | par animateur et par jour, où tombe la pause due, sur quel stand, qui peut relayer (`relaisAnimateurIds`) ; une pause que personne ne peut relayer est un écart dur, le filtre `sansRelais` ne rend que celles-là |
-| `analyser_enchainements` | deux postes consécutifs d'un animateur sur deux emplacements géolocalisés dont le battement ne laisse pas le temps de marcher, ou seulement en prenant sur la pause (`walkOnBreak`) ; `geolocated=false` dit qu'aucun trajet n'était calculable, plutôt qu'une liste vide qui se lirait « tout va bien ». Vitesse, détour et tolérance se règlent par `modifier_parametres` (section `organisation`) |
 | `analyser_arrivees_groupees` | pour chaque groupe, jour par jour, qui travaille, qui manque, l'écart des arrivées et des départs |
 | `comparer_editions` | le delta de la vue Éditions de l'écran Comparer deux versions, sans aucun nom : une ligne d'animateur porte ses ids dans chaque édition et le nom des champs qui diffèrent, jamais leurs valeurs. Rien n'est rapproché par id ; `matching` dit sur quoi deux lignes l'ont été (`CODE`, `NOM`, `EMAIL`, `IDENTITE`, `POSITION`) |
 
@@ -104,7 +101,7 @@ Deux **ressources**, à attacher une fois pour informer tous les appels suivants
 
 ## Anciens noms d'outils
 
-La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Un outil regroupé fait sous un seul nom, avec un argument (`vue`, `mode`, `decision`), ce que faisaient plusieurs ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)) ; ses anciens noms restent publiés jusqu'en 5.0 à côté du nouveau, leur description commençant par « Ancien nom » : ceux de la relecture des journées, ceux des journées types, des créneaux récurrents et de la dérivation, que le générateur de créneaux a regroupés ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), ceux du plan, du calcul, des règles et des échanges, et ceux des paramètres, des éditions, des scénarios, de la publication et des sauvegardes. L'ancien outil de réglage du solveur n'est plus publié : le budget de calcul qu'il réglait est passé à l'instance, et seul le mail de fin de résolution reste dans `modifier_parametres` (section `calcul`). Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
+La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Un outil regroupé fait sous un seul nom, avec un argument (`vue`, `section`, `mode`, `decision`), ce que faisaient plusieurs ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)) ; ses anciens noms restent publiés jusqu'en 5.0 à côté du nouveau, leur description commençant par « Ancien nom » : ceux de la relecture des journées, ceux des journées types, des créneaux récurrents et de la dérivation, que le générateur de créneaux a regroupés ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), ceux du plan, du calcul, des règles et des échanges, ceux du diagnostic et de ses rapports, et ceux des paramètres, des éditions, des scénarios, de la publication et des sauvegardes. Le mode `tension` d'`analyser_marge` est devenu la section `tension` de `consulter_risques`. L'ancien outil de réglage du solveur n'est plus publié : le budget de calcul qu'il réglait est passé à l'instance, et seul le mail de fin de résolution reste dans `modifier_parametres` (section `calcul`). Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
 
 <!-- mcp-renommages:debut -->
 | Nom en 3.x | Nom en 4.0 |
@@ -118,8 +115,15 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `ajouter_horaire_stand` | `creer_horaire_stand` |
 | `ajouter_ouverture_stand` | `creer_plage_stand` |
 | `ajouter_validation_journee` | `modifier_etat_journee` |
+| `analyser_effectifs` | `consulter_besoin` |
+| `analyser_enchainements` | `consulter_repas_pauses` |
+| `analyser_faisabilite` | `consulter_besoin` |
+| `analyser_marge` | `consulter_besoin` |
+| `analyser_pauses` | `consulter_repas_pauses` |
+| `analyser_typologies` | `consulter_besoin` |
 | `arreter_solveur` | `arreter_calcul` |
 | `capturer_instantane` | `creer_version` |
+| `changements_journee` | `comparer_journee` |
 | `compacter_horaires_stands` | retiré |
 | `comparer_instantanes` | `comparer_versions` |
 | `configurer_foire_echanges` | `modifier_foire_echanges` |
@@ -138,6 +142,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `edition_courante` | `lister_editions` |
 | `effacer_horaires_stand` | `supprimer_horaires_stand` |
 | `effacer_plages_stand` | `supprimer_plage_stand` |
+| `equite_planning` | `consulter_charge` |
 | `etat_edition` | `consulter_edition` |
 | `etat_planning` | `consulter_planning` |
 | `etat_publication` | `consulter_publication` |
@@ -146,6 +151,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `expliquer_echec_contraintes_dures` | `diagnostiquer_plan` |
 | `figer_referentiel` | `modifier_phase_edition` |
 | `generer_creneaux_depuis_stands` | `appliquer_generateur_creneaux` |
+| `heures_travaillees` | `consulter_charge` |
 | `importer_scenario_yaml` | `importer_scenario` |
 | `lancer_solveur` | `lancer_calcul` |
 | `lever_gel` | `modifier_phase_edition` |
@@ -162,6 +168,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
 | `modifier_poids_contrainte` | `modifier_contrainte` |
+| `plan_formation` | `consulter_risques` |
 | `previsualiser_application_journees_types` | `previsualiser_generateur_creneaux` |
 | `previsualiser_creneaux_recurrents` | `previsualiser_generateur_creneaux` |
 | `previsualiser_derivation_creneaux` | `previsualiser_generateur_creneaux` |
@@ -188,6 +195,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `synthese_affectations` | `consulter_planning` |
 | `synthese_confirmations` | `consulter_publication` |
 | `valider_scenario_yaml` | `diagnostiquer_scenario` |
+| `volumes` | `consulter_besoin` |
 <!-- mcp-renommages:fin -->
 
 ## Ce qui n'a pas d'outil

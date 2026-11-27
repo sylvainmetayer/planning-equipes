@@ -11,7 +11,7 @@ import java.util.Objects;
 
 /**
  * The training plan of the current edition — what {@code GET /api/formation}
- * and the MCP tool {@code plan_formation} both return.
+ * and the MCP tool {@code consulter_risques} (section {@code former}) both return.
  *
  * <p>It gathers the two reports the plan is read from — the staffing need
  * ({@link StaffingService}, the very call behind the Besoin tab) and the

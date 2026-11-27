@@ -632,7 +632,7 @@ describe('StandsPage table', () => {
   it('distinguishes an empty referential from a filter that matched nothing', async () => {
     await rendre([]);
     // Its actions are the empty state's alone: the header leaves them out.
-    expectOnlyInEmptyState(racine(), ['Ajouter', 'Importer']);
+    expectOnlyInEmptyState(racine(), ['Ajouter']);
     // The step before the stands is named, and still to do.
     const vide = racine().querySelector('.empty-state')!;
     expect(vide.textContent).toContain('Un stand propose des typologies');
@@ -756,7 +756,7 @@ describe('StandsPage table', () => {
     expect(racine().querySelectorAll('th[mat-sort-header]')).toHaveLength(7);
   });
 
-  it('keeps in its header Ajouter, Importer and Édition groupée, the rest under « Plus »', async () => {
+  it('keeps in its header Ajouter and Édition groupée, the rest under « Plus », with no import of the grid', async () => {
     await rendre([stand({ id: 's1', nom: 'Loup-Garou' }), stand({ id: 's2', nom: 'Dixit' })]);
 
     const header = Array.from(
@@ -766,6 +766,8 @@ describe('StandsPage table', () => {
       .filter((texte) => texte !== '');
     expect(header.some((texte) => texte.endsWith('Compacter les horaires'))).toBe(false);
     expect(header.some((texte) => texte.endsWith('Saisir en grille'))).toBe(false);
+    // The CSV import of the stands and of their grid left in 4.0: the YAML replaces them.
+    expect(header.some((texte) => texte.endsWith('Importer'))).toBe(false);
     expect((await moreMenuItem('Saisir en grille')).getAttribute('href')).toBe(
       '/creneaux?onglet=horaires&vue=saisie',
     );

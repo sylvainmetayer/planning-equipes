@@ -10,7 +10,7 @@ Le type d'événement change les priorités : voir [un planning de festival](/pl
 
 - Choisissez l'édition de travail dans la barre d'édition, au-dessus de chaque page. Deux onglets du navigateur peuvent travailler sur deux éditions à la fois ; elles ne se mélangent jamais. Pour en créer une, voir [Enchaîner les éditions](enchainer-les-editions.md).
 - Sur une édition vide, l'accueil propose un bloc « Démarrer » : importer un fichier, repartir d'une édition précédente ou charger un exemple. Chaque liste de référentiel vide dit ce qu'elle contiendra, mène à l'étape précédente quand elle manque, et propose elle aussi un exemple.
-- Si vous avez déjà un tableur, [Importer et exporter des fichiers](importer-exporter.md) évite la saisie à la main.
+- Si vous avez déjà un tableur de bénévoles ou une édition à reprendre, [Importer et exporter des fichiers](importer-exporter.md) évite la saisie à la main : le CSV pour les animateurs, le fichier YAML pour tout le reste.
 
 ## Créer vos typologies
 

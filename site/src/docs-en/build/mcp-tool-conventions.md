@@ -93,7 +93,7 @@ The assistant names ids it may have invented, sees no greyed-out button and read
 | `simuler_affectation`, `modifier_affectation`, `modifier_demande_echange`, `analyser_impact_echange` | refuse a seat whose timeslot has begun: "Ce créneau est déjà commencé : le passé ne se modifie plus" ("This timeslot has already begun: the past can no longer be modified") | the simulation tool already refuses, so as not to build a plan on a gesture that the write will refuse |
 | `consulter_calcul` | with no `jobId` and no active job, answers `IDLE` with "Aucun solveur ne tourne." ("No solver is running.") in `avertissement`; an unknown `jobId` is refused | a tool that returns nothing cannot be encoded, the assistant received "Internal error" |
 | `consulter_planning`, `consulter_version` | cap the list (200 by default) and announce the total | a real plan carries several thousand seats; the total makes the truncation readable |
-| `heures_travaillees` | reads the saved plan by default, where the screen opens on the publication in force | an assistant generally reads what it has just retouched |
+| `consulter_charge` (`heures` view) | reads the saved plan by default, where the screen opens on the publication in force | an assistant generally reads what it has just retouched |
 | `diagnostiquer_plan` | error with no saved plan, where `POST /api/constraints/diagnostic` returns the empty view | an empty structure would read as "no constraint at fault" |
 | `publier_planning`, `configurer_collecte_disponibilites` | count the people with no address and the send failures, REST names them | `lister_destinataires_publication` gives the detail again by id |
 

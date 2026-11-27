@@ -37,7 +37,7 @@ Trois choix la cadrent :
 
 Un stand sans emplacement, ou un emplacement sans coordonnées, rend la règle inerte : un trajet inconnu n'est ni court ni long.
 
-La vérification des enchaînements (`GET /api/planning/enchainements`, outil MCP `analyser_enchainements`) lit le plan persisté avec le même calcul mais un filet plus large : toutes les paires consécutives, battement nul compris, passé compris. Elle signale en plus un battement qui est aussi la pause légale quand le trajet en mange une part (« trajet pris sur la pause »), sans que la règle de pause change.
+La vérification des enchaînements (`GET /api/planning/enchainements`, outil MCP `consulter_repas_pauses`, section `enchainements`) lit le plan persisté avec le même calcul mais un filet plus large : toutes les paires consécutives, battement nul compris, passé compris. Elle signale en plus un battement qui est aussi la pause légale quand le trajet en mange une part (« trajet pris sur la pause »), sans que la règle de pause change.
 
 ## L'arrivée groupée (covoiturage)
 

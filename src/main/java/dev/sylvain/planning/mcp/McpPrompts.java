@@ -142,7 +142,7 @@ public class McpPrompts {
                 consulter_planning (vue affectations) puis analyser_affectation, et donne la cause racine probable \
                 (compétences manquantes sur la typologie, indisponibilité, effectif insuffisant sur la \
                 tranche, plafond légal atteint, aucun animateur polyvalent…).
-                4. Recoupe avec analyser_faisabilite et analyser_effectifs : si le problème est \
+                4. Recoupe avec consulter_besoin (sections faisabilite et borne) : si le problème est \
                 structurellement infaisable, aucune résolution ne le corrigera.
                 5. Termine par des actions concrètes classées par impact décroissant, en disant pour \
                 chacune quel outil l'appliquerait.
@@ -163,7 +163,7 @@ public class McpPrompts {
 
                 1. consulter_edition en premier : la checklist du cycle dit déjà ce qui est fait, ce qui \
                 reste et ce qui bloque. Le reste de la liste en détaille les lignes.
-                2. volumes : y a-t-il des animateurs et des postes à pourvoir ?
+                2. consulter_besoin (section volumetrie) : y a-t-il des animateurs et des postes à pourvoir ?
                 3. lister_anomalies_referentiel : traite d'abord les lignes BLOQUANT, puis dis-moi \
                 combien restent A_VERIFIER.
                 4. lister_declarations_disponibilite avec statut EN_ATTENTE : une déclaration non \
@@ -176,10 +176,10 @@ public class McpPrompts {
                 effet, des segments trop courts ?
                 7. lister_consignes : une consigne posée sur une date à venir change les horaires de \
                 tous les stands ce jour-là — dis-moi lesquelles, et si leur motif tient toujours.
-                8. analyser_effectifs : combien d'animateurs faut-il au minimum, et l'effectif présent \
-                suffit-il ? Puis analyser_marge en mode « avant » : une tranche négative manquera de \
+                8. consulter_besoin (section borne) : combien d'animateurs faut-il au minimum, et l'effectif présent \
+                suffit-il ? Puis la section marge en mode « avant » : une tranche négative manquera de \
                 monde quoi que fasse le solveur.
-                9. analyser_faisabilite : reste-t-il une cause structurellement bloquante ?
+                9. consulter_besoin (section faisabilite) : reste-t-il une cause structurellement bloquante ?
                 10. consulter_parametres (section legal) : la pause minimale entre vacations et la pause sur le \
                 poste sont-elles réglées comme l'organisateur le veut ? À 30 minutes entre vacations, \
                 deux blocs qui se touchent exigent deux équipes ; sans la pause sur le poste, aucune \
@@ -207,7 +207,7 @@ public class McpPrompts {
                 5. Dis-moi ce qui a changé : score, postes pourvus, écarts par contrainte. Si le \
                 résultat est moins bon, propose restaurer_version — mais ne le fais pas sans mon \
                 accord. Si la pause sur le poste est déclarée (consulter_parametres (section legal)), appelle \
-                analyser_pauses avec sansRelaisSeulement : chaque pause sans relais est un relais à \
+                consulter_repas_pauses avec sansRelaisSeulement : chaque pause sans relais est un relais à \
                 organiser avant de publier.
 
                 6. Rappelle-moi que résoudre n'est pas prévenir : tant que le planning n'est pas \
@@ -300,7 +300,7 @@ public class McpPrompts {
                 qui est déclaré (joursIndisponibles, souhaits) avec ce que la fiche dit aujourd'hui \
                 (joursActuels) : dis-moi ce qui changerait vraiment.
                 3. Signale-moi celles qui coûtent cher avant de les appliquer : un jour retiré sur une \
-                journée déjà tendue se voit avec analyser_effectifs et analyser_faisabilite.
+                journée déjà tendue se voit avec consulter_besoin (sections borne et faisabilite).
                 4. appliquer_declaration_disponibilite ou refuser_declaration_disponibilite, une par \
                 une et seulement après mon accord — appliquer écrit sur la fiche, tout ou rien, et il \
                 n'y a pas de retour en arrière.
@@ -365,7 +365,7 @@ public class McpPrompts {
                 règles impératives, c'est faire lire à quelqu'un un horaire qu'on va lui reprendre.
                 4. consulter_etats_journee : quelles journées sont encore à relire ? Ce \
                 n'est pas bloquant, mais dis-le-moi. Pour les journées qui bougent le plus, \
-                changements_journee avec reference=publication montre, siège par siège, ce que la \
+                comparer_journee avec reference=publication montre, siège par siège, ce que la \
                 publication va annoncer.
                 5. Signale-moi les personnes dont adresseConnue est faux : elles ne recevront rien et \
                 devront être prévenues autrement.
@@ -475,16 +475,16 @@ public class McpPrompts {
 
                 %s
 
-                1. analyser_effectifs : l'effectif minimum que l'événement exige, le pic qui le fixe, \
+                1. consulter_besoin (section borne) : l'effectif minimum que l'événement exige, le pic qui le fixe, \
                 et les typologies dont le vivier de compétents est trop mince. C'est la réponse à \
                 « faut-il recruter ou faut-il calculer plus longtemps ».
-                2. analyser_faisabilite : reste-t-il une cause structurellement bloquante ? Un manque \
+                2. consulter_besoin (section faisabilite) : reste-t-il une cause structurellement bloquante ? Un manque \
                 de compétence sur une typologie ne se résout pas en allongeant le budget du solveur.
-                3. analyser_marge en mode « avant » : quels jours et quelles tranches manquent de \
+                3. consulter_besoin (section marge, mode « avant ») : quels jours et quelles tranches manquent de \
                 monde, compétences mises à part. Sur un planning déjà résolu, le mode « tension » \
                 croise la marge avec la fragilité et note chaque tranche de CALME à CRITIQUE, avec les \
                 sièges que personne d'autre ne peut tenir.
-                4. plan_formation : typologie par typologie, le déficit, les jours en tension et les \
+                4. consulter_risques (section former) : typologie par typologie, le déficit, les jours en tension et les \
                 candidats à former — des animateurs déjà présents dont la compétence peut monter. Une \
                 typologie sans candidat relève du recrutement.
                 5. Sur un planning déjà résolu, simuler_affectation (mode candidats) sur un poste sensible montre \
@@ -521,7 +521,7 @@ public class McpPrompts {
                 prends en connaissance de cause : dis-le-moi en toutes lettres avant.
                 4. consulter_parametres (section calcul) : la durée d'une résolution et l'arrêt sur plateau, \
                 que fixe l'exploitant de l'instance et que tu ne modifies pas — un budget plus long ne \
-                corrige pas un manque de monde (analyser_effectifs).
+                corrige pas un manque de monde (consulter_besoin, section borne).
                 5. Rappelle-moi que rien de tout cela ne change le planning en place : le nouveau \
                 dosage vaut pour la prochaine résolution, et diagnostiquer_plan relit dès maintenant \
                 le plan persisté sous ce dosage.""".formatted(suffixe(edition), editionFrame(edition)));
@@ -548,7 +548,7 @@ public class McpPrompts {
                 3. consulter_parametres (section organisation) : quelle tolérance d'arrivée groupée l'édition \
                 accepte-t-elle ? modifier_parametres (section organisation) seulement après mon accord, et en me \
                 disant que la tolérance ne vaut qu'à la prochaine résolution.
-                4. analyser_enchainements : un membre du groupe qui court d'un emplacement à l'autre \
+                4. consulter_repas_pauses (section enchainements) : un membre du groupe qui court d'un emplacement à l'autre \
                 entre deux postes arrive en retard pour tout le monde.
                 5. Conclus par les groupes à revoir, et pour chacun ce qui le corrigerait : une \
                 résolution, une tolérance, ou une conversation avec les intéressés.
@@ -570,7 +570,7 @@ public class McpPrompts {
                 quelles journées restent à relire. consulter_edition signale celles des sept jours à venir.
                 2. Pour chaque journée à relire, consulter_prerequis_validation : écarts durs, sièges \
                 vides, pauses sans relais, postes irremplaçables, comptés sur cette seule journée.
-                3. changements_journee pour la même date : ce qui a bougé depuis la dernière \
+                3. comparer_journee pour la même date : ce qui a bougé depuis la dernière \
                 publication (reference=publication), ou depuis la dernière résolution \
                 (reference=resolution). referenceDisponible faux veut dire « rien à comparer », pas \
                 « aucun changement ».
@@ -672,12 +672,12 @@ public class McpPrompts {
                 3. diagnostiquer_plan : le plan persisté est-il faisable, et sur quelles règles \
                 reste-t-il en défaut ? Une règle de temps de travail encore en défaut se traite \
                 avant diffusion, pas après.
-                4. consulter_parametres (section legal), puis analyser_pauses avec sansRelaisSeulement : une \
+                4. consulter_parametres (section legal), puis consulter_repas_pauses avec sansRelaisSeulement : une \
                 pause que personne ne peut relayer est une pause qui n'aura pas lieu.
-                5. heures_travaillees, puis equite_planning : y a-t-il des semaines au-dessus du \
+                5. consulter_charge, vue heures puis vue equite : y a-t-il des semaines au-dessus du \
                 plafond, ou des écarts que personne n'a arbitrés — heures de soirée, de week-end, \
                 postes pénibles, souhaits jamais satisfaits ? L'équité se lit ici, pas dans le score.
-                6. analyser_enchainements : des postes qui se suivent sur deux emplacements trop \
+                6. consulter_repas_pauses (section enchainements) : des postes qui se suivent sur deux emplacements trop \
                 éloignés pour le battement. analyser_arrivees_groupees : des covoiturages que le \
                 planning sépare.
                 7. lister_consignes : une consigne posée change les horaires de toute une journée — \
@@ -721,7 +721,7 @@ public class McpPrompts {
                 fige ce qui reste valable et ne recalcule que ce que le changement a invalidé. \
                 Quelques dizaines de secondes au lieu de plusieurs minutes, et surtout un planning \
                 que les animateurs reconnaissent encore.
-                4. changements_journee pour chaque journée touchée, avec reference=publication : \
+                4. comparer_journee pour chaque journée touchée, avec reference=publication : \
                 siège par siège et personne par personne, qui gagne, perd ou change de vacation par \
                 rapport à ce qui a été annoncé. Ce sont exactement les gens à prévenir.
                 5. consulter_publication puis publier_planning après mon accord — sans quoi les animateurs \
@@ -742,7 +742,7 @@ public class McpPrompts {
                 %s
 
                 1. consulter_planning (vue affectations, animateurId) pour la personne : ses postes, par id de stand et de créneau ; \
-                garde ceux d'aujourd'hui. changements_journee sur la date du jour dit aussi ce qui a \
+                garde ceux d'aujourd'hui. comparer_journee sur la date du jour dit aussi ce qui a \
                 déjà bougé depuis la publication. Un créneau passé ne se rattrape pas : le passé ne \
                 se modifie plus.
                 2. Pour chaque poste restant, simuler_affectation (mode candidats) : qui pourrait le prendre sans \
@@ -782,7 +782,7 @@ public class McpPrompts {
                 2. lister_mesures_edition : score, couverture des postes, heures et écarts par \
                 contrainte, résolution par résolution et toutes éditions confondues — compare la \
                 dernière résolution de cette édition à celle de l'édition précédente.
-                3. equite_planning et heures_travaillees : les écarts d'heures, de soirées, de \
+                3. consulter_charge, vues equite et heures : les écarts d'heures, de soirées, de \
                 week-ends et de postes pénibles, que l'organisation doit pouvoir expliquer.
                 4. consulter_publication (vue confirmations) et consulter_foire_echanges : combien ont accusé réception, \
                 et ce que la foire aux échanges a donné.

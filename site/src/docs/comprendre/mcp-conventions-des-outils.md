@@ -90,7 +90,7 @@ L'assistant nomme des ids qu'il a pu inventer, ne voit pas de bouton grisé et l
 | `simuler_affectation`, `modifier_affectation`, `modifier_demande_echange`, `analyser_impact_echange` | refusent un poste dont le créneau est commencé : « Ce créneau est déjà commencé : le passé ne se modifie plus » | l'outil de simulation refuse déjà, pour ne pas bâtir un plan sur un geste que l'écriture refusera |
 | `consulter_calcul` | sans `jobId` ni job actif, répond `IDLE` avec « Aucun solveur ne tourne. » en `avertissement` ; un `jobId` inconnu est refusé | un outil qui ne renvoie rien ne s'encode pas, l'assistant recevait « Internal error » |
 | `consulter_planning`, `consulter_version` | plafonnent la liste (200 par défaut) et annoncent le total | un plan réel porte plusieurs milliers de postes ; le total rend la troncature lisible |
-| `heures_travaillees` | lit le plan enregistré par défaut, là où l'écran ouvre sur la publication en vigueur | un assistant lit en général ce qu'il vient de retoucher |
+| `consulter_charge` (vue `heures`) | lit le plan enregistré par défaut, là où l'écran ouvre sur la publication en vigueur | un assistant lit en général ce qu'il vient de retoucher |
 | `diagnostiquer_plan` | erreur sans plan enregistré, là où `POST /api/constraints/diagnostic` rend la vue vide | une structure vide se lirait « aucune contrainte en défaut » |
 | `publier_planning`, `configurer_collecte_disponibilites` | comptent les personnes sans adresse et les échecs d'envoi, le REST les nomme | `lister_destinataires_publication` redonne le détail par id |
 

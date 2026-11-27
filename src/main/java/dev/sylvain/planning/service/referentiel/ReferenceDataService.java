@@ -95,8 +95,6 @@ public class ReferenceDataService implements ReferenceData {
 
     private final GabaritRepository gabarits;
 
-    private final ReferentielCsvImportService referentielCsvImport;
-
     private final ReferentielCsvExportService referentielCsvExport;
 
     private final JdbcEditionScope scope;
@@ -119,7 +117,6 @@ public class ReferenceDataService implements ReferenceData {
             CurrentAction currentAction,
             CreneauGridService grille,
             GabaritRepository gabarits,
-            ReferentielCsvImportService referentielCsvImport,
             ReferentielCsvExportService referentielCsvExport,
             JdbcEditionScope scope) {
         this.imports = imports;
@@ -138,7 +135,6 @@ public class ReferenceDataService implements ReferenceData {
         this.currentAction = currentAction;
         this.grille = grille;
         this.gabarits = gabarits;
-        this.referentielCsvImport = referentielCsvImport;
         this.referentielCsvExport = referentielCsvExport;
         this.scope = scope;
     }
@@ -495,22 +491,6 @@ public class ReferenceDataService implements ReferenceData {
                     .toList());
         }
         return referentielCsvExport.zip(cibles);
-    }
-
-    /* ----------------------- Referential CSV imports ----------------------- */
-
-    public String exempleCsvReferentiel(ReferentielCsvImportReport.ImportTarget cible) {
-        return referentielCsvImport.exemple(cible);
-    }
-
-    public ReferentielCsvImportReport previewCsvReferentiel(
-            ReferentielCsvImportReport.ImportTarget cible, ReferentielCsvImportRequest request) {
-        return referentielCsvImport.preview(cible, request);
-    }
-
-    public ReferentielCsvImportReport importCsvReferentiel(
-            ReferentielCsvImportReport.ImportTarget cible, ReferentielCsvImportRequest request) {
-        return referentielCsvImport.apply(cible, request);
     }
 
     /* ------------------------------ Templates ------------------------------ */

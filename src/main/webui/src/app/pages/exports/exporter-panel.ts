@@ -14,7 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { ExportCsvApi } from '../../core/api/export-csv-api';
-import { CIBLES_EXPORT_CSV } from '../../core/api/imports-api';
+import { CIBLES_EXPORT_CSV } from '../../core/api/export-csv-targets';
 import { PlanningApi } from '../../core/api/planning-api';
 import { errorMessage, errorPrefix } from '../../core/error-message';
 import { ExportCsvTarget, VolumesExportCsv } from '../../core/models';
@@ -34,12 +34,11 @@ interface LigneExport {
  * audience: this screen writes files for the team, that one mails schedules to
  * people.
  *
- * <p>Two shapes, two uses. The CSV archive writes the referentials out in the
- * very form the import tabs read, each one to tick: a team copying its stands
- * from one year to the next does not necessarily take its animateurs along,
- * and a team replaying its calendar takes only the timeslots and the day
- * templates. The scenario file carries the whole edition at once — which is
- * what the Importer tab's « Scénario » card reads back.</p>
+ * <p>Two shapes, two uses. The CSV archive writes the referentials out for a
+ * spreadsheet, each one to tick: only the animateurs' file is read back (the
+ * Importer tab's animateurs card). The scenario file carries the whole edition
+ * at once — the workbook the Importer tab's « Scénario » card reads back, and
+ * the way back in for everything the CSV files no longer import.</p>
  *
  * <p>The end-of-event archive, which takes several exports of the edition —
  * these two among them — at once, is the Fichiers page's third tab.</p>
