@@ -54,30 +54,4 @@ public class TypologieResource {
         referenceDataService.deleteTypologie(id);
         return Response.noContent().build();
     }
-
-    /* ------------------------ Import CSV (withdrawn in 4.0) ------------------------ */
-
-    /** Retired: answers {@code 410} and points at the YAML import. */
-    @GET
-    @Path("/import-csv/exemple")
-    @NotForLecteur
-    public Response exempleCsv() {
-        throw ImportRetire.gone("CSV des typologies");
-    }
-
-    /** Retired: answers {@code 410} and points at the YAML import. */
-    @POST
-    @Path("/import-csv/analyse")
-    @Consumes(MediaType.WILDCARD)
-    public Response analyseCsv() {
-        throw ImportRetire.gone("CSV des typologies");
-    }
-
-    /** Retired: answers {@code 410} and points at the YAML import. */
-    @POST
-    @Path("/import-csv")
-    @Consumes(MediaType.WILDCARD)
-    public Response importCsv() {
-        throw ImportRetire.gone("CSV des typologies");
-    }
 }

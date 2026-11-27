@@ -489,7 +489,7 @@ class JournalCoverageStructurelleTest {
         for (String cle : List.of(
                 "AffectationExplanationResource#simulateSwap",
                 "CreneauResource#previewRecurrence",
-                "StandResource#analyseGrille")) {
+                "AnimateurResource#analyseCsvAnimateurs")) {
             assertThat(CatalogueActions.untrackedReason(cle))
                     .as("motif de %s", cle)
                     .isPresent()

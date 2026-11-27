@@ -238,7 +238,7 @@ Single Quarkus service, no separate solver microservice. Package root:
     the stands' model), the grid check (`CreneauGridService`), the stand-hours
     entry grid (`GrilleHorairesStands`), coherence, reference usage, and the
     animateurs' CSV import (the other CSV imports and the stand matrix were
-    withdrawn in 4.0, ADR 0127: their routes answer `410`).
+    withdrawn in 4.0, ADR 0128: their routes answer `410`).
   - `service/scenario/` — `ScenarioYamlReader` / `ScenarioYamlWriter` (the
     scenario file format, both pure and static, so their tests exercise reading
     and writing without a database; `PlanningServiceScenarioAllerRetourTest`

@@ -1,6 +1,6 @@
 # 0022 — L'import de la grille des stands transpose la décision 0021
 
-- **Statut** : accepté, implémenté · **remplacé** par [0127](0127-le-yaml-est-le-classeur-complet-le-csv-ne-sert-qu-aux-animateurs.md) (novembre 2026) : la matrice ne s'importe plus, le YAML porte les horaires des stands
+- **Statut** : accepté, implémenté · **remplacé** par [0128](0128-le-yaml-est-le-classeur-complet-le-csv-ne-sert-qu-aux-animateurs.md) (novembre 2026) : la matrice ne s'importe plus, le YAML porte les horaires des stands
 - **Date** : septembre 2026
 - **Portée** : import de données, API, écran d'administration
 

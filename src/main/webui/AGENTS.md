@@ -298,7 +298,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   « Exemples » (`pages/imports/exemples-card`, the bundled scenarios under a
   readable name and one sentence from the pure `exemples.ts`, never a file
   name) and « Vérifier un fichier » (the YAML validator). The CSV of every
-  other referential and the stand matrix are gone (ADR 0127): a `?cible=`
+  other referential and the stand matrix are gone (ADR 0128): a `?cible=`
   naming one falls back to the scenario card, and `/imports?onglet=` drops it;
   the animateurs card takes cells pasted from a spreadsheet (`collage-tableur.ts`
   over the pure `collage.ts`, which reads the quoting of Excel and LibreOffice)

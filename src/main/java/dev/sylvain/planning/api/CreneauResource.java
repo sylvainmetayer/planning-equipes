@@ -231,30 +231,4 @@ public class CreneauResource {
     public ReferenceUsage countCreneauUsages(@QueryParam("id") List<String> ids) {
         return referenceDataService.countCreneauUsages(ids);
     }
-
-    /* ------------------------ Import CSV (withdrawn in 4.0) ------------------------ */
-
-    /** Retired: answers {@code 410} and points at the YAML import. */
-    @GET
-    @Path("/import-csv/exemple")
-    @NotForLecteur
-    public Response exempleCsv() {
-        throw ImportRetire.gone("CSV des créneaux");
-    }
-
-    /** Retired: answers {@code 410} and points at the YAML import. */
-    @POST
-    @Path("/import-csv/analyse")
-    @Consumes(MediaType.WILDCARD)
-    public Response analyseCsv() {
-        throw ImportRetire.gone("CSV des créneaux");
-    }
-
-    /** Retired: answers {@code 410} and points at the YAML import. */
-    @POST
-    @Path("/import-csv")
-    @Consumes(MediaType.WILDCARD)
-    public Response importCsv() {
-        throw ImportRetire.gone("CSV des créneaux");
-    }
 }

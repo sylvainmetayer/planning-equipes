@@ -10,7 +10,7 @@ A scenario describes a whole event: reference data, grid, team, settings. It is 
 
 ## Where each action takes place
 
-Everything goes through the Files screen (`/fichiers`), which brings together export, correction and re-import (the YAML is the complete workbook of an edition, [ADR 0127](repo:docs/decisions/0127-le-yaml-est-le-classeur-complet-le-csv-ne-sert-qu-aux-animateurs.md)), as well as the end-of-event archive. Its three tabs are driven by `?onglet=importer|exporter|archive`, the open card of the Import tab by `?cible=`. The old addresses `/imports`, `/exports`, `/export-csv` and `/validateur-yaml` redirect to it.
+Everything goes through the Files screen (`/fichiers`), which brings together export, correction and re-import (the YAML is the complete workbook of an edition, [ADR 0128](repo:docs/decisions/0128-le-yaml-est-le-classeur-complet-le-csv-ne-sert-qu-aux-animateurs.md)), as well as the end-of-event archive. Its three tabs are driven by `?onglet=importer|exporter|archive`, the open card of the Import tab by `?cible=`. The old addresses `/imports`, `/exports`, `/export-csv` and `/validateur-yaml` redirect to it.
 
 | Action | Address |
 | --- | --- |

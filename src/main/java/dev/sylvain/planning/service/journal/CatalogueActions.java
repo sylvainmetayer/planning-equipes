@@ -204,7 +204,6 @@ public final class CatalogueActions {
     // Reasons shared by several untracked entry points.
     private static final String ANALYSE_FICHIER = "analyse préalable d'un fichier, n'écrit rien";
     private static final String FICHIER_EXEMPLE = "télécharge un fichier d'exemple";
-    private static final String ROUTE_RETIREE = "route retirée en 4.0 : répond 410 sans rien lire ni écrire";
     private static final String PREVISUALISATION = "prévisualisation, n'écrit rien";
     private static final String SIMULATION = "simulation, n'écrit rien";
 
@@ -868,18 +867,6 @@ public final class CatalogueActions {
         untracked("AffectationExplanationResource#simulateSwap", SIMULATION);
         untracked("AffectationExplanationResource#simulateDeplacement", SIMULATION);
         untracked("AnimateurResource#analyseCsvAnimateurs", ANALYSE_FICHIER);
-        untracked("TypologieResource#analyseCsv", ROUTE_RETIREE);
-        untracked("TypologieResource#importCsv", ROUTE_RETIREE);
-        untracked("EmplacementResource#analyseCsv", ROUTE_RETIREE);
-        untracked("EmplacementResource#importCsv", ROUTE_RETIREE);
-        untracked("StandResource#analyseCsv", ROUTE_RETIREE);
-        untracked("StandResource#importCsv", ROUTE_RETIREE);
-        untracked("CreneauResource#analyseCsv", ROUTE_RETIREE);
-        untracked("CreneauResource#importCsv", ROUTE_RETIREE);
-        untracked("JourneeTypeResource#analyseCsv", ROUTE_RETIREE);
-        untracked("JourneeTypeResource#importCsv", ROUTE_RETIREE);
-        untracked("StandResource#analyseGrille", ROUTE_RETIREE);
-        untracked("StandResource#importGrille", ROUTE_RETIREE);
         untracked(
                 "ResponsableResource#affichette",
                 "The responsable's own sheet: what their screen already shows them, to the same person, "
