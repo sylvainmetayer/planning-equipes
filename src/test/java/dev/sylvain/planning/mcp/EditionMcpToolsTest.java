@@ -260,4 +260,24 @@ class EditionMcpToolsTest {
                 .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("Édition inconnue");
     }
+
+    /** The 3.x names stay published until 5.0 and must still do what they did, through the shared bodies. */
+    @Test
+    void theFormerNamesStillRenameActivateAndDeactivate() {
+        String editionTest = createTestEdition();
+        String activeBefore = editionTools.listEditions().stream()
+                .filter(EditionView::active)
+                .map(EditionView::id)
+                .findFirst()
+                .orElse(null);
+        try {
+            assertThat(editionTools.renameEdition(editionTest, NOM_COPIE).nom()).isEqualTo(NOM_COPIE);
+            assertThat(editionTools.activateEdition(editionTest).active()).isTrue();
+            assertThat(editionTools.deactivateEdition(editionTest).active()).isFalse();
+        } finally {
+            if (activeBefore != null) {
+                editionTools.activateEdition(activeBefore);
+            }
+        }
+    }
 }
