@@ -82,14 +82,7 @@ class SolverJobResourceTest {
         assertThat(job.getString("result.diagnostic.score")).isNotBlank();
         // The solved planning is persisted server-side even though it never
         // travels back as part of the job result.
-        assertThat(given().header("X-Edition-Id", "E1")
-                        .when()
-                        .get("/api/planning/persisted")
-                        .then()
-                        .extract()
-                        .jsonPath()
-                        .getList("postes"))
-                .isNotEmpty();
+        assertThat(PersistedPlan.read("E1").getList("postes")).isNotEmpty();
     }
 
     /**

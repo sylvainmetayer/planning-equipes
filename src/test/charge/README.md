@@ -33,6 +33,7 @@ src/test/charge/demo-locale.sh --arreter
 | `FILE_MAX` | `3` | `SOLVER_MAX_QUEUED_JOBS` de l'instance visée |
 | `SECONDES` | durée de l'édition | durée demandée pour chaque calcul |
 | `ESPACE_TOKEN` | le jeton du dump de démo | l'espace visé |
+| `ESPACE_TOKENS` | *(vide)* | plusieurs jetons séparés par des virgules : chaque visiteur ouvre le sien, comme une équipe qui lit le mail de publication |
 | `TAUX_SESSIONS_MIN` | `0.9` | part des visiteurs de l'espace qui doivent ouvrir leur session |
 | `RESULTATS` | `./resultats-charge` | dossier des résumés JSON |
 

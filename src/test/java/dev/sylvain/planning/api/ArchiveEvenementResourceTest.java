@@ -246,13 +246,7 @@ class ArchiveEvenementResourceTest {
         // The control first: the individual documents of the Publication
         // screen do print the espace link, so a search for the token in these
         // bytes is one that can find it.
-        String plan = given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .statusCode(200)
-                .extract()
-                .asString();
+        String plan = PersistedPlan.json("E1");
         byte[] bundle = given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
                 .body(plan)

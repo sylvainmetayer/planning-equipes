@@ -378,8 +378,8 @@
         }
       },
       "Animateur" : {
-        "required" : [ "id", "prenom", "nom", "dateNaissance" ],
         "type" : "object",
+        "required" : [ "id", "prenom", "nom", "dateNaissance" ],
         "properties" : {
           "id" : {
             "type" : "string"
@@ -1739,6 +1739,119 @@
           },
           "active" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "CompactPlanning" : {
+        "required" : [ "animateurs", "stands", "creneaux", "postes" ],
+        "type" : "object",
+        "properties" : {
+          "dateDebutFestival" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "score" : {
+            "$ref" : "#/components/schemas/HardMediumSoftScore"
+          },
+          "animateurs" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Animateur"
+            }
+          },
+          "stands" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Stand"
+            }
+          },
+          "creneaux" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Creneau"
+            }
+          },
+          "postes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CompactSeat"
+            }
+          },
+          "contraintesAdHoc" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ContrainteAdHoc"
+            }
+          },
+          "parametresLegaux" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ParametresLegaux"
+            }
+          },
+          "parametresQualite" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ParametresQualite"
+            }
+          },
+          "constraintsDesactivees" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ConstraintToggle"
+            }
+          },
+          "quotasTypologies" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/QuotaTypologie"
+            }
+          },
+          "fenetresRepas" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/FenetreRepas"
+            }
+          },
+          "verrouillages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/VerrouillagePlanning"
+            }
+          }
+        }
+      },
+      "CompactSeat" : {
+        "type" : "object",
+        "required" : [ "id", "verrouille", "dureeEffectiveMinutes" ],
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "standId" : {
+            "type" : "string"
+          },
+          "creneauId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "animateurId" : {
+            "type" : "string"
+          },
+          "verrouille" : {
+            "type" : "boolean"
+          },
+          "dureeEffectiveMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "heureDebutEffective" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFinEffective" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "suiteDe" : {
+            "type" : "string"
           }
         }
       },
@@ -17811,7 +17924,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/PlanningEvenement"
+                  "$ref" : "#/components/schemas/CompactPlanning"
                 }
               }
             }

@@ -1087,6 +1087,40 @@ export interface PlanningEvenement {
   score: HardMediumSoftScore | null;
 }
 
+/** A seat of {@link CompactPlanning}: its stand, timeslot and animateur by id. */
+export interface CompactSeat {
+  id: string;
+  standId: string | null;
+  creneauId: number | null;
+  animateurId: string | null;
+  verrouille: boolean;
+  dureeEffectiveMinutes: number;
+  heureDebutEffective: string | null;
+  heureFinEffective: string | null;
+  suiteDe: string | null;
+}
+
+/**
+ * `/api/planning/persisted`: the persisted plan with every stand,
+ * timeslot and animateur written once, the seats naming them by id. Rebuilt
+ * into a {@link PlanningEvenement} by `PlanningStateService`.
+ */
+export interface CompactPlanning {
+  constraintsDesactivees?: ConstraintToggle[];
+  parametresLegaux?: ParametresLegaux[];
+  parametresQualite?: ParametresQualite[];
+  quotasTypologies?: QuotaTypologie[];
+  fenetresRepas?: FenetreRepas[];
+  verrouillages?: VerrouillagePlanning[];
+  dateDebutFestival?: string;
+  animateurs: Animateur[];
+  stands: Stand[];
+  creneaux: Creneau[];
+  postes: CompactSeat[];
+  contraintesAdHoc?: ContrainteAdHoc[];
+  score: HardMediumSoftScore | null;
+}
+
 export interface ConstraintDiagnostic {
   name: string;
   score: string;

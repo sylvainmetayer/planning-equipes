@@ -20,6 +20,7 @@ import {
   seedPlanning,
   EDITION_REFERENCE,
   type CompteLocal,
+  planEnregistre,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -142,7 +143,7 @@ test('un siège vide se remplit depuis la Journée : « Placer » affecte et ver
       'href',
       '/publication',
     );
-    const plan = await (await admin.get('/api/planning/persisted')).json();
+    const plan = (await planEnregistre(admin)) as any;
     const siege = plan.postes.find((poste: { id: string }) => poste.id === 'E2E-P1');
     expect(siege.animateur.id).toBe(SEED.collegueLibre);
     const verrous = await (await admin.get('/api/verrouillages')).json();
@@ -176,14 +177,14 @@ test('« Simuler un changement » montre l’avant et l’après, puis « Appliq
       .click();
     await expect(panneau(page)).toContainText('Donner ce siège à Denis');
     await expect(panneau(page)).toContainText('Score avant');
-    let plan = await (await admin.get('/api/planning/persisted')).json();
+    let plan = (await planEnregistre(admin)) as any;
     expect(plan.postes.find((poste: { id: string }) => poste.id === 'E2E-P1').animateur.id).toBe(
       SEED.demandeur,
     );
 
     await panneau(page).getByRole('button', { name: 'Appliquer' }).click();
     await expect(panneau(page)).toContainText('prend ce siège');
-    plan = await (await admin.get('/api/planning/persisted')).json();
+    plan = (await planEnregistre(admin)) as any;
     expect(plan.postes.find((poste: { id: string }) => poste.id === 'E2E-P1').animateur.id).toBe(
       SEED.collegueLibre,
     );
@@ -237,7 +238,7 @@ test('« Libérer » vide le siège et tient la personne à l’écart de ce cr�
     await confirmation.getByRole('button', { name: 'Libérer' }).click();
 
     await expect(panneau(page)).toContainText("restera à l'écart de ce créneau");
-    const plan = await (await admin.get('/api/planning/persisted')).json();
+    const plan = (await planEnregistre(admin)) as any;
     const siege = plan.postes.find((poste: { id: string }) => poste.id === 'E2E-P1');
     expect(siege.animateur).toBeNull();
     const verrous = await (await admin.get('/api/verrouillages')).json();

@@ -2,22 +2,42 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.notNullValue;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
+import io.restassured.response.ExtractableResponse;
+import jakarta.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 class PlanningResourceTest {
+
+    private static final TypeReference<Map<String, Object>> MAP = new TypeReference<>() {};
+
+    @Inject
+    ObjectMapper objectMapper;
+
+    @Inject
+    EditionContext editionContext;
+
+    @Inject
+    PlanningPersistenceService persistence;
 
     @Test
     void sampleEndpointRetourneUnPlanning() {
@@ -301,6 +321,58 @@ class PlanningResourceTest {
                 .post("/api/planning/reset")
                 .then()
                 .statusCode(200);
+    }
+
+    @Test
+    void thePersistedPlanNamesEachObjectOnceAndTravelsCompressed() throws Exception {
+        String sample = given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/sample?name=scenario.yml")
+                .then()
+                .statusCode(200)
+                .extract()
+                .asString();
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(sample)
+                .when()
+                .post("/api/solve?seconds=1")
+                .then()
+                .statusCode(200);
+        try {
+            ExtractableResponse<io.restassured.response.Response> response = given().header("X-Edition-Id", "E1")
+                    .header("Accept-Encoding", "gzip")
+                    .when()
+                    .get("/api/planning/persisted")
+                    .then()
+                    .statusCode(200)
+                    .header("Content-Encoding", "gzip")
+                    .header("Vary", containsString("Accept-Encoding"))
+                    .extract();
+            // The full form, as the route sent it before every seat named its objects by id.
+            String full =
+                    objectMapper.writeValueAsString(editionContext.executeIn("E1", persistence::loadPersistedPlanning));
+
+            Map<String, Object> plan = objectMapper.readValue(full, MAP);
+            assertThat((List<?>) plan.get("postes")).isNotEmpty();
+            assertThat(PersistedPlan.expand(objectMapper.readValue(response.asString(), MAP)))
+                    .isEqualTo(plan);
+            assertThat(response.asString().length()).isLessThan(full.length());
+        } finally {
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .post("/api/planning/reset")
+                    .then()
+                    .statusCode(200);
+        }
+    }
+
+    @Test
+    void theSolverStreamIsLeftOutOfTheCompressedTypes() {
+        // Compressed, the SSE stream would sit in the deflater's buffer instead of leaving event by event.
+        assertThat(ConfigProvider.getConfig().getValues("quarkus.http.compress-media-types", String.class))
+                .contains("application/json")
+                .doesNotContain("text/event-stream");
     }
 
     @Test

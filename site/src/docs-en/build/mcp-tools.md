@@ -224,7 +224,7 @@ Two **resources**, to attach once to inform all following calls:
 | Backups before emptying | each is a scenario export. `supprimer_donnees_edition` and the imports write one, but only an administrator reads, restores or deletes it, through the API ([ADR 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) |
 | SQL dump, PDF, ICS and CSV exports | all the personal data, or binaries meant for download from the interface |
 | CSV import of volunteers | the spreadsheet carries last name, first name, date of birth and address: a tool that accepted it would let in through MCP what does not leave through it |
-| `/api/planning/sample`, `/persisted` | a whole `PlanningEvenement`, several dozen MB with the personal data; `consulter_planning` (view `affectations`) covers the need while staying filtered |
+| `/api/planning/sample`, `/persisted` | a whole `PlanningEvenement`, or the whole stored plan (several MB, even compact), with the personal data; `consulter_planning` (view `affectations`) covers the need while staying filtered |
 | Staff espace and ICS subscription | the staff side, behind a personal token: MCP sees the requests and declarations on the admin side, never someone's espace |
 | Rotating a staff member's espace token | it invalidates the link already printed on a distributed PDF, a consequence that cannot be undone from a conversation |
 | Outgoing webhooks | a Slack, Discord or Matrix address is a secret, and a webhook opens a network exit from the server: configuring it from a conversation would be a ready-made exfiltration route. They are set in Settings › Instance |

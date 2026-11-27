@@ -667,14 +667,7 @@ class FrozenPastAcceptanceTest {
     }
 
     private static List<Map<String, Object>> affectationsPersistees() {
-        return given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath()
-                .getList("postes");
+        return PersistedPlan.read("E1").getList("postes");
     }
 
     /** Adds a day off to an animateur, keeping everything else the referential holds. */

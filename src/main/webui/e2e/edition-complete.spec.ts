@@ -14,6 +14,7 @@ import {
   dialogueOuvert,
   pageAdmin,
   PAGE_CALCULER,
+  planEnregistre,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -259,9 +260,7 @@ test('an edition entered end to end, solved, and read back', async ({ browser })
     .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 90_000 })
     .toBe(204);
 
-  const planning = (await (
-    await page.request.get('/api/planning/persisted', DANS_EDITION)
-  ).json()) as {
+  const planning = (await planEnregistre(page.request, DANS_EDITION)) as unknown as {
     postes: { stand?: { id: string }; animateur: unknown }[];
   };
   // 4 + 1 sièges le jour 1, 4 + 1 + 1 le jour 2, 2 + 1 la nocturne.

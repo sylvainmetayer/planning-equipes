@@ -2,7 +2,7 @@
 
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
-import { PlanningEvenement } from './models';
+import { Animateur, CompactPlanning, Creneau, PlanningEvenement, Stand } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class PlanningStateService {
@@ -28,7 +28,7 @@ export class PlanningStateService {
     if (current) {
       return Promise.resolve(current);
     }
-    return this.api.get<PlanningEvenement>('/api/planning/persisted');
+    return this.api.get<CompactPlanning>('/api/planning/persisted').then(expandCompactPlanning);
   }
 
   /**
@@ -44,4 +44,25 @@ export class PlanningStateService {
     }
     return planning;
   }
+}
+
+/**
+ * The full planning out of its compact form: each seat gets its stand,
+ * timeslot and animateur back — shared instances, one per id, where the full
+ * route sent a copy per seat.
+ */
+export function expandCompactPlanning(compact: CompactPlanning): PlanningEvenement {
+  const { stands, creneaux, postes, ...rest } = compact;
+  const standsById = new Map<string, Stand>(stands.map((s) => [s.id, s]));
+  const creneauxById = new Map<number, Creneau>(creneaux.map((c) => [c.id, c]));
+  const animateursById = new Map<string, Animateur>(rest.animateurs.map((a) => [a.id, a]));
+  return {
+    ...rest,
+    postes: postes.map(({ standId, creneauId, animateurId, ...seat }) => ({
+      ...seat,
+      stand: standId === null ? null : (standsById.get(standId) ?? null),
+      creneau: creneauId === null ? null : (creneauxById.get(creneauId) ?? null),
+      animateur: animateurId === null ? null : (animateursById.get(animateurId) ?? null),
+    })),
+  };
 }

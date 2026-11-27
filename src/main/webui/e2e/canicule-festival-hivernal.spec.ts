@@ -30,6 +30,7 @@ import {
   dayLabel,
   ouvrirSelect,
   pageAdmin,
+  planEnregistre,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -154,9 +155,7 @@ interface Seat {
 }
 
 async function persistedPlan(): Promise<Seat[]> {
-  const response = await admin.get('/api/planning/persisted', { timeout: 120_000 });
-  expect(response.ok()).toBe(true);
-  return ((await response.json()) as { postes: Seat[] }).postes;
+  return (await planEnregistre(admin, { timeout: 120_000 })).postes as unknown as Seat[];
 }
 
 function seatsOf(plan: Seat[], date: string): Seat[] {

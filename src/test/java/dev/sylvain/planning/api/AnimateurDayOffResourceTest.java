@@ -59,13 +59,7 @@ class AnimateurDayOffResourceTest {
     private record Held(String animateurId, String date, Object creneauId) {}
 
     private static JsonPath persisted() {
-        return given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath();
+        return PersistedPlan.read("E1");
     }
 
     private static List<Map<String, Object>> held(JsonPath plan) {
