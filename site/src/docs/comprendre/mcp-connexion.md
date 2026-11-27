@@ -68,7 +68,7 @@ Ce plafond ne remplace pas la limitation par IP du reverse proxy, première lign
 
 ## Verrouiller après des clés refusées
 
-Le plafond ne limite pas le devinage : 120 requêtes par minute font plus de sept mille essais par heure. L'entropie de la clé reste sa protection, et ce second garde fait seulement coûter du temps à une série d'essais. Au-delà de `PLANNING_MCP_MAX_FAILURES` clés refusées consécutives, l'adresse reçoit `429` pendant `PLANNING_MCP_LOCKOUT_DURATION`, y compris avec la bonne clé, sans quoi il suffirait d'attendre son tour. La durée court depuis le **dernier** échec : réessayer pendant le blocage ne rapporte rien.
+Le plafond ne limite pas le devinage : 120 requêtes par minute font plus de sept mille essais par heure. L'entropie de la clé reste sa protection, et ce second garde fait seulement coûter du temps à une série d'essais. Au-delà de `PLANNING_MCP_MAX_FAILURES` clés refusées consécutives, l'adresse reçoit `429` pendant `PLANNING_MCP_LOCKOUT_DURATION`, y compris avec la clé de la configuration quand elle est juste, sans quoi il suffirait d'attendre son tour. Une clé générée depuis l'écran et en vigueur passe le verrou sans effacer la série : 256 bits aléatoires n'ont pas besoin d'être freinés, et l'adresse verrouillée peut être un NAT partagé avec celui qui devine. La durée court depuis le **dernier** échec : réessayer pendant le blocage ne rapporte rien.
 
 | Variable | Défaut | Usage |
 | --- | --- | --- |

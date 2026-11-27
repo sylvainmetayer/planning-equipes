@@ -107,6 +107,25 @@ public class McpKeyService {
                         .isPresent();
     }
 
+    /**
+     * Whether {@code presented} is a <b>generated</b> key in force, read from
+     * memory only — {@code false} while the state is not loaded, so it never
+     * blocks: {@code McpRateLimiter} asks it on the event loop, to let the right
+     * key through an address locked by somebody else's wrong ones. Generated
+     * keys only: 256 random bits, which no lock is needed to keep from being
+     * guessed, where the configured key is whatever the operator typed.
+     */
+    public boolean isLiveGeneratedKey(String presented) {
+        State current = state.get();
+        if (current == null || presented == null || presented.isEmpty()) {
+            return false;
+        }
+        Row row = current.byFingerprint.get(fingerprint(presented));
+        return row != null
+                && row.origin.equals("GENEREE")
+                && (row.expiresAt == null || row.expiresAt.isAfter(Instant.now()));
+    }
+
     public Status status() {
         State current = state();
         Instant now = Instant.now();

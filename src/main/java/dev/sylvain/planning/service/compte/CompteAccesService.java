@@ -3,9 +3,9 @@ package dev.sylvain.planning.service.compte;
 import dev.sylvain.planning.config.ConfigAdminLogin;
 import dev.sylvain.planning.config.ConfigComptesLocaux;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.FailureLockout;
 import dev.sylvain.planning.service.RateLimitVerdict;
 import dev.sylvain.planning.service.Sha256;
+import dev.sylvain.planning.service.SlidingWindowCounter;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.espace.CodeRequestLimiter;
 import dev.sylvain.planning.service.publication.MailService;
@@ -89,11 +89,29 @@ public class CompteAccesService {
 
     /**
      * Failures of the password step <b>per account address</b> (existing or not:
-     * the key must not tell), beside the per-address lock of the form: a spray
+     * the key must not tell), beside the per-pair lock of the form: a spray
      * from many addresses at one account is stopped here, and a success on
      * another account does not wipe it.
+     *
+     * <p>At {@link #ACCOUNT_FACTOR} times the form's ceiling, never at the
+     * ceiling itself. One address gives an account no more failures than the
+     * pair (address, account) allows, the ceiling, before it is locked out
+     * itself ({@code AdminLoginLimiter#reservePasswordStep}): at the ceiling, an
+     * anonymous stranger locked anybody out with that many wrong passwords. At
+     * ten times, it takes ten addresses inside one window — the distributed
+     * guessing this lock exists for, still held to that many guesses.</p>
+     *
+     * <p><b>A fixed window, not a run counted from the last failure</b>
+     * ({@code FailureLockout}): a run is kept alive by any failure, so two
+     * addresses taking turns — each locked out of its pair while the other
+     * fails — would stretch one run past the multiple and lock the account
+     * anyway. In a window as long as the pair's lock, one address gives at most
+     * the ceiling.</p>
      */
-    private final FailureLockout accountFailures = new FailureLockout(1_000);
+    private final SlidingWindowCounter accountFailures = SlidingWindowCounter.bounded(1_000);
+
+    /** Multiple of the form's ceiling the account lock engages at; the address alone locks at the same multiple. */
+    public static final int ACCOUNT_FACTOR = 10;
 
     /** « Forgot my password » requests handed to the pool and not over yet. */
     private final AtomicInteger pendingForgot = new AtomicInteger();
@@ -245,7 +263,8 @@ public class CompteAccesService {
      */
     public Optional<Challenge> open(String email, String password) {
         String key = email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
-        long wait = accountFailures.lockoutSeconds(key, adminLogin.maxEchecs(), adminLogin.dureeBlocage());
+        int ceiling = adminLogin.maxEchecs() * ACCOUNT_FACTOR;
+        long wait = accountFailures.blockedSeconds(key, ceiling, adminLogin.dureeBlocage());
         if (wait > 0) {
             throw new TooManyRequests("tentatives de connexion sur ce compte", wait);
         }
@@ -254,10 +273,10 @@ public class CompteAccesService {
                 password,
                 compte.map(CompteAccesRepository.Credentials::passwordHash).orElse(null));
         if (!bon || !compte.get().active()) {
-            accountFailures.recordFailure(key, adminLogin.dureeBlocage());
+            accountFailures.use(key, ceiling, adminLogin.dureeBlocage());
             return Optional.empty();
         }
-        accountFailures.clear(key);
+        accountFailures.forget(key);
         CompteAccesRepository.Credentials c = compte.get();
         String challenge = token();
         if (!config.secondeEtape()) {

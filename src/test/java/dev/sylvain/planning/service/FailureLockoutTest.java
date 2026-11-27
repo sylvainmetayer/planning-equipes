@@ -42,7 +42,8 @@ class FailureLockoutTest {
 
         for (int i = 0; i < 3; i++) {
             assertThat(lockout.reserve("k", 3, TEN_MINUTES)).isZero();
-            lockout.settle("k", Outcome.FAILURE, TEN_MINUTES);
+            // The run so far, so the caller knows which failure engaged the lock.
+            assertThat(lockout.settle("k", Outcome.FAILURE, TEN_MINUTES)).isEqualTo(i + 1);
         }
         assertThat(lockout.lockoutSeconds("k", 3, TEN_MINUTES)).isBetween(1L, TEN_MINUTES.toSeconds());
         assertThat(lockout.reserve("k", 3, TEN_MINUTES)).isGreaterThan(1);

@@ -152,8 +152,17 @@ qu'une **série d'essais coûte du temps** plutôt que rien.
 
 `McpRateLimiter` compte donc aussi les **clés refusées**, séparément du débit :
 au-delà de `PLANNING_MCP_MAX_FAILURES` échecs consécutifs, l'adresse reçoit
-`429` pendant `PLANNING_MCP_LOCKOUT_DURATION`, **y compris avec la bonne clé**,
-sans quoi il suffirait d'attendre son tour.
+`429` pendant `PLANNING_MCP_LOCKOUT_DURATION`, sans quoi il suffirait
+d'attendre son tour.
+
+Une exception : **une clé générée depuis l'écran MCP, et en vigueur, passe le
+verrou.** L'adresse n'est pas l'appelant : derrière un NAT ou un proxy non
+déclaré, les mauvaises clés d'un inconnu verrouillaient aussi l'assistant
+légitime. Une clé générée porte 256 bits aléatoires, que le verrou ne protège
+de rien. Elle passe sans prendre de place ni effacer la série : celui qui
+devine reste verrouillé. La clé de la configuration (`PLANNING_MCP_API_KEY`),
+dont personne n'a vérifié la force, reste derrière le verrou, **y compris
+quand elle est juste** : générez une clé depuis l'écran pour en sortir.
 
 | Variable | Défaut | Usage |
 | --- | --- | --- |

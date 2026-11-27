@@ -71,7 +71,7 @@ This ceiling does not replace the reverse proxy's per-IP limit, the first line f
 
 ## Locking out after refused keys
 
-The ceiling does not limit guessing: 120 requests per minute make more than seven thousand attempts per hour. The key's entropy remains its protection, and this second guard merely makes a series of attempts cost time. Beyond `PLANNING_MCP_MAX_FAILURES` consecutive refused keys, the address receives `429` for `PLANNING_MCP_LOCKOUT_DURATION`, even with the right key, otherwise it would be enough to wait one's turn. The duration runs from the **last** failure: retrying during the block gains nothing.
+The ceiling does not limit guessing: 120 requests per minute make more than seven thousand attempts per hour. The key's entropy remains its protection, and this second guard merely makes a series of attempts cost time. Beyond `PLANNING_MCP_MAX_FAILURES` consecutive refused keys, the address receives `429` for `PLANNING_MCP_LOCKOUT_DURATION`, even with the configuration's key when it is right, otherwise it would be enough to wait one's turn. A key generated from the screen and in force passes the lockout without clearing the series: 256 random bits need no slowing down, and the locked address may be a NAT shared with whoever is guessing. The duration runs from the **last** failure: retrying during the block gains nothing.
 
 | Variable | Default | Use |
 | --- | --- | --- |

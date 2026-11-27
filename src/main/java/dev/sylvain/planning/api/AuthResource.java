@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.service.FailureLockout;
 import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.compte.CompteAccesService;
 import io.quarkus.security.Authenticated;
@@ -104,7 +105,8 @@ public class AuthResource {
     public Response passwordStep(Credentials credentials, @Context RoutingContext routage) {
         // The lock is asked here too, not only by the filter: a path the filter
         // does not recognise must not buy unlimited bcrypt.
-        long wait = limiteur.lockoutFor(routage, credentials == null ? null : credentials.email());
+        String email = credentials == null ? null : credentials.email();
+        long wait = limiteur.reservePasswordStep(routage, email);
         if (wait > 0) {
             return Response.status(429)
                     .header("Retry-After", wait)
@@ -114,25 +116,26 @@ public class AuthResource {
                                     + " minute(s)."))
                     .build();
         }
-        Optional<CompteAccesService.Challenge> challenge;
+        FailureLockout.Outcome outcome = FailureLockout.Outcome.NEITHER;
         try {
-            challenge = acces.open(
-                    credentials == null ? null : credentials.email(),
-                    credentials == null ? null : credentials.password());
+            Optional<CompteAccesService.Challenge> challenge =
+                    acces.open(email, credentials == null ? null : credentials.password());
+            if (challenge.isEmpty()) {
+                outcome = FailureLockout.Outcome.FAILURE;
+                return Response.status(401)
+                        .entity(Map.of(MESSAGE, "Adresse ou mot de passe incorrect."))
+                        .build();
+            }
+            outcome = FailureLockout.Outcome.SUCCESS;
+            return Response.ok(challenge.get()).build();
         } catch (CompteAccesService.TooManyRequests e) {
             return Response.status(429)
                     .header("Retry-After", e.secondsBeforeNextTry())
                     .entity(Map.of(MESSAGE, e.getMessage()))
                     .build();
+        } finally {
+            limiteur.settlePasswordStep(routage, email, outcome);
         }
-        if (challenge.isEmpty()) {
-            limiteur.recordFailure(routage, credentials == null ? null : credentials.email());
-            return Response.status(401)
-                    .entity(Map.of(MESSAGE, "Adresse ou mot de passe incorrect."))
-                    .build();
-        }
-        limiteur.clearPair(routage, credentials.email());
-        return Response.ok(challenge.get()).build();
     }
 
     /**

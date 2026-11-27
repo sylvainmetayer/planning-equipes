@@ -32,15 +32,19 @@ Four doors, from strongest to weakest:
    the address and the date of the last password); the owner is notified
    by e-mail. The local account's lock counts per **(IP address, account) pair** at
    the form's threshold (`CONNEXION_MAX_ECHECS`), per **address alone at ten times
-   that threshold**, and per **account** across all addresses: behind a
+   that threshold**, and per **account** across all addresses, **also at ten
+   times that threshold**: behind a
    shared address (a festival's wifi), several people's typos
    do not block everyone, but one password tried on
    many accounts, or many passwords on one account, hit
    a wall. A successful login resets only the failures of its own
-   pair. A deliberate choice: an attacker can lock a specific account by
-   failing five times (targeted denial of service, lifted after
-   `CONNEXION_DUREE_BLOCAGE`), without which they could not be stopped from
-   several addresses. A session whose password has changed, or whose
+   pair. Five wrong passwords lock out only the address that typed them:
+   the account's owner still signs in from their own. An address feeds the
+   account's counter no more than its pair's failures, even in a burst (each
+   attempt reserves its slot before it is judged), so locking an account takes
+   ten addresses within one window, which is the distributed guessing this
+   lock stops, held to fifty attempts per `CONNEXION_DUREE_BLOCAGE` with the
+   default settings. A session whose password has changed, or whose
    account was deactivated then reactivated, is anonymous (`401`): the session
    epoch (`sessions_depuis`) moves forward at each of these events. `429` and `409` responses after a
    correct password (lock, code not sent) confirm it: low risk,

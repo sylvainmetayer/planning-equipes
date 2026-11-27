@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 
 /**
  * The lockout on a run of wrong API keys ({@code McpRateLimiter}): past the
- * ceiling, the address gets {@code 429} instead of {@code 401}, and the right
- * key no longer opens anything either.
+ * ceiling, the address gets {@code 429} instead of {@code 401}, and the
+ * configured key no longer opens anything either.
  *
  * <p>Three things matter as much as the ceiling itself, and each has its step
  * below: a request carrying <b>no</b> key counts for nothing, a request that
@@ -86,8 +86,9 @@ class McpKeyLockoutTest {
 
         wrongKey().then().statusCode(429).header("Retry-After", matchesPattern("\\d+"));
 
-        // And the right key is refused just the same, which is the whole point:
-        // waiting for one's turn must not be enough.
+        // And the configured key, right as it is, is refused just the same:
+        // waiting for one's turn must not be enough. Only a generated key
+        // passes (McpKeyLockoutGeneratedKeyTest).
         given().header("X-Edition-Id", "E1")
                 .header("X-MCP-Api-Key", "test-mcp-key")
                 .when()
