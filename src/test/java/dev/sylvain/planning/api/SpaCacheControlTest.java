@@ -43,6 +43,41 @@ class SpaCacheControlTest {
                 .header("Cache-Control", equalTo("no-cache"));
     }
 
+    /** The entry URL everyone has in cache: the shell served for the directory, not by its name. */
+    @Test
+    void theRootIsRevalidatedToo() {
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/")
+                .then()
+                .statusCode(200)
+                .header("Cache-Control", equalTo("no-cache"));
+    }
+
+    /**
+     * A HEAD answer has no Content-Type, and a cache may freshen its stored
+     * GET from it: without the path rule the shell went back to « immutable ».
+     */
+    @Test
+    void aHeadRequestOnTheShellIsRevalidatedToo() {
+        for (String path : List.of("/", "/index.html")) {
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .head(path)
+                    .then()
+                    .statusCode(200)
+                    .header("Cache-Control", equalTo("no-cache"));
+        }
+    }
+
+    @Test
+    void theShellIsTellableFromItsPathAlone() {
+        assertThat(List.of("/", "/index.html", "/calendrier", "/animateur/abc"))
+                .allMatch(SpaCacheControlFilter::servesTheShell);
+        assertThat(List.of("/main-3FQ2.js", "/chunk-AB12.js", "/styles-X.css", "/api/auth/me", "/q/health", "/mcp"))
+                .noneMatch(SpaCacheControlFilter::servesTheShell);
+    }
+
     /** Any HTML response, whatever its path: the trigger is the content type. */
     @Test
     void anyHtmlResponseIsCovered() {

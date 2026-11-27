@@ -187,7 +187,7 @@ export class AnimateurFichePage implements OnInit {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   /** The mailer is mocked on this server: a « sent » mail never left it. */
-  private readonly mailMock = injectAppConfig().mailMock;
+  private readonly mailMock = injectAppConfig().mailMock ?? false;
 
   /** The id in the address; a change of person reloads the fiche. */
   protected readonly animateurId = toSignal(

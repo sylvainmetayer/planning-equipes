@@ -22,6 +22,7 @@ import { AdminApi } from '../../core/api/admin-api';
 import { APP_CONFIG } from '../../core/app-config';
 import { BRANDING } from '../../core/branding';
 import { errorMessage } from '../../core/error-message';
+import { loadAppConfig } from '../../core/observability';
 import { SignInChallenge } from '../../core/models';
 import { signedInWithoutAccess } from '../../core/session';
 import { BrandLogo } from '../../shared/brand-logo';
@@ -283,6 +284,8 @@ export class LoginPage implements OnInit {
     }
     const statut = await this.adminApi.session();
     if (statut.authentifie) {
+      // Read before sign-in, the answer left out what only a session sees.
+      Object.assign(this.config, await loadAppConfig());
       await this.router.navigateByUrl('/');
     } else {
       this.echec.set({ fermee: false, message: null });

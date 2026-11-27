@@ -2,8 +2,9 @@
 # Vérifie qu'une instance déployée est saine, à la bonne version, et prête à
 # servir le public. À lancer par l'exploitant juste après
 # `docker compose -f docker-compose.prod.yml --env-file .env.prod up -d`,
-# ou par toute CI de déploiement : le script ne demande ni accès à l'hôte ni
-# identifiant, seulement l'URL publique.
+# ou par toute CI de déploiement : le script ne demande pas d'accès à l'hôte,
+# seulement l'URL publique et, pour lire la version, le mot de passe du compte
+# admin (ADMIN_PASSWORD de l'environnement ou du --env-file).
 #
 #   scripts/verifier-deploiement.sh https://planning.exemple.org 1.2.0
 #   scripts/verifier-deploiement.sh https://planning.exemple.org        # version lue dans .env.prod
@@ -13,7 +14,9 @@
 #      attente ni en échec. Attente bornée (--attente, 120 s par défaut) : une
 #      instance qui migre, ou un proxy qui répond 502 avant elle, n'est pas un
 #      échec tant que le délai court ;
-#   2. la version exposée par /api/config est la version attendue ;
+#   2. la version exposée par /api/config est la version attendue. Elle n'est
+#      servie qu'à une session : le script ouvre celle du compte admin par le
+#      formulaire de connexion, avec ADMIN_PASSWORD, et la referme ensuite ;
 #   3. /api/branding et /api/mentions-legales répondent 200 ;
 #   4. aucune mention légale obligatoire n'est vide, sauf si l'instance se
 #      déclare de démonstration — l'indicateur demoInstance de
@@ -98,7 +101,8 @@ ko() { echo "✘ $*" >&2; exit 1; }
 
 # 1. Disponibilité, attente bornée.
 REPONSE="$(mktemp)"
-trap 'rm -f "$REPONSE"' EXIT
+COOKIES="$(mktemp)"
+trap 'rm -f "$REPONSE" "$COOKIES"' EXIT
 debut=$SECONDS
 while true; do
   code="$(curl -sS -o "$REPONSE" -w '%{http_code}' --max-time 10 "$URL/q/health/ready" 2>/dev/null || true)"
@@ -113,9 +117,24 @@ while true; do
   sleep 3
 done
 
-# 2. Version.
-version="$(curl -fsS --max-time 10 "$URL/api/config" | jq -r '.version // empty')" \
+# 2. Version, réservée à une session : un visiteur ne la lit pas.
+if [[ "$VERSION_LIBRE" == false ]]; then
+  mot_de_passe="${ADMIN_PASSWORD:-$(valeur_env ADMIN_PASSWORD)}"
+  [[ -n "$mot_de_passe" ]] \
+    || ko "ADMIN_PASSWORD inconnu (environnement ou $ENV_FILE) : la version n'est servie qu'à une session (ou --version-libre)"
+  # Par l'entrée standard : un mot de passe ne passe pas sur la ligne de commande.
+  code="$(printf '%s' "$mot_de_passe" | curl -sS -o /dev/null -w '%{http_code}' --max-time 10 -c "$COOKIES" \
+    --data-urlencode j_username=admin --data-urlencode j_password@- "$URL/j_security_check" || true)"
+  [[ "$code" == "302" ]] \
+    || ko "Connexion admin refusée (HTTP ${code:-aucun}) : mot de passe faux, ou porte de secours fermée derrière un OIDC (--version-libre)"
+fi
+version="$(curl -fsS --max-time 10 -b "$COOKIES" "$URL/api/config" | jq -r '.version // empty')" \
   || ko "/api/config ne répond pas"
+if [[ "$VERSION_LIBRE" == false ]]; then
+  curl -sS -o /dev/null --max-time 10 -b "$COOKIES" -X POST "$URL/api/auth/logout" || true
+  # Un mot de passe faux redirige aussi (302) : seule la réponse dit si la session s'est ouverte.
+  [[ -n "$version" ]] || ko "Version non lue : connexion admin refusée (mot de passe faux, ou porte de secours fermée derrière un OIDC : --version-libre)"
+fi
 if [[ "$VERSION_LIBRE" == true ]]; then
   ok "Version exposée : ${version:-inconnue} (non comparée)"
 elif [[ "$version" == "$ATTENDUE" ]]; then

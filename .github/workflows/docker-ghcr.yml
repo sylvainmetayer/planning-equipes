@@ -244,7 +244,8 @@ jobs:
           # expect the SHA where the image rightly says the version.
           revision="$(git describe --tags --exact-match HEAD 2>/dev/null || git rev-parse --short HEAD)"
           expected="${revision#v}"
-          if ! scripts/verifier-deploiement.sh --attente 180 --instance-demo \
+          # The version is served to a session only: the script signs in as admin.
+          if ! ADMIN_PASSWORD="$admin_password" scripts/verifier-deploiement.sh --attente 180 --instance-demo \
               --env-file /dev/null http://localhost:8080 "$expected"; then
             echo "::error::L'image ne démarre pas ou ne répond pas comme attendu"
             docker logs smoke

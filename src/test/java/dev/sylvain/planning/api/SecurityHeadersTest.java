@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.blankOrNullString;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -89,6 +90,22 @@ class SecurityHeadersTest {
                 .then()
                 .statusCode(200)
                 .header("Strict-Transport-Security", blankOrNullString());
+    }
+
+    /**
+     * No Cloudflare token and no DSN under test: neither origin is named, and
+     * {@code connect-src} no longer lets a script talk to any https host.
+     */
+    @Test
+    void theDefaultPolicyOpensNoUnconfiguredTool() {
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/auth/me")
+                .then()
+                .statusCode(200)
+                .header("Content-Security-Policy", containsString("script-src 'self';"))
+                .header("Content-Security-Policy", not(containsString("cloudflareinsights")))
+                .header("Content-Security-Policy", containsString("connect-src 'self' https://api.github.com;"));
     }
 
     /**

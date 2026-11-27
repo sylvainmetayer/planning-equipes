@@ -74,12 +74,30 @@ public class SpaCacheControlFilter {
         contexte.addHeadersEndHandler(fin -> {
             HttpServerResponse reponse = contexte.response();
             String type = reponse.headers().get("Content-Type");
-            boolean shell = type != null && type.toLowerCase(Locale.ROOT).contains("text/html");
-            if (shell || hasStableName(contexte.normalizedPath())) {
+            String path = contexte.normalizedPath();
+            // A HEAD answer carries no Content-Type: the path says what a GET would have served.
+            boolean shell = type == null
+                    ? servesTheShell(path)
+                    : type.toLowerCase(Locale.ROOT).contains("text/html");
+            if (shell || hasStableName(path)) {
                 reponse.putHeader("Cache-Control", "no-cache");
             }
         });
         contexte.next();
+    }
+
+    /**
+     * Whether a path the static handler answers without a type names the shell:
+     * the root, an {@code .html} file, or an SPA route — a last segment without
+     * an extension, outside the API and Quarkus' own pages. A hashed bundle
+     * always has one.
+     */
+    static boolean servesTheShell(String path) {
+        if (path.startsWith("/api/") || path.startsWith("/q/") || path.startsWith("/mcp")) {
+            return false;
+        }
+        String last = path.substring(path.lastIndexOf('/') + 1);
+        return last.isEmpty() || last.endsWith(".html") || !last.contains(".");
     }
 
     /** Whether this path is served under a name a redeployment will not change. */

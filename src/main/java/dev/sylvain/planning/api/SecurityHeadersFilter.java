@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.config.ConfigObservabilite;
 import dev.sylvain.planning.config.ConfigSecurite;
 import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.vertx.core.http.HttpServerResponse;
@@ -7,7 +8,12 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Browser-side hardening headers, added to every response before the
@@ -27,8 +33,12 @@ import java.util.Locale;
  * <ul>
  * <li><b>Content-Security-Policy</b> — the SPA loads no third-party script
  * except the Cloudflare Web Analytics beacon, so anything else injected into
- * a page is refused execution. {@code style-src} keeps {@code 'unsafe-inline'}:
- * Angular Material writes inline styles.</li>
+ * a page is refused execution. The origins of the two observability tools are
+ * added here, and only when they are configured: the beacon's to
+ * {@code script-src} and {@code connect-src} with the analytics token, the
+ * Sentry DSN's to {@code connect-src} — a deployment that sets neither opens
+ * neither. {@code style-src} keeps {@code 'unsafe-inline'}: Angular Material
+ * writes inline styles.</li>
  * <li><b>Referrer-Policy: no-referrer</b> — the espace animateur carries its
  * access token <b>in the URL</b>, and the planning pages link out
  * (OpenStreetMap attribution, the issue tracker). Without this, that token
@@ -60,11 +70,73 @@ public class SecurityHeadersFilter {
     /** Quarkus' own management endpoints (Swagger UI, dev UI): no CSP, see the class javadoc. */
     private static final String PREFIXE_QUARKUS = "/q/";
 
+    /** Where the Cloudflare beacon is loaded from, and where it reports to. */
+    static final String CLOUDFLARE_SCRIPT = "https://static.cloudflareinsights.com";
+
+    static final String CLOUDFLARE_REPORT = "https://cloudflareinsights.com";
+
     private final ConfigSecurite config;
 
+    /** The configured policy, with the origins of the configured tools added once at startup. */
+    private final Optional<String> csp;
+
     @Inject
-    public SecurityHeadersFilter(ConfigSecurite config) {
+    public SecurityHeadersFilter(ConfigSecurite config, ConfigObservabilite observabilite) {
         this.config = config;
+        this.csp = config.csp()
+                .map(policy -> withObservability(
+                        policy,
+                        observabilite.cloudflare().webAnalyticsToken(),
+                        observabilite.sentry().dsn()));
+    }
+
+    /**
+     * The policy with the analytics origins when a token is set, and the
+     * error-reporting origin when a DSN is: a source a deployment never
+     * configured stays out of the header. A directive the policy does not
+     * carry is left out too — an operator's own {@code CSP} decides.
+     */
+    static String withObservability(String policy, Optional<String> cloudflareToken, Optional<String> sentryDsn) {
+        String result = policy;
+        if (cloudflareToken.filter(token -> !token.isBlank()).isPresent()) {
+            result = withSources(result, "script-src", CLOUDFLARE_SCRIPT);
+            result = withSources(result, "connect-src", CLOUDFLARE_REPORT);
+        }
+        Optional<String> sentry = sentryDsn.flatMap(SecurityHeadersFilter::origin);
+        if (sentry.isPresent()) {
+            result = withSources(result, "connect-src", sentry.get());
+        }
+        return result;
+    }
+
+    /** Appends {@code source} to {@code directive} unless it is already there. */
+    static String withSources(String policy, String directive, String source) {
+        List<String> directives = new ArrayList<>();
+        for (String part : policy.split(";")) {
+            String trimmed = part.trim();
+            List<String> tokens = Arrays.asList(trimmed.split("\\s+"));
+            if (tokens.getFirst().equalsIgnoreCase(directive) && !tokens.contains(source)) {
+                trimmed = trimmed + " " + source;
+            }
+            if (!trimmed.isEmpty()) {
+                directives.add(trimmed);
+            }
+        }
+        return String.join("; ", directives);
+    }
+
+    /** {@code scheme://host[:port]} of a DSN, empty when it is not a URL. */
+    static Optional<String> origin(String dsn) {
+        try {
+            URI uri = URI.create(dsn.trim());
+            if (uri.getScheme() == null || uri.getHost() == null) {
+                return Optional.empty();
+            }
+            return Optional.of(
+                    uri.getScheme() + "://" + uri.getHost() + (uri.getPort() == -1 ? "" : ":" + uri.getPort()));
+        } catch (IllegalArgumentException _) {
+            return Optional.empty();
+        }
     }
 
     public void register(@Observes Filters filters) {
@@ -87,8 +159,8 @@ public class SecurityHeadersFilter {
         // worth indexing, and the one URL a crawler can reach without an account
         // — an animateur's espace — carries that person's access token.
         reponse.putHeader("X-Robots-Tag", "noindex, nofollow");
-        if (config.csp().isPresent() && !contexte.normalizedPath().startsWith(PREFIXE_QUARKUS)) {
-            reponse.putHeader("Content-Security-Policy", config.csp().get());
+        if (csp.isPresent() && !contexte.normalizedPath().startsWith(PREFIXE_QUARKUS)) {
+            reponse.putHeader("Content-Security-Policy", csp.get());
         }
         if (config.hsts().isPresent() && encryptedVisit(contexte)) {
             reponse.putHeader("Strict-Transport-Security", config.hsts().get());

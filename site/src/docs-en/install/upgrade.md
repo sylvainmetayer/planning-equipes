@@ -22,7 +22,7 @@ What each number promises, and how to read the release notes, is in [version num
 
 A production deployment references a **named version** (`1.2.0`), never `:main` or `:latest`. The workflow also publishes a `:main` image on every merge and rebuilds it without cache every Sunday for Ubuntu fixes: this is the **acceptance-test image**, used to validate what will ship, not to run at a client's. `:main` points to a different commit every day; `:latest` points to whatever the registry decides; neither answers "what were you running?".
 
-`docker-compose.prod.yml` takes the version from the `APP_VERSION` variable of `.env.prod`. The version can also be read **in the application's responses**: `GET /api/config` carries a `version` field (`X.Y.Z` on a release image, the short SHA on an acceptance-test image, `999-SNAPSHOT` locally), the same as the startup line.
+`docker-compose.prod.yml` takes the version from the `APP_VERSION` variable of `.env.prod`. The version can also be read **in the application's responses**: `GET /api/config` carries, for an open session, a `version` field (`X.Y.Z` on a release image, the short SHA on an acceptance-test image, `999-SNAPSHOT` locally), the same as the startup line.
 
 Read the release notes before upgrading: the "⚠️ Attention" entry flags what needs action on your part, such as a new legal constraint that can make a schedule that used to pass unsatisfiable, or a value to convert by hand.
 

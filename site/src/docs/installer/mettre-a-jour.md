@@ -18,7 +18,7 @@ Ce que promet chaque numéro, et comment lire les notes de version, est dans [le
 
 Un déploiement de production référence une **version nommée** (`1.2.0`), jamais `:main` ni `:latest`. Le workflow publie aussi une image `:main` à chaque fusion et la reconstruit sans cache chaque dimanche pour les correctifs Ubuntu : c'est l'**image de recette**, qui sert à valider ce qui sortira, pas à tourner chez un client. `:main` désigne un commit différent chaque jour ; `:latest` désigne ce que le registre veut bien ; ni l'un ni l'autre n'est une réponse à « vous tourniez sur quoi ? ».
 
-`docker-compose.prod.yml` prend la version par la variable `APP_VERSION` du `.env.prod`. La version se lit aussi **dans les réponses** de l'application : `GET /api/config` porte un champ `version` (`X.Y.Z` sur une image de release, le SHA court sur une image de recette, `999-SNAPSHOT` en local), le même que la ligne de démarrage.
+`docker-compose.prod.yml` prend la version par la variable `APP_VERSION` du `.env.prod`. La version se lit aussi **dans les réponses** de l'application : `GET /api/config` porte, pour une session ouverte, un champ `version` (`X.Y.Z` sur une image de release, le SHA court sur une image de recette, `999-SNAPSHOT` en local), le même que la ligne de démarrage.
 
 Lisez les notes de la release avant de monter : l'entrée « ⚠️ Attention » signale ce qui demande une action de votre part, comme une nouvelle contrainte légale qui peut rendre insatisfiable un planning qui passait, ou une valeur à convertir à la main.
 
