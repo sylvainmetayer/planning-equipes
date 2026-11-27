@@ -37,7 +37,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.editions.rappel:Un bandeau « Action requise », sous la barre du haut, signale ce qui demande une décision : l'édition active a passé son dernier jour, une édition inactive commence dans les jours qui viennent (sept par défaut, réglage de l'exploitant), ou, plus urgent, une édition inactive a déjà commencé, son espace animateur fermé. Les dates sont lues dans les créneaux : une édition sans créneau ne déclenche rien. Le bandeau n'envoie aucun courriel.`,
+          text: $localize`:@@aide.editions.rappel:Un bandeau « Action requise », sous la barre du haut, porte une ligne par situation, qui nomme l'édition et ce qu'il faut décider : l'édition active a passé son dernier jour (Désactiver, ou Activer la suivante), une édition inactive commence dans les jours qui viennent (sept par défaut, réglage de l'exploitant) ou a déjà commencé, son espace animateur fermé, ou aucune édition n'est active alors qu'une commence (Activer, avec la même confirmation que l'écran Éditions). Quand l'horloge simulée est active, la ligne le dit. « Ne plus afficher » masque cette ligne seulement, pour cette édition et cette situation, dans ce navigateur. Les dates sont lues dans les créneaux : une édition sans créneau ne déclenche rien. Le bandeau n'envoie aucun courriel.`,
         },
         {
           kind: 'steps',

@@ -1,4 +1,4 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+import { LOCALE_ID, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,6 +21,7 @@ describe('EditionActuelleBar', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
+        { provide: LOCALE_ID, useValue: 'fr' },
         // The strip now embeds the groupe de créneaux selector, which fetches
         // its own (here empty) list on creation.
         {
@@ -100,7 +101,49 @@ describe('EditionActuelleBar', () => {
       },
     ]);
     await fixture.whenStable();
-    expect(text()).toContain('Action requise');
+    expect(text()).toContain('Année 2025 est terminée depuis le 12/07/2025 et reste active.');
+    expect(text()).toContain('Désactiver');
+    expect(text()).not.toContain('Activer la suivante');
+  });
+
+  it('hides a dismissed situation only, and remembers it in the browser', async () => {
+    localStorage.clear();
+    seedStore(store, 'courant', edition('A', 'Année 2025', true));
+    seedStore(store, 'situations', [
+      {
+        type: 'ACTIVE_TERMINEE',
+        edition: edition('A', 'Année 2025', true),
+        premierJour: '2025-07-10',
+        dernierJour: '2025-07-12',
+      },
+      {
+        type: 'INACTIVE_IMMINENTE',
+        edition: edition('B', 'Année 2026'),
+        premierJour: '2026-07-10',
+        dernierJour: '2026-07-12',
+      },
+    ]);
+    await fixture.whenStable();
+    expect(text()).toContain('Activer la suivante');
+
+    fixture.componentInstance['masquer']('ACTIVE_TERMINEE.A');
+    await fixture.whenStable();
+    expect(text()).not.toContain('reste active');
+    expect(text()).toContain('Année 2026 commence le 10/07/2026');
+    expect(localStorage.getItem('planning.bandeau-edition-masque.ACTIVE_TERMINEE.A')).toBe('true');
+
+    // Another type on the same edition comes back.
+    seedStore(store, 'situations', [
+      {
+        type: 'INACTIVE_EN_COURS',
+        edition: edition('A', 'Année 2025'),
+        premierJour: '2025-07-10',
+        dernierJour: '2025-07-12',
+      },
+    ]);
+    await fixture.whenStable();
+    expect(text()).toContain('est en cours mais inactive');
+    localStorage.clear();
   });
 
   it('names the phase of the edition, and bannerises an unblocked structure', async () => {

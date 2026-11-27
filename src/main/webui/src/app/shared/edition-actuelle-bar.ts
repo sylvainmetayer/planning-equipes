@@ -1,13 +1,32 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  LOCALE_ID,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
+import { DateMockService } from '../core/date-mock.service';
+import { toDateKey } from '../core/date-utils';
+import {
+  defaultPanelStorage,
+  readPanelCollapsed,
+  writePanelCollapsed,
+} from '../core/panel-collapse';
+import { situationText } from '../core/situation-wording';
 import { EditionStore } from '../core/edition.store';
 import { Edition } from '../core/models';
 import { phaseLabel } from '../core/phase-edition';
 import { SessionStore } from '../core/session.store';
+import { EditionActivationActions } from './edition-activation-actions';
 import { PhaseEditionActions } from './phase-edition-actions';
+
+/** localStorage prefix of a dismissed situation (`type.edition`). */
+const CLE_MASQUE = 'planning.bandeau-edition-masque.';
 
 /**
  * Persistent strip under the toolbar naming the edition every screen is
@@ -84,12 +103,27 @@ import { PhaseEditionActions } from './phase-edition-actions';
           }
         </div>
       }
-      @if (situations().length > 0) {
-        <div class="edition-actuelle-bar edition-actuelle-bar-rappel" role="status">
+      @for (ligne of lignes(); track ligne.cle) {
+        <div class="edition-actuelle-bar edition-actuelle-bar-rappel" role="status" data-bandeau="situation">
           <mat-icon class="edition-actuelle-bar-icon">notification_important</mat-icon>
-          <span i18n="@@editionActuelle.rappel">Action requise : la mise en service des éditions demande votre attention.</span>
+          <span>{{ ligne.texte }}</span>
           <span class="edition-actuelle-bar-actions">
+            @if (!lectureSeule()) {
+              @if (ligne.situation.type === 'ACTIVE_TERMINEE') {
+                <button matButton type="button" [disabled]="busy()" (click)="agir(ligne.situation.edition, 'desactiver')"
+                        i18n="@@editionActuelle.desactiver">Désactiver</button>
+                @if (suivante(); as next) {
+                  <button matButton type="button" [disabled]="busy()" (click)="agir(next, 'activer')"
+                          i18n="@@editionActuelle.activerSuivante">Activer la suivante</button>
+                }
+              } @else {
+                <button matButton type="button" [disabled]="busy()" (click)="agir(ligne.situation.edition, 'activer')"
+                        i18n="@@editionActuelle.activer">Activer</button>
+              }
+            }
             <a matButton routerLink="/editions" i18n="@@editionActuelle.rappelLien">Voir les éditions</a>
+            <button matButton type="button" (click)="masquer(ligne.cle)"
+                    i18n="@@editionActuelle.neplusafficher">Ne plus afficher</button>
           </span>
         </div>
       }
@@ -160,7 +194,35 @@ export class EditionActuelleBar {
 
   protected readonly editionActuelle = computed(() => this.store.courant());
   protected readonly autresEditions = computed(() => this.store.autres());
-  protected readonly situations = computed(() => this.store.situations());
+  private readonly locale = inject(LOCALE_ID);
+  private readonly clock = inject(DateMockService);
+  private readonly activation = inject(EditionActivationActions);
+  private readonly storage = defaultPanelStorage();
+  /** Keys hidden in this session; the ones of earlier sessions are read from the browser. */
+  private readonly masquees = signal<ReadonlySet<string>>(new Set());
+  protected readonly busy = signal(false);
+  /** One line per situation not dismissed: a dismissal is for one type on one edition. */
+  protected readonly lignes = computed(() => {
+    const today = this.clock.dateDuJour() || toDateKey(new Date());
+    return this.store
+      .situations()
+      .map((situation) => ({ situation, cle: `${situation.type}.${situation.edition.id}` }))
+      .filter(
+        ({ cle }) =>
+          !this.masquees().has(cle) && !readPanelCollapsed(this.storage, CLE_MASQUE + cle),
+      )
+      .map((ligne) => ({
+        ...ligne,
+        texte: situationText(ligne.situation, this.locale, today, this.clock.actif()),
+      }));
+  });
+  /** The edition to start once the active one is over, when the state names one. */
+  protected readonly suivante = computed(
+    () =>
+      this.store
+        .situations()
+        .find((s) => s.type === 'INACTIVE_IMMINENTE' || s.type === 'INACTIVE_EN_COURS')?.edition,
+  );
   protected readonly phase = computed(() => {
     const phase = this.store.phase();
     return phase ? phaseLabel(phase) : '';
@@ -168,6 +230,22 @@ export class EditionActuelleBar {
   protected readonly structureDebloquee = this.store.structureDebloquee;
   protected readonly lectureSeule = inject(SessionStore).lectureSeule;
   protected readonly actions = inject(PhaseEditionActions);
+
+  protected masquer(cle: string): void {
+    writePanelCollapsed(this.storage, CLE_MASQUE + cle, true);
+    this.masquees.update((anciennes) => new Set(anciennes).add(cle));
+  }
+
+  protected async agir(edition: Edition, geste: 'activer' | 'desactiver'): Promise<void> {
+    this.busy.set(true);
+    try {
+      await (geste === 'activer'
+        ? this.activation.activate(edition)
+        : this.activation.deactivate(edition));
+    } finally {
+      this.busy.set(false);
+    }
+  }
 
   protected refiger(): void {
     void this.actions.refreezeStructure();
