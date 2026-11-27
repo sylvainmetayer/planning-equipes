@@ -14,7 +14,6 @@ Un créneau est une **vacation** : une tranche de travail réelle, sur laquelle 
 | --- | --- | --- |
 | `VACATION_TROP_LONGUE` | Avertissement | La vacation dépasse `dureeVacationMaxMinutes` (6 h par défaut, le seuil de l'art. [L3121-16]). Elle contiendra une pause à relayer : vérifiez qu'un collègue du stand tient une place à ce moment, ou coupez la journée en deux |
 | `REPOS_QUOTIDIEN_IMPOSSIBLE` | Erreur | La vacation dépasse `1440 − reposQuotidienMinimalMinutes` : toute affectation produirait un écart à une règle dure |
-| `RELAIS_REPAS_HORS_FENETRE` | Avertissement | Une vacation `couverturePause` hors de toute fenêtre repas : l'effectif y est divisé par deux sans qu'aucune coupure puisse s'y prendre |
 
 Une vacation de plus de 6 h n'est donc pas refusée : elle est légale si un collègue la relaie pendant la pause. Le seuil vit dans `ParametresLegaux`, parce que c'est une règle de l'événement jugée sur la grille que l'organisateur a, quelle que soit la façon dont elle a été écrite.
 
@@ -26,19 +25,19 @@ L'analyse de faisabilité (`GET /api/feasibility`) **ne voit pas ce pic** : c'es
 
 ### Couvrir un stand pendant le repas
 
-Trois façons de traiter le temps du midi, chacune écrite à la main sur la grille (formulaire du créneau ou gabarit) :
+Trois façons de traiter le temps du midi :
 
 | Ce qu'on veut | Comment on l'écrit |
 | --- | --- |
-| Le stand ferme | Aucune vacation sur la fenêtre |
+| Le stand ferme | Aucune vacation sur la fenêtre, ou une plage de fermeture du stand |
 | Effectif plein pendant la pause | Une vacation ordinaire sur la fenêtre |
-| Effectif réduit | Une vacation marquée `couverturePause` |
+| Effectif réduit | Une plage d'ouverture du stand qui nomme son propre effectif (*Stands › Horaires*) |
 
-`couverturePause` ne génère que la **moitié de l'effectif du segment ouvert, arrondie au supérieur** (`Creneau.siegesSegment`). L'arrondi supérieur fait qu'un stand tenu par une seule personne la garde au lieu de fermer : fermer reste une décision explicite, pas l'effet de bord d'une division entière. Une vacation pleine sur la fenêtre repas est à manier avec prudence sur un scénario déjà tendu : une équipe de plus par pause sur chaque stand concerné, concentrée sur la même fenêtre, est exactement le pic décrit plus haut.
+Il n'y a plus de drapeau « relais repas » sur la vacation : l'effectif réduit se dit sur le stand, qui est celui qui sait combien de personnes il lui faut à midi (`Creneau.siegesSegment`, jamais moins d'un siège). Une vacation pleine sur la fenêtre repas est à manier avec prudence sur un scénario déjà tendu : une équipe de plus par pause sur chaque stand concerné, concentrée sur la même fenêtre, est exactement le pic décrit plus haut.
 
 ### Un seul compte de sièges
 
-Le nombre de sièges d'un segment ouvert (au moins un, la moitié arrondie au supérieur sur une vacation de couverture de pause) est `Creneau.siegesSegment`, et le segment le plus chargé d'un stand sur un créneau est `Creneau.siegesSimultanes`. La génération des postes, l'analyse de faisabilité, l'analyse de fragilité et la règle `eviterRoulementStandsPremium` lisent tous ces deux méthodes : ce que le solveur doit remplir et ce que les écrans annoncent ne peuvent pas être deux nombres différents.
+Le nombre de sièges d'un segment ouvert (au moins un) est `Creneau.siegesSegment`, et le segment le plus chargé d'un stand sur un créneau est `Creneau.siegesSimultanes`. La génération des postes, l'analyse de faisabilité, l'analyse de fragilité et la règle `eviterRoulementStandsPremium` lisent tous ces deux méthodes : ce que le solveur doit remplir et ce que les écrans annoncent ne peuvent pas être deux nombres différents.
 
 ## Les paramètres légaux
 

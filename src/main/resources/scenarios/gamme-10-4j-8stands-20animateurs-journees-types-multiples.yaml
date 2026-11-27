@@ -31,13 +31,11 @@ creneaux:
     date: 2027-09-02
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J2-MIDI2
     jour: 2
     date: 2027-09-02
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J2-APREM
     jour: 2
     date: 2027-09-02
@@ -53,13 +51,11 @@ creneaux:
     date: 2027-09-03
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J3-MIDI2
     jour: 3
     date: 2027-09-03
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J3-APREM
     jour: 3
     date: 2027-09-03
@@ -75,13 +71,11 @@ creneaux:
     date: 2027-09-04
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J4-MIDI2
     jour: 4
     date: 2027-09-04
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J4-APREM
     jour: 4
     date: 2027-09-04
@@ -106,10 +100,8 @@ journeesTypes:
         heureFin: "12:00"
       - heureDebut: "12:00"
         heureFin: "13:00"
-        couverturePause: true
       - heureDebut: "13:00"
         heureFin: "14:00"
-        couverturePause: true
       - heureDebut: "14:00"
         heureFin: "18:00"
     dates:
@@ -121,10 +113,8 @@ journeesTypes:
         heureFin: "12:00"
       - heureDebut: "12:00"
         heureFin: "13:00"
-        couverturePause: true
       - heureDebut: "13:00"
         heureFin: "14:00"
-        couverturePause: true
       - heureDebut: "14:00"
         heureFin: "18:00"
       - heureDebut: "20:00"

@@ -38,7 +38,7 @@ class CompactTimeTest {
     /** The compact vacation line reads its hours here, so the two can never drift apart. */
     @Test
     void theCompactVacationLineReadsTheSameForms() {
-        assertThat(VacationsLigne.format(VacationsLigne.parse("9h-12h, 12h-13h R, 13-20")))
-                .isEqualTo("09:00-12:00, 12:00-13:00 R, 13:00-20:00");
+        assertThat(VacationsLigne.format(VacationsLigne.parse("9h-12h, 12h-13h, 13-20")))
+                .isEqualTo("09:00-12:00, 12:00-13:00, 13:00-20:00");
     }
 }

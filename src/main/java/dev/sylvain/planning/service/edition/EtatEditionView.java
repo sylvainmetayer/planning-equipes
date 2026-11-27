@@ -11,7 +11,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * The checklist of an edition's cycle, one block per step of the « Prise en
  * main » guide, each carrying its state and the figures that decide it.
  * Served by {@code GET /api/editions/courant/etat} and by the MCP tool
- * {@code etat_edition}, so the home screen and an assistant read the same
+ * {@code consulter_edition}, so the home screen and an assistant read the same
  * aggregation.
  *
  * <p>Deliberately free of any person: counts, dates and scores only. The

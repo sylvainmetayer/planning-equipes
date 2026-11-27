@@ -57,8 +57,7 @@ const DIAGNOSTIC = {
   nombreCreneaux: 1,
   premiereDate: '2026-08-01',
   derniereDate: '2026-08-01',
-  contientCouverturePause: false,
-  explication: '1 vacations sur 1 date(s), durée médiane de 120 min, aucun relais repas.',
+  explication: '1 vacations sur 1 date(s), durée médiane de 120 min.',
 };
 
 const CONTROLE = {
@@ -114,9 +113,7 @@ const OUVERTURES = {
       minutes: 120,
       nombreCreneaux: 1,
       ferie: null,
-      creneaux: [
-        { id: 1, tranche: 0, heureDebut: '10:00', heureFin: '12:00', couverturePause: false },
-      ],
+      creneaux: [{ id: 1, tranche: 0, heureDebut: '10:00', heureFin: '12:00' }],
     },
   ],
   stands: [2, 1].map((effectif, index) => ({

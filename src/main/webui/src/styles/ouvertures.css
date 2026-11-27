@@ -1,5 +1,4 @@
-/* The anomalies list the Calendrier controls and its dialogs share, and the meal-relay
-   marker of a timeslot row. */
+/* The anomalies list the Calendrier controls and its dialogs share. */
 
 .ouvertures-anomalies {
   list-style: none;
@@ -33,12 +32,4 @@
   flex: none;
   color: var(--mat-sys-on-surface-variant);
   font-variant-numeric: tabular-nums;
-}
-
-/* The meal-relay marker on a créneau row: an indication of how the pause is covered,
-   never a shortfall, so it borrows neither the error nor the warning colour. */
-.creneaux-table .relais-repas-icon {
-  color: var(--mat-sys-on-surface-variant);
-  vertical-align: middle;
-  font-size: 1rem;
 }

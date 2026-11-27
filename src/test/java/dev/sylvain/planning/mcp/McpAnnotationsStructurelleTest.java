@@ -131,6 +131,7 @@ class McpAnnotationsStructurelleTest {
     private static final List<String> SORTIE_EXTERIEURE = List.of(
             "publier_planning",
             "envoyer_planning_animateur",
+            "envoyer_relance_animateurs",
             "configurer_collecte_disponibilites",
             "relancer_animateurs");
 

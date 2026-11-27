@@ -146,7 +146,7 @@ class ScenarioValidatorTest {
         assertThatThrownBy(() -> ScenarioValidator.validate(MINIMAL + "decoupageAuto: {}\n"))
                 .isInstanceOf(ScenarioFormatException.class)
                 .hasMessageContaining("decoupageAuto")
-                .hasMessageContaining("couverturePause");
+                .hasMessageContaining("gabarits");
     }
 
     /**

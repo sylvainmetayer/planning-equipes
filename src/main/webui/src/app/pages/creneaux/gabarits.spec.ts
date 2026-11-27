@@ -8,18 +8,16 @@ import {
 } from './gabarits';
 
 describe('parseVacations', () => {
-  it('reads one vacation per comma and a trailing R as a meal relay', () => {
-    const saisie = parseVacations(
-      '09:00-12:00, 12:00-13:00 R, 13h-14h r, 14:00-20:00 (R); 20h00-00:00',
-    );
+  it('reads one vacation per comma', () => {
+    const saisie = parseVacations('09:00-12:00, 12:00-13:00, 13h-14h, 14:00-20:00; 20h00-00:00');
 
     expect(saisie.erreur).toBeNull();
     expect(saisie.vacations).toEqual([
-      { heureDebut: '09:00', heureFin: '12:00', couverturePause: false },
-      { heureDebut: '12:00', heureFin: '13:00', couverturePause: true },
-      { heureDebut: '13:00', heureFin: '14:00', couverturePause: true },
-      { heureDebut: '14:00', heureFin: '20:00', couverturePause: true },
-      { heureDebut: '20:00', heureFin: '00:00', couverturePause: false },
+      { heureDebut: '09:00', heureFin: '12:00' },
+      { heureDebut: '12:00', heureFin: '13:00' },
+      { heureDebut: '13:00', heureFin: '14:00' },
+      { heureDebut: '14:00', heureFin: '20:00' },
+      { heureDebut: '20:00', heureFin: '00:00' },
     ]);
   });
 
@@ -29,17 +27,15 @@ describe('parseVacations', () => {
       morceau: '14:00-',
     });
     expect(parseVacations('9:5-12:00')).toMatchObject({ erreur: 'HEURE', morceau: '9:5-12:00' });
-    expect(parseVacations('09:00-12:00, 09:00-12:00 R')).toMatchObject({ erreur: 'DOUBLON' });
+    expect(parseVacations('09:00-12:00, 09:00-12:00')).toMatchObject({ erreur: 'DOUBLON' });
     expect(parseVacations('  ')).toMatchObject({ erreur: 'VIDE' });
   });
 
   it('formats what it reads', () => {
-    const ligne = '09:00-12:00, 12:00-13:00 R, 14:00-20:00';
+    const ligne = '09:00-12:00, 12:00-13:00, 14:00-20:00';
     expect(formatVacations(parseVacations(ligne).vacations!)).toBe(ligne);
     // Server hours come with seconds; the chip does not show them.
-    expect(
-      formatVacations([{ heureDebut: '09:00:00', heureFin: '12:00:00', couverturePause: false }]),
-    ).toBe('09:00-12:00');
+    expect(formatVacations([{ heureDebut: '09:00:00', heureFin: '12:00:00' }])).toBe('09:00-12:00');
   });
 });
 

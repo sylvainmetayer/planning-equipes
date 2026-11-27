@@ -3,8 +3,7 @@ schemaVersion: 2
 # Barreau 22 : un mois entier de vacations, deux formes de journée.
 # Juin 2027 : la semaine tient en une seule vacation 14 h-19 h ; le week-end
 # ouvre à 10 h et se lit en quatre vacations jointives, dont le relais de midi
-# 12 h-13 h marqué couverturePause (effectif divisé par deux, arrondi au
-# supérieur). Les vacations se touchent. Cinquante stands n'ouvrent que le
+# 12 h-13 h. Les vacations se touchent. Cinquante stands n'ouvrent que le
 # week-end.
 
 festival:
@@ -41,7 +40,6 @@ creneaux:
     date: 2027-06-05
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J5-V3
     jour: 5
     date: 2027-06-05
@@ -62,7 +60,6 @@ creneaux:
     date: 2027-06-06
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J6-V3
     jour: 6
     date: 2027-06-06
@@ -108,7 +105,6 @@ creneaux:
     date: 2027-06-12
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J12-V3
     jour: 12
     date: 2027-06-12
@@ -129,7 +125,6 @@ creneaux:
     date: 2027-06-13
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J13-V3
     jour: 13
     date: 2027-06-13
@@ -175,7 +170,6 @@ creneaux:
     date: 2027-06-19
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J19-V3
     jour: 19
     date: 2027-06-19
@@ -196,7 +190,6 @@ creneaux:
     date: 2027-06-20
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J20-V3
     jour: 20
     date: 2027-06-20
@@ -242,7 +235,6 @@ creneaux:
     date: 2027-06-26
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J26-V3
     jour: 26
     date: 2027-06-26
@@ -263,7 +255,6 @@ creneaux:
     date: 2027-06-27
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J27-V3
     jour: 27
     date: 2027-06-27

@@ -449,7 +449,6 @@ describe('FragilitePage gestures', () => {
     heureDebut: '10:00:00',
     heureFin: '12:00:00',
     effectifMin: 1,
-    couverturePause: false,
     siegesRequis: 1,
     siegesPourvus: 1,
     siegesLiberes: 1,

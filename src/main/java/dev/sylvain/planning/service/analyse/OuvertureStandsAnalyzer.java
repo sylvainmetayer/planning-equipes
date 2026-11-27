@@ -92,13 +92,12 @@ public final class OuvertureStandsAnalyzer {
      *
      * @param tranche the column's rank inside its créneau, from 0
      */
-    @Schema(requiredProperties = {"couverturePause", "tranche"})
-    public record ColonneCreneau(
-            Long id, int tranche, LocalTime heureDebut, LocalTime heureFin, boolean couverturePause) {
+    @Schema(requiredProperties = {"tranche"})
+    public record ColonneCreneau(Long id, int tranche, LocalTime heureDebut, LocalTime heureFin) {
 
         /** A créneau in one piece. */
-        public ColonneCreneau(Long id, LocalTime heureDebut, LocalTime heureFin, boolean couverturePause) {
-            this(id, 0, heureDebut, heureFin, couverturePause);
+        public ColonneCreneau(Long id, LocalTime heureDebut, LocalTime heureFin) {
+            this(id, 0, heureDebut, heureFin);
         }
     }
 
@@ -369,8 +368,7 @@ public final class OuvertureStandsAnalyzer {
                             creneau.getId(),
                             index,
                             minuteToTime(debutCreneau + tries.get(index)),
-                            minuteToTime(debutCreneau + tries.get(index + 1)),
-                            creneau.isCouverturePause())));
+                            minuteToTime(debutCreneau + tries.get(index + 1)))));
         }
         return colonnes;
     }
@@ -392,9 +390,7 @@ public final class OuvertureStandsAnalyzer {
     /**
      * The grid cell of one column, read off the same open segments seat
      * generation reads ({@link Creneau#segmentsOuverts}), clipped to the
-     * column: the configured headcount, not the seats — a break-covering
-     * créneau halves the seats, and the organiser types what the stand needs,
-     * not what the solver gets.
+     * column: the configured headcount, not the seats.
      */
     private static CelluleCreneau celluleCreneau(Stand stand, Creneau creneau, ColonneCreneau colonne) {
         int[] bornes = boundsWithin(creneau, colonne.heureDebut(), colonne.heureFin());

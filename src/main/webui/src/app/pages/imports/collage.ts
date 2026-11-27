@@ -74,7 +74,7 @@ function readQuoted(text: string, start: number): { value: string; next: number 
  * A spreadsheet puts a tab between two cells of a row, and a line break
  * between two rows. The server recognises `,`, `;` and the tab alike, but by
  * counting them — and a paste easily carries more commas inside its cells
- * (« 09:00-12:00, 12:00-13:00 R ») than tabs between them. So every cell is
+ * (« 09:00-12:00, 12:00-13:00 ») than tabs between them. So every cell is
  * read as the spreadsheet quoted it ({@link parseTsv}), quoted again and
  * rejoined with `;`: the separators left outside quotes are then the ones
  * between cells, and the server cannot pick another.

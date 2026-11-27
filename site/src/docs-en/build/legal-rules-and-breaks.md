@@ -79,7 +79,7 @@ The break is **one hour** by default (`coupureRepasMinutes`). A two-hour window 
 
 ### The rotation and what it costs
 
-Offering the choice between 12-13 and 13-14 assumes two distinct timeslots at midday, and that somebody holds the stand while the others eat. `couverturePause` on a timeslot halves, rounded up, the seats a stand opens there; the flag is set on the timeslot or on the shift of a typical day. Without it, a rotation demands two full crews. A grid of contiguous blocks (11:00-12:00 then 12:00-13:00) needs no gap setting between shifts.
+Offering the choice between 12-13 and 13-14 assumes two distinct timeslots at midday, and that somebody holds the stand while the others eat. For one to hold the stand at reduced staffing, the stand's opening plage at noon names its own headcount; without that, a rotation demands two full crews. A grid of contiguous blocks (11:00-12:00 then 12:00-13:00) needs no gap setting between shifts.
 
 The 11-hour **daily rest** is still due between the end of an evening and the next morning. The floor on the Staffing need screen does not see it (its bounds ignore it) and may announce a comfortable margin while part of the workforce is unusable.
 

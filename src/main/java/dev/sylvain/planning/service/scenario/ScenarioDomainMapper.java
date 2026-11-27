@@ -204,14 +204,6 @@ final class ScenarioDomainMapper {
                     required(creneauDto.date(), "creneaux.date"),
                     required(creneauDto.heureDebut(), "creneaux.heureDebut"),
                     required(creneauDto.heureFin(), "creneaux.heureFin"));
-            // A hand-written grid can say what the découpage says of the shifts
-            // it generates itself: this slot covers a meal service, so the
-            // stand runs at half its usual headcount on it
-            // (Creneau#effectifRequis). Without it a grid entered as VACATIONS
-            // — the very mode issue #438 is about — could describe a midday
-            // rotation only by asking for two full crews where one relieves
-            // the other.
-            creneau.setCouverturePause(Boolean.TRUE.equals(creneauDto.couverturePause()));
             creneauxParId.put(creneauDto.id(), creneau);
         }
         Creneau.assignerJours(creneauxParId.values());
@@ -648,8 +640,7 @@ final class ScenarioDomainMapper {
             List<VacationType> vacations = required(dto.vacations(), "gabarits.vacations").stream()
                     .map(vacation -> new VacationType(
                             required(vacation.heureDebut(), "gabarits.vacations.heureDebut"),
-                            required(vacation.heureFin(), "gabarits.vacations.heureFin"),
-                            Boolean.TRUE.equals(vacation.couverturePause())))
+                            required(vacation.heureFin(), "gabarits.vacations.heureFin")))
                     .collect(Collectors.toCollection(ArrayList::new));
             Gabarit journeeType = new Gabarit(provisoire, required(dto.nom(), "gabarits.nom"), vacations);
             gabarits.add(journeeType);
