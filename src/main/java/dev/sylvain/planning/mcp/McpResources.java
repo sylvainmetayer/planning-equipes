@@ -85,7 +85,7 @@ public class McpResources {
                 | **Édition** | un événement complet et son référentiel. Chaque outil qui travaille dans une édition exige l'argument `edition` (id ou nom, voir `lister_editions`). Une seule édition est **active** : elle seule publie, envoie des courriels et ouvre l'espace animateur. Un plan de repli est une **consigne datée** dans l'édition vivante, pas une autre édition. |
                 | **Contrainte ad hoc** | une règle sur mesure posée **avant** le calcul pour placer ou écarter quelqu'un (indisponibilité forcée, incompatibilité, affectation forcée, affinité) ; « Ajustement manuel » à l'écran. Toute résolution l'honore, y compris en repartant de zéro. |
                 | **Verrouillage** | une partie du planning que le solveur n'a plus le droit de déplacer : un geste **après** le calcul, qui conserve ce que la dernière résolution a produit sans rien dire de ce qui devrait s'y trouver. Pour imposer une affectation, c'est une contrainte ad hoc, pas un verrou. |
-                | **Instantané** | une copie datée d'un planning résolu, qu'on peut comparer et restaurer. |
+                | **Version** | une copie datée d'un planning résolu (`creer_version`), qu'on peut comparer et restaurer : l'onglet Versions du Planning. |
                 | **Publication** | l'envoi du planning aux animateurs concernés. Elle capture au passage un **instantané publié** : c'est lui que les animateurs lisent, pas le planning de travail. Résoudre ne prévient personne — `consulter_planning` date la dernière résolution, `consulter_publication` la dernière publication. |
                 | **Déclaration de disponibilité** | ce qu'un animateur propose depuis son espace pendant la fenêtre de collecte. Elle n'entre dans le référentiel que si quelqu'un l'applique. |
                 | **Demande d'échange** | une permutation de postes demandée par un animateur pendant la « foire ». Acceptée, elle est appliquée au planning résolu **et figée** par un verrouillage. |
@@ -106,6 +106,22 @@ public class McpResources {
 
                 Les déclarations de disponibilité, elles, se traitent **avant** l'étape 3 : une
                 déclaration non décidée n'est pas dans le référentiel que le solveur lira.
+
+                ## Où cela se passe dans le menu
+
+                Le menu a neuf entrées, dans l'ordre du cycle ; chaque invite suit l'une d'elles.
+
+                | Entrée | Invites | Outils |
+                | --- | --- | --- |
+                | **Accueil** | `verifier_avant_resolution` | `consulter_edition` |
+                | **Préparer** (Stands, Calendrier, Animateurs) | `saisir_les_horaires_des_stands`, `construire_la_grille_de_creneaux`, `ouvrir_collecte_et_foire`, `traiter_les_declarations_de_disponibilite`, `verifier_les_arrivees_groupees` | `lister_stands`, `diagnostiquer_creneaux`, `consulter_disponibilites` |
+                | **Fichiers** | aucune : les imports et les exports se font à l'écran, sauf le scénario | `importer_scenario`, `diagnostiquer_scenario` |
+                | **Planning** (Calculer, Versions) | `resoudre_sans_perdre_le_planning`, `relire_et_valider_les_journees`, `verrouiller_ce_qui_tient`, `reprendre_apres_un_changement_tardif` | `lancer_calcul`, `creer_version`, `consulter_planning` |
+                | **Diagnostic** (Besoin, Risques, Charge, Repas et pauses) | `savoir_ou_recruter_ou_former`, `diagnostiquer_contraintes_dures`, `auditer_avant_diffusion` | `consulter_besoin`, `consulter_risques`, `consulter_charge`, `consulter_repas_pauses` |
+                | **Règles** | `regler_les_regles`, `preparer_un_plan_de_repli` | `modifier_contrainte`, `appliquer_consigne` |
+                | **Diffuser** (Échanges) | `publier_le_planning`, `suivre_les_confirmations`, `traiter_les_demandes_dechange` | `publier_planning`, `consulter_publication` |
+                | **Aujourd'hui** | `tenir_le_jour_j` | `comparer_journee`, `modifier_affectation` |
+                | **Administrer** (Éditions) | `demarrer_une_nouvelle_edition`, `figer_le_referentiel`, `tirer_le_bilan_de_l_evenement` | `creer_edition`, `modifier_phase_edition`, `comparer_realise_planifie` |
                 """);
     }
 

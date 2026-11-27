@@ -36,7 +36,7 @@ The four *hints* of the MCP specification are declared on **all** tools. Their d
 | Hint | Value |
 | --- | --- |
 | `readOnlyHint` | true for tools that only read |
-| `destructiveHint` | true for deletions, imports, a snapshot restore and solves, which replace the saved plan |
+| `destructiveHint` | true for deletions, imports, a version restore and solves, which replace the saved plan |
 | `idempotentHint` | true when calling the tool again with the same arguments changes nothing more |
 | `openWorldHint` | true only for the tools that send e-mail, false everywhere else |
 
