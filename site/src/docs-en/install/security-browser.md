@@ -67,6 +67,16 @@ Three deliberate exceptions:
   `referrerPolicy: 'strict-origin-when-cross-origin'` on its tile layer alone. The token does not leak: this policy sends only the origin, never
   the path or the query.
 
+### A single origin
+
+The CORS filter is on, and it names **no** third-party origin. A request carrying an `Origin` header other than the application's address is refused with a 403 before it reaches anything, on `/mcp` as on `/api` and on the login. The application's own pages go through as before, and a client that sends no `Origin` is not affected: an MCP client outside a browser, a subscribed calendar, `curl`.
+
+This is the `Origin` validation the MCP specification asks of an HTTP server. It does not protect against *DNS rebinding*, where the trap's origin and the requested host are the same; that is not needed here, since `/mcp` requires a key or a token in a header, which a trapped page does not have.
+
+"The same origin" is read from the scheme and the host of the request, so behind the reverse proxy from `X-Forwarded-Proto` and `Host`, the two headers the admin login already depends on. A proxy that rewrites `Host` needs `QUARKUS_HTTP_PROXY_ENABLE_FORWARDED_HOST=true`. An instance served over https on a port other than 443 also needs `X-Forwarded-Port`.
+
+No application variable opens a third-party origin, on purpose: do not set `QUARKUS_HTTP_CORS_ORIGINS` either, which Quarkus reads by itself, since opening one for an MCP client in a browser would open the whole administration API to it as well. `QUARKUS_HTTP_CORS_ENABLED=false` switches the filter off and restores the 4.0.0 behaviour, while you fix a proxy that does not pass these headers on.
+
 ### Configuration
 
 | Variable | Default | Use |

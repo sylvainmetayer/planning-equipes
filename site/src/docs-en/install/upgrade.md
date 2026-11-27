@@ -65,9 +65,15 @@ A restore with `scripts/restaurer.sh` of a `pg_dump` dump taken before the upgra
 
 A live public instance (`PUBLIC_INSTANCE=true`) that has never set the legal notice does not restart, and any other warns at startup ([setting it](mentions-legales.md#monter-de-version-avec-une-instance-déjà-en-service)). On upgrading to `V118`, the active edition is chosen automatically ([the automatic sends](envois-automatiques.md#2-activer-lédition-qui-doit-écrire)).
 
+### 4.0.1 and the origin of requests
+
+From 4.0.1 on, a browser request whose `Origin` header is not the application's address is refused with a 403. Your reverse proxy must therefore pass on the visitor's `Host` header and `X-Forwarded-Proto`. If it does not, the screens display but every save fails with a 403. Fix the proxy ([a single origin](securite-navigateur.md#une-seule-origine)), or set `QUARKUS_HTTP_CORS_ENABLED=false` while you do.
+
 ## The PostgreSQL version
 
 The `postgres:` image of `docker-compose.prod.yml` and the `pg_dump` client of the application image are on **version 19**, and always move together: a `pg_dump` older than the server refuses to run ("server version mismatch"), and the nightly backup would then fail without the application stopping. Do not change one without the other.
+
+At startup, Flyway writes "Using PostgreSQL 19.0 which is newer than the version Flyway has been verified with (18)". This warning is expected and has no effect: migrations apply normally, and it will go away with a Flyway version that knows PostgreSQL 19.
 
 ## Unblock an interrupted migration
 
