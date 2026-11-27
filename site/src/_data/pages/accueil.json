@@ -130,7 +130,7 @@
       {
         "id": "calcul",
         "titre": "Le calcul",
-        "secondes": 31,
+        "secondes": 32,
         "legende": "En une minute, il repart de zéro, annonce dès qu'un plan respecte les règles impératives, puis l'améliore. Le passage d'attente est accéléré.",
         "transcription": [
           "L'onglet Calculer du Planning résume ce dont le calcul tiendra compte : verrouillages, ajustements, consignes, déclarations de disponibilité non traitées et règles désactivées.",
@@ -143,7 +143,7 @@
       {
         "id": "jourj",
         "titre": "Une absence le jour J",
-        "secondes": 21,
+        "secondes": 20,
         "legende": "On cherche la personne, on la déclare absente, la place vide apparaît et l'application propose qui peut la tenir. Il reste à prévenir les personnes concernées.",
         "transcription": [
           "L'écran Aujourd'hui, le 10 août 2027 à 15 h : 25 stands ouverts, une vacation restante, aucun absent.",
@@ -196,9 +196,9 @@
         "alt": "Planning par personne : la semaine de chaque animateur, heures et soirées comprises."
       },
       {
-        "id": "horaires",
-        "titre": "Horaires des stands",
-        "alt": "Horaires des stands : l'effectif de chaque stand, jour par jour."
+        "id": "stand",
+        "titre": "Fiche stand",
+        "alt": "Fiche stand : son effectif, son modèle de semaine et ses plages datées."
       },
       {
         "id": "regles",
@@ -384,7 +384,7 @@
         {
           "id": "calcul",
           "titre": "The calculation",
-          "secondes": 28,
+          "secondes": 31,
           "legende": "In one minute it starts from nothing, says as soon as a plan meets the mandatory rules, then improves it. The wait is sped up.",
           "transcription": [
             "The Calculate tab of the Planning page sums up what the run will take into account: locks, manual adjustments, consignes, unprocessed availability declarations and disabled rules.",
@@ -450,9 +450,9 @@
           "alt": "Schedule by person: each team member's week, hours and evenings included."
         },
         {
-          "id": "horaires",
-          "titre": "Stand opening hours",
-          "alt": "Stand opening hours: each stand's headcount, day by day."
+          "id": "stand",
+          "titre": "Stand sheet",
+          "alt": "Stand sheet: its headcount, weekly model and dated ranges."
         },
         {
           "id": "regles",
