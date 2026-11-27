@@ -48,6 +48,8 @@ on:
       - 'src/main/java/dev/sylvain/planning/scenario/**'
       # La borne du besoin et le test qui la confronte à la gamme.
       - 'src/main/java/dev/sylvain/planning/service/analyse/StaffingAnalyzer.java'
+      - 'src/main/java/dev/sylvain/planning/service/analyse/FeasibilityAnalyzer.java'
+      - 'src/test/java/dev/sylvain/planning/service/scenario/ScenarioLadder.java'
       - 'src/test/java/dev/sylvain/planning/service/scenario/StaffingBoundEquivalenceTest.java'
       # Une montée de version Timefold est précisément le moment où l'on veut
       # savoir si les scénarios connus convergent toujours.
@@ -76,6 +78,8 @@ on:
       - 'src/main/java/dev/sylvain/planning/scenario/**'
       # La borne du besoin et le test qui la confronte à la gamme.
       - 'src/main/java/dev/sylvain/planning/service/analyse/StaffingAnalyzer.java'
+      - 'src/main/java/dev/sylvain/planning/service/analyse/FeasibilityAnalyzer.java'
+      - 'src/test/java/dev/sylvain/planning/service/scenario/ScenarioLadder.java'
       - 'src/test/java/dev/sylvain/planning/service/scenario/StaffingBoundEquivalenceTest.java'
       - 'pom.xml'
       - '.github/workflows/scenario-tests.yml'
@@ -153,8 +157,10 @@ jobs:
 
   # La borne exacte du besoin (écran Besoin) contre le besoin d'une équipe
   # fictive, sur toute la gamme (ADR 0098). Un job à part, en parallèle du
-  # précédent : il dure à lui seul une demi-heure (33 min mesurées sur 12 cœurs ; les résolutions sont bornées en temps), et rien ne le jouait — il a
-  # cassé sans bruit quand le relais repas a quitté le modèle (ADR 0129).
+  # précédent : il dure à lui seul une demi-heure (33 min mesurées sur 12
+  # cœurs ; les résolutions sont bornées en temps, un runner plus lent en
+  # rate donc davantage), et rien ne le jouait — il a cassé sans bruit quand
+  # le relais repas a quitté le modèle (ADR 0129).
   staffing-bound:
     if: >-
       (github.event_name != 'pull_request'
