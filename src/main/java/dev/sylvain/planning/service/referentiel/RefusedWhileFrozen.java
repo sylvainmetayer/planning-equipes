@@ -24,8 +24,8 @@ import java.lang.annotation.Target;
  * class (the type target is for the interceptor only): a service mixes reads,
  * writes of a frozen family and writes nothing freezes.</p>
  *
- * <p>An interceptor is bypassed by a call on {@code this}: an annotated method
- * is therefore never called from inside its own class, which
+ * <p>ArC intercepts a call on {@code this} again, so the guard would run twice:
+ * an annotated method is therefore never called from inside its own class, which
  * {@code GelReferentielStructuralTest} checks, together with every write method
  * of the guarded services carrying either this annotation, an explicit
  * {@link GelReferentielService#refuseIfFrozen} call, or an argued exclusion.</p>

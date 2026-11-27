@@ -367,9 +367,11 @@ Single Quarkus service, no separate solver microservice. Package root:
   `409 REFERENTIEL_FIGE`), or compares with its before-image and calls
   `gel.refuseIfFrozen` itself when only some fields are frozen.
   `GelReferentielStructuralTest` fails on a method of those services in neither
-  case nor argued as open — and on an annotated method called on `this`, which
-  bypasses the interceptor. Consignes stay open: their grid write goes through
-  the in-transaction timeslot methods, which only `ConsigneService` calls. The
+  case nor argued as open — and on an annotated method called on `this`: ArC
+  intercepts that call too, so the guard would run a second time (see *ArC
+  intercepts a call on `this`* below). Consignes stay open: their grid write
+  goes through the in-transaction timeslot methods, which only `ConsigneService`
+  calls. The
   3.x freeze routes are aliases of the phase until 5.0 (the MCP tools
   `figer_referentiel` / `lever_gel` are replaced by `modifier_phase_edition`),
   and the table `gel_referentiel` is read by nothing. The screen side is one
@@ -378,6 +380,15 @@ Single Quarkus service, no separate solver microservice. Package root:
   server's per-family state (`GET /api/editions/courant/gel`, from the phase).
   A test that publishes leaves its edition `PUBLIEE`: the `PhaseReset` test
   callback puts every edition back in preparation before each `@QuarkusTest`.
+- **ArC intercepts a call on `this`** (Quarkus self-interception): a
+  non-private, non-static method called from inside its own bean crosses its
+  interceptors like a call from outside; a `private` one never does. So an
+  annotated method called on `this` does **not** bypass its guard, it runs it
+  again — which is the bug for a `@Tool`, where `JournalOutilInterceptor`
+  writes a second journal line (`EchangeJournalMcpTest`). A write tool that
+  delegates (a grouped tool over its former name, a method shared by two
+  tools) calls a `private` method, never another `@Tool` or annotated method;
+  a read tool may still call another, since a read is never journalled.
 - **A write a running solve would undo is refused, by annotation too.** A
   solve's landing re-upserts the stands, timeslots and animateurs its problem
   names and rewrites every seat, so a service method writing them carries
@@ -390,7 +401,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   fails on a write method of the referential, consigne or plan-writing services
   (and of any bean holding the guard) that is neither annotated, nor argued
   open or imperative, on an unargued explicit call anywhere, and on an annotated
-  method called on `this`.
+  method called on `this` (intercepted again, so the guard runs twice).
 - **Only the active edition reaches outside** (ADR 0072). At most one edition
   is `active` (`edition.active`, unique partial index); none is a valid state.
   It alone publishes, mails animateurs and opens the espace, the ICS feed and
@@ -552,9 +563,8 @@ Single Quarkus service, no separate solver microservice. Package root:
      in an edition nobody named (`McpEditionStructurelleTest`). A tool that
      names no edition is `@InstanceOnlyTool` — refused to an organiser who
      reaches `/mcp` by OAuth (ADR 0097) — or argued in that same test, with
-     what keeps it inside the organiser's editions. Beware CDI
-     self-invocation: a tool calling another tool on `this` bypasses the
-     interceptor.
+     what keeps it inside the organiser's editions. A tool never calls
+     another `@Tool` on `this`: see the ArC paragraph above.
   3. every tool declares the four MCP hints, and only the tools that **send
      mail** (`publier_planning`, `envoyer_planning_animateur`,
      `envoyer_relance_animateurs`, `configurer_collecte_disponibilites`) may

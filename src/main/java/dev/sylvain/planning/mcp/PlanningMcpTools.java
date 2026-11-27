@@ -273,12 +273,11 @@ public class PlanningMcpTools {
                         "posteCibleId et occupantAttendu ne valent qu'en mode deplacer : en mode affecter, le siège "
                                 + "posteId passe à animateurId, sans contrôle de l'occupant");
             }
-            return new ModificationAffectationView(choisi, assignPoste(posteId, animateurId, edition), null);
+            return new ModificationAffectationView(choisi, assign(posteId, animateurId), null);
         }
         // The catalogue files the tool under the seat handed over; a move is its own line.
         currentAction.action("AFFECTATION_DEPLACEE");
-        return new ModificationAffectationView(
-                choisi, null, moveAffectation(posteId, posteCibleId, animateurId, occupantAttendu, edition));
+        return new ModificationAffectationView(choisi, null, move(posteId, posteCibleId, animateurId, occupantAttendu));
     }
 
     private static final String AFFECTER = "affecter";
@@ -648,6 +647,11 @@ public class PlanningMcpTools {
             @ToolArg(description = "Id du poste") String posteId,
             @ToolArg(description = "Id de l'animateur ; omis, le poste est vidé", required = false) String animateurId,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return assign(posteId, animateurId);
+    }
+
+    // Private on purpose: a tool called on `this` crosses the interceptors again and journals a second line.
+    private ReaffectationView assign(String posteId, String animateurId) {
         String precedent = persistedPlanning().getPostes().stream()
                 .filter(poste -> poste.getId().equals(posteId))
                 .findFirst()
@@ -716,6 +720,11 @@ public class PlanningMcpTools {
                             required = false)
                     String occupantAttendu,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return move(posteId, posteCibleId, animateurId, occupantAttendu);
+    }
+
+    // Private on purpose: a tool called on `this` crosses the interceptors again and journals a second line.
+    private DeplacementView move(String posteId, String posteCibleId, String animateurId, String occupantAttendu) {
         return toView(deplacementService.apply(posteId, posteCibleId, animateurId, occupantAttendu));
     }
 
