@@ -48,10 +48,17 @@ class McpKeyFormSignInTest {
                 .post("/j_security_check");
     }
 
+    /** The instant is noted by an end handler, once the response has left: the client can be faster. */
+    private void awaitNoted(String cookie) {
+        await().atMost(Duration.ofSeconds(5))
+                .until(() -> openings.openedAt(cookie).isPresent());
+    }
+
     @Test
     void theLoginNotesTheInstantAndTheKeyIsRevealedOnIt() {
         String session = login().cookie("planning-session");
         assertThat(session).isNotBlank();
+        awaitNoted(session);
         assertThat(openings.openedAt(session))
                 .hasValueSatisfying(at -> assertThat(at)
                         .isBetween(Instant.now().minusSeconds(30), Instant.now().plusSeconds(5)));
@@ -68,6 +75,7 @@ class McpKeyFormSignInTest {
     @Test
     void aReissuedCookieKeepsTheInstantItsSessionOpened() throws Exception {
         String session = login().cookie("planning-session");
+        awaitNoted(session);
         Instant opened = openings.openedAt(session).orElseThrow();
         Thread.sleep(1_500);
 
@@ -77,14 +85,14 @@ class McpKeyFormSignInTest {
                 .cookie("planning-session");
 
         assertThat(renewed).isNotBlank().isNotEqualTo(session);
-        await().atMost(Duration.ofSeconds(5))
-                .until(() -> openings.openedAt(renewed).isPresent());
+        awaitNoted(renewed);
         assertThat(openings.openedAt(renewed)).contains(opened);
     }
 
     @Test
     void anOldSessionIsAskedToSignInAgain() {
         String session = login().cookie("planning-session");
+        awaitNoted(session);
         openings.record(session, Instant.now().minusSeconds(11 * 60));
 
         given().header("X-Edition-Id", "E1")
