@@ -40,7 +40,7 @@ class PlanningMcpToolsSyntheseTest {
                 return planning;
             }
         };
-        return new PlanningMcpTools(null, null, persistenceService, null, null, null, null, null, null, null);
+        return new PlanningMcpTools(null, null, persistenceService, null, null, null, null, null);
     }
 
     private static PosteAffectation poste(String id, Stand stand, LocalDate date, String animateurId) {

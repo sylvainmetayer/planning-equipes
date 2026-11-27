@@ -40,7 +40,7 @@ Three choices frame it:
 
 A stand with no location, or a location with no coordinates, makes the rule inert: an unknown trip is neither short nor long.
 
-The check of the sequences (`GET /api/planning/enchainements`, MCP tool `analyser_enchainements`) reads the persisted plan with the same calculation but a wider net: all consecutive pairs, zero gap included, past included. It also flags a gap that is also the legal break when the trip eats part of it ("trip taken from the break"), without the break rule changing.
+The check of the sequences (`GET /api/planning/enchainements`, MCP tool `consulter_repas_pauses`, section `enchainements`) reads the persisted plan with the same calculation but a wider net: all consecutive pairs, zero gap included, past included. It also flags a gap that is also the legal break when the trip eats part of it ("trip taken from the break"), without the break rule changing.
 
 ## Grouped arrival (carpooling)
 

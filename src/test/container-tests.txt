@@ -149,6 +149,7 @@ dev/sylvain/planning/mcp/RealiseMcpToolsTest.java
 dev/sylvain/planning/mcp/ReferentielMcpToolsTest.java
 dev/sylvain/planning/mcp/RefusMetierMcpToolsTest.java
 dev/sylvain/planning/mcp/RefusedWhileSolvingDoorsTest.java
+dev/sylvain/planning/mcp/RegroupementDiagnosticMcpToolsTest.java
 dev/sylvain/planning/mcp/RegroupementPlanningMcpToolsTest.java
 dev/sylvain/planning/mcp/ReparationMcpToolsTest.java
 dev/sylvain/planning/mcp/ScenarioMcpToolsTest.java

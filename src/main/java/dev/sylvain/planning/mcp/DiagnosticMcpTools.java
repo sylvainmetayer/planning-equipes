@@ -1,10 +1,19 @@
 package dev.sylvain.planning.mcp;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.analyse.FormationAnalyzer.PlanFormation;
 import dev.sylvain.planning.service.analyse.FormationAnalyzer.TypologieAFormer;
 import dev.sylvain.planning.service.analyse.FormationService;
+import dev.sylvain.planning.service.analyse.FragiliteAnalyzer;
+import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.AnimateurFragilite;
+import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.CompetenceRare;
+import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.PosteFragile;
+import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.RapportFragilite;
+import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.SeveriteFragilite;
 import dev.sylvain.planning.service.analyse.GroupedArrivalAnalyzer;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService.KpiHistoriqueEntry;
@@ -29,6 +38,8 @@ import dev.sylvain.planning.service.referentiel.ImportImpact;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferenceUsage;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.service.solve.ProblemScaleService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -45,7 +56,9 @@ import java.util.Optional;
  * animateurs the event needs at all ({@code StaffingResource}), how the editions
  * compare over the years ({@code MesuresEditionResource}), what an import would
  * overwrite ({@code ReferenceDataResource}), and the plan read by game
- * category ({@code TypologieAnalyseResource}).
+ * category ({@code TypologieAnalyseResource}). The Besoin and Risques tabs and
+ * the Repas et pauses report are each one tool whose {@code section} is the
+ * part read (ADR 0127).
  *
  * <p>None of them carries a personal field: they count seats, hours and
  * stands. The animateurs appear only as totals — "il en faut au moins 148",
@@ -79,6 +92,14 @@ public class DiagnosticMcpTools {
 
     private final TypologieAnalyzer typologieAnalyzer;
 
+    private final FragiliteAnalyzer fragiliteAnalyzer;
+
+    private final FeasibilityAnalyzer feasibilityAnalyzer;
+
+    private final ProblemScaleService problemScaleService;
+
+    private final PlanningService planningService;
+
     @Inject
     DiagnosticMcpTools(
             ReferenceDataService referenceDataService,
@@ -91,7 +112,11 @@ public class DiagnosticMcpTools {
             CoherenceReferentielService coherenceService,
             WalkSequenceAnalyzer walkSequenceAnalyzer,
             GroupedArrivalAnalyzer groupedArrivalAnalyzer,
-            TypologieAnalyzer typologieAnalyzer) {
+            TypologieAnalyzer typologieAnalyzer,
+            FragiliteAnalyzer fragiliteAnalyzer,
+            FeasibilityAnalyzer feasibilityAnalyzer,
+            ProblemScaleService problemScaleService,
+            PlanningService planningService) {
         this.referenceDataService = referenceDataService;
         this.staffingService = staffingService;
         this.margeService = margeService;
@@ -103,6 +128,198 @@ public class DiagnosticMcpTools {
         this.walkSequenceAnalyzer = walkSequenceAnalyzer;
         this.groupedArrivalAnalyzer = groupedArrivalAnalyzer;
         this.typologieAnalyzer = typologieAnalyzer;
+        this.fragiliteAnalyzer = fragiliteAnalyzer;
+        this.feasibilityAnalyzer = feasibilityAnalyzer;
+        this.problemScaleService = problemScaleService;
+        this.planningService = planningService;
+    }
+
+    private static final String MARGE = "marge";
+    private static final String PAUSES = "pauses";
+
+    /**
+     * The Besoin tab of Diagnostic in one tool (ADR 0127): the section is the
+     * part of the tab read, each answered by the tool it replaces.
+     */
+    @Tool(
+            name = "consulter_besoin",
+            description = "L'onglet Besoin du Diagnostic, sous la section demandée ; calcul en Java pur, aucune "
+                    + "résolution lancée, aucun nom. borne (défaut) : combien d'animateurs il faut au minimum et "
+                    + "pourquoi — la borne exacte (pic simultané, pic avec pause, charge de la semaine la plus "
+                    + "chargée, rotation sur les jours, coupure repas), jour et semaine critiques, détail par jour et "
+                    + "par semaine, goulot par typologie, projection sur les indisponibilités déclarées, et "
+                    + "referentielsManquants ; elle répond avant la saisie d'aucun animateur. marge : animateurs "
+                    + "disponibles moins sièges à pourvoir, jour par jour et créneau par créneau, mode « avant » "
+                    + "(défaut, capacité brute contre besoin) ou « apres » (les seules personnes libres sur le planning "
+                    + "persisté, face aux sièges restés vides) ; lecture optimiste. typologie : le planning persisté "
+                    + "lu par typologie de jeu, heures et postes tenus, heures par jour, et les animateurs affectés, "
+                    + "compétents, compétents jamais affectés et affectés sans la compétence, par id. volumetrie : la "
+                    + "taille du problème que construirait la prochaine résolution (animateurs, postes, contraintes "
+                    + "ad hoc, heures à pourvoir et offertes). faisabilite : les causes structurellement bloquantes "
+                    + "avant résolution (créneau en sous-effectif, contraintes ad hoc contradictoires, affectation "
+                    + "forcée intenable, plafond de jours d'affilée intenable ou tendu). mode ne vaut que pour la "
+                    + "section marge.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    BesoinView consultNeed(
+            @ToolArg(description = "borne (défaut), marge, typologie, volumetrie ou faisabilite", required = false)
+                    String section,
+            @ToolArg(description = "Section marge : « avant » (défaut) ou « apres »", required = false) String mode,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        String choisie =
+                McpArgs.choix(section, "section", "borne", "borne", MARGE, "typologie", "volumetrie", "faisabilite");
+        if (mode != null && !mode.isBlank() && !MARGE.equals(choisie)) {
+            throw new BusinessError.Invalid("mode ne vaut que pour la section marge");
+        }
+        return switch (choisie) {
+            case "borne" -> new BesoinView(choisie, analyzeEffectifs(edition), null, null, null, null);
+            case MARGE -> {
+                // Tension is a section of Risques: refused here rather than answered under the wrong tab.
+                String lu = McpArgs.choix(mode, "mode", "avant", "avant", "apres");
+                yield new BesoinView(choisie, null, analyzeMargin(lu, edition), null, null, null);
+            }
+            case "typologie" -> new BesoinView(choisie, null, null, analyzeGameCategories(edition), null, null);
+            case "volumetrie" -> new BesoinView(choisie, null, null, null, volumes(edition), null);
+            default -> new BesoinView(choisie, null, null, null, null, analyzeFeasibility(edition));
+        };
+    }
+
+    /**
+     * The Risques tab of Diagnostic in one tool (ADR 0127). Fragility had no
+     * tool before: its report names people — in each line and in its
+     * sentence — so it crosses as {@link FragiliteView}, ids and counts only.
+     */
+    @Tool(
+            name = "consulter_risques",
+            description = "L'onglet Risques du Diagnostic, sous la section demandée, lu sur le planning persisté "
+                    + "sans lancer de résolution ; animateurs par id seul, aucun nom ni phrase. fragilite (défaut) : "
+                    + "les points de rupture — par animateur affecté, les postes qu'un désistement effondrerait et "
+                    + "ceux que personne d'autre ne peut reprendre (irremplacable, avec le nombre de remplaçants), et "
+                    + "les couples stand × créneau qu'au plus un spécialiste peut tenir (specialistes, renforts "
+                    + "polyvalents, sévérité) ; aucunAnimateur dit qu'il n'y a rien à mesurer. former : le plan de "
+                    + "formation suggéré, typologie par typologie en déficit, avec les candidats DEBUTANT ou AUTONOME "
+                    + "à former, triés par jours en tension où ils sont disponibles, souhait puis niveau ; une "
+                    + "typologie sans candidat relève du recrutement. tension : la marge « apres » croisée avec la "
+                    + "fragilité, chaque créneau noté CRITIQUE, ELEVEE, SURVEILLEE ou CALME par des règles nommées, "
+                    + "avec tous les sièges irremplaçables de la tranche ; une tranche commencée est passee.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    RisquesView consultRisks(
+            @ToolArg(description = "fragilite (défaut), former ou tension", required = false) String section,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        String choisie = McpArgs.choix(section, "section", "fragilite", "fragilite", "former", "tension");
+        return switch (choisie) {
+            case "fragilite" ->
+                new RisquesView(
+                        choisie,
+                        FragiliteView.of(fragiliteAnalyzer.analyze(persistenceService.loadPersistedPlanning())),
+                        null,
+                        null);
+            case "former" -> new RisquesView(choisie, null, suggestTrainingPlan(edition), null);
+            default -> new RisquesView(choisie, null, null, margeService.tension());
+        };
+    }
+
+    /** The Repas et pauses report in one tool (ADR 0127): the legal breaks, and the walks between two shifts. */
+    @Tool(
+            name = "consulter_repas_pauses",
+            description = "Le rapport Repas et pauses du planning persisté, sous la section demandée, lu sous les "
+                    + "réglages courants sans lancer de résolution ; animateurs par id seul. pauses (défaut) : pour "
+                    + "chaque animateur et chaque jour, les séquences de travail ininterrompu, la pause légale due et "
+                    + "son placement (une personne à la fois par stand, au plus tard possible), le relais sur le "
+                    + "stand, les trous déjà planifiés par la grille, et la coupure repas due par chaque journée à "
+                    + "cheval sur une fenêtre repas avec le plus grand trou libre qu'elle y laisse ; une pause sans "
+                    + "relais est un écart dur. Filtrable par stand ou aux seules pauses sans relais. enchainements : "
+                    + "deux postes consécutifs d'un même animateur sur deux emplacements géolocalisés dont le "
+                    + "battement ne laisse pas le temps d'aller de l'un à l'autre à pied, ou seulement en mangeant la "
+                    + "pause légale (walkOnBreak) ; geolocated=false dit qu'aucun trajet n'était calculable. Les deux "
+                    + "sections se filtrent par date ; standId et sansRelaisSeulement ne valent que pour pauses.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    RepasPausesView consultMealsAndBreaks(
+            @ToolArg(description = "pauses (défaut) ou enchainements", required = false) String section,
+            @ToolArg(description = "Date (AAAA-MM-JJ) : ne garder que ce jour", required = false) String date,
+            @ToolArg(
+                            description = "Section pauses : id de stand, ne garder que les pauses tenues sur ce stand",
+                            required = false)
+                    String standId,
+            @ToolArg(
+                            description = "Section pauses : true, ne garder que les pauses sans relais possible",
+                            required = false)
+                    Boolean sansRelaisSeulement,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        String choisie = McpArgs.choix(section, "section", PAUSES, PAUSES, "enchainements");
+        if (PAUSES.equals(choisie)) {
+            return new RepasPausesView(choisie, analyzePauses(date, standId, sansRelaisSeulement, edition), null);
+        }
+        if ((standId != null && !standId.isBlank()) || Boolean.TRUE.equals(sansRelaisSeulement)) {
+            throw new BusinessError.Invalid("standId et sansRelaisSeulement ne valent que pour la section pauses");
+        }
+        return new RepasPausesView(choisie, null, analyzeWalks(date, edition));
+    }
+
+    @Deprecated
+    @Tool(
+            name = "volumes",
+            description =
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_besoin (section volumetrie). "
+                            + "Volumétrie réelle du problème que construirait la prochaine résolution : nombre "
+                            + "d'animateurs, de postes à pourvoir et de contraintes ad hoc, heures à pourvoir (somme des durées "
+                            + "effectives des postes) et heures offertes (plafond légal de ce que les animateurs peuvent travailler "
+                            + "sur l'événement, jours d'indisponibilité déduits). Les postes ne dépendent que des stands et des créneaux : "
+                            + "ils sont comptés avant la saisie d'aucun animateur, et tout est à zéro sans stand ou sans créneau.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ProblemScaleService.ProblemScale volumes(
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return problemScaleService.compute();
+    }
+
+    @Deprecated
+    @Tool(
+            name = "analyser_faisabilite",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_besoin (section faisabilite). "
+                    + "Diagnostic de faisabilité avant résolution : calcul de capacité en Java pur (aucune "
+                    + "résolution lancée) sur les données de référence courantes, listant les causes structurellement "
+                    + "bloquantes : créneau en sous-effectif, contraintes ad hoc contradictoires, affectation forcée "
+                    + "intenable (jour déclaré indisponible, règle dure sur toutes les places de sa portée, "
+                    + "emploi du temps verrouillé), plafond de jours travaillés d'affilée intenable ou tendu sur "
+                    + "la grille ou le plan en place.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    FeasibilityReport analyzeFeasibility(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return feasibilityAnalyzer.analyze(
+                referenceDataService.listAnimateurs(),
+                referenceDataService.listSolvedStands(),
+                referenceDataService.listCreneaux(),
+                referenceDataService.listContraintesAdHoc(),
+                FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
+                FeasibilityAnalyzer.ConsecutiveDaysRule.of(
+                        referenceDataService.getContraintesDesactivees(),
+                        referenceDataService.getNiveauxObligatoires(),
+                        referenceDataService.getParametresQualite()),
+                new FeasibilityAnalyzer.PlanContext(
+                        planningService.pastHorizon(), persistenceService::loadEmployedByDay));
     }
 
     /** The same reading as {@code GET /api/planning/arrivees-groupees}: ids only. */
@@ -132,9 +349,11 @@ public class DiagnosticMcpTools {
      * The same reading as {@code GET /api/planning/enchainements}: animateurs
      * by id, stands and emplacements by id, nothing else about a person.
      */
+    @Deprecated
     @Tool(
             name = "analyser_enchainements",
-            description = "Les enchaînements serrés du planning persisté : deux postes consécutifs d'un même "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_repas_pauses (section enchainements). "
+                    + "Les enchaînements serrés du planning persisté : deux postes consécutifs d'un même "
                     + "animateur le même jour, sur deux emplacements géolocalisés différents, dont le battement ne "
                     + "laisse pas le temps d'aller de l'un à l'autre à pied (distance à vol d'oiseau × facteur de "
                     + "détour ÷ vitesse de marche, arrondi à la minute supérieure), ou ne le laisse qu'en mangeant la "
@@ -177,9 +396,11 @@ public class DiagnosticMcpTools {
      * caller drifted from the real problem, badly — recurring horaires and the
      * reduced effectif during meal windows both change the count.
      */
+    @Deprecated
     @Tool(
             name = "analyser_effectifs",
-            description = "Combien d'animateurs il faut au minimum pour couvrir l'événement, et pourquoi : pic "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_besoin (section borne). "
+                    + "Combien d'animateurs il faut au minimum pour couvrir l'événement, et pourquoi : pic "
                     + "simultané, pic avec pause, charge horaire de la semaine la plus chargée, rotation sur les jours "
                     + "(nul ne travaille plus de six jours par semaine ISO), coupure repas (une grille qui ne s'arrête "
                     + "jamais entre le matin et l'après-midi ne se tient pas à son seul pic ; nulle quand la règle est "
@@ -208,10 +429,12 @@ public class DiagnosticMcpTools {
      * screen and the CSV name them, an assistant reads who they are through
      * the tools that anonymise.
      */
+    @Deprecated
     @Tool(
             name = "plan_formation",
-            description = "Plan de formation suggéré, typologie par typologie : pour chaque typologie en déficit — "
-                    + "manque signalé par analyser_effectifs, ou au moins un couple stand × créneau tenu par un seul "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_risques (section former). "
+                    + "Plan de formation suggéré, typologie par typologie : pour chaque typologie en déficit — "
+                    + "manque signalé par consulter_besoin (section borne), ou au moins un couple stand × créneau tenu par un seul "
                     + "spécialiste ou aucun dans la fragilité du planning persisté —, les chiffres de ces deux "
                     + "analyses (manque, competencesRares, groupesSansSpecialiste, postesIrremplacables), les jours "
                     + "en tension, et les candidats à former : animateurs DEBUTANT ou AUTONOME sur la typologie, "
@@ -236,9 +459,11 @@ public class DiagnosticMcpTools {
      * a count: the screen names who holds a game, an assistant reads who they
      * are through the tools that anonymise.
      */
+    @Deprecated
     @Tool(
             name = "analyser_typologies",
-            description = "Le planning persisté lu par typologie de jeu, sur toute l'édition : pour chaque typologie "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_besoin (section typologie). "
+                    + "Le planning persisté lu par typologie de jeu, sur toute l'édition : pour chaque typologie "
                     + "(celles du référentiel, tenues ou non, et celles qu'un stand propose sans que le référentiel "
                     + "les déclare), les heures et les postes tenus, les heures jour par jour (heuresParJour, un jour "
                     + "sans poste tenu n'y figure pas), et quatre listes d'animateurs par id avec leur compte : "
@@ -262,26 +487,29 @@ public class DiagnosticMcpTools {
      * capacity is tight — which is the question a withdrawal, a recruitment or
      * one opening window fewer actually turns on.
      */
+    @Deprecated
     @Tool(
             name = "analyser_marge",
-            description = "La marge disponible, jour par jour et tranche horaire par tranche horaire : animateurs "
-                    + "disponibles à ce moment-là moins sièges à pourvoir. Les tranches sont les créneaux de la grille, "
-                    + "donc lisibles aussi bien en amplitudes qu'en vacations. Deux modes : « avant » (par défaut) "
-                    + "compare la capacité brute — qui n'a pas déclaré cette date indisponible — aux sièges qu'une "
-                    + "résolution devrait pourvoir, et répond avant toute résolution ; « apres » lit le planning "
-                    + "persisté et ne compte libre que celui qui n'est pas déjà sur un siège qui chevauche, qui "
-                    + "respecte la pause légale entre vacations de part et d'autre, et que les règles dures laissent "
-                    + "prendre un siège de la tranche — face aux seuls sièges restés vides. Chaque journée porte sa "
-                    + "pire tranche, et le rapport la pire de l'événement. Calcul en Java pur, aucune résolution "
-                    + "lancée, compétences hors périmètre (voir analyser_effectifs pour le goulot par typologie). "
-                    + "Lecture optimiste : une tranche annoncée négative l'est, une tranche confortable ne le "
-                    + "garantit pas. Troisième mode, « tension » : la marge « apres » croisée avec la fragilité "
-                    + "du même planning persisté, chaque tranche notée CRITIQUE, ELEVEE, SURVEILLEE ou CALME par "
-                    + "des règles nommées (motifs : SIEGES_VIDES_NON_COUVRABLES, SIEGE_IRREMPLACABLE, "
-                    + "STAND_SANS_SPECIALISTE, MARGE_NULLE_AVEC_SIEGES_VIDES, FRAGILES_AU_DELA_DE_LA_MARGE, "
-                    + "SIEGES_FRAGILES, SPECIALISTE_UNIQUE_SANS_RENFORT), avec tous les sièges irremplaçables de la "
-                    + "tranche, sans troncature, et les animateurs et stands en cause par id seulement ; une "
-                    + "tranche déjà commencée est passee, sans gravité.",
+            description =
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_besoin (section marge) ou consulter_risques (section tension). "
+                            + "La marge disponible, jour par jour et tranche horaire par tranche horaire : animateurs "
+                            + "disponibles à ce moment-là moins sièges à pourvoir. Les tranches sont les créneaux de la grille, "
+                            + "donc lisibles aussi bien en amplitudes qu'en vacations. Deux modes : « avant » (par défaut) "
+                            + "compare la capacité brute — qui n'a pas déclaré cette date indisponible — aux sièges qu'une "
+                            + "résolution devrait pourvoir, et répond avant toute résolution ; « apres » lit le planning "
+                            + "persisté et ne compte libre que celui qui n'est pas déjà sur un siège qui chevauche, qui "
+                            + "respecte la pause légale entre vacations de part et d'autre, et que les règles dures laissent "
+                            + "prendre un siège de la tranche — face aux seuls sièges restés vides. Chaque journée porte sa "
+                            + "pire tranche, et le rapport la pire de l'événement. Calcul en Java pur, aucune résolution "
+                            + "lancée, compétences hors périmètre (voir consulter_besoin, section borne, pour le goulot par typologie). "
+                            + "Lecture optimiste : une tranche annoncée négative l'est, une tranche confortable ne le "
+                            + "garantit pas. Troisième mode, « tension » : la marge « apres » croisée avec la fragilité "
+                            + "du même planning persisté, chaque tranche notée CRITIQUE, ELEVEE, SURVEILLEE ou CALME par "
+                            + "des règles nommées (motifs : SIEGES_VIDES_NON_COUVRABLES, SIEGE_IRREMPLACABLE, "
+                            + "STAND_SANS_SPECIALISTE, MARGE_NULLE_AVEC_SIEGES_VIDES, FRAGILES_AU_DELA_DE_LA_MARGE, "
+                            + "SIEGES_FRAGILES, SPECIALISTE_UNIQUE_SANS_RENFORT), avec tous les sièges irremplaçables de la "
+                            + "tranche, sans troncature, et les animateurs et stands en cause par id seulement ; une "
+                            + "tranche déjà commencée est passee, sans gravité.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -445,9 +673,11 @@ public class DiagnosticMcpTools {
      * its own so that no name crosses MCP — the analyzer's own views carry the
      * animateur's display name for the screens.
      */
+    @Deprecated
     @Tool(
             name = "analyser_pauses",
-            description = "La rotation des pauses légales du planning persisté : pour chaque animateur et chaque "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_repas_pauses (section pauses). "
+                    + "La rotation des pauses légales du planning persisté : pour chaque animateur et chaque "
                     + "jour, les séquences de travail ininterrompu, la pause due (20 min à la sixième heure, 30 min à "
                     + "4 h 30 pour un mineur) posée de telle heure à telle heure — une personne à la fois par stand, au "
                     + "plus tard possible —, le stand tenu et les collègues présents pendant la pause, plus les trous déjà "
@@ -716,4 +946,119 @@ public class DiagnosticMcpTools {
             int coupuresRepasManquantes,
             List<JourneePausesView> journees,
             String message) {}
+
+    /** What {@code consulter_besoin} answers: the section asked, the others left out. */
+    public record BesoinView(
+            String section,
+            @JsonInclude(JsonInclude.Include.NON_NULL) StaffingSummary borne,
+            @JsonInclude(JsonInclude.Include.NON_NULL) MarginReading marge,
+            @JsonInclude(JsonInclude.Include.NON_NULL) TypologiesView typologie,
+            @JsonInclude(JsonInclude.Include.NON_NULL) ProblemScaleService.ProblemScale volumetrie,
+            @JsonInclude(JsonInclude.Include.NON_NULL) FeasibilityReport faisabilite) {}
+
+    /** What {@code consulter_risques} answers: the section asked, the others left out. */
+    public record RisquesView(
+            String section,
+            @JsonInclude(JsonInclude.Include.NON_NULL) FragiliteView fragilite,
+            @JsonInclude(JsonInclude.Include.NON_NULL) PlanFormationView former,
+            @JsonInclude(JsonInclude.Include.NON_NULL) MarginReading tension) {}
+
+    /** What {@code consulter_repas_pauses} answers: the section asked, the other left out. */
+    public record RepasPausesView(
+            String section,
+            @JsonInclude(JsonInclude.Include.NON_NULL) PausesView pauses,
+            @JsonInclude(JsonInclude.Include.NON_NULL) WalkSequenceAnalyzer.WalkSequenceReport enchainements) {}
+
+    /**
+     * {@link RapportFragilite} without a name: the lines lose their display
+     * name, and the report its sentence, which names the most fragile person.
+     */
+    public record FragiliteView(
+            List<AnimateurFragiliteView> animateurs,
+            List<CompetenceRareView> competencesRares,
+            int totalCompetencesRares,
+            int groupesSansSpecialiste,
+            int groupesAnalyses,
+            int groupesDejaSousEffectif,
+            int animateursIrremplacables,
+            boolean polyvalentConfigure,
+            boolean aucunAnimateur) {
+
+        static FragiliteView of(RapportFragilite rapport) {
+            return new FragiliteView(
+                    rapport.animateurs().stream()
+                            .map(AnimateurFragiliteView::of)
+                            .toList(),
+                    rapport.competencesRares().stream()
+                            .map(CompetenceRareView::of)
+                            .toList(),
+                    rapport.totalCompetencesRares(),
+                    rapport.groupesSansSpecialiste(),
+                    rapport.groupesAnalyses(),
+                    rapport.groupesDejaSousEffectif(),
+                    rapport.animateursIrremplacables(),
+                    rapport.polyvalentConfigure(),
+                    rapport.aucunAnimateur());
+        }
+    }
+
+    /** {@link AnimateurFragilite} without the display name. */
+    public record AnimateurFragiliteView(
+            String animateurId,
+            boolean polyvalent,
+            int affectations,
+            int postesEffondres,
+            int postesIrremplacables,
+            int competencesRares,
+            SeveriteFragilite severite,
+            List<PosteFragile> postes,
+            int postesNonDetailles) {
+
+        static AnimateurFragiliteView of(AnimateurFragilite ligne) {
+            return new AnimateurFragiliteView(
+                    ligne.animateurId(),
+                    ligne.polyvalent(),
+                    ligne.affectations(),
+                    ligne.postesEffondres(),
+                    ligne.postesIrremplacables(),
+                    ligne.competencesRares(),
+                    ligne.severite(),
+                    ligne.postes(),
+                    ligne.postesNonDetailles());
+        }
+    }
+
+    /** {@link CompetenceRare} without the single specialist's display name. */
+    public record CompetenceRareView(
+            String standId,
+            String standNom,
+            long creneauId,
+            LocalDate date,
+            int jour,
+            LocalTime heureDebut,
+            LocalTime heureFin,
+            List<String> typologies,
+            int specialistes,
+            String animateurId,
+            int renforts,
+            boolean pourvu,
+            SeveriteFragilite severite) {
+
+        static CompetenceRareView of(CompetenceRare ligne) {
+            return new CompetenceRareView(
+                    ligne.standId(),
+                    ligne.standNom(),
+                    ligne.creneauId(),
+                    ligne.date(),
+                    ligne.jour(),
+                    ligne.heureDebut(),
+                    ligne.heureFin(),
+                    ligne.typologies(),
+                    ligne.specialistes(),
+                    ligne.animateurId(),
+                    ligne.renforts(),
+                    ligne.pourvu(),
+                    ligne.severite());
+        }
+    }
 }
