@@ -42,7 +42,8 @@ content:
           - { name: calcul, label: Le calcul, type: string, required: true }
           - { name: faq, label: Questions, type: string, required: true }
           - { name: docs, label: Documentation (« Doc »), type: string, required: true }
-          - { name: contact, label: Bouton de contact, type: string, required: true }
+          - { name: contact, label: Bouton de contact (pied de page), type: string, required: true }
+          - { name: demo, label: Bouton « Essayer la démo », type: string, required: true }
           - { name: langue, label: Lien vers l'autre langue, type: string, required: true }
           - { name: langueLabel, label: Lien vers l'autre langue (lecteurs d'écran), type: string, required: true }
       - { name: skip, label: Lien d'évitement, type: string, required: true }
@@ -129,7 +130,8 @@ content:
               - { name: calcul, label: Le calcul, type: string, required: true }
               - { name: faq, label: Questions, type: string, required: true }
               - { name: docs, label: Documentation (« Doc »), type: string, required: true }
-              - { name: contact, label: Bouton de contact, type: string, required: true }
+              - { name: contact, label: Bouton de contact (pied de page), type: string, required: true }
+              - { name: demo, label: Bouton « Essayer la démo », type: string, required: true }
               - { name: langue, label: Lien vers l'autre langue, type: string, required: true }
               - { name: langueLabel, label: Lien vers l'autre langue (lecteurs d'écran), type: string, required: true }
           - { name: skip, label: Lien d'évitement, type: string, required: true }
@@ -788,6 +790,79 @@ content:
         - { name: ecrire, label: Texte devant l'adresse e-mail, type: string, required: true }
         - { name: delai, label: Délai de réponse, type: string, required: true }
         - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs, contact, mentions), type: string, list: true }
+
+  - name: demo
+    label: Page démo
+    type: file
+    path: site/src/_data/pages/demo.json
+    format: json
+    fields:
+      - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+      - { name: h1, label: Titre de la page, type: string, required: true }
+      - { name: reponse, label: Introduction (Markdown), type: text, required: true }
+      - { name: bouton, label: Bouton vers la démo, type: string, required: true }
+      - name: comptes
+        label: Tableau des comptes (l'adresse, les identifiants et les mots de passe sont dans site/src/_data/site.json)
+        type: object
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: colonnes, label: En-têtes de colonnes (rôle, identifiant, mot de passe, droits), type: string, list: true }
+          - name: roles
+            label: Rôles
+            type: object
+            list: true
+            fields:
+              - { name: role, label: Clé du rôle (admin, rh, responsable, lecteur), type: string, required: true }
+              - { name: nom, label: Nom du rôle, type: string, required: true }
+              - { name: droits, label: Ce que le rôle peut faire, type: string, required: true }
+      - name: sections
+        label: Les trois pas
+        type: object
+        list:
+          collapsible: { collapsed: true, summary: "{h2}" }
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: texte, label: Texte (Markdown), type: text, required: true }
+      - { name: notesH, label: Titre des mentions, type: string, required: true }
+      - { name: notes, label: Mentions (une par ligne), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs, contact, mentions, demo), type: string, list: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+        - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+        - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+        - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+        - { name: h1, label: Titre de la page, type: string, required: true }
+        - { name: reponse, label: Introduction (Markdown), type: text, required: true }
+        - { name: bouton, label: Bouton vers la démo, type: string, required: true }
+        - name: comptes
+          label: Tableau des comptes (l'adresse, les identifiants et les mots de passe sont dans site/src/_data/site.json)
+          type: object
+          fields:
+            - { name: h2, label: Titre, type: string, required: true }
+            - { name: colonnes, label: En-têtes de colonnes (rôle, identifiant, mot de passe, droits), type: string, list: true }
+            - name: roles
+              label: Rôles
+              type: object
+              list: true
+              fields:
+                - { name: role, label: Clé du rôle (admin, rh, responsable, lecteur), type: string, required: true }
+                - { name: nom, label: Nom du rôle, type: string, required: true }
+                - { name: droits, label: Ce que le rôle peut faire, type: string, required: true }
+        - name: sections
+          label: Les trois pas
+          type: object
+          list:
+            collapsible: { collapsed: true, summary: "{h2}" }
+          fields:
+            - { name: h2, label: Titre, type: string, required: true }
+            - { name: texte, label: Texte (Markdown), type: text, required: true }
+        - { name: notesH, label: Titre des mentions, type: string, required: true }
+        - { name: notes, label: Mentions (une par ligne), type: string, list: true }
+        - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs, contact, mentions, demo), type: string, list: true }
 
   - name: plan
     label: Plan du site

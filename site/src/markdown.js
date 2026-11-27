@@ -39,7 +39,9 @@ export function toMarkdown(p) {
     out.push(page.reponse);
     if (page.guide) out.push(`[${page.guide}](${site.url}/docs/installer/)`);
     if (key === 'legal') out.push(`## ${page.articlesH}`, articles.map((a) => `- **${a.number}**, ${a[lang].subject}${sep}${a[lang].rule}`).join('\n'));
-    if (page.sections) out.push(sections(page.sections));
+    if (key === 'demo') out.push(`## ${page.comptes.h2}`, `${site.demo.url}`, [`| ${page.comptes.colonnes.join(' | ')} |`, '| --- | --- | --- | --- |', ...page.comptes.roles.map((r) => { const acc = site.demo.comptes.find((x) => x.role === r.role); return `| ${r.nom} | ${acc.identifiant} | ${acc.motDePasse} | ${r.droits} |`; })].join('\n'));
+    if (page.sections) out.push(sections(page.sections).replaceAll('{espace}', site.demo.espace));
+    if (page.notes) out.push(`## ${page.notesH}`, page.notes.map((n) => `- ${n}`).join('\n'));
     if (page.tableau) out.push(`## ${page.tableau.h2}`, [`| ${page.tableau.colonnes.join(' | ')} |`, '| --- | --- | --- |', ...page.tableau.lignes.map((l) => `| ${l.q} | ${l.tableur} | ${l.logiciel} |`)].join('\n'));
     if (page.items) out.push(page.items.map((i) => `## ${i.q}\n\n${i.a}`).join('\n\n'));
   }

@@ -1,0 +1,136 @@
+{
+  "slug": "demo",
+  "titre": "Essayer la démo en ligne | Planning Équipes",
+  "description": "Essayez Planning Équipes sans rien installer : une démo en ligne aux données fictives, quatre comptes, remise à zéro toutes les 30 minutes.",
+  "h1": "Essayer la démo",
+  "reponse": "Une instance en ligne, remplie de données fictives, où vous pouvez tout essayer : calculer un planning, ouvrir l'espace d'un animateur, suivre une journée.",
+  "bouton": "Ouvrir la démo",
+  "comptes": {
+    "h2": "Les quatre comptes",
+    "colonnes": [
+      "Rôle",
+      "Identifiant",
+      "Mot de passe",
+      "Ce que ce rôle peut faire"
+    ],
+    "roles": [
+      {
+        "role": "admin",
+        "nom": "Administrateur (porte de secours)",
+        "droits": "Tout : saisir les données, calculer, publier, régler les règles. C'est le seul compte qui peut changer les réglages."
+      },
+      {
+        "role": "rh",
+        "nom": "RH",
+        "droits": "Lire le rapport de conformité RH, sans rien modifier."
+      },
+      {
+        "role": "responsable",
+        "nom": "Responsable de stand",
+        "droits": "Lire le planning publié des deux premiers stands et leurs places vides, sans rien modifier."
+      },
+      {
+        "role": "lecteur",
+        "nom": "Lecteur",
+        "droits": "Consulter les écrans, sans rien modifier."
+      }
+    ]
+  },
+  "sections": [
+    {
+      "h2": "1. Calculer un planning",
+      "texte": "Connectez-vous en administrateur, ouvrez **Planning**, puis l'onglet **Calculer**. Le calcul place chacun sur ses postes en quelques secondes. Ouvrez ensuite **Règles du planning** : chaque règle appliquée y est expliquée."
+    },
+    {
+      "h2": "2. Ouvrir l'espace animateur",
+      "texte": "Ouvrez [l'espace d'un animateur]({espace}) : son planning, la confirmation de présence, les échanges. Aucun e-mail ne part : le code d'accès s'affiche et se remplit à l'écran."
+    },
+    {
+      "h2": "3. Suivre la journée du jour J",
+      "texte": "Ouvrez **Aujourd'hui** : les postes de la journée, les places vides et qui peut les tenir sans enfreindre une règle."
+    }
+  ],
+  "notesH": "À savoir avant d'essayer",
+  "notes": [
+    "Toutes les données sont fictives.",
+    "La démo est remise à zéro toutes les 30 minutes, à l'heure pile et à la demie. Ce que vous saisissez disparaît à la prochaine remise à zéro.",
+    "L'instance est partagée : d'autres visiteurs voient ce que vous saisissez. N'y mettez rien de réel, et aucune adresse e-mail.",
+    "Les e-mails ne partent pas.",
+    "Le calcul est limité : un seul à la fois, 40 secondes au plus.",
+    "La démo ne fait pas plus d'appels sortants qu'une installation ordinaire.",
+    "En démo, personne ne peut créer de compte, changer un mot de passe, générer une clé MCP ni configurer un webhook."
+  ],
+  "liens": [
+    "faq",
+    "hebergement",
+    "contact"
+  ],
+  "en": {
+    "slug": "demo",
+    "titre": "Try the online demo | Planning Équipes",
+    "description": "Try Planning Équipes with nothing to install: an online demo with made-up data, four accounts, reset every 30 minutes.",
+    "h1": "Try the demo",
+    "reponse": "An online instance filled with made-up data, where you can try everything: compute a schedule, open an animateur's space, follow a day.",
+    "bouton": "Open the demo",
+    "comptes": {
+      "h2": "The four accounts",
+      "colonnes": [
+        "Role",
+        "Username",
+        "Password",
+        "What this role can do"
+      ],
+      "roles": [
+        {
+          "role": "admin",
+          "nom": "Administrator (back door)",
+          "droits": "Everything: enter the data, compute, publish, tune the rules. The only account that can change settings."
+        },
+        {
+          "role": "rh",
+          "nom": "HR",
+          "droits": "Read the HR compliance report, change nothing."
+        },
+        {
+          "role": "responsable",
+          "nom": "Stand lead",
+          "droits": "Read the published schedule of the first two stands and their empty seats, change nothing."
+        },
+        {
+          "role": "lecteur",
+          "nom": "Reader",
+          "droits": "Browse the screens, change nothing."
+        }
+      ]
+    },
+    "sections": [
+      {
+        "h2": "1. Compute a schedule",
+        "texte": "Sign in as administrator, open **Planning**, then the **Calculate** tab. The solver places everyone on their shifts in a few seconds. Then open **Planning rules**: every rule applied is explained there."
+      },
+      {
+        "h2": "2. Open the animateur space",
+        "texte": "Open [an animateur's space]({espace}): their schedule, the presence confirmation, the swaps. No e-mail is sent: the access code is shown and filled in on screen."
+      },
+      {
+        "h2": "3. Follow the day itself",
+        "texte": "Open **Today**: the day's shifts, the empty seats and who can fill them without breaking a rule."
+      }
+    ],
+    "notesH": "Before you try",
+    "notes": [
+      "All the data is made up.",
+      "The demo is reset every 30 minutes, on the hour and on the half hour. What you enter disappears at the next reset.",
+      "The instance is shared: other visitors see what you enter. Put nothing real in it, and no e-mail address.",
+      "E-mails are not sent.",
+      "Computing is limited: one at a time, 40 seconds at most.",
+      "The demo makes no more outgoing calls than an ordinary installation.",
+      "In the demo, nobody can create an account, change a password, generate an MCP key or configure a webhook."
+    ],
+    "liens": [
+      "faq",
+      "hebergement",
+      "contact"
+    ]
+  }
+}

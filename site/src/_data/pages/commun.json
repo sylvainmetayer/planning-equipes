@@ -9,7 +9,8 @@
     "docs": "Doc",
     "contact": "Parlons-en",
     "langue": "English",
-    "langueLabel": "Read this page in English"
+    "langueLabel": "Read this page in English",
+    "demo": "Essayer la démo"
   },
   "skip": "Aller au contenu",
   "logoLabel": "Planning Équipes, accueil",
@@ -133,7 +134,8 @@
       "docs": "Docs",
       "contact": "Let's talk",
       "langue": "Français",
-      "langueLabel": "Lire cette page en français"
+      "langueLabel": "Lire cette page en français",
+      "demo": "Try the demo"
     },
     "skip": "Skip to content",
     "logoLabel": "Planning Équipes, home",

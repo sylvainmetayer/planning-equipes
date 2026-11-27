@@ -1,5 +1,6 @@
 {% set c = copy[lang][key] %}
 {% set mail = urls[lang].contact %}
+{% set btnUrl = site.demo.url if key == 'demo' else mail %}
 {% set player = {'legal': 4, 'equipe': 3, 'hebergement': 1, 'festival': 1, 'salon': 3, 'sport': 4, 'mineurs': 4}[key] or 2 %}
 <article data-player="{{ player }}">
   <header class="ask">
@@ -7,7 +8,7 @@
       <nav class="crumbs" aria-label="{{ copy[lang].commun.ariane }}"><ol><li><a href="{{ urls[lang].accueil }}">{{ copy[lang].commun.nav.accueil }}</a></li><li aria-current="page">{{ c.h1 | typo(lang) }}</li></ol></nav>
       <h1>{{ c.h1 | typo(lang) }}</h1>
       <p class="lead">{{ c.reponse | mdi(lang) | safe }}</p>
-      {% if c.bouton %}<p class="acts"><a class="btn btn--primary" href="{{ mail }}">{{ c.bouton }}</a>{% if c.guide %} <a class="btn" href="{{ "/en/docs/install/" if lang == "en" else "/docs/installer/" }}">{{ c.guide }}</a>{% endif %}</p>{% endif %}
+      {% if c.bouton %}<p class="acts"><a class="btn btn--primary" href="{{ btnUrl }}">{{ c.bouton }}</a>{% if c.guide %} <a class="btn" href="{{ "/en/docs/install/" if lang == "en" else "/docs/installer/" }}">{{ c.guide }}</a>{% endif %}</p>{% endif %}
     </div>
   </header>
 
@@ -55,12 +56,34 @@
   </section>
   {% endif %}
 
+  {% if key == 'demo' %}
+  <section class="sec sec--tint" aria-labelledby="comptes-t">
+    <div class="container">
+      <div class="head"><h2 id="comptes-t">{{ c.comptes.h2 | typo(lang) }}</h2></div>
+      <div class="example">
+        <div class="scroll" role="group" aria-label="{{ c.comptes.h2 | typo(lang) }}" tabindex="0">
+          <table class="rows rows--cmp">
+            <caption class="visually-hidden">{{ c.comptes.h2 | typo(lang) }}</caption>
+            <thead><tr>{% for h in c.comptes.colonnes %}<th scope="col">{{ h }}</th>{% endfor %}</tr></thead>
+            <tbody>
+              {% for r in c.comptes.roles %}{% for acc in site.demo.comptes %}{% if acc.role == r.role %}
+              <tr><th scope="row">{{ r.nom | typo(lang) }}</th><td data-label="{{ c.comptes.colonnes[1] }}"><code>{{ acc.identifiant }}</code></td><td data-label="{{ c.comptes.colonnes[2] }}"><code>{{ acc.motDePasse }}</code></td><td data-label="{{ c.comptes.colonnes[3] }}">{{ r.droits | typo(lang) }}</td></tr>
+              {% endif %}{% endfor %}{% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="example__note"><a href="{{ site.demo.url }}">{{ site.demo.url }}</a></p>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
   {% if c.sections %}
   <section class="container chapters" aria-label="{{ c.h1 | typo(lang) }}">
     {% for s in c.sections %}
     <div class="chapter" data-player="{{ ((loop.index0 + player) % 4) + 1 }}">
       <h2>{{ s.h2 | typo(lang) }}</h2>
-      <div class="prose">{{ s.texte | md(lang) | safe }}</div>
+      <div class="prose">{{ s.texte | replace('{espace}', site.demo.espace) | md(lang) | safe }}</div>
     </div>
     {% endfor %}
   </section>
@@ -92,6 +115,15 @@
     {% for i in c.items %}
     <details id="{{ i.id }}"><summary>{{ i.q | typo(lang) }}</summary><p>{{ i.a | mdi(lang) | safe }}</p></details>
     {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if c.notes %}
+  <section class="sec" data-player="3" aria-labelledby="notes-t">
+    <div class="container">
+      <div class="head"><h2 id="notes-t">{{ c.notesH | typo(lang) }}</h2></div>
+      <ul class="facts">{% for n in c.notes %}<li data-player="{{ (loop.index0 % 4) + 1 }}">{{ n | typo(lang) }}</li>{% endfor %}</ul>
+    </div>
   </section>
   {% endif %}
 

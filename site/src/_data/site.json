@@ -9,6 +9,16 @@
     "url": "https://www.sylvain.dev/",
     "sameAs": ["https://github.com/sylvainmetayer"]
   },
+  "demo": {
+    "url": "https://demo-planning.sylvain.dev",
+    "espace": "https://demo-planning.sylvain.dev/animateur/00000000-0000-4000-8000-0000000de305",
+    "comptes": [
+      { "role": "admin", "identifiant": "admin", "motDePasse": "admin" },
+      { "role": "rh", "identifiant": "rh@example.org", "motDePasse": "demo-planning" },
+      { "role": "responsable", "identifiant": "responsable@example.org", "motDePasse": "demo-planning" },
+      { "role": "lecteur", "identifiant": "lecteur@example.org", "motDePasse": "demo-planning" }
+    ]
+  },
   "tally": { "fr": "OQ791k", "en": "VpzAEN" },
   "license": "https://www.gnu.org/licenses/agpl-3.0.html",
   "legifrance": "https://www.legifrance.gouv.fr/codes/texte_lc/LEGITEXT000006072050/",

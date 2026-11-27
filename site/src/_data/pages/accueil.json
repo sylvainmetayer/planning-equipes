@@ -4,8 +4,8 @@
   "ogTitre": "Planning Équipes : planifiez en minutes, pas en week-ends",
   "h1": "Planifiez en minutes, pas en week-ends.",
   "lede": "Animateurs, bénévoles et mineurs placés sur vos stands, Code du travail compris.",
-  "cta": "Parlons-en",
-  "cta2": "Voir les écrans",
+  "cta": "Essayer la démo",
+  "cta2": "Voir le code sur GitHub",
   "heroAlt": "Planning par jour de l'application : chaque stand, chaque créneau et les personnes affectées.",
   "heroLegende": "Une journée de la Fête du jeu de Pierrefeuille, festival fictif.",
   "loi": {
@@ -258,8 +258,8 @@
     "ogTitre": "Planning Équipes: schedule in minutes, not weekends",
     "h1": "Schedule in minutes, not weekends.",
     "lede": "Staff, volunteers and under-18s on your stands, French Labour Code included.",
-    "cta": "Let's talk",
-    "cta2": "See the screens",
+    "cta": "Try the demo",
+    "cta2": "See the code on GitHub",
     "heroAlt": "The schedule by day in the application: every stand, every time slot and the people assigned.",
     "heroLegende": "One day of the Fête du jeu de Pierrefeuille, a fictional festival.",
     "loi": {
