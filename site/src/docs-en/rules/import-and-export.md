@@ -13,7 +13,7 @@ Is a spreadsheet your starting point? [Moving from a spreadsheet to scheduling s
 
 The *Import* tab offers four cards:
 
-1. the **YAML scenario**, the complete workbook of an edition: game categories, locations, stands and their hours, timeslots, template days, staff, adjustments, settings. It is **the only one that replaces the edition** instead of completing it;
+1. the **YAML scenario**, the complete workbook of an edition: game categories, locations, stands and their hours, timeslots, templates, staff, adjustments, settings. It is **the only one that replaces the edition** instead of completing it;
 2. the **staff**, from a CSV spreadsheet;
 3. the **examples** shipped with the application;
 4. the **check of a scenario file**, which writes nothing.
@@ -50,7 +50,7 @@ Before replacing an edition with a scenario, the application keeps a copy of it:
 
 The *Export* tab offers two forms.
 
-- The ZIP archive: one CSV per type of reference data (game categories, locations, stands, timeslots, template days, staff), each one tickable, to open in a spreadsheet. Only the staff file reads back in.
+- The ZIP archive: one CSV per type of reference data (game categories, locations, stands, timeslots, templates, staff), each one tickable, to open in a spreadsheet. Only the staff file reads back in.
 - The scenario file: the whole edition in a single file, the one the Scenario card of the imports reads back. It is what lets you copy one edition onto another, replay a year's calendar the next year, or correct in bulk and then re-import.
 
 Each reference data list also offers "Export this list", which downloads as CSV what the table shows.

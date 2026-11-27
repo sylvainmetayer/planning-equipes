@@ -49,7 +49,7 @@ export function familyTitle(family: DeltaFamily): string {
     case 'EMPLACEMENT':
       return $localize`:@@comparerEditions.famille.emplacements:Emplacements`;
     case 'JOURNEE_TYPE':
-      return $localize`:@@comparerEditions.famille.journeesTypes:Journées types`;
+      return $localize`:@@comparerEditions.famille.journeesTypes:Gabarits`;
     case 'CRENEAU':
       return $localize`:@@comparerEditions.famille.creneaux:Créneaux`;
     case 'PARAMETRE':

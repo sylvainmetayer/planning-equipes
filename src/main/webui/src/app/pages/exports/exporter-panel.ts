@@ -103,7 +103,7 @@ export class ExporterPanel implements OnInit {
       },
       {
         target: 'JOURNEES_TYPES' as const,
-        libelle: $localize`:@@journeesTypes.title:Journées types`,
+        libelle: $localize`:@@gabarits.title:Gabarits`,
         fichier: 'journees-types.csv',
         total: volumes.JOURNEES_TYPES ?? 0,
       },

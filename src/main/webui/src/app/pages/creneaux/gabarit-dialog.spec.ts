@@ -5,47 +5,47 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { JourneesTypesApi } from '../../core/api/journees-types-api';
+import { GenerateurCreneauxApi } from '../../core/api/generateur-creneaux-api';
 import { EditionsApi } from '../../core/api/editions-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { EtatGel, JourneeType } from '../../core/models';
-import { JourneeTypeDialog } from './journee-type-dialog';
+import { EtatGel, Gabarit } from '../../core/models';
+import { GabaritDialog } from './gabarit-dialog';
 
-function monter(journeeType: JourneeType | null, gel: EtatGel[] = []) {
-  const create = vi.fn((payload: JourneeType) => Promise.resolve({ ...payload, id: 9 }));
-  const update = vi.fn((id: number, payload: JourneeType) => Promise.resolve({ ...payload, id }));
+function monter(gabarit: Gabarit | null, gel: EtatGel[] = []) {
+  const create = vi.fn((payload: Gabarit) => Promise.resolve({ ...payload, id: 9 }));
+  const update = vi.fn((id: number, payload: Gabarit) => Promise.resolve({ ...payload, id }));
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
       { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
-      { provide: JourneesTypesApi, useValue: { create, update } },
+      { provide: GenerateurCreneauxApi, useValue: { create, update } },
       { provide: EditionsApi, useValue: { gel: vi.fn(() => Promise.resolve(gel)) } },
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: { journeeType } },
+      { provide: MAT_DIALOG_DATA, useValue: { gabarit } },
     ],
   });
-  return { fixture: TestBed.createComponent(JourneeTypeDialog), create, update, close };
+  return { fixture: TestBed.createComponent(GabaritDialog), create, update, close };
 }
 
-function racine(fixture: ComponentFixture<JourneeTypeDialog>): HTMLElement {
+function racine(fixture: ComponentFixture<GabaritDialog>): HTMLElement {
   return fixture.nativeElement as HTMLElement;
 }
 
-function saisir(fixture: ComponentFixture<JourneeTypeDialog>, name: string, valeur: string): void {
+function saisir(fixture: ComponentFixture<GabaritDialog>, name: string, valeur: string): void {
   const input = racine(fixture).querySelector(`input[name="${name}"]`) as HTMLInputElement;
   input.value = valeur;
   input.dispatchEvent(new Event('input'));
 }
 
-function submit(fixture: ComponentFixture<JourneeTypeDialog>): void {
+function submit(fixture: ComponentFixture<GabaritDialog>): void {
   racine(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
 }
 
-describe('JourneeTypeDialog', () => {
+describe('GabaritDialog', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
   });

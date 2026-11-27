@@ -7,14 +7,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { CreneauxApi } from '../../core/api/creneaux-api';
+import { GenerateurCreneauxApi } from '../../core/api/generateur-creneaux-api';
 import { libelleJour } from '../../core/horaire-stand';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { labelsOf, standNames } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { DerivationRequest, RapportDerivation } from '../../core/models';
+import { DemandeGeneration, DerivationRequest, Generation } from '../../core/models';
 import { holidayDays, summarizeVacationsByDay } from './jours-resume';
 import { JoursFeriesService } from '../../core/jours-feries.service';
 import { PastilleFerie } from '../../shared/pastille-ferie';
@@ -62,9 +62,9 @@ export interface DerivationDraft {
 export class CreneauDerivationDialog {
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
   protected readonly dialogRef =
-    inject<MatDialogRef<CreneauDerivationDialog, RapportDerivation | null>>(MatDialogRef);
+    inject<MatDialogRef<CreneauDerivationDialog, Generation | null>>(MatDialogRef);
   private readonly data = inject<CreneauDerivationData>(MAT_DIALOG_DATA);
-  private readonly creneauxApi = inject(CreneauxApi);
+  private readonly generateur = inject(GenerateurCreneauxApi);
   /** The public holidays of the preview's dates, marked beside them. */
   private readonly feries = inject(JoursFeriesService);
   private readonly crud = inject(ReferenceCrudService);
@@ -79,7 +79,7 @@ export class CreneauDerivationDialog {
     heureFermeture: '20:00',
     dureeMinimaleMinutes: 15,
   });
-  protected readonly apercu = signal<RapportDerivation | null>(null);
+  protected readonly apercu = signal<Generation | null>(null);
   private readonly signatureApercu = signal<string | null>(null);
   protected readonly chargement = signal(false);
   protected readonly ecriture = signal(false);
@@ -162,13 +162,17 @@ export class CreneauDerivationDialog {
     };
   }
 
+  private demande(remplacer: boolean): DemandeGeneration {
+    return { source: 'STANDS', derivation: this.request(remplacer) };
+  }
+
   protected async previsualiser(): Promise<void> {
     if (this.erreur() !== null || this.chargement()) {
       return;
     }
     this.chargement.set(true);
     try {
-      const apercu = await this.creneauxApi.previewDerivation(this.request(false));
+      const apercu = await this.generateur.preview(this.demande(false));
       this.apercu.set(apercu);
       void this.feries.load(apercu.creneaux.map((creneau) => creneau.date));
       this.signatureApercu.set(JSON.stringify(this.draft()));
@@ -202,7 +206,7 @@ export class CreneauDerivationDialog {
     }
     this.ecriture.set(true);
     try {
-      const rapport = await this.creneauxApi.derive(this.request(remplacer));
+      const rapport = await this.generateur.apply(this.demande(remplacer));
       this.dialogRef.close(rapport);
     } catch (error) {
       this.crud.reportError(error);

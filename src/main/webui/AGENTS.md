@@ -325,10 +325,16 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   who it is for; a screen of its own since issue #320, so the solver page only
   solves), `/export-csv`, `/creneaux` (« Calendrier » — the timeslots; the
   retired `?onglet=horaires`, the stands' hours tab, is sent by the route's
-  `retiredHorairesTab` guard to the fiche stand (`openingsToStandsUrl`); one path
-  first — day templates laid on the calendar, or applied without being kept;
-  a single timeslot, recognition and derivation from the stands' hours sit in
-  one « Autres façons de créer la grille » menu; the grid check is a band read
+  `retiredHorairesTab` guard to the fiche stand (`openingsToStandsUrl`); the
+  generator's gabarits first — templates (the former
+  journées types, ADR 0126) and their calendar, `pages/creneaux/gabarits-card`
+  over `GenerateurCreneauxApi` (`/api/generateur-creneaux`, the one client of
+  the generator: gabarits, calendar, `apercu`, `application`, `retrait`,
+  recognition); the « Générer des créneaux » menu offers its three sources
+  (gabarits, the stands' hours, a recurring pattern, each previewed before it
+  writes) and the recognition, a single timeslot typed by hand being the
+  « Ajouter un créneau » button beside it; withdrawing a date from the calendar
+  keeps its timeslots; the grid check is a band read
   by itself on every visit and after every write), `/typologies` (a redirect
   to `/stands?onglet=typologies`: every count
   links to the list it counts, the polyvalent category is ticked in the table, and

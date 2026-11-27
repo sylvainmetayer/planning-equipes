@@ -11,7 +11,7 @@
     },
     {
       "h2": "Des stands, des créneaux, des postes",
-      "texte": "Chaque stand a ses horaires d'ouverture (des règles qui se répètent, des exceptions datées), un effectif minimum et maximum, et la ou les catégories de jeu qu'il demande. Les créneaux se posent par **journées types** : une journée type regroupe les vacations d'une sorte de journée, et se pose sur le calendrier en un geste, après un aperçu chiffré.\n\nLe calcul crée une place à pourvoir par poste, puis place chaque animateur selon ses compétences, sans jamais enfreindre une règle impérative. Pour poser les stands et le calendrier, suivez [préparer votre première édition](/docs/regles/preparer-edition/)."
+      "texte": "Chaque stand a ses horaires d'ouverture (des règles qui se répètent, des exceptions datées), un effectif minimum et maximum, et la ou les catégories de jeu qu'il demande. Les créneaux se posent par **gabarits** : un gabarit regroupe les vacations d'une sorte de journée, et se pose sur le calendrier en un geste, après un aperçu chiffré.\n\nLe calcul crée une place à pourvoir par poste, puis place chaque animateur selon ses compétences, sans jamais enfreindre une règle impérative. Pour poser les stands et le calendrier, suivez [préparer votre première édition](/docs/regles/preparer-edition/)."
     },
     {
       "h2": "Les disponibilités, sur les téléphones",

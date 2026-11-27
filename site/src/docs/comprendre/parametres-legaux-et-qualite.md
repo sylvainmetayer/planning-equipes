@@ -26,7 +26,7 @@ L'analyse de faisabilité (`GET /api/feasibility`) **ne voit pas ce pic** : c'es
 
 ### Couvrir un stand pendant le repas
 
-Trois façons de traiter le temps du midi, chacune écrite à la main sur la grille (formulaire du créneau ou journée type) :
+Trois façons de traiter le temps du midi, chacune écrite à la main sur la grille (formulaire du créneau ou gabarit) :
 
 | Ce qu'on veut | Comment on l'écrit |
 | --- | --- |

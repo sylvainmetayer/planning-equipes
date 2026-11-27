@@ -82,7 +82,7 @@ export function buildOperationsSections(): HelpSection[] {
         {
           kind: 'callout',
           title: $localize`:@@aide.consignes.callout.title:Rien n'est détruit`,
-          text: $localize`:@@aide.consignes.callout.text:La bande ferme tous les stands, sans exception, au-dessus de leurs règles et de leurs exceptions datées. Elle ne ferme que cela : un stand non coché garde ses horaires hors bande. Les créneaux nominaux gardent leur identifiant, leurs sièges et leurs verrous ; les vacations de la bande deviennent simplement sans siège. Les créneaux manquants pour couvrir une fenêtre sont ajoutés et marqués « ajouté par consigne » ; les journées types ignorent ces dates, affichées « sous consigne » plutôt qu'en écart. Les statistiques comptent les heures réellement travaillées, et une version emporte les consignes en vigueur à sa capture.`,
+          text: $localize`:@@aide.consignes.callout.text:La bande ferme tous les stands, sans exception, au-dessus de leurs règles et de leurs exceptions datées. Elle ne ferme que cela : un stand non coché garde ses horaires hors bande. Les créneaux nominaux gardent leur identifiant, leurs sièges et leurs verrous ; les vacations de la bande deviennent simplement sans siège. Les créneaux manquants pour couvrir une fenêtre sont ajoutés et marqués « ajouté par consigne » ; les gabarits ignorent ces dates, affichées « sous consigne » plutôt qu'en écart. Les statistiques comptent les heures réellement travaillées, et une version emporte les consignes en vigueur à sa capture.`,
         },
         {
           kind: 'definitions',

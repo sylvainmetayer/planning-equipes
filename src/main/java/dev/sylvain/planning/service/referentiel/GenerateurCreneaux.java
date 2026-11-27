@@ -101,7 +101,7 @@ public class GenerateurCreneaux {
         journeeType.setId(id);
         List<Gabarit> existants = repository.list();
         if (existants.stream().noneMatch(autre -> autre.getId() == id)) {
-            throw new BusinessError.NotFound("Journée type introuvable : " + id);
+            throw new BusinessError.NotFound("Gabarit introuvable : " + id);
         }
         validate(journeeType, existants);
         repository.update(journeeType);
@@ -111,24 +111,24 @@ public class GenerateurCreneaux {
     /** The template goes, its dates are no longer governed; the créneaux it produced stay. */
     public void delete(long id) {
         if (!repository.exists(id)) {
-            throw new BusinessError.NotFound("Journée type introuvable : " + id);
+            throw new BusinessError.NotFound("Gabarit introuvable : " + id);
         }
         repository.delete(id);
     }
 
     static void validate(Gabarit journeeType, List<Gabarit> existants) {
         if (journeeType.getNom() == null || journeeType.getNom().isBlank()) {
-            throw new BusinessError.Invalid("Une journée type porte un nom, ex. « Jour normal »");
+            throw new BusinessError.Invalid("Un gabarit porte un nom, ex. « Jour normal »");
         }
         if (journeeType.getNom().strip().length() > NOM_LONGUEUR_MAX) {
-            throw new BusinessError.Invalid("Le nom d'une journée type tient en " + NOM_LONGUEUR_MAX + " caractères");
+            throw new BusinessError.Invalid("Le nom d'un gabarit tient en " + NOM_LONGUEUR_MAX + " caractères");
         }
         journeeType.setNom(journeeType.getNom().strip());
         for (Gabarit autre : existants) {
             boolean memeLigne =
                     journeeType.getId() != null && journeeType.getId().equals(autre.getId());
             if (!memeLigne && autre.getNom().equalsIgnoreCase(journeeType.getNom())) {
-                throw new BusinessError.Invalid("Une journée type s'appelle déjà « " + autre.getNom() + " »");
+                throw new BusinessError.Invalid("Un gabarit s'appelle déjà « " + autre.getNom() + " »");
             }
         }
         validateVacations(journeeType);
@@ -137,7 +137,7 @@ public class GenerateurCreneaux {
     private static void validateVacations(Gabarit journeeType) {
         if (journeeType.getVacations().isEmpty()) {
             throw new BusinessError.Invalid(
-                    "Une journée type contient au moins une vacation, ex. « 09:00-12:00, 14:00-18:00 »");
+                    "Un gabarit contient au moins une vacation, ex. « 09:00-12:00, 14:00-18:00 »");
         }
         Set<String> cles = new HashSet<>();
         for (VacationType vacation : journeeType.getVacations()) {
@@ -148,8 +148,8 @@ public class GenerateurCreneaux {
                 throw new BusinessError.Invalid("Vacation de durée nulle : " + vacation.heureDebut());
             }
             if (!cles.add(vacation.key())) {
-                throw new BusinessError.Invalid("Vacation en double dans la journée type : " + vacation.heureDebut()
-                        + "-" + vacation.heureFin());
+                throw new BusinessError.Invalid(
+                        "Vacation en double dans le gabarit : " + vacation.heureDebut() + "-" + vacation.heureFin());
             }
         }
     }
@@ -214,10 +214,10 @@ public class GenerateurCreneaux {
         Set<LocalDate> dates = new HashSet<>();
         for (Affectation affectation : calendrier) {
             if (affectation.date() == null || affectation.gabaritId() == null) {
-                throw new BusinessError.Invalid("Chaque ligne du calendrier porte une date et une journée type");
+                throw new BusinessError.Invalid("Chaque ligne du calendrier porte une date et un gabarit");
             }
             if (!idsConnus.contains(affectation.gabaritId())) {
-                throw new BusinessError.Invalid("Journée type introuvable : " + affectation.gabaritId());
+                throw new BusinessError.Invalid("Gabarit introuvable : " + affectation.gabaritId());
             }
             if (!dates.add(affectation.date())) {
                 throw new BusinessError.Invalid("Le " + affectation.date() + " est affecté deux fois");
@@ -473,7 +473,7 @@ public class GenerateurCreneaux {
         List<Affectation> calendrier = repository.calendrier();
         if (calendrier.isEmpty()) {
             throw new BusinessError.Invalid(
-                    "Aucune date n'est affectée à une journée type : rien à appliquer. Ajoutez des dates d'abord.");
+                    "Aucune date n'est affectée à un gabarit : rien à appliquer. Ajoutez des dates d'abord.");
         }
         return JourneesTypesMaterialisation.planifier(gabarits, calendrier, grilleNominale());
     }

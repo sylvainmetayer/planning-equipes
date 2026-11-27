@@ -6,16 +6,17 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CreneauxApi } from '../../core/api/creneaux-api';
+import { GenerateurCreneauxApi } from '../../core/api/generateur-creneaux-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { RapportDerivation, Stand } from '../../core/models';
+import { Generation, Stand } from '../../core/models';
 import { CreneauDerivationDialog } from './creneau-derivation-dialog';
 
-function apercu(patch: Partial<RapportDerivation> = {}): RapportDerivation {
+function apercu(patch: Partial<Generation> = {}): Generation {
   return {
+    source: 'STANDS',
     nombreGeneres: 2,
     creneaux: [
       { id: 0, jour: 0, date: '2026-07-06', heureDebut: '10:00', heureFin: '12:00' },
@@ -38,7 +39,7 @@ function apercu(patch: Partial<RapportDerivation> = {}): RapportDerivation {
 
 function monter(
   options: {
-    reponse?: RapportDerivation;
+    reponse?: Generation;
     confirme?: boolean;
     dates?: [string | null, string | null];
   } = {},
@@ -52,7 +53,7 @@ function monter(
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: CreneauxApi, useValue: { previewDerivation: preview, derive: post } },
+      { provide: GenerateurCreneauxApi, useValue: { preview, apply: post } },
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
       {
         provide: ReferenceDataStore,
@@ -105,11 +106,14 @@ describe('CreneauDerivationDialog', () => {
     await fixture.whenStable();
 
     expect(preview).toHaveBeenCalledWith({
-      dateDebut: '2026-07-06',
-      dateFin: '2026-07-07',
-      heureFermeture: '20:00',
-      dureeMinimaleMinutes: 15,
-      remplacer: false,
+      source: 'STANDS',
+      derivation: {
+        dateDebut: '2026-07-06',
+        dateFin: '2026-07-07',
+        heureFermeture: '20:00',
+        dureeMinimaleMinutes: 15,
+        remplacer: false,
+      },
     });
     expect(racine(fixture).querySelectorAll('.vacation-chip')).toHaveLength(2);
     expect(racine(fixture).textContent).toContain('2 coupure(s)');
@@ -165,7 +169,10 @@ describe('CreneauDerivationDialog', () => {
     bouton(fixture, 'Remplacer la grille').click();
     await fixture.whenStable();
 
-    expect(post).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ remplacer: true }));
+    expect(post).toHaveBeenCalledExactlyOnceWith({
+      source: 'STANDS',
+      derivation: expect.objectContaining({ remplacer: true }),
+    });
   });
 
   it('keeps the write off on an empty derivation or a blocking verdict, and says why', async () => {

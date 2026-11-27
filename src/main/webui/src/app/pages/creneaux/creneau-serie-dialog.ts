@@ -8,10 +8,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { CreneauxApi } from '../../core/api/creneaux-api';
+import { GenerateurCreneauxApi } from '../../core/api/generateur-creneaux-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { JourSemaine, RapportGrille, RapportRecurrence, RegleRecurrence } from '../../core/models';
+import { Generation, JourSemaine, RapportGrille } from '../../core/models';
 import { libelleJour, libelleJourSemaine } from '../../core/horaire-stand';
 import { holidayDays, summarizeVacationsByDay } from './jours-resume';
 import { JoursFeriesService } from '../../core/jours-feries.service';
@@ -66,9 +66,9 @@ export interface CreneauSerieData {
 export class CreneauSerieDialog {
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
   protected readonly dialogRef =
-    inject<MatDialogRef<CreneauSerieDialog, RapportRecurrence | null>>(MatDialogRef);
+    inject<MatDialogRef<CreneauSerieDialog, Generation | null>>(MatDialogRef);
   private readonly data = inject<CreneauSerieData>(MAT_DIALOG_DATA);
-  private readonly creneauxApi = inject(CreneauxApi);
+  private readonly generateur = inject(GenerateurCreneauxApi);
   /** The public holidays of the preview's dates, marked beside them. */
   private readonly feries = inject(JoursFeriesService);
   private readonly crud = inject(ReferenceCrudService);
@@ -87,7 +87,7 @@ export class CreneauSerieDialog {
     ...serieVide(),
     fenetres: this.data.fenetres ?? '',
   });
-  protected readonly apercu = signal<RapportRecurrence | null>(null);
+  protected readonly apercu = signal<Generation | null>(null);
   /** The rule the preview was taken on: an edit since sends the user back to « Prévisualiser ». */
   private readonly signatureApercu = signal<string | null>(null);
   protected readonly chargement = signal(false);
@@ -155,7 +155,7 @@ export class CreneauSerieDialog {
     }
     this.chargement.set(true);
     try {
-      const apercu = await this.creneauxApi.previewRecurrence(regle satisfies RegleRecurrence);
+      const apercu = await this.generateur.preview({ source: 'RECURRENCE', recurrence: regle });
       this.apercu.set(apercu);
       void this.feries.load(apercu.creneaux.map((creneau) => creneau.date));
       this.signatureApercu.set(signatureSerie(this.draft()));
@@ -173,7 +173,7 @@ export class CreneauSerieDialog {
     }
     this.creation.set(true);
     try {
-      const rapport = await this.creneauxApi.createRecurrence(regle);
+      const rapport = await this.generateur.apply({ source: 'RECURRENCE', recurrence: regle });
       this.dialogRef.close(rapport);
     } catch (error) {
       this.crud.reportError(error);
