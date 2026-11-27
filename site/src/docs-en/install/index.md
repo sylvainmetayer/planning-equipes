@@ -71,7 +71,7 @@ You host Planning Équipes for an organiser, or for yourself: an application and
 
 - [Upgrade to a new version](mettre-a-jour.md), and [what a version number promises](versioning.md).
 - [Publish a version and patch the previous one](publier-une-version.md), for whoever builds the image.
-- [Moving from 3.x to 4.0](passer-a-la-4-0.md): what 4.0 will require, in preparation.
+- [Moving from 3.x to 4.0](passer-a-la-4-0.md): what 4.0 breaks and what you do when upgrading.
 
 ## I must meet my obligations
 

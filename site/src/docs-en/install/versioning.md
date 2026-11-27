@@ -42,7 +42,7 @@ So read the "⚠️ Attention" entry of the notes before each upgrade: it tells 
 
 Only one maintenance line exists at a time: the last `MAJOR.MINOR` published before the current one ([how it is kept](publier-une-version.md#3-patcher-une-version-antérieure)). For 3.x, that is the `release/3.5` branch, which receives only fixes.
 
-**After 4.0.0 is released, 3.x receives security fixes for six months**, then nothing more: the branch is abandoned and the answer becomes "upgrade". These six months run from the date of the 4.0.0 release. Only security flaws are fixed, not functional defects nor dependencies with no known flaw.
+**Since the release of 4.0.0, 3.x receives security fixes for six months**, then nothing more: the branch is abandoned and the answer becomes "upgrade". These six months run from the date of the 4.0.0 release. Only security flaws are fixed, not functional defects nor dependencies with no known flaw.
 
 ## What the release expects for a major
 

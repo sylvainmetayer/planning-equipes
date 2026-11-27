@@ -38,7 +38,7 @@ Lisez donc l'entrée « ⚠️ Attention » des notes avant chaque montée : c'e
 
 Une seule ligne de maintenance existe à la fois : la dernière `MAJOR.MINOR` publiée avant la courante ([comment elle se tient](publier-une-version.md#3-patcher-une-version-antérieure)). Pour la 3.x, c'est la branche `release/3.5`, qui ne reçoit plus que des correctifs.
 
-**Après la sortie de la 4.0.0, la 3.x reçoit des correctifs de sécurité pendant six mois**, puis plus rien : la branche est abandonnée et la réponse devient « montez de version ». Ces six mois courent à partir de la date de la release 4.0.0. Seules les failles de sécurité sont corrigées, pas les anomalies fonctionnelles ni les dépendances sans faille connue.
+**Depuis la sortie de la 4.0.0, la 3.x reçoit des correctifs de sécurité pendant six mois**, puis plus rien : la branche est abandonnée et la réponse devient « montez de version ». Ces six mois courent à partir de la date de la release 4.0.0. Seules les failles de sécurité sont corrigées, pas les anomalies fonctionnelles ni les dépendances sans faille connue.
 
 ## Ce que la release attend pour une majeure
 
