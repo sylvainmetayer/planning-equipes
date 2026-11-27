@@ -48,7 +48,7 @@ class RefusMetierMcpToolsTest {
 
     @Test
     void aDateInTheWrongFormatStatesTheExpectedFormat() {
-        assertThatThrownBy(() -> creneauTools.createCreneau("18/07/2026", "09:00", "12:00", null, "E1"))
+        assertThatThrownBy(() -> creneauTools.createCreneau("18/07/2026", "09:00", "12:00", "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("18/07/2026")

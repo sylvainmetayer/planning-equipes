@@ -53,7 +53,7 @@ With no staff member in the reference data there are no bounds: the response is 
 
 `GET /api/fragilite` answers a distinct question: who is irreplaceable. `/api/feasibility` says why a schedule does not hold, `/api/staffing` how many to recruit, this one what a withdrawal would take away. It launches no solve: it reads the persisted plan and the skills. Two indicators:
 
-- per staff member, the stand x timeslot pairs that would fall below the minimum headcount if they withdraw. Seats are generated at `max(1, headcount of the open segment)`, half of that on a break-cover shift: the number of seats of a group is its floor. The figure that ranks is `postesIrremplacables`, the groups where nobody else could take over the seat. A group already understaffed is attributed to nobody (`groupesDejaSousEffectif`);
+- per staff member, the stand x timeslot pairs that would fall below the minimum headcount if they withdraw. Seats are generated at `max(1, headcount of the open segment)`: the number of seats of a group is its floor. The figure that ranks is `postesIrremplacables`, the groups where nobody else could take over the seat. A group already understaffed is attributed to nobody (`groupesDejaSousEffectif`);
 - the stand x timeslot pairs held by at most one person skilled for the stand's game categories, with the corresponding severity.
 
 A possible replacement is skilled, not declared unavailable that day, an adult if the stand is reserved for adults, and free of any overlapping seat. Daily rest, weekly ceiling, ad hoc and preferences are not checked: an "irreplaceable" one certainly is, a "replaceable" one may not be after solving. Only one withdrawal is simulated at a time.
@@ -65,7 +65,7 @@ All-rounders are counted differently depending on the indicator, on purpose (`An
 
 The reasoning and the two options discarded are in [decision 0017](repo:docs/decisions/0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md). `polyvalentConfigure: false` signals that no game category is marked all-rounder: the two counts then coincide and a `renforts` at zero says nothing.
 
-Three clarifications of the contract. A pair is really a triplet stand x timeslot x window: a stand closed in the middle of a timeslot produces several rows that differ only by `heureDebut`, and `groupesSansSpecialiste` as well as `groupesAnalyses` are counted in that unit. `effectifMin` is the headcount configured for the window, not the floor: on a break-cover shift (`couverturePause: true`) the seats are generated at the half rounded up, and `siegesRequis` carries the applicable floor. The lists are bounded (20 detailed seats per staff member, 100 pairs); `postesNonDetailles` and `totalCompetencesRares` say what is not shown, and staff members with no assignment are not listed.
+Three clarifications of the contract. A pair is really a triplet stand x timeslot x window: a stand closed in the middle of a timeslot produces several rows that differ only by `heureDebut`, and `groupesSansSpecialiste` as well as `groupesAnalyses` are counted in that unit. `effectifMin` is the headcount configured for the window, not the floor: `siegesRequis` carries the applicable floor, which follows the window's headcount. The lists are bounded (20 detailed seats per staff member, 100 pairs); `postesNonDetailles` and `totalCompetencesRares` say what is not shown, and staff members with no assignment are not listed.
 
 ## Legal breaks
 

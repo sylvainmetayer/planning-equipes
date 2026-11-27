@@ -21,7 +21,7 @@ import jakarta.ws.rs.core.Response;
  * <p>The seats it reasons on are the ones an actual solve would have to fill:
  * they are built exactly like {@code POST /api/solve/async/reference-data}
  * builds them, so the count never drifts from the real one (résolution des
- * horaires récurrents, families de relais, effectif réduit pendant les pauses).
+ * horaires récurrents, families de relais).
  * Computing it in the browser from stands × créneaux did drift, badly — see
  * {@link StaffingAnalyzer}. Seats only, though: the problem itself refuses an
  * edition without animateur, and this screen is meant to be read before any is

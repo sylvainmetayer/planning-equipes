@@ -172,7 +172,7 @@ export function buildSolverSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.setup.term.stands:Un effectif par fenêtre, pas par stand`,
-              text: $localize`:@@aide.setup.def.stands:L'effectif minimum du stand s'applique à toute la journée. Si un stand tient à deux le matin et à quatre l'après-midi, saisir « 2 » sous-dote l'après-midi et saisir « 4 » sur-dote le matin. Donnez à chaque fenêtre d'ouverture son effectif, et laissez vides celles qui reprennent le minimum. Sur une vacation de relais repas, la moitié de cet effectif est demandée, arrondie au supérieur.`,
+              text: $localize`:@@aide.setup.def.stands:L'effectif minimum du stand s'applique à toute la journée. Si un stand tient à deux le matin et à quatre l'après-midi, saisir « 2 » sous-dote l'après-midi et saisir « 4 » sur-dote le matin. Donnez à chaque fenêtre d'ouverture son effectif, et laissez vides celles qui reprennent le minimum.`,
             },
             {
               term: $localize`:@@aide.setup.term.ouvertures:Vérifier ce que le solveur lira`,

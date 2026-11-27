@@ -1,12 +1,10 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
 schemaVersion: 2
 # Barreau 2 : la rotation du midi, saisie comme une organisation la tape.
-# Une journée type en quatre vacations jointives ; les deux vacations de midi
-# portent couverturePause, donc chaque stand de deux places n'en ouvre qu'une.
-# Quatre animateurs pour quatre places le matin et quatre l'après-midi : tous
-# travaillent de part et d'autre de la fenêtre 12 h-14 h, et chacun doit tenir
-# exactement une des deux relèves pour garder son heure de repas. Le problème est
-# tendu à dessein — une seule famille de solutions.
+# Une journée type en quatre vacations jointives dont deux vacations de midi.
+# Quatre animateurs pour deux places par vacation, deux stands d'une personne :
+# un problème minuscule, qui exerce la saisie d'une journée type et la coupure
+# repas autour de midi.
 
 festival:
   dateDebut: 2027-07-04
@@ -22,13 +20,11 @@ creneaux:
     date: 2027-07-04
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J1-MIDI2
     jour: 1
     date: 2027-07-04
     heureDebut: "13:00"
     heureFin: "14:00"
-    couverturePause: true
   - id: J1-APREM
     jour: 1
     date: 2027-07-04
@@ -42,10 +38,8 @@ journeesTypes:
         heureFin: "12:00"
       - heureDebut: "12:00"
         heureFin: "13:00"
-        couverturePause: true
       - heureDebut: "13:00"
         heureFin: "14:00"
-        couverturePause: true
       - heureDebut: "14:00"
         heureFin: "18:00"
     dates:
@@ -56,14 +50,14 @@ stands:
     nom: "Parcours de motricité"
     typologiesProposees:
       - MOTRICITE
-    effectifMin: 2
+    effectifMin: 1
     effectifMax: 2
     reserveMajeurs: false
   - id: PLATEAU
     nom: "Jeux de plateau"
     typologiesProposees:
       - JEUX_DE_SOCIETE
-    effectifMin: 2
+    effectifMin: 1
     effectifMax: 2
     reserveMajeurs: false
 

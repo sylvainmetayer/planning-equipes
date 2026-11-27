@@ -42,7 +42,7 @@ What a frozen family no longer lets you write:
 | Family | What can no longer be written |
 | --- | --- |
 | Stands | Creation, deletion, min and max staffing, adults-only reserve, proposed game categories, hours (rules, dated openings and closures) |
-| Timeslots | Creation, deletion, date, hours, break cover; typical days applied, derivation, series |
+| Timeslots | Creation, deletion, date, hours; typical days applied, derivation, series |
 | Game categories and locations | Creation, deletion, cap per game category, all-rounder game category |
 | Skills | Skill levels of staff members already registered (record, grid, import) |
 

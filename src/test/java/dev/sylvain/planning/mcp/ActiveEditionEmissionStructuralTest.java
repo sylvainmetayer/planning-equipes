@@ -45,22 +45,25 @@ class ActiveEditionEmissionStructuralTest {
             "the code ending a local sign-in: accounts serve every edition and nothing about one is in it");
 
     /**
-     * The service method each outward MCP tool goes through. A new outward
+     * The service methods each outward MCP tool goes through — one tool per
+     * mailing gesture, never a mode of another tool (ADR 0127). A new outward
      * tool fails until it is added here, which is the moment to guard it.
      */
-    private static final Map<String, Method> OUTWARD_TOOLS = Map.of(
+    private static final Map<String, List<Method>> OUTWARD_TOOLS = Map.of(
             "publier_planning",
-            method(PlanPublicationService.class, "publier"),
+            List.of(method(PlanPublicationService.class, "publier")),
             "envoyer_planning_animateur",
-            method(PlanningDeliveryService.class, "sendToOneAnimateur", String.class),
+            List.of(method(PlanningDeliveryService.class, "sendToOneAnimateur", String.class)),
+            "envoyer_relance_animateurs",
+            List.of(method(RelanceManuelleService.class, "relancer", List.class)),
             "relancer_animateurs",
-            method(RelanceManuelleService.class, "relancer", List.class),
+            List.of(method(RelanceManuelleService.class, "relancer", List.class)),
             "configurer_collecte_disponibilites",
-            method(
+            List.of(method(
                     DeclarationDisponibiliteService.class,
                     "configure",
                     DeclarationDisponibiliteRepository.FenetreCollecte.class,
-                    boolean.class));
+                    boolean.class)));
 
     /**
      * Outward service methods that refuse only in one branch, hence call the
@@ -94,7 +97,7 @@ class ActiveEditionEmissionStructuralTest {
                 .as("every tool with openWorldHint = true names the service method it goes through")
                 .containsExactlyInAnyOrderElementsOf(outward);
 
-        OUTWARD_TOOLS.values().forEach(service -> {
+        OUTWARD_TOOLS.values().stream().flatMap(List::stream).forEach(service -> {
             String key = service.getDeclaringClass().getSimpleName() + "#" + service.getName();
             assertThat(service.isAnnotationPresent(RequiresActiveEdition.class) || CONDITIONAL_GUARDS.containsKey(key))
                     .as("%s must carry @RequiresActiveEdition, or be argued in CONDITIONAL_GUARDS", key)

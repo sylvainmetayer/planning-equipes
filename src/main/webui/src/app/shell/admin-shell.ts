@@ -159,12 +159,13 @@ export class AdminShell {
       : $localize`:@@nav.notificationsBadge.count:${this.notifications.unreadCount()}:count: notification(s) non lue(s)`,
   );
   /**
-   * The bell while the address is `/#a-traiter` already: the router does not
-   * navigate to the URL it is on, so the home screen never hears of the click
-   * — the shell scrolls the section back into view itself.
+   * The bell while the address names « À traiter » already — `/#a-traiter`,
+   * or the feed's `/?type=…#a-traiter`: the fragment does not change, so the
+   * home screen never hears of the click — the shell scrolls the section back
+   * into view itself.
    */
   protected toATraiter(): void {
-    if (this.router.url === '/#a-traiter') {
+    if (/^\/(\?[^#]*)?#a-traiter$/.test(this.router.url)) {
       this.document.getElementById('a-traiter')?.scrollIntoView?.({ block: 'start' });
     }
   }

@@ -1,6 +1,6 @@
 # 0037 — Une grille de créneaux est toujours faite de vacations
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; remplacé en partie par [0129](0129-pas-de-couverture-de-pause-sur-un-creneau.md) (la couverture de pause n'est plus un attribut du créneau)
 - **Date** : septembre 2026
 - **Portée** : créneaux, paramètres, génération des postes, contrôle de grille, import/export de scénario, API, MCP, écrans Créneaux et Paramètres, base
 - **Complète** : [0032](0032-journees-types-nommees-vacations-fixes.md)

@@ -183,7 +183,7 @@ public class CreneauResource {
         return referenceDataService.controlerGrille();
     }
 
-    /** What the grid holds: how many vacations, over which dates, with how many meal relays. */
+    /** What the grid holds: how many vacations, over which dates. */
     @GET
     @Path("/diagnostic")
     public DiagnosticGrille diagnoseGrid() {

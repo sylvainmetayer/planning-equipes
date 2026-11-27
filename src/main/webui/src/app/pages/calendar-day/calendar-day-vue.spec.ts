@@ -140,26 +140,6 @@ describe('buildDays — understaffing indicator', () => {
     expect(line.entries.length).toBeGreaterThanOrEqual(line.effectifRequis);
   });
 
-  it('does not flag a meal-pause coverage slot, deliberately staffed at half the headcount', () => {
-    // EFFECTIF_REDUIT: the découpage generates a single seat on the pause
-    // vacation of a two-person stand. Filling it is full coverage, not a
-    // shortfall — the previous effectifMin comparison flagged every such slot.
-    const pause = creneau({ id: 2, heureDebut: '12:00', heureFin: '13:00', couverturePause: true });
-    const days = buildDays([
-      poste({
-        id: 'p1',
-        creneau: pause,
-        stand: stand('Stand Argent', 2),
-        animateur: animateur('Oscar'),
-      }),
-    ]);
-
-    const line = days[0].slots[0].stands[0];
-    expect(line.couverturePause).toBe(true);
-    expect(line.effectifRequis).toBe(1);
-    expect(days[0].understaffed).toBe(false);
-  });
-
   it('flags the whole day card when any of its stand-lines is understaffed, visible without opening it', () => {
     const c1 = creneau({ id: 1, jour: 1 });
     const s1 = stand('Stratégie 16', 2);

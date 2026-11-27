@@ -123,7 +123,7 @@ class CoherenceReferentielServiceTest {
                 verrouillages,
                 null,
                 diagnostics,
-                CreneauGridService.gridAnomalies(creneaux, new ParametresLegaux(), verrouillages, List.of()),
+                CreneauGridService.gridAnomalies(creneaux, new ParametresLegaux(), verrouillages),
                 OuvertureStandsAnalyzer.analyze(stands, creneaux),
                 withStaffing
                         ? new StaffingAnalyzer()

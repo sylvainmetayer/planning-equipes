@@ -45,7 +45,7 @@ Le calendrier est un **générateur**, jamais la vérité. Appliquer le calendri
 
 | Cas | Effet |
 | --- | --- |
-| Créneau identique | Il garde son id, ses sièges et ses verrous. Seul son drapeau de relais repas peut changer en place |
+| Créneau identique | Il garde son id, ses sièges et ses verrous. |
 | Créneau manquant | Il est créé |
 | Créneau que le gabarit ne nomme pas, sur une date gouvernée | Il est supprimé avec ses sièges, après un aperçu chiffré |
 | Date que le calendrier n'affecte pas | Elle n'est jamais touchée |
@@ -54,7 +54,7 @@ Tout l'aval (postes, verrous, `JoursEvenement`) continue de lire les créneaux. 
 
 Modifier un gabarit après coup ne propage rien : ses dates passent « en écart » et l'organisateur réapplique. La **reconnaissance** fait le chemin inverse : elle lit les gabarits qu'une grille implique (chaque date aux mêmes vacations et aux mêmes drapeaux est la même journée) et remplace gabarits et calendrier. Elle suit tout remplacement de la grille (import de scénario, dérivation depuis les horaires des stands), si bien qu'une édition importée et une édition tapée se lisent pareil sur l'écran Créneaux.
 
-Les créneaux qu'une [consigne](horaires-et-fenetres-des-stands.md#la-consigne-des-plages-écrites-sur-les-stands) a ajoutés à la grille ne sont ni comptés en écart ni supprimés à l'application : une journée type ne les nomme jamais, ils appartiennent à la consigne, qui les retire à sa levée. La carte affiche ces dates « sous consigne » (`datesSousConsigne`).
+Les créneaux qu'une [consigne](horaires-et-fenetres-des-stands.md#la-consigne-des-plages-écrites-sur-les-stands) a ajoutés à la grille ne sont ni comptés en écart ni supprimés à l'application : un gabarit ne les nomme jamais, ils appartiennent à la consigne, qui les retire à sa levée. La carte affiche ces dates « sous consigne » (`datesSousConsigne`).
 
 ## Invariants à ne pas casser
 

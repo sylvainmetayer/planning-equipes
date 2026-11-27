@@ -24,12 +24,12 @@ export interface LigneEtat {
   statut: StatutEtat;
   /** The figures behind the state, in one sentence. */
   detail: string;
-  /** The screen the line leads to; absent on a line whose detail unfolds in place instead. */
+  /** The screen the line leads to; absent on a line whose detail unfolds in place instead, or with nothing to lead to. */
   lien?: LienEtat;
   /** A second way out, beside the first: the setting that would move the step on its own. */
   lienSecondaire?: LienEtat;
   /** A detail this line unfolds below itself rather than on another screen. */
-  panneau?: 'coherence' | 'phase';
+  panneau?: 'phase';
   /** Sentences read out below the detail — the reading of the score, never the score itself. */
   lecture?: ScoreSentence[];
 }
@@ -153,11 +153,10 @@ function phase(etat: EtatEdition, phaseCourante: EditionPhase | null): LigneEtat
 
 /**
  * What was entered, read as a whole: the anomalies every other screen detects
- * on its own, counted here and unfolded in place — no screen to go to, the
- * detail is the list, and each of its lines links to the fiche that fixes it.
- * Identical anomalies — the same gap in the grid on sixteen days — are one
- * subject with its count: once the detail is read (it is only fetched when
- * unfolded), the line counts its subjects too.
+ * on its own, counted here and listed in the home screen's feed, each with the
+ * link to the fiche that fixes it. Identical anomalies — the same gap in the
+ * grid on sixteen days — are one subject with its count, which the line says
+ * once the report is read.
  */
 function coherence(etat: EtatEdition, rapport: CoherenceReport | null): LigneEtat {
   const { bloquants, aVerifier, informations, statut } = etat.coherence;
@@ -171,8 +170,8 @@ function coherence(etat: EtatEdition, rapport: CoherenceReport | null): LigneEta
       detail: $localize`:@@accueil.detail.coherence.ok:Aucune anomalie dans ce qui est saisi`,
     };
   }
-  // Once the detail is read, the count of subjects — identical anomalies
-  // merged — comes first; the subjects themselves are in the panel.
+  // Once the report is read, the count of subjects — identical anomalies
+  // merged — comes first; the subjects themselves are in the feed.
   const sujets = rapport ? coherenceLines(rapport.anomalies) : [];
   const parts: string[] = [];
   if (sujets.length > 0) {
@@ -190,7 +189,18 @@ function coherence(etat: EtatEdition, rapport: CoherenceReport | null): LigneEta
       $localize`:@@accueil.detail.coherence.informations:${informations}:count: pour information`,
     );
   }
-  return { id: 'coherence', titre, statut, detail: parts.join(' · '), panneau: 'coherence' };
+  return {
+    id: 'coherence',
+    titre,
+    statut,
+    detail: parts.join(' · '),
+    lien: {
+      route: '/',
+      queryParams: { type: 'coherence' },
+      fragment: 'a-traiter',
+      libelle: $localize`:@@accueil.coherence.voirFil:Voir dans le fil`,
+    },
+  };
 }
 
 function collecte(etat: EtatEdition): LigneEtat {
@@ -702,7 +712,8 @@ function failureItems(bloc: EtatEdition['aTraiter']): TodayItem[] {
       alerte: true,
       lien: {
         route: '/',
-        fragment: 'alertes-nuit',
+        queryParams: { type: 'alertes' },
+        fragment: 'a-traiter',
         libelle: $localize`:@@accueil.aTraiter.lien.alertesNuit:Voir qui`,
       },
     });
@@ -715,7 +726,8 @@ function failureItems(bloc: EtatEdition['aTraiter']): TodayItem[] {
       alerte: true,
       lien: {
         route: '/',
-        fragment: 'alertes-nuit',
+        queryParams: { type: 'alertes' },
+        fragment: 'a-traiter',
         libelle: $localize`:@@accueil.aTraiter.lien.alertesNuit:Voir qui`,
       },
     });

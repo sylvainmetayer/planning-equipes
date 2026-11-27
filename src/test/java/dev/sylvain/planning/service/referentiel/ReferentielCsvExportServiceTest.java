@@ -72,7 +72,6 @@ class ReferentielCsvExportServiceTest {
                 date: 2026-09-01
                 heureDebut: "12:00"
                 heureFin: "13:00"
-                couverturePause: true
               - id: C3
                 jour: 1
                 date: 2026-09-01
@@ -101,7 +100,7 @@ class ReferentielCsvExportServiceTest {
               - nom: Jour normal
                 vacations:
                   - { heureDebut: "09:00", heureFin: "12:00" }
-                  - { heureDebut: "12:00", heureFin: "13:00", couverturePause: true }
+                  - { heureDebut: "12:00", heureFin: "13:00" }
                   - { heureDebut: "13:00", heureFin: "20:00" }
                 dates: [2026-09-01]
               - nom: Nocturne
@@ -284,13 +283,12 @@ class ReferentielCsvExportServiceTest {
                 .body("find { it.code == 'EXP-P' }.longitude", equalTo(-0.24f))
                 .body("find { it.code == 'EXP-E' }.nom", equalTo("-Esplanade"));
 
-        // The grid crossed over whole, meal relay and night vacation included.
+        // The grid crossed over whole, night vacation included.
         given().header(HEADER, CIBLE)
                 .when()
                 .get("/api/creneaux")
                 .then()
                 .body("$", org.hamcrest.Matchers.hasSize(4))
-                .body("find { it.heureDebut == '12:00:00' }.couverturePause", equalTo(true))
                 .body("find { it.date == '2026-09-02' }.heureFin", equalTo("00:00:00"));
 
         // And so did the day templates, their shift line and their dates.
@@ -300,7 +298,6 @@ class ReferentielCsvExportServiceTest {
                 .then()
                 .body("journeesTypes", org.hamcrest.Matchers.hasSize(2))
                 .body("journeesTypes.find { it.nom == 'Jour normal' }.vacations", org.hamcrest.Matchers.hasSize(3))
-                .body("journeesTypes.find { it.nom == 'Jour normal' }.vacations[1].couverturePause", equalTo(true))
                 .body("calendrier", org.hamcrest.Matchers.hasSize(2));
 
         // Applying right after the round trip finds nothing to change: the

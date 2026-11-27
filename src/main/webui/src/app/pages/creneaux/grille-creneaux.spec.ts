@@ -52,7 +52,7 @@ function rapport(anomalies: AnomalieGrille[], faisable: boolean | null = true): 
 }
 
 describe('regleDepuis', () => {
-  it('lit une journée type sur une ligne et une plage de jours', () => {
+  it('lit un gabarit sur une ligne et une plage de jours', () => {
     const resultat = regleDepuis({
       ...serieVide(),
       fenetres: '9h-12h, 14:00-18:00',
@@ -243,7 +243,7 @@ describe('verdict', () => {
  * Timeslot 7 (14:00–20:00) cut at 17:00 because stand B closes then: stand
  * A's one segment, 4 people all afternoon, shows in both columns, clipped.
  */
-function openingsReport(relay = false): RapportOuvertures {
+function openingsReport(): RapportOuvertures {
   const segment = (heureDebut: string, heureFin: string, effectif: number): SegmentCellule => ({
     heureDebut,
     heureFin,
@@ -286,8 +286,8 @@ function openingsReport(relay = false): RapportOuvertures {
         nombreCreneaux: 1,
         ferie: null,
         creneaux: [
-          { id: 7, tranche: 0, heureDebut: '14:00', heureFin: '17:00', couverturePause: relay },
-          { id: 7, tranche: 1, heureDebut: '17:00', heureFin: '20:00', couverturePause: relay },
+          { id: 7, tranche: 0, heureDebut: '14:00', heureFin: '17:00' },
+          { id: 7, tranche: 1, heureDebut: '17:00', heureFin: '20:00' },
         ],
       },
     ],
@@ -306,10 +306,6 @@ function openingsReport(relay = false): RapportOuvertures {
 describe('openingsByCreneau', () => {
   it('counts a segment spread over the columns of its timeslot once, not once per column', () => {
     expect(openingsByCreneau(openingsReport()).get(7)).toEqual({ stands: 2, postes: 6 });
-  });
-
-  it('halves each segment once on a meal relay, rounded up', () => {
-    expect(openingsByCreneau(openingsReport(true)).get(7)).toEqual({ stands: 2, postes: 3 });
   });
 
   it('keeps two headcounts of one timeslot as two segments', () => {

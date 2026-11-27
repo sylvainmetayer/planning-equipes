@@ -292,7 +292,7 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry("GenerateurCreneaux#withdraw(Set)", "same: a withdrawn date keeps its timeslots"),
             Map.entry("ReferentielCsvExportService#writeEntries(Set,ZipOutputStream,String)", "writes a ZIP stream"),
             Map.entry(
-                    "CreneauGridService#validate(List,List,List,ParametresLegaux,List,List)",
+                    "CreneauGridService#validate(List,List,List,ParametresLegaux,List)",
                     "a read whose name says check: reports on a grid, writes nothing"),
             Map.entry(
                     "ConsigneService#savePrereglage(PrereglageConsigne)", "a preset is read by the consigne form only"),

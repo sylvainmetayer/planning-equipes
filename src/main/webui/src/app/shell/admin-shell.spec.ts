@@ -685,6 +685,27 @@ describe('AdminShell', () => {
       }
     });
 
+    /** The feed's filters keep the fragment: the bell from `/?type=…#a-traiter` must scroll too. */
+    it('scrolls back to « À traiter » when the bell is pressed from a filtered feed', async () => {
+      const fixture = createFixture();
+      const section = document.createElement('section');
+      section.id = 'a-traiter';
+      section.scrollIntoView = vi.fn();
+      document.body.appendChild(section);
+      try {
+        await TestBed.inject(Router).navigateByUrl('/?type=alertes#a-traiter');
+        const bell = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+          'a.notifications-toggle',
+        )!;
+        bell.click();
+
+        expect(section.scrollIntoView).toHaveBeenCalledOnce();
+      } finally {
+        section.remove();
+        await TestBed.inject(Router).navigateByUrl('/');
+      }
+    });
+
     it('goes back to the count once the alert has been read', () => {
       const shell = createShell();
       pushAlert(true);

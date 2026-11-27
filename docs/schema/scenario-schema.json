@@ -200,9 +200,6 @@
     "CreneauDto" : {
       "type" : "object",
       "properties" : {
-        "couverturePause" : {
-          "type" : "boolean"
-        },
         "date" : {
           "$ref" : "#/$defs/LocalDate"
         },
@@ -769,9 +766,6 @@
     "VacationTypeDto" : {
       "type" : "object",
       "properties" : {
-        "couverturePause" : {
-          "type" : "boolean"
-        },
         "heureDebut" : {
           "$ref" : "#/$defs/LocalTime"
         },
@@ -881,7 +875,7 @@
       "type" : "integer",
       "format" : "int32",
       "minimum" : 1,
-      "maximum" : 6
+      "maximum" : 7
     },
     "stands" : {
       "type" : "array",

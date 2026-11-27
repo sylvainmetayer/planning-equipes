@@ -149,6 +149,7 @@ dialog
 espace
 espaces
 forgeable
+gabarit
 gabarits
 geolocated
 guaranteeable
@@ -200,3 +201,4 @@ wifi
 writable
 zoneless
 édition
+journée

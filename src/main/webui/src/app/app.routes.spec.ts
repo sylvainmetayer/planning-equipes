@@ -629,6 +629,11 @@ describe('app.routes', () => {
     });
   });
 
+  /** The Notifications page became the home screen's feed, narrowed to the messages. */
+  it("mène l'ancienne page Notifications au fil de l'accueil, restreint aux messages", () => {
+    expect(redirectTarget('notifications', {})).toBe('/?type=messages#a-traiter');
+  });
+
   /** The Autopsie, the Instantanés and the Comparateur became « Versions du plan » (issue #702). */
   it('mène les trois anciennes adresses des versions à la nouvelle page', () => {
     for (const path of ['instantanes', 'comparateur']) {

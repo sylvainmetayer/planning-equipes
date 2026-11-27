@@ -33,7 +33,7 @@ The home screen takes the shape of the moment.
 - the last solve is read as sentences, never as a raw score;
 - the phase of the edition (Preparation, Solving, Published, Finished), which decides what the reference data lets you edit, is read and changed there, with its "Unblock the structure" and "Freeze again" buttons in Published;
 - the acknowledgements say whether the automatic reminders are active and only alert beyond the reminder delay;
-- the "Referential coherence" line gathers all the anomalies detected elsewhere. Identical anomalies are merged into one line with their count ("16 days: nothing between 12:00 and 13:00") and each line leads to the fiche that fixes it;
+- the "Referential coherence" line gathers all the anomalies detected elsewhere. Identical anomalies are merged into one line with their count ("16 days: nothing between 12:00 and 13:00") and each line leads to the fiche that fixes it. The detail of these anomalies is read in the feed of alerts and messages, further down: "See in the feed" opens it on that type;
 - two lines count without listing: the fiches with no phone number (including those assigned on an upcoming date) and, on an edition that enters locations, the stands with no location. For the latter, the application shows those for which neighbouring stands suggest a location, with its reason. Each line opens the filtered list; the suggestion also appears in the Location column of the stands and when a stand left without a location is saved.
 
 **During the event**, the first line is the day's: its number (D5 for the fifth day), the open stands, the empty seats, the absentees, the swaps to rule on. It opens the Today screen, next to the link to the wall display, and the list of steps unfolds on demand.
@@ -54,7 +54,7 @@ At the top of the home screen, "To handle today" gathers what awaits a decision 
 - the people to notify;
 - what could not go out, as long as the cause remains: a day-before reminder to a fiche still without an address, a reminder (from the night or by hand) to someone still silent, a failed night backup, a published or resent schedule whose sending failed.
 
-Each line opens the screen with its filter already set. The bell in the toolbar opens this area, followed by recent messages: the night-sending alerts, by name, and the history of the application's messages (solves finished, rules in default, input errors), which you can mark as read or clear.
+Each line opens the screen with its filter already set. The bell in the toolbar opens this area, which ends with a single feed of alerts and messages. It gathers the plan's alerts (the night sends', by name, the weather alert, the people to notify after a removed exclusion), the anomalies of the referential coherence and the history of the application's messages (solves finished, rules in default, input errors). It is sorted most serious first, then newest: blockers, then what is to check, then messages. A filter by type (plan alerts, referential coherence, messages) narrows it and is kept in the page's address. An alert or an anomaly closes by dealing with what it reports; only the messages are marked as read or cleared, and they are kept by this browser alone.
 
 ## Who uses it
 

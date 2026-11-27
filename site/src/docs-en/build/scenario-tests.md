@@ -23,7 +23,7 @@ CI runs them only when something that can break convergence changes: `.github/wo
 
 ## The scenario ladder
 
-The thirty `gamme-…` files are sorted by size: one day, two stands and three staff members at rung 1; one month, 150 stands and 320 staff members at rung 25. Each rung exercises part of what a file can express: midday rotation, premium stands, minors and public holidays, ad hoc exceptions, recurring opening hours under all their scopes, meal relays at full or reduced headcount, typical days, disabled constraints, headcounts carried by the window, target edition. Rungs 26 to 30 must never be solved, each for a named reason, and the test says whether the feasibility analysis sees it.
+The thirty `gamme-…` files are sorted by size: one day, two stands and three staff members at rung 1; one month, 150 stands and 320 staff members at rung 25. Each rung exercises part of what a file can express: midday rotation, premium stands, minors and public holidays, ad hoc exceptions, recurring opening hours under all their scopes, meal handover at full headcount, typical days, disabled constraints, headcounts carried by the window, target edition. Rungs 26 to 30 must never be solved, each for a named reason, and the test says whether the feasibility analysis sees it.
 
 A file's name is its index: `gamme-18-14j-35stands-132animateurs-effectifs-par-fenetre`. `ScenarioLadderCatalogTest` fails if a name no longer states the file's days, stands and staff members, if a file is played by no test or if the numbering has a gap.
 

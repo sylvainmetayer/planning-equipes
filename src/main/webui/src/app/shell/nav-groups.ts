@@ -96,11 +96,12 @@ export function buildNavGroups(): NavGroup[] {
           ],
         },
         {
+          // The timeslots and their generator (templates, stands' hours, recurrence).
           path: '/creneaux',
           label: $localize`:@@nav.link.calendrier:Calendrier`,
           icon: 'schedule',
           shortcut: 'c',
-          keywords: $localize`:@@nav.keywords.calendrier:créneaux journées types`,
+          keywords: $localize`:@@nav.keywords.calendrier:créneaux gabarits générateur`,
         },
         {
           path: '/animateurs',
