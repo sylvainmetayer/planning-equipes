@@ -20,7 +20,7 @@ import java.util.Objects;
 
 /**
  * The margin of the current edition — what {@code GET /api/marge} and the MCP
- * tool {@code analyser_marge} both return, computed here once so the two
+ * tool {@code consulter_besoin} both return, computed here once so the two
  * callers cannot drift, exactly as {@link StaffingService} does for the
  * staffing need.
  *

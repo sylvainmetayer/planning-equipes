@@ -11,8 +11,6 @@ import dev.sylvain.planning.service.analyse.EquiteService.ColonneSolveur;
 import dev.sylvain.planning.service.analyse.EquiteService.LigneEquite;
 import dev.sylvain.planning.service.analyse.EquiteService.RapportEquite;
 import dev.sylvain.planning.service.analyse.EquiteService.SyntheseColonne;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.analyse.PlanningHoursReader;
 import dev.sylvain.planning.service.analyse.PlanningHoursReader.HoursReading;
 import dev.sylvain.planning.service.analyse.PlanningHoursReader.Source;
@@ -27,7 +25,6 @@ import dev.sylvain.planning.service.solve.PlanningWhatIf.ContrainteImpact;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.DeplacementSimulation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SwapSimulation;
-import dev.sylvain.planning.service.solve.ProblemScaleService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -43,9 +40,8 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * MCP tools around the planning itself: the size of the problem the next
- * solve will build, the pre-solve feasibility report, what is persisted from
- * the last solve, the hours worked per animateur, and the per-poste
+ * MCP tools around the planning itself: what is persisted from the last
+ * solve, the load it gives each animateur (hours and fairness), and the per-poste
  * explanation/swap simulation of {@code AffectationExplanationResource}.
  *
  * <p>The explanation/swap REST endpoints take a whole
@@ -83,15 +79,11 @@ public class PlanningMcpTools {
 
     private final ReferenceDataService referenceDataService;
 
-    private final FeasibilityAnalyzer feasibilityAnalyzer;
-
     private final PlanningHoursReader hoursReader;
 
     private final EquiteService equiteService;
 
     private final ReferenceDataChangeTracker changeTracker;
-
-    private final ProblemScaleService problemScaleService;
 
     private final CurrentAction currentAction;
 
@@ -101,70 +93,18 @@ public class PlanningMcpTools {
             PlanningService planningService,
             PlanningPersistenceService persistenceService,
             ReferenceDataService referenceDataService,
-            FeasibilityAnalyzer feasibilityAnalyzer,
             PlanningHoursReader hoursReader,
             EquiteService equiteService,
             ReferenceDataChangeTracker changeTracker,
-            ProblemScaleService problemScaleService,
             CurrentAction currentAction) {
         this.deplacementService = deplacementService;
         this.planningService = planningService;
         this.persistenceService = persistenceService;
         this.referenceDataService = referenceDataService;
-        this.feasibilityAnalyzer = feasibilityAnalyzer;
         this.hoursReader = hoursReader;
         this.equiteService = equiteService;
         this.changeTracker = changeTracker;
-        this.problemScaleService = problemScaleService;
         this.currentAction = currentAction;
-    }
-
-    @Tool(
-            name = "volumes",
-            description =
-                    "Volumétrie réelle du problème que construirait la prochaine résolution : nombre "
-                            + "d'animateurs, de postes à pourvoir et de contraintes ad hoc, heures à pourvoir (somme des durées "
-                            + "effectives des postes) et heures offertes (plafond légal de ce que les animateurs peuvent travailler "
-                            + "sur l'événement, jours d'indisponibilité déduits). Les postes ne dépendent que des stands et des créneaux : "
-                            + "ils sont comptés avant la saisie d'aucun animateur, et tout est à zéro sans stand ou sans créneau.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = true,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    ProblemScaleService.ProblemScale volumes(
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return problemScaleService.compute();
-    }
-
-    @Tool(
-            name = "analyser_faisabilite",
-            description = "Diagnostic de faisabilité avant résolution : calcul de capacité en Java pur (aucune "
-                    + "résolution lancée) sur les données de référence courantes, listant les causes structurellement "
-                    + "bloquantes : créneau en sous-effectif, contraintes ad hoc contradictoires, affectation forcée "
-                    + "intenable (jour déclaré indisponible, règle dure sur toutes les places de sa portée, "
-                    + "emploi du temps verrouillé), plafond de jours travaillés d'affilée intenable ou tendu sur "
-                    + "la grille ou le plan en place.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = true,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    FeasibilityReport analyzeFeasibility(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return feasibilityAnalyzer.analyze(
-                referenceDataService.listAnimateurs(),
-                referenceDataService.listSolvedStands(),
-                referenceDataService.listCreneaux(),
-                referenceDataService.listContraintesAdHoc(),
-                FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
-                FeasibilityAnalyzer.ConsecutiveDaysRule.of(
-                        referenceDataService.getContraintesDesactivees(),
-                        referenceDataService.getNiveauxObligatoires(),
-                        referenceDataService.getParametresQualite()),
-                new FeasibilityAnalyzer.PlanContext(
-                        planningService.pastHorizon(), persistenceService::loadEmployedByDay));
     }
 
     @Tool(
@@ -495,13 +435,50 @@ public class PlanningMcpTools {
     }
 
     @Tool(
+            name = "consulter_charge",
+            description = "Le rapport Charge du planning, sous la vue demandée, animateurs désignés par id seul. "
+                    + "equite (défaut) : par animateur affecté du dernier planning persisté, heures totales et par "
+                    + "semaine ISO, heures de soirée, de week-end et de jour férié, postes et postes pénibles, stands, "
+                    + "typologies et emplacements distincts, part des postes sur une typologie souhaitée ou appréciée, "
+                    + "jours travaillés, de repos et plus longue série ; par colonne, médiane, min, max, écart-type, et "
+                    + "si le solveur la mesure. heures : heures par animateur, par semaine ISO et au total, amplitude "
+                    + "journalière maximale et jours au-delà de 12 h (affichage, aucune règle), sur le plan persisté "
+                    + "(source persiste, défaut) ou sur la publication en vigueur (source publie, refusée tant que rien "
+                    + "n'a été publié) ; la réponse dit quel plan elle a lu et sa date. source ne vaut que pour la vue "
+                    + "heures.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ChargeView consultLoad(
+            @ToolArg(description = "equite (défaut) ou heures", required = false) String vue,
+            @ToolArg(
+                            description = "Vue heures : « persiste » (le plan enregistré, par défaut) ou « publie »"
+                                    + " (la publication en vigueur)",
+                            required = false)
+                    String source,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        String choisie = McpArgs.choix(vue, "vue", "equite", "equite", "heures");
+        if ("equite".equals(choisie)) {
+            if (source != null) {
+                throw new BusinessError.Invalid("source ne vaut que pour la vue heures");
+            }
+            return new ChargeView(choisie, planningFairness(edition), null);
+        }
+        return new ChargeView(choisie, null, workedHours(edition, source));
+    }
+
+    @Deprecated
+    @Tool(
             name = "heures_travaillees",
-            description =
-                    "Heures travaillées par animateur, par semaine ISO et au total, avec l'amplitude journalière maximale et le "
-                            + "nombre de jours au-delà de 12 h (affichage, aucune règle), lues côté serveur : sur le "
-                            + "dernier planning persisté par défaut (source « persiste »), ou sur la publication en vigueur, ce "
-                            + "que les animateurs ont reçu (source « publie »), refusée tant que rien n'a été publié. La réponse "
-                            + "dit quel plan elle a lu et sa date. Les animateurs sont désignés par id seul.",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_charge (vue heures). "
+                    + "Heures travaillées par animateur, par semaine ISO et au total, avec l'amplitude journalière maximale et le "
+                    + "nombre de jours au-delà de 12 h (affichage, aucune règle), lues côté serveur : sur le "
+                    + "dernier planning persisté par défaut (source « persiste »), ou sur la publication en vigueur, ce "
+                    + "que les animateurs ont reçu (source « publie »), refusée tant que rien n'a été publié. La réponse "
+                    + "dit quel plan elle a lu et sa date. Les animateurs sont désignés par id seul.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -525,10 +502,12 @@ public class PlanningMcpTools {
                         .toList());
     }
 
+    @Deprecated
     @Tool(
             name = "equite_planning",
             description =
-                    "Tableau d'équité du dernier planning persisté : par animateur affecté, heures totales "
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_charge (vue equite). "
+                            + "Tableau d'équité du dernier planning persisté : par animateur affecté, heures totales "
                             + "et par semaine ISO, heures de soirée (après l'heure paramétrée), de week-end et de jour férié, "
                             + "postes et postes pénibles, stands, typologies et emplacements distincts, part des postes sur une "
                             + "typologie souhaitée ou appréciée, jours travaillés, de repos et plus longue série ; par colonne, "
@@ -831,6 +810,12 @@ public class PlanningMcpTools {
                 ligne.joursRepos(),
                 ligne.plusLongueSerie());
     }
+
+    /** What {@code consulter_charge} answers: the view asked, the other left out. */
+    public record ChargeView(
+            String vue,
+            @JsonInclude(JsonInclude.Include.NON_NULL) EquiteView equite,
+            @JsonInclude(JsonInclude.Include.NON_NULL) HeuresView heures) {}
 
     /** What {@code consulter_planning} answers: the view asked, the other two left out. */
     public record PlanningConsultationView(

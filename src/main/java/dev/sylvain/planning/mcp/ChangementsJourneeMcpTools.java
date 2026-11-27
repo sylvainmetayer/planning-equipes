@@ -38,8 +38,30 @@ public class ChangementsJourneeMcpTools {
     }
 
     @Tool(
+            name = "comparer_journee",
+            description = "Compare une journée du plan enregistré à sa référence : par siège (stand, heures, "
+                    + "titulaire avant et après) et par animateur (vacations gagnées, retirées, déplacées), ids "
+                    + "seulement. reference = publication (le dernier plan publié) ou resolution (le plan d'avant la "
+                    + "dernière résolution) ; omise, la publication s'il y en a une. referenceDisponible faux veut "
+                    + "dire « rien à comparer », pas « aucun changement ».",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ChangementsJourneeView compareDay(
+            @ToolArg(description = "Journée (AAAA-MM-JJ)") String jour,
+            @ToolArg(description = "publication ou resolution", required = false) String reference,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return journeeChanges(jour, reference, edition);
+    }
+
+    @Deprecated
+    @Tool(
             name = "changements_journee",
-            description = "Ce qui a changé sur une journée du plan enregistré : par siège (stand, heures, "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser comparer_journee. "
+                    + "Ce qui a changé sur une journée du plan enregistré : par siège (stand, heures, "
                     + "titulaire avant et après) et par animateur (vacations gagnées, retirées, déplacées). "
                     + "reference = publication (depuis le dernier plan publié) ou resolution (depuis le plan "
                     + "d'avant la dernière résolution) ; omise, la publication s'il y en a une. "
