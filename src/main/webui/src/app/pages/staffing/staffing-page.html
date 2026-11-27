@@ -154,7 +154,7 @@
             <ng-container i18n="@@staffing.verification.historique">Vérifications précédentes</ng-container>
           </a>
         </div>
-        <app-reglages-avances [etat]="avance">
+        <app-reglages-avances [etat]="avance" [utile]="true">
           <ng-template>
             <mat-checkbox [ngModel]="byCalculation()" (ngModelChange)="byCalculation.set($event)" name="byCalculation"
                           [disabled]="verificationRunning()">

@@ -122,7 +122,7 @@
     />
   }
   @if (shownFilters().emplacement || shownFilters().typologie) {
-    <app-reglages-avances [etat]="avance" />
+    <app-reglages-avances [etat]="avance" [utile]="true" />
   }
   <span class="planning-barre-espace"></span>
   @if (dateCourante(); as date) {

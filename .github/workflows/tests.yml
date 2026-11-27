@@ -643,6 +643,10 @@ jobs:
       - name: New window links check
         run: npm run new-window-check
 
+      # « Réglages avancés » n'est dessiné que s'il y a quelque chose derrière.
+      - name: Réglages avancés check
+        run: npm run reglages-avances-check
+
       # Un cliquet, pas une barrière : la règle s'applique aux **lignes** que la
       # branche écrit, pas au dépôt entier. Le solde — 589 noms et 240 blocs de
       # commentaire, chiffré dans #425 — se paie au fil des passages, sans

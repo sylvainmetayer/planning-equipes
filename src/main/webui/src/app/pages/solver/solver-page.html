@@ -139,7 +139,7 @@
   <app-incremental-result [stats]="stats" [changements]="incrementalChangements()" />
 }
 
-<app-reglages-avances [etat]="avance">
+<app-reglages-avances [etat]="avance" [utile]="avanceUtile()">
   <ng-template>
     @if (!solverBusy()) {
       <app-score-curve-card />

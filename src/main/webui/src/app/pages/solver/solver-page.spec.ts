@@ -1290,6 +1290,49 @@ describe('SolverPage', () => {
     });
   });
 
+  describe('« Réglages avancés »', () => {
+    const bouton = () => racine().querySelector('app-reglages-avances button');
+
+    it('is not offered when it would unfold nothing', async () => {
+      createPage();
+      await fixture.whenStable();
+
+      expect(bouton()).toBeNull();
+    });
+
+    // The card that would read it lives behind the button: the page reads it.
+    it('reads the last curve itself, the card being folded away', async () => {
+      createPage();
+      await fixture.whenStable();
+
+      expect(jobs.chargerCourbeScore).toHaveBeenCalled();
+    });
+
+    it('is offered once a finished run left a curve', async () => {
+      createPage();
+      scoreTraceEdition.set({
+        jobId: 'j',
+        editionId: 'festival-2026',
+        generation: 1,
+        intervalleMs: 1000,
+        dureeMs: 1000,
+        termine: true,
+        points: [{ tempsMs: 0, hard: 0, medium: 0, soft: 0 }],
+      });
+      await fixture.whenStable();
+
+      expect(bouton()).not.toBeNull();
+    });
+
+    it('is offered on an instance with a compute machine', async () => {
+      machineApi.read.mockResolvedValue(machine({ configured: true }));
+      createPage();
+      await fixture.whenStable();
+
+      expect(bouton()).not.toBeNull();
+    });
+  });
+
   // ADR 0086: a full solve may run on a compute machine instead of here.
   describe('the compute machine', () => {
     it('shows nothing of it on an instance without one, and sends no choice', async () => {

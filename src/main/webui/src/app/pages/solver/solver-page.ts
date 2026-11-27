@@ -248,6 +248,16 @@ export class SolverPage implements OnInit {
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
 
   /**
+   * What « Réglages avancés » unfolds here: where to compute (an instance with
+   * a machine) and the score curve once a run is over (the card draws nothing
+   * without a curve). Neither: no button.
+   */
+  protected readonly avanceUtile = computed(
+    () =>
+      this.machineConfiguree() || (!this.solverBusy() && this.jobs.scoreTraceEdition() !== null),
+  );
+
+  /**
    * The two solve buttons say what the click will actually do. While the
    * solver is busy they plan the run instead of being greyed out — the whole
    * point being to prepare the next edition without waiting in front of the
@@ -442,6 +452,10 @@ export class SolverPage implements OnInit {
     void this.loadLastRun();
     void this.loadLastPublication();
     void this.loadStartingPoint();
+    // The card that reads the curve is only created once the fold is open, and
+    // the fold is only offered once a curve is held: without this read, a
+    // browser the stream does not reach could never get to the last run's curve.
+    void this.jobs.chargerCourbeScore();
   }
 
   /** Shared with the Contraintes screen: see `ProblemesStore.alerteReglesLegales`. */
