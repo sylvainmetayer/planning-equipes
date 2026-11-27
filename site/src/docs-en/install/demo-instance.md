@@ -50,8 +50,8 @@ Only one solve runs at a time on an instance: that is how the queue works, with 
 The repository's `scripts/demo/generer-dump.sh` starts a throw-away stack (PostgreSQL, Mailpit, the application), imports the showcase scenario, runs a solve and waits for it, publishes the plan, creates the three local accounts, then writes the dump. It needs `docker` (with `docker compose`), `curl` and `jq`, and a few minutes.
 
 ```bash
-DEMO_PASSWORD='a-password-to-publish' \
-APP_IMAGE=ghcr.io/sylvainmetayer/planning-equipes:4.0.1 \
+DEMO_PASSWORD='demo-planning' \
+APP_IMAGE=ghcr.io/sylvainmetayer/planning-equipes:4.2.0 \
   scripts/demo/generer-dump.sh reference.dump
 ```
 

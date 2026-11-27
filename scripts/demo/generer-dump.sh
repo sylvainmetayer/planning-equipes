@@ -4,8 +4,8 @@
 # importe le scénario de la vitrine (Pierrefeuille), calcule et publie le plan,
 # crée les trois comptes locaux de la démo, puis écrit un pg_dump -Fc.
 #
-#   DEMO_PASSWORD='…' scripts/demo/generer-dump.sh reference.dump
-#   APP_IMAGE=ghcr.io/sylvainmetayer/planning-equipes:4.0.1 DEMO_PASSWORD='…' scripts/demo/generer-dump.sh reference.dump
+#   DEMO_PASSWORD='demo-planning' scripts/demo/generer-dump.sh reference.dump
+#   APP_IMAGE=ghcr.io/sylvainmetayer/planning-equipes:4.2.0 DEMO_PASSWORD='demo-planning' scripts/demo/generer-dump.sh reference.dump
 #
 # DEMO_PASSWORD (12 caractères au moins) est le mot de passe des comptes
 # rh@example.org, responsable@example.org et lecteur@example.org. Le compte
