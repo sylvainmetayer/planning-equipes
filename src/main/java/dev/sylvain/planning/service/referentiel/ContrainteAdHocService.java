@@ -189,6 +189,9 @@ public class ContrainteAdHocService {
      * ignored.
      */
     static void checkShape(ContrainteAdHoc contrainte) {
+        if (contrainte.getType() == null) {
+            throw new BusinessError.Invalid("Le type de l'ajustement " + contrainte.getId() + " est obligatoire.");
+        }
         if (contrainte.getType() != TypeContrainteAdHoc.ARRIVEE_GROUPEE) {
             return;
         }

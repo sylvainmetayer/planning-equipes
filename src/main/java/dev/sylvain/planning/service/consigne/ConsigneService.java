@@ -46,6 +46,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -417,6 +418,10 @@ public class ConsigneService {
         List<ConsigneEdition> versConsignes() {
             if (dates == null || dates.isEmpty()) {
                 throw new BusinessError.Invalid("Aucune date : une consigne s'applique à au moins un jour");
+            }
+            if (Stream.of(dates, fenetres, ouvertures)
+                    .anyMatch(list -> list != null && list.stream().anyMatch(Objects::isNull))) {
+                throw new BusinessError.Invalid("Une date, une fenêtre ou une ouverture de la consigne est vide");
             }
             // A stamp for a date not laid down would check nothing while looking like a precondition.
             if (modifieLe != null && !dates.containsAll(modifieLe.keySet())) {

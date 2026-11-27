@@ -56,12 +56,14 @@ public class StandResource {
      */
     @POST
     public WrittenStand createStand(Stand stand) {
+        RequiredBody.require(stand);
         return referenceDataService.writeStand(stand);
     }
 
     @PUT
     @Path("/{id}")
     public WrittenStand updateStand(@PathParam("id") String id, Stand stand) {
+        RequiredBody.require(stand);
         return referenceDataService.writeStand(id, stand);
     }
 
@@ -73,6 +75,7 @@ public class StandResource {
     @POST
     @Path("/{id}/plages")
     public WrittenStand addPlage(@PathParam("id") String id, PlageStand plage) {
+        RequiredBody.require(plage);
         return referenceDataService.addStandPlage(id, plage);
     }
 

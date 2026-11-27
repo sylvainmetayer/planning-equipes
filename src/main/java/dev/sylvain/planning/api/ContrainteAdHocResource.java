@@ -42,6 +42,7 @@ public class ContrainteAdHocResource {
      */
     @POST
     public WrittenContrainteAdHoc createContrainteAdHoc(ContrainteAdHoc contrainteAdHoc) {
+        RequiredBody.require(contrainteAdHoc);
         return referenceDataService.writeContrainteAdHoc(contrainteAdHoc);
     }
 

@@ -37,12 +37,14 @@ public class EmplacementResource {
 
     @POST
     public Emplacement createEmplacement(Emplacement emplacement) {
+        RequiredBody.require(emplacement);
         return referenceDataService.createEmplacement(emplacement);
     }
 
     @PUT
     @Path("/{id}")
     public Emplacement updateEmplacement(@PathParam("id") String id, Emplacement emplacement) {
+        RequiredBody.require(emplacement);
         return referenceDataService.updateEmplacement(id, emplacement);
     }
 

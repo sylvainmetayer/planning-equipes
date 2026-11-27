@@ -52,6 +52,7 @@ public class GenerateurCreneauxResource {
     @Path("/gabarits")
     @Consumes(MediaType.APPLICATION_JSON)
     public Gabarit createGabarit(Gabarit gabarit) {
+        RequiredBody.require(gabarit);
         return generateur.create(gabarit);
     }
 
@@ -59,6 +60,7 @@ public class GenerateurCreneauxResource {
     @Path("/gabarits/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Gabarit updateGabarit(@PathParam("id") long id, Gabarit gabarit) {
+        RequiredBody.require(gabarit);
         return generateur.update(id, gabarit);
     }
 
@@ -75,6 +77,7 @@ public class GenerateurCreneauxResource {
     @Path("/calendrier")
     @Consumes(MediaType.APPLICATION_JSON)
     public EtatGenerateur setCalendrier(List<Affectation> calendrier) {
+        RequiredBody.require(calendrier);
         generateur.setCalendrier(calendrier);
         return generateur.etat();
     }

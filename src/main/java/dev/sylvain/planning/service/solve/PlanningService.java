@@ -11,6 +11,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.scenario.dto.PlanDto;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.Dosage;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
@@ -274,7 +275,7 @@ public class PlanningService {
         List<Stand> stands = referenceDataService.listStands();
         List<Creneau> creneaux = referenceDataService.listCreneaux();
         if (refuseIncomplete && (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty())) {
-            throw new IllegalStateException(
+            throw new BusinessError.Conflict(
                     "Aucune donnée de référence à exporter. Créez des stands, des animateurs et des créneaux d'abord.");
         }
         // Own hours: a consigne's plages leave the file, the consigne section carries them (ADR 0125).

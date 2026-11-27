@@ -38,12 +38,14 @@ public class TypologieResource {
 
     @POST
     public TypologieItem createTypologie(TypologieItem typologie) {
+        RequiredBody.require(typologie);
         return referenceDataService.createTypologie(typologie);
     }
 
     @PUT
     @Path("/{id}")
     public TypologieItem updateTypologie(@PathParam("id") String id, TypologieItem typologie) {
+        RequiredBody.require(typologie);
         return referenceDataService.updateTypologie(id, typologie);
     }
 

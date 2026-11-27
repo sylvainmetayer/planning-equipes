@@ -357,6 +357,10 @@ public class StandService {
         List<GrilleHorairesStands.LigneGrille> lignes = new ArrayList<>();
         List<Stand> aEcrire = new ArrayList<>();
         for (GrilleHorairesStands.SaisieStand saisie : saisies) {
+            if (saisie == null
+                    || (saisie.cellules() != null && saisie.cellules().stream().anyMatch(Objects::isNull))) {
+                throw new BusinessError.Invalid("Une ligne ou une cellule de la grille est vide");
+            }
             Stand stand = parId.get(saisie.standId());
             if (stand == null) {
                 // A body field naming nothing is a bad request, not a missing page.

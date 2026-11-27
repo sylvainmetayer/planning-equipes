@@ -175,6 +175,7 @@ public class AnimateurResource {
      */
     @POST
     public WrittenAnimateur createAnimateur(Animateur animateur) {
+        RequiredBody.require(animateur);
         return referenceDataService.writeAnimateur(animateur);
     }
 
@@ -182,6 +183,7 @@ public class AnimateurResource {
     @PUT
     @Path("/{id}")
     public WrittenAnimateur updateAnimateur(@PathParam("id") String id, Animateur animateur) {
+        RequiredBody.require(animateur);
         return referenceDataService.writeAnimateur(id, animateur);
     }
 

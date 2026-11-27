@@ -204,6 +204,7 @@ public class EditionResource {
     @InstanceOnly
     @POST
     public Response create(Edition edition) {
+        RequiredBody.require(edition);
         return Response.ok(editionService.create(edition)).build();
     }
 
@@ -211,6 +212,7 @@ public class EditionResource {
     @PUT
     @Path("/{id}")
     public Response rename(@PathParam("id") String id, Edition edition) {
+        RequiredBody.require(edition);
         return Response.ok(editionService.renommer(id, edition)).build();
     }
 

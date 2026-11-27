@@ -188,7 +188,7 @@ public final class ScenarioYamlReader {
         String resource = checkedResourcePath(scenarioPath);
         InputStream inputStream = ScenarioYamlReader.class.getClassLoader().getResourceAsStream(resource);
         if (inputStream == null) {
-            throw new IOException("Fichier de scénario non trouvé: " + resource);
+            throw new BusinessError.NotFound("Scénario inconnu : " + resource);
         }
         try (inputStream) {
             return ScenarioBinder.bind(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
