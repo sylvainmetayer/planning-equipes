@@ -85,8 +85,10 @@
                   <mat-checkbox [checked]="window.open" (change)="setWindow(index, { open: $event.checked })">{{ window.label }}</mat-checkbox>
                 </th>
                 <td>
-                  <input class="stand-creation-effectif" type="number" min="0" [value]="window.effectif" [disabled]="!window.open"
-                         [attr.aria-label]="window.label" (change)="onEffectif(index, $event)" />
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="stand-creation-effectif">
+                    <input matInput type="number" min="0" [value]="window.effectif" [disabled]="!window.open"
+                           [attr.aria-label]="window.label" (change)="onEffectif(index, $event)" />
+                  </mat-form-field>
                 </td>
               </tr>
             }

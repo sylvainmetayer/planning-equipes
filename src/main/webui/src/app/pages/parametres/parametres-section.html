@@ -1,53 +1,61 @@
 <form class="parametres-section" (ngSubmit)="save()">
   <mat-card appearance="outlined" class="page-card">
     <mat-card-header>
+      <!-- One node per @if: a block holding two cannot project into the title and subtitle slots. -->
       @if (section() === 'legal') {
         <h2 mat-card-title i18n="@@parametres.section.legal.title">Paramètres légaux</h2>
-        <mat-card-subtitle i18n="@@parametres.section.legal.subtitle">Les plafonds du Code du travail et la coupure repas de l'événement. Chaque ligne d'obligation légale de « Règles du planning » renvoie ici : c'est le seul endroit où ils s'écrivent.</mat-card-subtitle>
       } @else {
         <h2 mat-card-title i18n="@@parametres.section.organisation.title">Seuils d'organisation</h2>
+      }
+      @if (section() === 'legal') {
+        <mat-card-subtitle i18n="@@parametres.section.legal.subtitle">Les plafonds du Code du travail et la coupure repas de l'événement. Chaque ligne d'obligation légale de « Règles du planning » renvoie ici : c'est le seul endroit où ils s'écrivent.</mat-card-subtitle>
+      } @else {
         <mat-card-subtitle i18n="@@parametres.section.organisation.subtitle">Ce qui règle le confort d'un planning et non la loi. Le niveau de chaque règle se règle dans « Règles du planning ».</mat-card-subtitle>
       }
     </mat-card-header>
     <mat-card-content class="parametres-section-champs">
       @for (champ of champs(); track champ.cle) {
         <div class="parametres-section-champ">
-          <span class="parametres-section-libelle" [id]="'seuil-' + champ.cle">{{ champ.libelle }}</span>
           @switch (champ.descriptor.kind) {
             @case ('plage') {
-              <span class="parametres-section-saisie">
+              <span class="parametres-section-plage" role="group" [attr.aria-label]="champ.libelle">
                 @for (field of champ.descriptor.fields; track field; let index = $index) {
-                  @if (index > 0) { – }
-                  <input type="time" [disabled]="loading() || saving()" [attr.aria-label]="endLabel(champ, index)"
-                         [attr.data-field]="field" [attr.aria-invalid]="shownInvalid(field) || null"
-                         [attr.aria-describedby]="shownInvalid(field) ? 'seuil-erreur-' + champ.cle : null"
-                         [value]="value(champ, field)"
-                         (input)="typed(champ, field, $any($event.target).value)" />
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>{{ endLabel(champ, index) }}</mat-label>
+                    <input matInput type="time" [disabled]="loading() || saving()"
+                           [attr.data-field]="field" [attr.aria-invalid]="shownInvalid(field) || null"
+                           [attr.aria-describedby]="shownInvalid(field) ? 'seuil-erreur-' + champ.cle : null"
+                           [value]="value(champ, field)"
+                           (input)="typed(champ, field, $any($event.target).value)" />
+                  </mat-form-field>
                 }
               </span>
             }
             @case ('heure') {
-              <span class="parametres-section-saisie">
-                <input type="time" [disabled]="loading() || saving()" [attr.aria-labelledby]="'seuil-' + champ.cle"
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>{{ champ.libelle }}</mat-label>
+                <input matInput type="time" [disabled]="loading() || saving()"
                        [attr.data-field]="champ.descriptor.fields[0]"
                        [value]="value(champ, champ.descriptor.fields[0])"
                        (input)="typed(champ, champ.descriptor.fields[0], $any($event.target).value)" />
-              </span>
+              </mat-form-field>
             }
             @case ('choix') {
-              <span class="parametres-section-saisie">
-                <select [disabled]="loading() || saving()" [attr.aria-labelledby]="'seuil-' + champ.cle"
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>{{ champ.libelle }}</mat-label>
+                <select matNativeControl [disabled]="loading() || saving()"
                         [attr.data-field]="champ.descriptor.fields[0]"
                         (change)="typed(champ, champ.descriptor.fields[0], $any($event.target).value)">
                   @for (option of placements(); track option.value) {
                     <option [value]="option.value" [selected]="option.value === value(champ, champ.descriptor.fields[0])">{{ option.label }}</option>
                   }
                 </select>
-              </span>
+              </mat-form-field>
             }
             @default {
-              <span class="parametres-section-saisie">
-                <input type="number" [disabled]="loading() || saving()" [attr.aria-labelledby]="'seuil-' + champ.cle"
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>{{ champ.libelle }}</mat-label>
+                <input matInput type="number" [disabled]="loading() || saving()"
                        [attr.min]="champ.descriptor.min ?? null" [attr.max]="champ.descriptor.max ?? null"
                        [attr.step]="champ.descriptor.step ?? null"
                        [attr.data-field]="champ.descriptor.fields[0]"
@@ -55,8 +63,10 @@
                        [attr.aria-describedby]="shownInvalid(champ.descriptor.fields[0]) ? 'seuil-erreur-' + champ.cle : null"
                        [value]="value(champ, champ.descriptor.fields[0])"
                        (input)="typed(champ, champ.descriptor.fields[0], $any($event.target).value)" />
-                {{ unit(champ) }}
-              </span>
+                @if (unit(champ); as unite) {
+                  <span matTextSuffix>{{ unite }}</span>
+                }
+              </mat-form-field>
             }
           }
           @if (champInvalid(champ)) {

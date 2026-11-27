@@ -218,22 +218,29 @@
   margin-top: 1rem;
 }
 
-.parametres-section-champs {
+/* Qualified by tag: Material's `.mat-mdc-card-content { display: block }` is injected after this
+   sheet and, at equal specificity, turned the grid back into block flow (see pages.css). */
+mat-card-content.parametres-section-champs {
   display: grid;
   gap: 0.75rem 2rem;
+  padding-top: 0.5rem;
   grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
 }
 
 .parametres-section-champ {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.25rem 1rem;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.parametres-section-champ input {
-  width: 7rem;
+/* The two ends of a window: two fields side by side, named by the group. */
+.parametres-section-plage {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.parametres-section-plage > mat-form-field {
+  flex: 1;
 }
 
 .polyvalent-select {
@@ -241,7 +248,6 @@
 }
 
 .parametres-section-erreur {
-  flex-basis: 100%;
   font: var(--mat-sys-body-small);
   color: var(--mat-sys-error);
 }
