@@ -80,7 +80,7 @@ class FlywayMigrationsReadinessCheckTest {
     void aDownVerdictIsCachedForAShortWindowThenReadAgain() {
         var reads = new AtomicInteger();
         var clock = new AtomicLong(1_000L);
-        var check = new FlywayMigrationsReadinessCheck(null, false) {
+        var check = new FlywayMigrationsReadinessCheck(null, null, false) {
             @Override
             HealthCheckResponse readHistory() {
                 // DOWN twice, then up to date.
@@ -110,12 +110,15 @@ class FlywayMigrationsReadinessCheckTest {
     void anUpVerdictIsKeptAndFlywayIsNotOpenedAgain() {
         var reads = new AtomicInteger();
         var clock = new AtomicLong(1_000L);
-        var check = new FlywayMigrationsReadinessCheck(null, false) {
+        var check = new FlywayMigrationsReadinessCheck(null, null, false) {
             @Override
             HealthCheckResponse readHistory() {
                 reads.incrementAndGet();
                 return HealthCheckResponse.named(NAME).up().build();
             }
+
+            @Override
+            void ping() {}
         };
         check.nanoTime = clock::get;
 
@@ -123,6 +126,35 @@ class FlywayMigrationsReadinessCheckTest {
             assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
             clock.addAndGet(FlywayMigrationsReadinessCheck.CACHE_TTL.toNanos() * 100);
         }
+        assertThat(reads).hasValue(1);
+    }
+
+    /** Once UP, a dead database turns the probe DOWN with no detail, then back UP: Flyway is still read once. */
+    @Test
+    void anUpVerdictFollowsTheDatabaseThroughAPing() {
+        var reads = new AtomicInteger();
+        var failing = new java.util.concurrent.atomic.AtomicBoolean();
+        var check = new FlywayMigrationsReadinessCheck(null, null, false) {
+            @Override
+            HealthCheckResponse readHistory() {
+                reads.incrementAndGet();
+                return HealthCheckResponse.named(NAME).up().build();
+            }
+
+            @Override
+            void ping() throws java.sql.SQLException {
+                if (failing.get()) {
+                    throw new java.sql.SQLException("Connection to db.internal:5432 refused");
+                }
+            }
+        };
+        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
+        failing.set(true);
+        var down = check.call();
+        assertThat(down.getStatus()).isEqualTo(HealthCheckResponse.Status.DOWN);
+        assertThat(down.getData()).isEmpty();
+        failing.set(false);
+        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
         assertThat(reads).hasValue(1);
     }
 
