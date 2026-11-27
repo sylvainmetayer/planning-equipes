@@ -43,7 +43,7 @@ Une ligne par animateur, une colonne par journée (la semaine du jour choisi, ce
 
 Une **frise** dessine une barre par personne, ce qui tient un événement d'un mois sur un écran.
 
-Ce que chacun a reçu sur tout l'événement (heures, équité, paie) se lit dans *Diagnostic*, onglet *Charge* : voir [Comprendre un planning qui coince](comprendre-un-planning.md#lire-la-charge-de-chacun--longlet-charge).
+Ce que chacun a reçu sur tout l'événement (heures, équité, paie) se lit dans *Diagnostic*, onglet *Charge* : voir [Comprendre un planning qui coince](comprendre-un-planning.md).
 
 ## Carte
 

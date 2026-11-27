@@ -46,7 +46,7 @@ One row per staff member, one column per day (the week of the chosen day, that d
 
 A **timeline** draws one bar per person, which fits a month-long event on one screen.
 
-What each person received over the whole event (hours, fairness, payroll) is read in the Diagnostic, *Workload* tab: see [Understand a stuck schedule](understand-a-stuck-schedule.md#read-everyones-workload-the-workload-tab).
+What each person received over the whole event (hours, fairness, payroll) is read in the Diagnostic, *Workload* tab: see [Understand a stuck schedule](understand-a-stuck-schedule.md).
 
 ## Map
 
