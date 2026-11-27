@@ -196,9 +196,9 @@
         "alt": "Planning par personne : la semaine de chaque animateur, heures et soirées comprises."
       },
       {
-        "id": "horaires",
-        "titre": "Horaires des stands",
-        "alt": "Horaires des stands : l'effectif de chaque stand, jour par jour."
+        "id": "stand",
+        "titre": "Fiche stand",
+        "alt": "Fiche stand : son effectif, son modèle de semaine et ses plages datées."
       },
       {
         "id": "regles",
@@ -450,9 +450,9 @@
           "alt": "Schedule by person: each team member's week, hours and evenings included."
         },
         {
-          "id": "horaires",
-          "titre": "Stand opening hours",
-          "alt": "Stand opening hours: each stand's headcount, day by day."
+          "id": "stand",
+          "titre": "Stand sheet",
+          "alt": "Stand sheet: its headcount, weekly model and dated ranges."
         },
         {
           "id": "regles",

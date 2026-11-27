@@ -59,7 +59,7 @@ echo "== Encodage"
 webp=(-quality 80 -define webp:method=6)
 for lang in fr en; do
   mkdir -p "$sortie/images/$lang/vignettes" "$sortie/videos/$lang"
-  for ecran in accueil planning rail personne horaires regles diagnostic diffuser mural; do
+  for ecran in accueil planning rail personne stand regles diagnostic diffuser mural; do
     magick "$brut/$lang/$ecran.png" "${webp[@]}" "$sortie/images/$lang/$ecran.webp"
     magick "$brut/$lang/$ecran.png" -resize 800x -quality 72 -define webp:method=6 "$sortie/images/$lang/vignettes/$ecran.webp"
   done

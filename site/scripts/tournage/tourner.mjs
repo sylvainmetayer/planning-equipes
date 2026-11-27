@@ -143,13 +143,15 @@ async function ecrans(browser, etat, lang) {
   mkdirSync(dossier, { recursive: true });
   const ctx = await contexte(browser, etat, lang, BUREAU);
   const page = await ctx.newPage();
+  // Une fiche stand : modèle de la semaine et plages datées, un stand qui porte un modèle d'horaires
+  const stands = await (await etat.api.get('/api/stands', { headers: etat.h })).json();
   const pages = [
     ['accueil', '/'],
-    ['planning', '/journee'],
+    ['planning', '/journee?vue=calendrier'],
     ['rail', '/journee?vue=rail'],
     ['personne', '/journee?axe=personne'],
-    ['horaires', '/stands'],
-    ['regles', '/regles'],
+    ['stand', `/stands/${(stands.find((s) => /ateliers/.test(s.nom)) ?? stands[0]).id}`],
+    ['regles', '/regles?onglet=regles'],
     ['diagnostic', '/diagnostic'],
     ['diffuser', '/publication'],
   ];
