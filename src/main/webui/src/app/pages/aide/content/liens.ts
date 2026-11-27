@@ -46,12 +46,6 @@ export const lienPauses = (): HelpLink => ({
   label: $localize`:@@aide.link.pausesProblemes:Pauses sans relais (Problèmes)`,
 });
 
-export const lienHoraires = (): HelpLink => ({
-  route: '/creneaux',
-  queryParams: { onglet: 'horaires' },
-  label: $localize`:@@nav.link.ouvertures:Horaires des stands`,
-});
-
 export const lienTypologies = (): HelpLink => ({
   route: '/stands',
   queryParams: { onglet: 'typologies' },

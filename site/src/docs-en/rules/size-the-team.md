@@ -19,7 +19,7 @@ The minimum headcount is **proven**: no smaller team can hold the seats, even wh
 
 Each day carries its **margin before the solve**: the people available minus the seats, on its tightest band, expandable band by band. It depends on no solve.
 
-Each figure leads to the screen that changes it: a bound leads to the stand hours of the busiest day, or to the row of its rule in Planning rules; each day leads to its stand hours; a bottleneck leads to the skills grid.
+Each figure leads to the screen that changes it: a bound leads to the stands list, or to the row of its rule in Planning rules; each day leads there too; a bottleneck leads to the skills grid.
 
 ## Check the minimum with a real solve
 

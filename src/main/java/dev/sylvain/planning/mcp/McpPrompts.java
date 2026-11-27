@@ -171,8 +171,8 @@ public class McpPrompts {
                 EN_ATTENTE ne pèse rien tant qu'elle n'est pas validée depuis l'onglet Covoiturage de \
                 l'écran Disponibilités. Dis-moi combien il en reste de chaque.
                 5. diagnostiquer_creneaux (section controle) : la grille est-elle cohérente ?
-                6. analyser_ouvertures_stands : y a-t-il des stands jamais ouverts, des fenêtres sans \
-                effet, des segments trop courts ?
+                6. lister_anomalies_referentiel, famille STANDS : y a-t-il des stands jamais ouverts, des \
+                fenêtres sans effet, des segments trop courts ?
                 7. lister_consignes : une consigne posée sur une date à venir change les horaires de \
                 tous les stands ce jour-là — dis-moi lesquelles, et si leur motif tient toujours.
                 8. consulter_besoin (section borne) : combien d'animateurs faut-il au minimum, et l'effectif présent \
@@ -446,25 +446,20 @@ public class McpPrompts {
                 1. etat_edition : la famille STANDS est-elle figée (bloc gel) ? Si oui, aucun horaire \
                 ne s'écrira : dis-le-moi et arrête-toi — modifier_phase_edition n'est à proposer que \
                 si je le demande.
-                2. lister_stands puis analyser_ouvertures_stands : pars de ce qui existe déjà plutôt \
-                que d'une page blanche, et dis-moi ce que le planning retiendrait en l'état.
+                2. lister_stands : pars de ce qui existe déjà plutôt que d'une page blanche, et dis-moi \
+                ce que le planning retiendrait en l'état.
                 3. Pour chaque stand à régler, creer_horaire_stand (forme modele) écrit un horaire récurrent — la \
                 forme normale, « tous les jours de 10 h à 12 h puis de 14 h à la fermeture » — sous la \
                 forme d'une plage datée par jour d'événement. Une fenêtre peut nommer son propre \
                 effectif ; sans effectif, elle reprend le minimum du stand. Garde \
                 la forme plage (mode OUVERTURE ou FERMETURE) pour les jours à part : un jour qui \
                 porte déjà une plage n'est pas modifié par la forme modele.
-                4. Relance analyser_ouvertures_stands et traite les trois erreurs habituelles : un \
+                4. Relance lister_anomalies_referentiel (famille STANDS) et traite les trois erreurs habituelles : un \
                 stand finalement ouvert aucun jour, une fenêtre hors des heures du jour donc sans \
                 effet, une plage trop courte pour être une vraie vacation.
                 5. Si la grille de créneaux n'existe pas encore, previsualiser_generateur_creneaux (source stands) la \
                 déduit de ces fenêtres — une coupure à chaque heure où un stand ouvre ou ferme. Montre \
-                l'aperçu avant d'écrire quoi que ce soit.
-
-                Deux choses ne passent pas par ici et méritent d'être dites : l'import de la matrice \
-                du classeur et la grille de saisie case par case vivent dans l'interface, pas dans \
-                ces outils. Si l'organisateur a déjà son tableau, l'écran « Import de la grille des \
-                stands » ira plus vite que trente appels.""".formatted(suffixe(edition), editionFrame(edition)));
+                l'aperçu avant d'écrire quoi que ce soit.""".formatted(suffixe(edition), editionFrame(edition)));
     }
 
     @Prompt(

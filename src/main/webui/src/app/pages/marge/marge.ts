@@ -246,7 +246,5 @@ export function lienCellule(
   if (mode === 'APRES') {
     return creneauId === null ? null : { route: '/journee', queryParams: { creneau: creneauId } };
   }
-  return date === null
-    ? null
-    : { route: '/creneaux', queryParams: { onglet: 'horaires', du: date, au: date } };
+  return date === null ? null : { route: '/stands', queryParams: {} };
 }

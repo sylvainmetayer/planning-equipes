@@ -39,7 +39,6 @@ import {
   TypologieStaffing,
 } from '../../core/models';
 import { errorMessage } from '../../core/error-message';
-import { libelleJour as jourCourt } from '../../core/horaire-stand';
 import { errorText, retainedValue } from '../../core/resource-state';
 import { reglagesAvances } from '../../core/reglages-avances';
 import { consumeQueryParam } from '../../core/view-query-params';
@@ -200,9 +199,6 @@ export class StaffingPage implements OnInit {
         (this.rapportMarge()?.jours ?? []).map((jour) => [jour.date, margeJour(jour.pireCellule)]),
       ),
   );
-
-  /** `2026-09-01` → `01/09`, the way the links to a day's opening hours name it. */
-  protected readonly jourCourt = jourCourt;
 
   private readonly injector = inject(Injector);
   /** The plan by typologie sits above the volumetry: its rows push it down while it loads. */

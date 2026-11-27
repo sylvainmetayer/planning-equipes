@@ -103,11 +103,6 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   },
   { path: '/journee?vue=personne&rendu=frise', sheet: 'personne-frise-ligne' },
   { path: '/journee?vue=personne&rendu=synthese', marker: 'Écart méd.', sheet: 'planning-grille' },
-  {
-    path: '/creneaux?onglet=horaires',
-    marker: 'Horaires des stands',
-    sheet: 'ouvertures-synthese',
-  },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },
   // Fragilité, « À former » and Tension are the three sections of Risques: the old tabs land there.
   { path: '/diagnostic?onglet=risques', marker: 'Fragilité', sheet: 'fragilite-message' },

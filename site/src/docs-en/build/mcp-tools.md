@@ -115,6 +115,7 @@ Two **resources**, to attach once to inform all following calls:
 | `analyser_enchainements` | `consulter_repas_pauses` |
 | `analyser_faisabilite` | `consulter_besoin` |
 | `analyser_marge` | `consulter_besoin` |
+| `analyser_ouvertures_stands` | removed |
 | `analyser_pauses` | `consulter_repas_pauses` |
 | `analyser_typologies` | `consulter_besoin` |
 | `appliquer_declaration_disponibilite` | `modifier_declaration_disponibilite` |

@@ -344,14 +344,6 @@ test.describe('horaires de stand', () => {
     // Every other day the edition has (the seed carries a single one, so there may be none) carries the unfolded rule.
     const deplies = cible.ouvertures.filter((each) => each.date !== SEED.jour);
     expect(deplies.every((each) => each.heureDebut.startsWith('10:00'))).toBe(true);
-
-    // The openings grid reads the store afresh: the seeded day now opens at 11:00,
-    // which the cells of that day say on hover.
-    await page.goto('/creneaux?onglet=horaires');
-    await expect(page.getByRole('button', { name: 'Actualiser' })).toBeVisible();
-    const ligneOuvertures = page.getByRole('row', { name: /Stand E2E deux/ });
-    await expect(ligneOuvertures).toBeVisible();
-    await expect(ligneOuvertures.locator('input[title*="11:00"]').first()).toBeAttached();
     await page.context().close();
   });
 

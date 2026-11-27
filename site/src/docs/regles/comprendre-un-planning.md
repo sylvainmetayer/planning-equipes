@@ -37,7 +37,7 @@ Quand une règle a buté sur des exceptions saisies à la main, elles sont nomm�
 Sous chaque problème, l'application liste les gestes réels qui le règlent, dans l'ordre que le catalogue des règles leur donne, chacun avec sa raison.
 
 - « Qui peut tenir ce siège ? » s'ouvre sur place, et « Placer » remplit le siège sans quitter le Diagnostic.
-- Les autres gestes ouvrent l'écran déjà positionné : la grille Compétences sur la typologie du stand, la fiche du stand, la ligne de la règle pour régler son plafond, les Horaires des stands, la charge par personne, les verrous, les ajustements en cause affichés seuls, la donnée manquante d'un plancher.
+- Les autres gestes ouvrent l'écran déjà positionné : la grille Compétences sur la typologie du stand, la fiche du stand, la ligne de la règle pour régler son plafond, la charge par personne, les verrous, les ajustements en cause affichés seuls, la donnée manquante d'un plancher.
 - « Baisser l'importance » vient toujours en dernier, et disparaît quand l'importance est déjà au plus bas.
 - Une journée déjà commencée ne propose rien qui la modifierait.
 
