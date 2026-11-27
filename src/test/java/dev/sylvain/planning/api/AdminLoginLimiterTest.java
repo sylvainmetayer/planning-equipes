@@ -174,6 +174,34 @@ class AdminLoginLimiterTest {
         }
     }
 
+    /**
+     * Only a form post logs in: a GET on the login path carrying a valid
+     * session, from an address with a failure behind it, journals no login and
+     * leaves that failure counted.
+     */
+    @Test
+    void aGetOnTheLoginPathWithASessionNeitherJournalsNorClearsFailures() {
+        Instant start = Instant.now();
+        String address = "203.0.113.60";
+        String session = login("203.0.113.61", MOT_DE_PASSE_DEV).cookie("planning-session");
+        assertThat(session).isNotBlank();
+
+        login(address, "mauvais").then().statusCode(anyOf(is(401), is(302)));
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", session)
+                .header("X-Forwarded-For", address)
+                .redirects()
+                .follow(false)
+                .get("/j_security_check");
+        login(address, "mauvais").then().statusCode(anyOf(is(401), is(302)));
+
+        // Had the GET cleared the first failure, the second would not lock.
+        login(address, MOT_DE_PASSE_DEV).then().statusCode(429);
+        await().atMost(Duration.ofSeconds(10))
+                .untilAsserted(() -> assertThat(events(address, start)).contains("VERROUILLAGE"));
+        assertThat(events(address, start)).containsExactly("VERROUILLAGE", "ECHEC", "ECHEC");
+    }
+
     /** The events journalled for {@code address} since {@code start}, newest first, as the screen reads them. */
     private static List<String> events(String address, Instant start) {
         List<Map<String, Object>> lines = given().header("X-Edition-Id", "E1")
