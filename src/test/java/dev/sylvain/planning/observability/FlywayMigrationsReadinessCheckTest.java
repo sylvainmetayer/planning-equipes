@@ -77,26 +77,32 @@ class FlywayMigrationsReadinessCheckTest {
      * served again, and the history is read afresh once it has elapsed.
      */
     @Test
-    void theVerdictIsCachedForAShortWindowThenReadAgain() {
+    void aDownVerdictIsCachedForAShortWindowThenReadAgain() {
         var reads = new AtomicInteger();
         var clock = new AtomicLong(1_000L);
         var check = new FlywayMigrationsReadinessCheck(null, false) {
             @Override
             HealthCheckResponse readHistory() {
-                reads.incrementAndGet();
-                return HealthCheckResponse.named(NAME).status(reads.get() == 1).build();
+                // DOWN twice, then up to date.
+                return HealthCheckResponse.named(NAME)
+                        .status(reads.incrementAndGet() >= 3)
+                        .build();
             }
         };
         check.nanoTime = clock::get;
 
-        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
+        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.DOWN);
         clock.addAndGet(FlywayMigrationsReadinessCheck.CACHE_TTL.toNanos() - 1);
-        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
+        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.DOWN);
         assertThat(reads).hasValue(1);
 
         clock.addAndGet(1);
         assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.DOWN);
         assertThat(reads).hasValue(2);
+
+        clock.addAndGet(FlywayMigrationsReadinessCheck.CACHE_TTL.toNanos());
+        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
+        assertThat(reads).hasValue(3);
     }
 
     /** An up-to-date history is read once: Flyway is not opened again, however long the instance lives. */
