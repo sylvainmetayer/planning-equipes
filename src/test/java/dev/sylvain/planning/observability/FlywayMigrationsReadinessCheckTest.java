@@ -99,6 +99,27 @@ class FlywayMigrationsReadinessCheckTest {
         assertThat(reads).hasValue(2);
     }
 
+    /** An up-to-date history is read once: Flyway is not opened again, however long the instance lives. */
+    @Test
+    void anUpVerdictIsKeptAndFlywayIsNotOpenedAgain() {
+        var reads = new AtomicInteger();
+        var clock = new AtomicLong(1_000L);
+        var check = new FlywayMigrationsReadinessCheck(null, false) {
+            @Override
+            HealthCheckResponse readHistory() {
+                reads.incrementAndGet();
+                return HealthCheckResponse.named(NAME).up().build();
+            }
+        };
+        check.nanoTime = clock::get;
+
+        for (int i = 0; i < 5; i++) {
+            assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
+            clock.addAndGet(FlywayMigrationsReadinessCheck.CACHE_TTL.toNanos() * 100);
+        }
+        assertThat(reads).hasValue(1);
+    }
+
     private static MigrationInfo migration(MigrationState state) {
         return (MigrationInfo) Proxy.newProxyInstance(
                 MigrationInfo.class.getClassLoader(), new Class<?>[] {MigrationInfo.class}, (proxy, method, args) -> {

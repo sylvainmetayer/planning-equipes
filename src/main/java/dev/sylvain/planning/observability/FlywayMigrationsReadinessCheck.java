@@ -28,6 +28,14 @@ import org.jboss.logging.Logger;
  * changed under it — another instance, or an operator, migrating the same
  * database with a newer binary.</p>
  *
+ * <p>Migrations no longer change once the application is up (migrate-at-start
+ * is done, the schema guard has read the history), so the first UP verdict is
+ * kept for good: later probes answer UP without opening Flyway, which would
+ * otherwise open a connection and write its "Database: jdbc:…" line on every
+ * poll. Only a DOWN verdict is re-read, at most once per {@link #CACHE_TTL},
+ * until the history is up to date. The price: a database that goes down later
+ * no longer turns readiness DOWN.</p>
+ *
  * <p>A failed migration <em>of a newer binary</em> counts like any other,
  * except under {@code ALLOW_SCHEMA_AHEAD=true}: the boot that escape hatch
  * forced was refused precisely because of the future rows, the failed ones
@@ -36,7 +44,7 @@ import org.jboss.logging.Logger;
  *
  * <p>The response carries two counts and nothing else: no version, no script
  * name, no JDBC URL. The probe is public, so every anonymous caller may hit it:
- * the verdict is kept for {@link #CACHE_TTL} rather than recomputed by a full
+ * a DOWN verdict is kept for {@link #CACHE_TTL} rather than recomputed by a full
  * {@code flyway.info()} on each request.</p>
  */
 @Readiness
@@ -74,7 +82,9 @@ public class FlywayMigrationsReadinessCheck implements HealthCheck {
     public HealthCheckResponse call() {
         long now = nanoTime.getAsLong();
         Verdict current = cached.get();
-        if (current != null && now - current.computedAt() < CACHE_TTL.toNanos()) {
+        if (current != null
+                && (current.response().getStatus() == HealthCheckResponse.Status.UP
+                        || now - current.computedAt() < CACHE_TTL.toNanos())) {
             return current.response();
         }
         // Two concurrent misses may both read the history; both write an
