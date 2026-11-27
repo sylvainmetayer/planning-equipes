@@ -8,6 +8,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { ConstraintsApi } from '../../core/api/constraints-api';
 import { EditionsApi } from '../../core/api/editions-api';
 import { ConsignesStore } from '../../core/consignes.store';
 import { EtatEdition } from '../../core/models';
@@ -153,6 +154,10 @@ describe('AccueilPage', () => {
         },
         { provide: SolverJobService, useValue: jobs },
         { provide: AnalysesApi, useValue: analysesApi },
+        {
+          provide: ConstraintsApi,
+          useValue: { catalogue: () => Promise.resolve({ contraintes: [] }) },
+        },
       ],
     });
   });
@@ -388,7 +393,7 @@ describe('AccueilPage', () => {
       expect(fil.textContent).toContain("n'est ouvert pendant le créneau");
     });
     expect(fil.querySelector('li[data-type="coherence"] a')!.getAttribute('href')).toBe(
-      '/creneaux?edit=7',
+      '/calendrier?edit=7',
     );
   });
 

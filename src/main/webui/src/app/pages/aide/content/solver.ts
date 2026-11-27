@@ -221,7 +221,7 @@ export function buildSolverSections(): HelpSection[] {
       ],
       links: [
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
+        { route: '/calendrier', label: $localize`:@@nav.link.creneaux:Créneaux` },
         { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
         lienStaffing(),
         { route: '/diagnostic', label: $localize`:@@aide.link.problemes:Problèmes` },

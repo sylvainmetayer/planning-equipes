@@ -388,7 +388,7 @@ describe('parametrer-pour-un-planning-complet', () => {
   it('links every screen the guide names, and only real routes', () => {
     expect(section.links.map((link) => link.route)).toEqual([
       '/stands',
-      '/creneaux',
+      '/calendrier',
       '/regles',
       '/diagnostic',
       '/diagnostic',

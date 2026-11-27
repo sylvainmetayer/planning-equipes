@@ -141,7 +141,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
       links: [
         lienDisponibilites(),
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
-        { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
+        { route: '/calendrier', label: $localize`:@@nav.link.creneaux:Créneaux` },
         lienAjustements(),
       ],
     },

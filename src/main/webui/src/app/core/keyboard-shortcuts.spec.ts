@@ -99,7 +99,7 @@ describe('buildRaccourcisNavigation', () => {
   it('covers the reference-data pages, which are the most visited', () => {
     const parRoute = new Map(raccourcis.map((raccourci) => [raccourci.route, raccourci.touche]));
     expect(parRoute.get('/animateurs')).toBe('n');
-    expect(parRoute.get('/creneaux')).toBe('c');
+    expect(parRoute.get('/calendrier')).toBe('c');
     expect(parRoute.get('/fichiers')).toBe('f');
     expect(parRoute.get('/')).toBe('g');
   });

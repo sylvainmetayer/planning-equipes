@@ -208,7 +208,7 @@ describe('buildLignes', () => {
 
   it('leads an empty edition to the first referential to enter, the créneaux', () => {
     const [referentiels] = buildLignes(etatVide());
-    expect(referentiels.lien!.route).toBe('/creneaux');
+    expect(referentiels.lien!.route).toBe('/calendrier');
     expect(referentiels.detail).toBe('0 stands · 0 animateurs · 0 créneaux');
 
     const withoutStand = etatVide({

@@ -265,7 +265,7 @@ export function matchedByName(delta: EditionDelta): string[] {
 }
 
 /** The grid, where a timeslot and a day template are edited. */
-export const TIMESLOT_URL = '/creneaux';
+export const TIMESLOT_URL = '/calendrier';
 
 /**
  * Where a line leads in the edition holding it: the fiche of a stand or of an

@@ -69,7 +69,7 @@ test('« ?edit= » ouvre la fiche du créneau nommé', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await ficheOuverte(
     page,
-    `/creneaux?edit=${SEED.creneauId}`,
+    `/calendrier?edit=${SEED.creneauId}`,
     new RegExp(`Modifier le créneau du ${SEED.jour}`),
   );
   await page.context().close();

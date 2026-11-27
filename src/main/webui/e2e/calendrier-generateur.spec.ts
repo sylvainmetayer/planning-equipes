@@ -37,7 +37,7 @@ test('un gabarit posé sur une date s’applique, et retirer la date garde le cr
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/creneaux');
+  await page.goto('/calendrier');
 
   await page.getByRole('button', { name: 'Nouveau gabarit' }).click();
   let dialog = await dialogueOuvert(page);

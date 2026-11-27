@@ -205,7 +205,7 @@ export class ReglesPage implements OnInit {
   });
 
   /**
-   * The tab on screen: the one chosen, else « Règles » when the address
+   * The tab on screen: the one chosen, else « Liste des règles » when the address
    * named a rule, else the adjustments.
    */
   protected readonly onglet = computed<OngletRegles>(
