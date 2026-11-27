@@ -22,7 +22,7 @@ Une case qui contient un séparateur possible (`;`, virgule, tabulation) sort en
 
 ## Les heures pour la paie
 
-`GET /api/planning/hours/export?source=publie|persiste` rend `heures-planning.csv` (« Heures pour la paie (CSV) » de la page Planning) : une ligne par animateur, une colonne par semaine ISO (`2026-W33`), puis `total`, `dimanche`, `jours feries`, `dont dimanches feries`, `nuit paie (apres 22h)`, `amplitude max (h)` et `jours au-dela du seuil d'amplitude`. La colonne de nuit est la seule trace de la borne fixe de 22 h dans l'application : la soirée est l'heure réglable des paramètres légaux, et la paie garde sa nuit à part ([ADR 0055](repo:docs/decisions/0055-une-seule-soiree-la-nuit-de-la-paie-a-part.md)). `GET /api/planning/hours` rend le même rapport en JSON, avec la source lue, sa date et `publicationAvailable`.
+`GET /api/planning/hours/export?source=publie|persiste` rend `heures-planning.csv` (« Heures pour la paie (CSV) » de l'onglet Charge du Diagnostic) : une ligne par animateur, une colonne par semaine ISO (`2026-W33`), puis `total`, `dimanche`, `jours feries`, `dont dimanches feries`, `nuit paie (apres 22h)`, `amplitude max (h)` et `jours au-dela du seuil d'amplitude`. La colonne de nuit est la seule trace de la borne fixe de 22 h dans l'application : la soirée est l'heure réglable des paramètres légaux, et la paie garde sa nuit à part ([ADR 0055](repo:docs/decisions/0055-une-seule-soiree-la-nuit-de-la-paie-a-part.md)). `GET /api/planning/hours` rend le même rapport en JSON, avec la source lue, sa date et `publicationAvailable`.
 
 Le serveur lit le plan, le navigateur ne l'envoie pas. Le fichier doit pouvoir être garanti devant une paie ou une inspection, ce qu'un planning posté par un onglet ne permettait pas : il disait ce que l'onglet tenait à un instant, ni ce que la base contenait ni ce qui avait été publié. Deux sources sont possibles :
 
@@ -37,7 +37,7 @@ La première ligne nomme la source et sa date (`Source : plan publié le 12/07/2
 
 ## L'équité
 
-`GET /api/planning/equite/export` rend `equite-planning.csv` (« Équité (CSV) » de la page Planning) : le tableau d'équité lu sur le plan persisté, une ligne par animateur affecté, dans l'ordre de l'écran. Les colonnes sont `heuresTotal`, une par semaine ISO, puis `heuresSoiree`, `heuresWeekEnd`, `heuresJourFerie`, `postes`, `postesPenibles`, `standsDistincts`, `typologiesDistinctes`, `emplacementsDistinctsParJourMax`, `tauxSouhaits`, `tauxAppreciation`, `joursTravailles`, `joursRepos` et `plusLongueSerie`. Les taux sont des rapports (`0,75`), qu'un tableur met en pourcentage d'un clic. La synthèse (médiane, min, max, écart-type) n'y figure pas : elle se recalcule dans le tableur, et l'écran la montre.
+`GET /api/planning/equite/export` rend `equite-planning.csv` (« Équité (CSV) » de l'onglet Charge du Diagnostic) : le tableau d'équité lu sur le plan persisté, une ligne par animateur affecté, dans l'ordre de l'écran. Les colonnes sont `heuresTotal`, une par semaine ISO, puis `heuresSoiree`, `heuresWeekEnd`, `heuresJourFerie`, `postes`, `postesPenibles`, `standsDistincts`, `typologiesDistinctes`, `emplacementsDistinctsParJourMax`, `tauxSouhaits`, `tauxAppreciation`, `joursTravailles`, `joursRepos` et `plusLongueSerie`. Les taux sont des rapports (`0,75`), qu'un tableur met en pourcentage d'un clic. La synthèse (médiane, min, max, écart-type) n'y figure pas : elle se recalcule dans le tableur, et l'écran la montre.
 
 ## Le planning individuel en PDF
 

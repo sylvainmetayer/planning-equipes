@@ -142,7 +142,10 @@ export class PlanningPersonneView {
     () => {
       const planning = this.planning();
       const source = this.hoursSource();
-      return planning ? { source, planning: source === 'publie' ? null : planning } : undefined;
+      // Only the synthesis reads the hours: the grid and the frise draw days.
+      return planning && this.view() === 'synthese'
+        ? { source, planning: source === 'publie' ? null : planning }
+        : undefined;
     },
     { equal: (a, b) => a?.source === b?.source && a?.planning === b?.planning },
   );

@@ -1,18 +1,20 @@
-// The pure side of the Diagnostic page: which of the four tabs a query param names.
+// The pure side of the Diagnostic page: which of the five tabs a query param names.
 
 /**
- * The four tabs, and the values of the `onglet` query param: what blocks, what
- * is missing, what is at risk, whether it is legal. Former tabs live on
+ * The five tabs, and the values of the `onglet` query param: what blocks, what
+ * is missing, what is at risk, what each person carries, whether it is legal.
+ * Former tabs live on
  * elsewhere, their addresses redirected by the routes: the bench (`banc`) is
  * « Qui peut tenir ce siège ? » in the Siège panel, and `fragilite`,
  * `former` and `tension` are the three sections of Risques.
  */
-export type OngletDiagnostic = 'problemes' | 'besoin' | 'risques' | 'conformite';
+export type OngletDiagnostic = 'problemes' | 'besoin' | 'risques' | 'charge' | 'conformite';
 
 export const ONGLETS_DIAGNOSTIC: readonly OngletDiagnostic[] = [
   'problemes',
   'besoin',
   'risques',
+  'charge',
   'conformite',
 ];
 

@@ -45,7 +45,7 @@ First steps, on a filled edition:
 
 1. **Files**, *Import* tab, *Examples* card: pick an example, then
    **Load this example**.
-2. **Solver › Solve**: the solve runs in the background, the curve is drawn
+2. **Planning › Calculate › Calculate the schedule**: the solve runs in the background, the curve is drawn
    live and a notification announces the end.
 3. Read the result in **Planning**, what blocks in **Diagnostic**, how the rules
    are respected in **Planning rules**, then export from **Share** or from a

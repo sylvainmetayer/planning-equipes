@@ -3,7 +3,7 @@
 // switching the rendering fetches nothing again.
 
 import { Location } from '@angular/common';
-import { provideZonelessChangeDetection } from '@angular/core';
+import { Component, provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, ParamMap, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
@@ -26,7 +26,16 @@ import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
+import { SolverPage } from '../solver/solver-page';
+import { VersionsPage } from '../versions/versions-page';
 import { JourneePage } from './journee-page';
+
+/** « Calculer » and « Versions du plan » stand in: what they do is their own specs'. */
+@Component({ selector: 'app-solver-page', template: '' })
+class SolverPageStub {}
+
+@Component({ selector: 'app-versions-page', template: '' })
+class VersionsPageStub {}
 
 function stand(id: string): Stand {
   return {
@@ -193,6 +202,15 @@ describe('JourneePage', () => {
         },
       ],
     });
+    TestBed.overrideComponent(JourneePage, {
+      remove: { imports: [SolverPage, VersionsPage] },
+      add: { imports: [SolverPageStub, VersionsPageStub] },
+    });
+    await TestBed.compileComponents();
+    // The tabs are read from the address bar, as `ongletHote` reads them.
+    if (queryParams['onglet']) {
+      TestBed.inject(Location).replaceState('/journee', `onglet=${queryParams['onglet']}`);
+    }
     fixture = TestBed.createComponent(JourneePage);
     await fixture.whenStable();
     return fixture.componentInstance;
@@ -224,6 +242,42 @@ describe('JourneePage', () => {
     const rail = await mount({ vue: 'rail' }, { tableau: false });
     expect(rail['view']()).toBe('rail');
     expect(TestBed.inject(Location).path()).not.toMatch(/vue=|mode=/);
+  });
+
+  // Q49: the former Solveur page is the « Calculer » tab, its versions the tab beside it.
+  it('opens « Calculer » from the address without reading the plan, and reads it on the way back', async () => {
+    const page = await mount({ onglet: 'calculer' }, { tableau: false });
+
+    expect(racine().querySelector('app-solver-page')).not.toBeNull();
+    expect(racine().querySelector('.planning-barre')).toBeNull();
+    expect(loadForDisplay).not.toHaveBeenCalled();
+
+    await page['selectToggle']('stand');
+    TestBed.tick();
+    await fixture.whenStable();
+
+    expect(racine().querySelector('app-solver-page')).toBeNull();
+    expect(page['currentView']()).toBe('stand');
+    expect(loadForDisplay).toHaveBeenCalledOnce();
+    expect(TestBed.inject(Location).path()).not.toContain('onglet=');
+  });
+
+  it('writes the tab alone in the address, and the plan nothing, while « Calculer » or « Versions » is open', async () => {
+    const page = await mount({ date: '2026-08-02' }, { tableau: false });
+    expect(TestBed.inject(Location).path()).toContain('date=2026-08-02');
+
+    await page['selectToggle']('versions');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(racine().querySelector('app-versions-page')).not.toBeNull();
+    expect(page['toggleValue']()).toBe('versions');
+    expect(TestBed.inject(Location).path()).toMatch(/\?onglet=versions$/);
+
+    await page['selectToggle']('calculer');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(racine().querySelector('app-solver-page')).not.toBeNull();
+    expect(TestBed.inject(Location).path()).toMatch(/\?onglet=calculer$/);
   });
 
   it('comes back to « Jour » in the mode it was left in', async () => {
@@ -468,13 +522,10 @@ describe('JourneePage', () => {
     const page = await mount({
       vue: 'personne',
       animateur: 'alice',
-      sort: 'heuresTotal',
-      dir: 'desc',
     });
     expect(page['axe']()).toBe('personne');
     expect(racine().querySelector('app-planning-personne-vue')).not.toBeNull();
     expect(racine().querySelector('app-relecture-barre')).toBeNull();
-    expect(TestBed.inject(Location).path()).toContain('sort=heuresTotal');
 
     page['selectView']('jour');
     TestBed.tick();
@@ -493,78 +544,6 @@ describe('JourneePage', () => {
     expect(TestBed.inject(Location).path()).toContain('vue=stand');
 
     expect(page['animateur']()).toBe('alice');
-  });
-
-  // The hours are read by the server on the plan the address names (`source`),
-  // and the browser sends no plan of its own.
-  it('reads the hours on the plan the address names, and gives the choice back to the server on reset', async () => {
-    const page = await mount({ vue: 'personne', rendu: 'synthese', source: 'persiste' });
-
-    expect(planningApi.hoursReport).toHaveBeenLastCalledWith('persiste');
-    expect(TestBed.inject(Location).path()).toContain('source=persiste');
-    // Nothing published: the published plan is offered, and refused.
-    const publie = racine().querySelector<HTMLElement>(
-      'app-planning-personne-vue mat-button-toggle[value="publie"]',
-    );
-    expect(publie?.classList).toContain('mat-button-toggle-disabled');
-
-    page['resetView']();
-    TestBed.tick();
-    await fixture.whenStable();
-    expect(planningApi.hoursReport).toHaveBeenLastCalledWith(null);
-    expect(TestBed.inject(Location).path()).not.toContain('source=');
-  });
-
-  // A switch of plan keeps the last reading on screen until the next one
-  // arrives: no hour column blanks, « Plan publié » stays offered, and a
-  // reload of the page's plan reads nothing more while the publication is read.
-  it('keeps the last hours on screen while the next ones load, and leaves the publication alone on a reload', async () => {
-    const lu = (source: HoursSource): HoursReading => ({
-      source,
-      planDate: '2026-07-10T08:00:00Z',
-      publicationAvailable: true,
-      report: { heureDebutSoiree: '20:00:00', semaines: [], animateurs: [] },
-    });
-    planningApi.hoursReport.mockImplementationOnce(() => Promise.resolve(lu('publie')));
-    const page = await mount({ vue: 'personne', rendu: 'synthese', source: 'publie' });
-    const publie = () =>
-      racine().querySelector<HTMLElement>(
-        'app-planning-personne-vue mat-button-toggle[value="publie"]',
-      );
-    expect(publie()?.classList).not.toContain('mat-button-toggle-disabled');
-    // Under the published plan, the screen says what is not read on it.
-    expect(racine().querySelector('.planning-personne-source-note')).not.toBeNull();
-
-    // A reload hands the page a plan of its own: the publication is not re-read for it.
-    planningApi.hoursReport.mockClear();
-    loadForDisplay.mockResolvedValueOnce(planningDeuxJours());
-    await page['recharger']();
-    await fixture.whenStable();
-    expect(planningApi.hoursReport).not.toHaveBeenCalled();
-
-    let deliver: (reading: HoursReading) => void = () => undefined;
-    planningApi.hoursReport.mockImplementationOnce(
-      () =>
-        new Promise<HoursReading>((resolve) => {
-          deliver = resolve;
-        }),
-    );
-    page['hoursSource'].set('persiste');
-    TestBed.tick();
-    expect(planningApi.hoursReport).toHaveBeenLastCalledWith('persiste');
-    expect(publie()?.classList).not.toContain('mat-button-toggle-disabled');
-    expect(racine().querySelector('.planning-personne-source-note')).not.toBeNull();
-
-    deliver(lu('persiste'));
-    await fixture.whenStable();
-    expect(racine().querySelector('.planning-personne-source-note')).toBeNull();
-
-    // The persisted plan's hours, though, follow the plan the page reloads.
-    planningApi.hoursReport.mockClear();
-    loadForDisplay.mockResolvedValueOnce(planningDeuxJours());
-    await page['recharger']();
-    await fixture.whenStable();
-    expect(planningApi.hoursReport).toHaveBeenCalledWith('persiste');
   });
 
   // A filter drawn over a rendering that ignores it narrows nothing while
@@ -620,24 +599,16 @@ describe('JourneePage', () => {
     expect(TestBed.inject(Location).path()).toContain('vue=stand&rendu=treemap');
   });
 
-  it('draws the days and the synthesis of the person axis apart, each in the width', async () => {
-    const page = await mount({ vue: 'personne' });
-    const entetes = () =>
-      Array.from(racine().querySelectorAll('.planning-grille thead th')).map((th) =>
-        th.textContent?.trim(),
-      );
+  // The synthesis is the Diagnostic's Charge: the route sends its addresses there,
+  // and a page reached some other way draws the grid rather than a screen it no
+  // longer offers.
+  it('never draws the synthesis, nor reads the hours', async () => {
+    const page = await mount({ vue: 'personne', rendu: 'synthese' });
+    expect(page['personView']()).toBe('grille');
     expect(racine().querySelector('.planning-grille-jour')).not.toBeNull();
-    expect(entetes()).not.toContain('Écart méd.');
-
-    page['personView'].set('synthese');
-    TestBed.tick();
-    await fixture.whenStable();
-    expect(racine().querySelector('.planning-grille-jour')).toBeNull();
-    expect(entetes()).toContain('Écart méd.');
-    const location = TestBed.inject(Location);
-    expect(location.path()).toContain('rendu=synthese');
-    // No day column: the span has nothing to narrow.
-    expect(location.path()).not.toContain('portee=');
+    expect(racine().querySelector('mat-button-toggle[value="synthese"]')).toBeNull();
+    expect(planningApi.hoursReport).not.toHaveBeenCalled();
+    expect(TestBed.inject(Location).path()).not.toContain('rendu=synthese');
   });
 
   it('keeps the span of the grids in the address, the week left out', async () => {
@@ -664,33 +635,6 @@ describe('JourneePage', () => {
     TestBed.tick();
     await fixture.whenStable();
     expect(location.path()).not.toContain('portee=');
-  });
-
-  it('reads an old summary link as the synthesis, and keeps its sort off the day grid', async () => {
-    // What /journee?axe=personne carried before the summary left the grid.
-    const page = await mount({
-      axe: 'personne',
-      sort: 'heuresTotal',
-      dir: 'desc',
-    });
-    const location = TestBed.inject(Location);
-    expect(page['personView']()).toBe('synthese');
-    expect(location.path()).toContain('vue=personne&rendu=synthese');
-    expect(location.path()).not.toContain('axe=');
-    expect(location.path()).toContain('sort=heuresTotal');
-
-    // On the day grid the sort names a column nobody sees: it leaves the
-    // address, and comes back with the synthesis.
-    page['personView'].set('grille');
-    TestBed.tick();
-    await fixture.whenStable();
-    expect(page['personView']()).toBe('grille');
-    expect(location.path()).not.toContain('sort=');
-
-    page['personView'].set('synthese');
-    TestBed.tick();
-    await fixture.whenStable();
-    expect(location.path()).toContain('sort=heuresTotal');
   });
 
   it('holds every cell to its colour over the whole event, and says why', async () => {

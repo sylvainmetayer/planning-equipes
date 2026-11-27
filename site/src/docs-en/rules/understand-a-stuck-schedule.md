@@ -7,7 +7,7 @@ A schedule leaves seats empty or a rule gives way: you know why, where, who is c
 
 ![The diagnostic of a schedule](/images/fr/diagnostic.webp "The Diagnostic: what blocks, what is missing, what is fragile")
 
-Everything is read in *Diagnostic* (*Plan* group) and, for the summary, at the top of the Solver page.
+Everything is read in *Diagnostic* (*Plan* group) and, for the summary, at the top of the *Calculate* tab of the Planning page.
 
 Why a solve can find nothing, in plain terms: [when the solve finds no solution](/comment-marche-le-calcul/).
 
@@ -22,7 +22,7 @@ The score is told without technical vocabulary:
 - the manual adjustments involved;
 - right after a solve, what changed compared with the previous plan.
 
-Each rule and each day cited leads to its row; no person is named. The same text appears at the top of the Solver and of the Diagnostic, and for each plan compared in the Plan versions.
+Each rule and each day cited leads to its row; no person is named. The same text appears at the top of the *Calculate* tab and of the Diagnostic, and for each plan compared in the Plan versions.
 
 ## Find what blocks: the Problems tab
 
@@ -68,6 +68,23 @@ The *Tension* section, at the foot of the *Risks* tab, crosses the day with the 
 - A cell opens the seat panel of its band on the Planning page. The worst band of each day gives its reasons, with the profile of the irreplaceable person and the stand's fragility. A band already started is greyed out.
 
 The margin *before* the solve is a column of the Need tab: see [Know how many people to recruit](dimensionner-l-equipe.md).
+
+## Read everyone's workload: the Workload tab
+
+The Diagnostic's *Workload* tab says what each staff member received over the whole event, one line per person, every value sortable with a click on its title. It is where you choose whom to relieve, and where the hours for payroll are read.
+
+- hours, their gap to the median and the hours of each week, flagged past 35 h (a minor's ceiling) and 48 h (the legal ceiling for everyone);
+- evening (from the time set in *Settings*, *Solve* tab, the only evening in the application), weekend, public holidays, Sunday and "Night (payroll)" after 22:00;
+- the maximum opening span of a day (from the first start to the last end, gaps included) and the number of days beyond 12 hours, flagged with no rule behind them;
+- seats and demanding seats; distinct stands, game categories and locations;
+- wishes and ratings satisfied;
+- days worked, rest days and longest streak.
+
+Columns where everyone is at zero stay hidden until you tick "Always-empty columns"; "Only those with no rest day" keeps just the people who have none, and the name filter narrows the list. A person's name leads to their profile, where their radar compares them with the team.
+
+The hours, those of the table and the payroll export, are read either on the **published plan**, what the staff received, proposed by default as soon as one exists, or on the **saved plan**. The file says which one and from when. On the published plan, the screen reminds you that the other counters remain those of the saved plan.
+
+Two CSV exports: "Hours for the payroll" and "Fairness".
 
 ## Know what changed since the last solve
 

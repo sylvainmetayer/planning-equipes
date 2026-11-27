@@ -23,7 +23,7 @@ The consigne destroys nothing in the grid. The closed shifts lose their seats, a
 
 There are also shortcuts:
 
-- "Close stands tomorrow" is offered on the Solver and on the Today screen;
+- "Close stands tomorrow" is offered on the *Calculate* tab and on the Today screen;
 - a **named preset** ("Heatwave plan") makes each wave identical down to the gesture.
 
 ## What the staff see

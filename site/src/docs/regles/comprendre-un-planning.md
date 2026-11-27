@@ -4,7 +4,7 @@ Un planning laisse des places vides ou une règle cède : vous savez pourquoi, o
 
 ![Le diagnostic d'un planning](/images/fr/diagnostic.webp "Le Diagnostic : ce qui bloque, ce qui manque, ce qui est fragile")
 
-Tout se lit dans *Diagnostic* (groupe *Planifier*) et, pour le résumé, en tête de la page Solveur.
+Tout se lit dans *Diagnostic* (groupe *Planifier*) et, pour le résumé, en tête de l'onglet *Calculer* de la page Planning.
 
 Pourquoi un calcul peut ne rien trouver, en termes simples : [quand le calcul ne trouve aucune solution](/comment-marche-le-calcul/).
 
@@ -19,7 +19,7 @@ Le score se dit sans vocabulaire technique :
 - les ajustements manuels en cause ;
 - juste après une résolution, ce qui a changé par rapport au plan d'avant.
 
-Chaque règle et chaque jour cités mènent à leur ligne ; aucune personne n'est nommée. Le même texte figure en tête du Solveur et du Diagnostic, et pour chaque plan comparé dans les Versions du plan.
+Chaque règle et chaque jour cités mènent à leur ligne ; aucune personne n'est nommée. Le même texte figure en tête de l'onglet *Calculer* et du Diagnostic, et pour chaque plan comparé dans les Versions du plan.
 
 ## Trouver ce qui bloque : l'onglet Problèmes
 
@@ -65,6 +65,23 @@ La section *Tension*, au pied de l'onglet *Risques*, croise le jour avec la tran
 - Une case ouvre le panneau du siège de sa tranche sur la page Planning. La pire tranche de chaque journée donne ses raisons, avec la fiche de la personne irremplaçable et la fragilité du stand. Une tranche déjà commencée est grisée.
 
 La marge *avant* résolution est une colonne de l'onglet Besoin : voir [Savoir combien de personnes recruter](dimensionner-l-equipe.md).
+
+## Lire la charge de chacun : l'onglet Charge
+
+L'onglet *Charge* du Diagnostic dit ce que chaque animateur a reçu sur tout l'événement, une ligne par personne, chaque valeur triable d'un clic sur son titre. C'est là que vous choisissez qui alléger, et là que se lisent les heures pour la paie.
+
+- les heures, leur écart à la médiane et les heures de chaque semaine, signalées au-delà de 35 h (le plafond d'un mineur) et de 48 h (le plafond légal de tous) ;
+- la soirée (à partir de l'heure réglée dans *Paramètres*, onglet *Calcul*, la seule soirée de l'application), le week-end, les jours fériés, le dimanche et « Nuit (paie) » après 22 h ;
+- l'amplitude maximale d'une journée (du premier début à la dernière fin, trous compris) et le nombre de journées au-delà de 12 h, signalées sans aucune règle derrière ;
+- les postes et les postes exigeants ; les stands, typologies et emplacements distincts ;
+- les souhaits et appréciations satisfaits ;
+- les jours travaillés, les jours de repos et la plus longue série.
+
+Les colonnes où tout le monde est à zéro sont masquées tant que vous ne cochez pas « Colonnes toujours vides » ; « Seulement sans jour de repos » ne garde que les personnes qui n'en ont aucun, et le filtre par nom réduit la liste. Le nom d'une personne mène à sa fiche, où son radar la compare à l'équipe.
+
+Les heures, celles du tableau comme l'export pour la paie, se lisent au choix sur le **plan publié**, ce que les animateurs ont reçu, proposé d'office dès qu'il existe, ou sur le **plan enregistré**. Le fichier dit lequel et de quand. Sur le plan publié, l'écran rappelle que les autres compteurs restent ceux du plan enregistré.
+
+Deux exports CSV : « Heures pour la paie » et « Équité ».
 
 ## Savoir ce qui a changé depuis le dernier calcul
 

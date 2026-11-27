@@ -126,7 +126,7 @@ export class ProblemesPage {
   protected readonly resumeAnalyse = computed(() => {
     const constraints = this.store.constraints();
     if (!constraints?.analysedAt) {
-      return $localize`:@@problemes.analysis.none:Aucune analyse de résolution pour le moment : lancez une résolution depuis la page Solveur pour voir les règles en défaut.`;
+      return $localize`:@@problemes.analysis.none:Aucune analyse de résolution pour le moment : lancez une résolution depuis Planning › Calculer pour voir les règles en défaut.`;
     }
     const analysedAt = new Date(constraints.analysedAt).toLocaleString(intlLocale());
     return $localize`:@@problemes.analysis.at:Dernière analyse ${analysedAt}:date:.`;

@@ -8,6 +8,7 @@
 import { buildRaccourcisNavigation } from '../../../core/keyboard-shortcuts';
 import { HelpSection } from '../help-section';
 import {
+  lienSolve,
   lienAjustements,
   lienConsignes,
   lienFragilite,
@@ -26,7 +27,7 @@ export function buildOperationsSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.relecture.intro:Entre le premier planning qui tient et l'envoi aux animateurs, il y a une relecture : on ouvre les journées une par une, on regarde, on corrige. Sur douze journées, on finit par se demander « où en étais-je ? ». Sur la page Planning, le bouton d'état de la barre de relecture (« À relire », « Relue le… » ou « Figée ») ouvre le contrôle de la journée : choisissez « Relue » puis « Enregistrer l'état » pour enregistrer votre passage, avec la date et un commentaire si vous en laissez un. Le sélecteur de jour marque ensuite les journées relues ou figées, et la page Solveur dit « 3 journées sur 12 ».`,
+          text: $localize`:@@aide.relecture.intro:Entre le premier planning qui tient et l'envoi aux animateurs, il y a une relecture : on ouvre les journées une par une, on regarde, on corrige. Sur douze journées, on finit par se demander « où en étais-je ? ». Sur la page Planning, le bouton d'état de la barre de relecture (« À relire », « Relue le… » ou « Figée ») ouvre le contrôle de la journée : choisissez « Relue » puis « Enregistrer l'état » pour enregistrer votre passage, avec la date et un commentaire si vous en laissez un. Le sélecteur de jour marque ensuite les journées relues ou figées, et l'onglet Calculer dit « 3 journées sur 12 », dès qu'un plan existe.`,
         },
         {
           kind: 'paragraph',
@@ -46,7 +47,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.relecture.changements:Ce qui a bougé ne se lit plus sur la page Planning. Depuis la dernière publication, c'est le tableau de Diffuser › Envoyer : une ligne par personne, avec les changements dans les phrases mêmes du courriel de publication, et « Ce qui change le » pour ne garder qu'un jour. Depuis la dernière résolution, c'est le résultat de la page Solveur, qui dit ce que le calcul vient de réécrire : celui qui a réellement remplacé le planning enregistré, un calcul interrompu ou refusé ne déplaçant pas ce repère. Une personne gardée sur son stand avec des horaires rognés se lit « horaires modifiés », pas retirée puis nouvelle.`,
+          text: $localize`:@@aide.relecture.changements:Ce qui a bougé ne se lit plus sur la page Planning. Depuis la dernière publication, c'est le tableau de Diffuser › Envoyer : une ligne par personne, avec les changements dans les phrases mêmes du courriel de publication, et « Ce qui change le » pour ne garder qu'un jour. Depuis la dernière résolution, c'est le résultat de l'onglet Calculer, qui dit ce que le calcul vient de réécrire : celui qui a réellement remplacé le planning enregistré, un calcul interrompu ou refusé ne déplaçant pas ce repère. Une personne gardée sur son stand avec des horaires rognés se lit « horaires modifiés », pas retirée puis nouvelle.`,
         },
       ],
       links: [
@@ -67,7 +68,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.consignes.demain:« Fermer des stands demain », sur le Solveur et sur Aujourd'hui, ouvre le formulaire sur le lendemain. Pas sur aujourd'hui : une journée commencée garde la consigne qui l'a gouvernée.`,
+          text: $localize`:@@aide.consignes.demain:« Fermer des stands demain », sur l'onglet Calculer et sur Aujourd'hui, ouvre le formulaire sur le lendemain. Pas sur aujourd'hui : une journée commencée garde la consigne qui l'a gouvernée.`,
         },
         {
           kind: 'steps',
@@ -101,7 +102,7 @@ export function buildOperationsSections(): HelpSection[] {
       links: [
         lienConsignes(),
         { route: '/journee', label: $localize`:@@nav.link.journee:Planning` },
-        { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
+        lienSolve(),
       ],
     },
     {
@@ -310,7 +311,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.parPersonne:Personne`,
-              text: $localize`:@@aide.views.def.parPersonne:La vue « Personne » : une ligne par animateur, une colonne par journée (la semaine du jour choisi, ce jour seul ou tout l'événement en couleur seule, comme par stand), et dans chaque case chaque poste de la journée, ses heures au-dessus de son stand, la case colorée selon ce que fait la personne (elle travaille, se repose ou était indisponible) ; un liseré marque une journée qui court jusqu'en soirée, et une case rouge une affectation posée sur une journée déclarée indisponible. La vue « Synthèse » dit ce que chacun a reçu sur tout l'événement : heures et écart à la médiane, heures par semaine, soirée, week-end, jours fériés, dimanche, « Nuit (paie) », postes, postes exigeants, stands, typologies et emplacements distincts, souhaits et appréciations satisfaits, jours travaillés, jours de repos, plus longue série. Chaque colonne se trie d'un clic sur son titre ; les colonnes où tout le monde est à zéro sont masquées tant que « Colonnes toujours vides » n'est pas cochée. Il n'y a qu'une soirée dans l'application : l'heure réglée dans les paramètres légaux, que la légende rappelle ; la borne fixe de 22 h ne sert qu'à « Nuit (paie) », pour la paie. « Frise » dessine une barre proportionnelle par personne, qui tient un événement d'un mois sur un écran. « Heures pour la paie (CSV) » et « Équité (CSV) » exportent les deux fichiers de toujours. Un clic sur une case ouvre le panneau du siège sur le premier poste de la personne ce jour-là ; son nom mène à sa fiche, dont la section « Charge et équité » lit ses indicateurs l'un sous l'autre à côté d'un radar qui a un axe par indicateur : heures, soirées, week-ends, postes pénibles, souhaits satisfaits, et au choix jours fériés, appréciations, jours travaillés, plus longue série. Chaque axe va du minimum de l'édition, au centre, à son maximum, au bord ; le polygone plein est la personne, le pointillé la médiane, la zone grisée l'étendue. Plus loin veut dire plus chargé, sauf sur les axes marqués « ↑ mieux ». Un axe où tout le monde a la même valeur est dessiné au centre et dit « aucune dispersion ». « Comparer avec… » pose une seconde personne sur le même radar, pour arbitrer entre deux.`,
+              text: $localize`:@@aide.views.def.parPersonne:La vue « Personne » : une ligne par animateur, une colonne par journée (la semaine du jour choisi, ce jour seul ou tout l'événement en couleur seule, comme par stand), et dans chaque case chaque poste de la journée, ses heures au-dessus de son stand, la case colorée selon ce que fait la personne (elle travaille, se repose ou était indisponible) ; un liseré marque une journée qui court jusqu'en soirée, et une case rouge une affectation posée sur une journée déclarée indisponible. Ce que chacun a reçu sur tout l'événement (heures, équité, paie) se lit dans le Diagnostic, onglet Charge. Il n'y a qu'une soirée dans l'application : l'heure réglée dans les paramètres légaux, que la légende rappelle. « Frise » dessine une barre proportionnelle par personne, qui tient un événement d'un mois sur un écran. Un clic sur une case ouvre le panneau du siège sur le premier poste de la personne ce jour-là ; son nom mène à sa fiche, dont la section « Charge et équité » lit ses indicateurs l'un sous l'autre à côté d'un radar qui a un axe par indicateur : heures, soirées, week-ends, postes pénibles, souhaits satisfaits, et au choix jours fériés, appréciations, jours travaillés, plus longue série. Chaque axe va du minimum de l'édition, au centre, à son maximum, au bord ; le polygone plein est la personne, le pointillé la médiane, la zone grisée l'étendue. Plus loin veut dire plus chargé, sauf sur les axes marqués « ↑ mieux ». Un axe où tout le monde a la même valeur est dessiné au centre et dit « aucune dispersion ». « Comparer avec… » pose une seconde personne sur le même radar, pour arbitrer entre deux.`,
             },
             {
               term: $localize`:@@aide.views.term.repartitionHeures:Stand, Répartition des heures`,
@@ -330,7 +331,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.hours:Besoin en animateurs`,
-              text: $localize`:@@aide.views.def.hoursBesoin:L'onglet Besoin du Diagnostic : l'estimation du nombre minimum d'animateurs à recruter. Les heures de chacun, elles, sont sur « Par personne ». L'estimation se calcule avant toute résolution, à partir des seuls stands et créneaux, comme la plus grande de plusieurs bornes : le pic de sièges simultanés, ce pic prolongé de la pause légale, la charge de la semaine la plus lourde, la coupure repas et la rotation sur les jours. Chacune est un plancher prouvé, jamais une cible, et chacune mène à l'écran qui la change : les horaires des stands du jour le plus chargé, la ligne de la règle dans Règles du planning. Chaque journée du tableau porte sa marge avant résolution (les disponibles moins les sièges, sur sa tranche la plus serrée) et le lien vers les horaires des stands de ce jour ; la grille complète, tranche par tranche, se déplie dessous. Elle se lit aussi typologie par typologie : une typologie dont le minimum dépasse le nombre d'animateurs qui la déclarent est le goulot, avec « Saisir la compétence ». Une fois les animateurs saisis, la faisabilité se vérifie sur le Solveur.`,
+              text: $localize`:@@aide.views.def.hoursBesoin:L'onglet Besoin du Diagnostic : l'estimation du nombre minimum d'animateurs à recruter. Les heures de chacun, elles, sont dans l'onglet Charge. L'estimation se calcule avant toute résolution, à partir des seuls stands et créneaux, comme la plus grande de plusieurs bornes : le pic de sièges simultanés, ce pic prolongé de la pause légale, la charge de la semaine la plus lourde, la coupure repas et la rotation sur les jours. Chacune est un plancher prouvé, jamais une cible, et chacune mène à l'écran qui la change : les horaires des stands du jour le plus chargé, la ligne de la règle dans Règles du planning. Chaque journée du tableau porte sa marge avant résolution (les disponibles moins les sièges, sur sa tranche la plus serrée) et le lien vers les horaires des stands de ce jour ; la grille complète, tranche par tranche, se déplie dessous. Elle se lit aussi typologie par typologie : une typologie dont le minimum dépasse le nombre d'animateurs qui la déclarent est le goulot, avec « Saisir la compétence ». Une fois les animateurs saisis, la faisabilité se vérifie sur l'onglet Calculer.`,
             },
             {
               term: $localize`:@@aide.views.term.fragilite:Fragilité du planning`,
@@ -339,6 +340,10 @@ export function buildOperationsSections(): HelpSection[] {
             {
               term: $localize`:@@aide.views.term.besoinLectures:Planning par typologie et volumétrie`,
               text: $localize`:@@aide.views.def.besoinLectures:Deux sections de l'onglet Besoin, sous les chiffres du besoin. « Le planning, typologie par typologie » lit le planning enregistré par typologie de jeu : postes, heures, compétents, compétents jamais affectés, affectés sans la compétence ; chaque chiffre mène à l'écran où l'on agit. « Volumétrie du problème », repliée, donne la taille du problème que le prochain calcul reçoit : animateurs, postes, créneaux, ajustements manuels, heures à pourvoir face aux heures offertes. La faisabilité, elle, se lit dans l'onglet Problèmes.`,
+            },
+            {
+              term: $localize`:@@aide.views.term.charge:Charge`,
+              text: $localize`:@@aide.views.def.charge:L'onglet Charge du Diagnostic : ce que chaque animateur a reçu sur tout l'événement, une ligne par personne, chaque colonne triable d'un clic sur son titre. Les heures et leur écart à la médiane, les heures par semaine (au-delà de 35 h, le plafond d'un mineur, ou de 48 h, le plafond légal de tous, la semaine est signalée), la soirée, le week-end, les jours fériés, le dimanche et « Nuit (paie) » ; les postes et les postes exigeants, les stands, typologies et emplacements distincts, les souhaits et appréciations satisfaits, les jours travaillés, les jours de repos et la plus longue série. Les colonnes où tout le monde est à zéro sont masquées tant que « Colonnes toujours vides » n'est pas cochée ; « Seulement sans jour de repos » ne garde que les personnes qui n'en ont aucun. Les heures se lisent au choix sur le plan publié, celui que les animateurs ont reçu, ou sur le plan enregistré ; l'écran dit lequel et de quand. « Heures pour la paie (CSV) » et « Équité (CSV) » exportent les deux fichiers de toujours. Le nom d'une personne mène à sa fiche et à son radar.`,
             },
             {
               term: $localize`:@@aide.views.term.former:À former`,
@@ -368,6 +373,11 @@ export function buildOperationsSections(): HelpSection[] {
           label: $localize`:@@aide.link.parPersonne:Planning, par personne`,
         },
         { route: '/diagnostic', label: $localize`:@@nav.link.diagnostic:Diagnostic` },
+        {
+          route: '/diagnostic',
+          queryParams: { onglet: 'charge' },
+          label: $localize`:@@diagnostic.onglet.charge:Charge`,
+        },
         {
           route: '/diagnostic',
           queryParams: { onglet: 'risques', section: 'tension' },
@@ -436,7 +446,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.shortcuts.go:Pour aller directement sur un écran, tapez « g » puis une lettre de son nom, l'initiale le plus souvent : « g » puis « a » pour Aujourd'hui, « g » puis « s » pour le solveur, « g » puis « n » pour les animateurs, dont l'initiale est prise. « g » « g » ramène à l'accueil. Les pages sans lettre restent atteignables par la palette.`,
+          text: $localize`:@@aide.shortcuts.go:Pour aller directement sur un écran, tapez « g » puis une lettre de son nom, l'initiale le plus souvent : « g » puis « a » pour Aujourd'hui, « g » puis « p » pour le planning, « g » puis « n » pour les animateurs, dont l'initiale est prise. « g » « g » ramène à l'accueil. Les pages sans lettre restent atteignables par la palette.`,
         },
         {
           kind: 'definitions',

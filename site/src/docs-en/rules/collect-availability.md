@@ -36,7 +36,7 @@ If you switched it on with the collection, each staff member who received the in
 
 ## Apply the declarations
 
-A declaration remains a **proposal**: it is taken into account only once you apply it, in bulk, from the *Availability* page (a tab of the *Staff* page). While it is pending, the solve does not see it, and the Solver tells you so in "what the solve will receive".
+A declaration remains a **proposal**: it is taken into account only once you apply it, in bulk, from the *Availability* page (a tab of the *Staff* page). While it is pending, the solve does not see it, and the *Calculate* tab tells you so in "what the solve will receive".
 
 ## Handle carpool requests
 

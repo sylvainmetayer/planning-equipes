@@ -67,7 +67,7 @@
   <mat-card appearance="outlined" class="page-card">
     <mat-card-content>
       @if (!hasPlan()) {
-        <p class="empty-hint" i18n="@@repartitionHeures.noPlan">Aucun planning enregistré pour le moment. Lancez une résolution depuis la page Solveur.</p>
+        <p class="empty-hint" i18n="@@repartitionHeures.noPlan">Aucun planning enregistré pour le moment. Lancez une résolution depuis Planning › Calculer.</p>
       } @else if (tree().requiredMinutes === 0) {
         <p class="empty-hint" i18n="@@repartitionHeures.emptyPeriod">Aucun siège à pourvoir sur cette période ou cet emplacement.</p>
       } @else {

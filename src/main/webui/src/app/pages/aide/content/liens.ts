@@ -22,8 +22,14 @@ export const lienAjustements = (): HelpLink => ({
   label: $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
 });
 
+export const lienSolve = (): HelpLink => ({
+  route: '/journee',
+  queryParams: { onglet: 'calculer' },
+  label: $localize`:@@aide.link.calculer:Planning › Calculer`,
+});
+
 export const lienVersions = (): HelpLink => ({
-  route: '/solveur',
+  route: '/journee',
   queryParams: { onglet: 'versions' },
   label: $localize`:@@nav.link.versions:Versions du plan`,
 });

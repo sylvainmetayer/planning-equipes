@@ -52,7 +52,7 @@ Dans la vue *Tableau*, chaque nom et chaque siège vide ouvrent le panneau du si
 
 Un lecteur voit l'état de la journée, sans bouton pour le changer.
 
-L'avancement se lit dans le Solveur (« 3 journées sur 12 ») et par une coche sur chaque journée relue du mini-mois de la page Planning. L'état porte toujours sur la journée entière, quel que soit le filtre affiché.
+L'avancement se lit dans l'onglet *Calculer* de la page Planning, dès qu'un plan existe (« 3 journées sur 12 »), et par une coche sur chaque journée relue du mini-mois de la page Planning. L'état porte toujours sur la journée entière, quel que soit le filtre affiché.
 
 Relire ne fige rien : seule la valeur « Figée » pose le verrouillage de journée (voir [Poser des exceptions et des verrous](ajustements-et-verrous.md)).
 

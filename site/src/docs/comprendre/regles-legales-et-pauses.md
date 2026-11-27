@@ -22,14 +22,14 @@ La pause est du repos, pas du travail effectif (art. L3121-1) : elle est **dédu
 |---|---|
 | `dureeQuotidienneMax` | travail effectif : amplitude moins les pauses dues |
 | `dureeHebdomadaireMax`, `dureeHebdomadaireMaxDeuxSemaines` | idem, sommé sur la semaine ISO |
-| page Planning par personne, CSV « Heures pour la paie » (`PlanningHoursService`), outil `consulter_charge` | idem : total et colonnes hebdomadaires |
+| Diagnostic, onglet Charge, CSV « Heures pour la paie » (`PlanningHoursService`), outil `consulter_charge` | idem : total et colonnes hebdomadaires |
 | tableau d'équité (`EquiteService`) | idem : c'est cette grandeur qu'on répartit |
 | KPI (`PlanningKpiService`) | idem, sauf les instantanés anciens |
 | volumétrie (`ProblemScaleService`) | idem pour les sièges tenus ; un siège vide compte son amplitude |
 
 `EffectiveWork` est l'unique endroit où ce calcul vit. Une pause est due **par journée et par animateur** (une séquence ne traverse pas minuit) : tout lecteur hebdomadaire groupe par jour avant de sommer, jamais l'inverse (`LegalConstraints.joursAvecParametres`). Un vrai trou entre deux vacations ne fait rien déduire : aucune séquence n'y dépasse six heures, donc aucune pause n'y est due, le trou est la pause. `HeuresCoherentesTest` verrouille l'égalité des lectures : sommer l'amplitude dans un écran et le travail effectif dans un autre donnait deux versions du même planning, et une demi-heure par jour d'écart, assez petit pour passer pour un arrondi.
 
-**L'amplitude journalière se voit, elle ne se borne pas.** Du premier début à la dernière fin d'une journée, trous et pauses compris, elle s'affiche (maximum, nombre de journées au-delà de 12 h) dans la synthèse par personne, le CSV des heures, `consulter_charge` et la timeline de la fiche. Le seuil est une constante (`PlanningHoursService.SEUIL_AMPLITUDE_MINUTES`), aucune règle ne le lit : borner l'amplitude attend l'avis d'un juriste.
+**L'amplitude journalière se voit, elle ne se borne pas.** Du premier début à la dernière fin d'une journée, trous et pauses compris, elle s'affiche (maximum, nombre de journées au-delà de 12 h) dans l'onglet Charge du Diagnostic, le CSV des heures, `consulter_charge` et la timeline de la fiche. Le seuil est une constante (`PlanningHoursService.SEUIL_AMPLITUDE_MINUTES`), aucune règle ne le lit : borner l'amplitude attend l'avis d'un juriste.
 
 L'amplitude reste la grandeur de trois cas, nommés :
 

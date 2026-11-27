@@ -17,7 +17,7 @@
 // stands up the stack allowing it.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { awaitJob, contexteAdmin, pageAdmin } from './support';
+import { awaitJob, calculerLePlanning, contexteAdmin, PAGE_CALCULER, pageAdmin } from './support';
 import { repartirDeLaReference } from './reference';
 
 /**
@@ -95,8 +95,8 @@ async function horloge(): Promise<{ dateDuJour: string | null; heureDuJour?: str
 
 /** Launches a full solve with the page's button and waits for the job to end. */
 async function calculerDepuisLEcran(page: Page): Promise<void> {
-  await page.goto('/solveur');
-  await page.getByRole('button', { name: 'Calculer le planning' }).click();
+  await page.goto(PAGE_CALCULER);
+  await calculerLePlanning(page);
   await expect
     .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 15_000 })
     .toBe(200);

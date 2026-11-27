@@ -87,32 +87,37 @@ const heatmapToPlanning: RedirectFunction = (route) =>
  * The Heures screen sorted by its payroll columns, under names of its own:
  * « Par personne » sorts by the fields of the reports it joins.
  */
-const HOURS_SORT = {
-  key: 'sort',
-  values: {
-    animateur: 'nom',
-    total: 'heuresTotal',
-    dimanche: 'heuresDimanche',
-    jourFerie: 'heuresJourFerie',
-    nuit: 'heuresNuit',
-  },
+const HOURS_SORT: Record<string, string> = {
+  animateur: 'nom',
+  total: 'heuresTotal',
+  dimanche: 'heuresDimanche',
+  jourFerie: 'heuresJourFerie',
+  nuit: 'heuresNuit',
 };
 
 /**
- * The Équité table is the « Synthèse » of « Par personne » now, sorted by the same fields; its
- * « fiche » reading of one person — the radar with it — is that person's fiche.
+ * The Équité table and the Heures report are the Diagnostic's Charge tab: their
+ * addresses land on it with the state the tab reads (the sort, the empty
+ * columns, the people without rest, the plan the hours are read on, the name
+ * filter) and nothing else. `values` renames the values of
+ * a sort the former screen wrote under names of its own.
  */
-const equiteToPlanning: RedirectFunction = (route) =>
-  equityFicheUrl(route.queryParams) ??
-  redirectToPlanning(
-    { axe: 'personne', vue: 'synthese' },
-    {
-      vue: '',
-      axes: '',
-      comparer: '',
-      sort: { key: 'sort', values: { animateur: 'nom' } },
-    },
-  )(route);
+const CHARGE_KEYS = ['q', 'sort', 'dir', 'colonnes', 'sansRepos', 'source'] as const;
+
+export function chargeUrl(queryParams: Params, sortValues: Record<string, string> = {}): string {
+  const params = new URLSearchParams({ onglet: 'charge' });
+  for (const key of CHARGE_KEYS) {
+    const value = queryParams[key];
+    if (value !== undefined && value !== null && value !== '') {
+      const text = paramText(value as string | readonly string[]);
+      params.set(key, key === 'sort' && Object.hasOwn(sortValues, text) ? sortValues[text] : text);
+    }
+  }
+  return `/diagnostic?${params.toString()}`;
+}
+
+const equiteToCharge: RedirectFunction = (route) =>
+  equityFicheUrl(route.queryParams) ?? chargeUrl(route.queryParams, { animateur: 'nom' });
 
 function redirectToDiagnostic(onglet: string): RedirectFunction {
   return redirectToOnglet('diagnostic', onglet);
@@ -232,7 +237,8 @@ export function equityFicheUrl(queryParams: Params): string | null {
 /**
  * The views the Planning page gave up in 4.0 (it keeps Jour, Stand, Personne
  * and Carte): their addresses land on the screen that holds their reading
- * today — the table by game category in the Diagnostic's Besoin, the
+ * today — the synthesis of « Par personne » in the Diagnostic's Charge, the
+ * table by game category in the Diagnostic's Besoin, the
  * breaks among the Diagnostic's problems, what changed since the publication
  * on the day's row of Diffuser — until the screens built for them exist
  * (Besoin, « Repas et pauses »). A day named by `date` (or an ISO `jour`) goes
@@ -245,6 +251,19 @@ export function planningFormerViewUrl(queryParams: Params): string | null {
   };
   if (text('axe') === 'typologie') {
     return '/diagnostic?onglet=besoin&section=typologie';
+  }
+  // The person axis read as a synthesis — `rendu`, the 3.x `vue`, or the summary
+  // sort and `colonnes=toutes` the links written before it had a name carry.
+  const personAxis = text('vue') === 'personne' || text('axe') === 'personne';
+  const rendu =
+    text('rendu') ||
+    (['jour', 'stand', 'personne', 'carte'].includes(text('vue')) ? '' : text('vue'));
+  const impliedSort = text('sort') !== '' && text('sort') !== 'nom';
+  if (
+    personAxis &&
+    (rendu === 'synthese' || (rendu === '' && (impliedSort || text('colonnes') === 'toutes')))
+  ) {
+    return chargeUrl(queryParams);
   }
   switch (text('vue')) {
     case 'pauses':
@@ -402,8 +421,20 @@ export const redirectEditionComparison: RedirectFunction = ({ queryParams }) => 
  */
 export const redirectKpiToVersions: RedirectFunction = ({ queryParams }) =>
   queryParams['edition'] === '*'
-    ? '/solveur?onglet=versions&editions=toutes'
-    : '/solveur?onglet=versions';
+    ? '/journee?onglet=versions&editions=toutes'
+    : '/journee?onglet=versions';
+
+/**
+ * The Solveur page became the « Calculer » tab of the Planning page (4.0), and
+ * its « Versions du plan » tab the Planning's neighbouring one: the address
+ * lands on the tab it named, its other params kept (`editions=toutes`, a 3.x
+ * `comparer=` the versions screen sends on to « Comparer deux versions »).
+ */
+export const redirectSolveurToPlanning: RedirectFunction = (route) =>
+  redirectToOnglet(
+    'journee',
+    route.queryParams['onglet'] === 'versions' ? 'versions' : 'calculer',
+  )(route);
 
 /**
  * Paramètres became four sections (`/api/parametres/{section}`): the legal
@@ -502,18 +533,15 @@ export function margeToDiagnostic(queryParams: Params): string {
 const adminRoutes: Routes = [
   {
     // The home: where the edition stands in its cycle, before any screen
-    // that acts on it (issue #485). The solver keeps its page under /solveur.
+    // that acts on it (issue #485). The solver is the Planning's « Calculer » tab.
     path: '',
     title: () => $localize`:@@route.accueil:État de l'édition`,
     data: { aide: 'prise-en-main' },
     loadComponent: () => import('./pages/accueil/accueil-page').then((m) => m.AccueilPage),
   },
-  {
-    path: 'solveur',
-    title: () => $localize`:@@route.solver:Solveur`,
-    data: { aide: 'calculer' },
-    loadComponent: () => import('./pages/solver/solver-page').then((m) => m.SolverPage),
-  },
+  // The Solveur page is the « Calculer » tab of the Planning page since 4.0,
+  // its « Versions du plan » the tab beside it.
+  { path: 'solveur', redirectTo: redirectSolveurToPlanning },
   {
     path: 'debug',
     title: () => $localize`:@@route.debug:Débogage`,
@@ -622,15 +650,16 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/aide/aide-page').then((m) => m.AidePage),
   },
   // The finished solves and the snapshots of the edition, the comparator
-  // beside them (issue #702), became the « Versions du plan » tab of the Solveur.
-  { path: 'versions', redirectTo: redirectToOnglet('solveur', 'versions') },
+  // beside them (issue #702), became the « Versions du plan » tab of the
+  // Solveur, and with it a tab of the Planning page (4.0).
+  { path: 'versions', redirectTo: redirectToOnglet('journee', 'versions') },
   // The Autopsie, the Instantanés and the Comparateur became that one page.
   // Their params named the replay (`edition`, `rang`) and a dosage filter,
   // neither of which survived: the address alone is kept — but for the
   // Autopsie's every-edition view, which the page keeps as a view of its own.
   { path: 'kpi', redirectTo: redirectKpiToVersions },
-  { path: 'instantanes', redirectTo: '/solveur?onglet=versions' },
-  { path: 'comparateur', redirectTo: '/solveur?onglet=versions' },
+  { path: 'instantanes', redirectTo: '/journee?onglet=versions' },
+  { path: 'comparateur', redirectTo: '/journee?onglet=versions' },
   {
     path: 'editions',
     title: () => $localize`:@@route.editions:Éditions`,
@@ -652,8 +681,8 @@ const adminRoutes: Routes = [
   { path: 'editions/comparer', redirectTo: redirectEditionComparison },
   // The solver was the home page until #485, under `/exports` and `/solver`.
   // `/exports` became the export screen, now a tab of Fichiers; only
-  // `/solver` still lands on the solver.
-  { path: 'solver', redirectTo: 'solveur' },
+  // `/solver` still lands on the solver, the Planning's « Calculer » tab.
+  { path: 'solver', redirectTo: redirectSolveurToPlanning },
   // Pre-Paramètres URLs (bookmarks, aide links): the pages were merged there.
   { path: 'data-transfer', redirectTo: 'parametres' },
   { path: 'data-setup', redirectTo: 'parametres' },
@@ -755,8 +784,10 @@ const adminRoutes: Routes = [
     // the plan starts from; the address stayed, for the links already out.
     path: 'journee',
     title: () => $localize`:@@route.journee:Planning`,
-    data: { aide: 'consulter' },
+    data: { aide: 'consulter', aideOnglets: { calculer: 'calculer', versions: 'calculer' } },
     canActivate: [planningFormerViews],
+    // An old synthesis address followed from inside the page changes the query alone.
+    runGuardsAndResolvers: 'paramsOrQueryParamsChange',
     loadComponent: () => import('./pages/journee/journee-page').then((m) => m.JourneePage),
   },
   // The month calendar is the Planning page's day selector now: its day, its
@@ -772,11 +803,8 @@ const adminRoutes: Routes = [
   // key of its own, `date` being the page's day.
   { path: 'heatmap', redirectTo: heatmapToPlanning },
   { path: 'repos', redirectTo: redirectToPlanning({ axe: 'personne' }) },
-  {
-    path: 'hours',
-    redirectTo: redirectToPlanning({ axe: 'personne', vue: 'synthese' }, { sort: HOURS_SORT }),
-  },
-  { path: 'equite', redirectTo: equiteToPlanning },
+  { path: 'hours', redirectTo: ({ queryParams }) => chargeUrl(queryParams, HOURS_SORT) },
+  { path: 'equite', redirectTo: equiteToCharge },
   {
     path: 'repartition-heures',
     redirectTo: redirectToPlanning({ axe: 'stand', vue: 'treemap' }, { date: 'jourTreemap' }),

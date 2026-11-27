@@ -22,12 +22,12 @@ test.afterAll(async () => {
 
 const NOMS = '.planning-grille tbody th a.planning-grille-lien';
 
-test("l'écran Équité mène au planning par personne, avec ses colonnes et sa soirée", async ({
+test("l'écran Équité mène à Charge, dans le Diagnostic, avec ses colonnes et sa soirée", async ({
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/equite');
-  await expect(page).toHaveURL(/\/journee\?.*vue=personne/);
+  await expect(page).toHaveURL(/\/diagnostic\?.*onglet=charge/);
   await expect(page.locator(NOMS)).toHaveText([/Alice E2E/, /Bruno E2E/]);
   await expect(page.locator('.planning-grille thead')).toContainText('Écart méd.');
   // The one evening of the application, read on the legal parameters.
@@ -55,7 +55,19 @@ test("le tri d'une colonne d'équité se pose dans l'URL et survit au rechargeme
   await page.context().close();
 });
 
-test('le filtre par nom se restaure au rechargement et se vide en une action', async ({
+test('le filtre par nom de Charge se restaure au rechargement', async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/diagnostic?onglet=charge');
+  await page.getByLabel('Filtrer par nom').fill('Alice');
+  await expect(page.locator(NOMS)).toHaveText([/Alice E2E/]);
+  await expect(page).toHaveURL(/[?&]q=Alice/);
+  await page.reload();
+  await expect(page.getByLabel('Filtrer par nom')).toHaveValue('Alice');
+  await expect(page.locator(NOMS)).toHaveText([/Alice E2E/]);
+  await page.context().close();
+});
+
+test('le filtre par nom du planning se restaure au rechargement et se vide en une action', async ({
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
@@ -77,7 +89,7 @@ test('le filtre par nom se restaure au rechargement et se vide en une action', a
 
 test("l'export CSV d'équité répond avec une ligne par animateur", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/journee?vue=personne');
+  await page.goto('/diagnostic?onglet=charge');
   await expect(page.locator(NOMS)).toHaveCount(2);
 
   const telechargement = page.waitForEvent('download');

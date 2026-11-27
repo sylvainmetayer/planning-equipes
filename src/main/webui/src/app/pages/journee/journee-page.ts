@@ -3,11 +3,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   Injector,
   OnInit,
   signal,
+  untracked,
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -16,6 +18,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute, ParamMap, RouterLink } from '@angular/router';
+import { ongletHote } from '../../core/onglet-hote';
 import { reglagesAvances } from '../../core/reglages-avances';
 import { ReglagesAvancesToggle } from '../../shared/reglages-avances';
 import { AnalysesApi } from '../../core/api/analyses-api';
@@ -23,7 +26,6 @@ import { dayNavigation } from '../../core/day-navigation';
 import { errorPrefix } from '../../core/error-message';
 import {
   Emplacement,
-  HoursSource,
   PlanningEvenement,
   GroupedArrivalReport,
   WalkSequenceReport,
@@ -61,7 +63,6 @@ import { PlanningStandView } from '../planning-stand/planning-stand-vue';
 import {
   DensitePersonne,
   readDensitePersonne,
-  readHoursSource,
   readPersonView,
   PersonView,
 } from '../planning-personne/planning-personne';
@@ -71,10 +72,12 @@ import { TRI_NOM } from '../planning-grille/planning-grille';
 import { RepartitionHeuresView } from '../repartition-heures/repartition-heures-vue';
 import {
   JourEvenement,
+  OngletPlanning,
   dayKey,
   JourneeView,
   PlanningView,
   readAxe,
+  readOngletPlanning,
   requestedKey,
   jourDemande,
   jourInconnu,
@@ -89,6 +92,8 @@ import { StatusMessage } from '../../shared/status-message';
 import { NewWindowLink } from '../../shared/new-window-link';
 import { SeatPanel } from '../../shared/siege-panel/siege-panel';
 import { resolveSeat, SeatRequest } from '../../shared/siege-panel/seat';
+import { SolverPage } from '../solver/solver-page';
+import { VersionsPage } from '../versions/versions-page';
 
 /** « Sans emplacement »: the stands that sit on none, as the location filter and the treemap name them. */
 const NO_LOCATION = 'aucun';
@@ -161,16 +166,6 @@ function filtersShown(axe: PlanningAxe, standView: StandView, view: JourneeView)
   }
 }
 
-/**
- * The person axis's rendering an address without `vue` implies: a summary
- * sort or `colonnes=toutes` — the links written before the summary left the
- * day grid, `/equite` redirects included — name the synthesis.
- */
-function impliedPersonView(query: ParamMap): string | null {
-  const sort = query.get('sort');
-  return (sort && sort !== TRI_NOM) || query.get('colonnes') === 'toutes' ? 'synthese' : null;
-}
-
 /** A stand or an animateur of the plan, as the two filter selectors list them. */
 interface Option {
   id: string;
@@ -192,6 +187,11 @@ interface Option {
  * <p>Each view keeps the view state that is its own (which lines the rail
  * shows, the map's cursor…) and writes it to the URL next to the page's keys:
  * `keepViewInQueryParams` lets every writer own the keys it names.</p>
+ *
+ * <p>Two tabs beside the views, `?onglet=calculer` (the former Solveur page)
+ * and `?onglet=versions` (its « Versions du plan »): on them the plan is
+ * neither read nor written to the address, and coming back re-reads it — a
+ * solve may have rewritten it meanwhile.</p>
  */
 @Component({
   selector: 'app-journee-page',
@@ -215,12 +215,14 @@ interface Option {
     PlanningPersonneView,
     RepartitionHeuresView,
     SeatPanel,
+    SolverPage,
+    VersionsPage,
     // Rendered inside a `@defer` block only: `leaflet` travels with this
     // component and must not enter the chunk of the three other renderings.
     CarteJourView,
   ],
   templateUrl: './journee-page.html',
-  styleUrl: './journee-page.css',
+  styleUrls: ['../../../styles/planning-axe.css', './journee-page.css'],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -231,6 +233,9 @@ export class JourneePage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly validations = inject(ValidationsStore);
   private readonly consignes = inject(ConsignesStore);
+
+  /** The plan (its four views), « Calculer » or « Versions du plan ». */
+  protected readonly ongletsPage = ongletHote<OngletPlanning>(readOngletPlanning, 'plan');
 
   protected readonly loading = signal(false);
   protected readonly error = signal('');
@@ -265,10 +270,7 @@ export class JourneePage implements OnInit {
   /** How many days the two grids show around the page's day (`portee`); one value for both axes. */
   protected readonly gridSpan = signal<GridSpan>('semaine');
   protected readonly triPersonne = signal<SortState>(NO_SORT);
-  protected readonly allColumns = signal(false);
   protected readonly noRestOnly = signal(false);
-  /** The plan « Par personne » reads its hours from (`source`); null leaves it to the server. */
-  protected readonly hoursSource = signal<HoursSource | null>(null);
   /* The views' own state, read from the URL here and handed over two-way. */
   protected readonly lignesRail = signal<RailVue>('tous');
   protected readonly instantCarte = signal<number | null>(null);
@@ -482,9 +484,7 @@ export class JourneePage implements OnInit {
       this.densitePersonne() !== 'detail' ||
       this.gridSpanParam() !== null ||
       this.shownPersonSort().active !== '' ||
-      (this.allColumns() && this.axe() === 'personne' && this.personView() === 'synthese') ||
       this.noRestOnly() ||
-      (this.hoursSource() !== null && this.axe() === 'personne') ||
       this.lignesRail() !== 'tous' ||
       this.instantCarte() !== null ||
       this.chargeCarte() !== 'jour' ||
@@ -561,9 +561,7 @@ export class JourneePage implements OnInit {
     }
     this.gridSpan.set(readGridSpan(params.get('portee')));
     this.triPersonne.set(readSort(params));
-    this.allColumns.set(params.get('colonnes') === 'toutes');
     this.noRestOnly.set(params.get('sansRepos') === '1');
-    this.hoursSource.set(readHoursSource(params.get('source')));
     this.filtre.set(params.get('q') ?? '');
     this.emplacement.set(params.get('emplacement') ?? '');
     this.typologie.set(params.get('typologie') ?? '');
@@ -580,54 +578,63 @@ export class JourneePage implements OnInit {
     // the signal, the rail was gone, and a reload brought the filter back.
     // `jour`, the key of the four former screens, is retired once the day is
     // known by its date.
-    keepViewInQueryParams(() => ({
-      ...RETIRED_KEYS_CLEARED,
-      date: this.dateParam(),
-      jour: this.jours().length > 0 ? null : this.route.snapshot.queryParamMap.get('jour'),
-      vue: this.viewParam(),
-      rendu: this.renduParam(),
-      mode: this.modeParam(),
-      densite: this.densiteParam(),
-      portee: this.gridSpanParam(),
-      ...sortQueryParams(this.shownPersonSort()),
-      ...this.personAxisParams(),
-      q: optionalParam(this.filtre()),
-      stand: optionalParam(this.stand()),
-      animateur: optionalParam(this.animateur()),
-      emplacement: optionalParam(this.emplacement()),
-      typologie: optionalParam(this.typologie()),
-      lignes: this.lignesRail() === 'tous' ? null : this.lignesRail(),
-      t: this.instantCarte() === null ? null : String(this.instantCarte()),
-      charge: this.chargeCarte() === 'jour' ? null : this.chargeCarte(),
-      problemes: this.seulementProblemes() ? '1' : null,
-      sieges: this.sieges() === 'tous' ? null : this.sieges(),
-      siege: this.openSeatId(),
-      creneau: this.creneauParam(),
-      // The treemap writes its own keys while it is on screen; once it is
-      // gone, nothing would, and a reload would bring its period back unasked.
-      ...(this.axe() === 'stand' && this.standView() === 'treemap' ? {} : TREEMAP_KEYS_CLEARED),
-    }));
+    // On « Calculer » or « Versions » the plan's keys are not the screen's:
+    // nothing is written, and the address keeps the tab alone.
+    keepViewInQueryParams(() =>
+      this.ongletsPage.onglet() !== 'plan'
+        ? {}
+        : {
+            ...RETIRED_KEYS_CLEARED,
+            date: this.dateParam(),
+            jour: this.jours().length > 0 ? null : this.route.snapshot.queryParamMap.get('jour'),
+            vue: this.viewParam(),
+            rendu: this.renduParam(),
+            mode: this.modeParam(),
+            densite: this.densiteParam(),
+            portee: this.gridSpanParam(),
+            ...sortQueryParams(this.shownPersonSort()),
+            ...this.personAxisParams(),
+            q: optionalParam(this.filtre()),
+            stand: optionalParam(this.stand()),
+            animateur: optionalParam(this.animateur()),
+            emplacement: optionalParam(this.emplacement()),
+            typologie: optionalParam(this.typologie()),
+            lignes: this.lignesRail() === 'tous' ? null : this.lignesRail(),
+            t: this.instantCarte() === null ? null : String(this.instantCarte()),
+            charge: this.chargeCarte() === 'jour' ? null : this.chargeCarte(),
+            problemes: this.seulementProblemes() ? '1' : null,
+            sieges: this.sieges() === 'tous' ? null : this.sieges(),
+            siege: this.openSeatId(),
+            creneau: this.creneauParam(),
+            // The treemap writes its own keys while it is on screen; once it is
+            // gone, nothing would, and a reload would bring its period back unasked.
+            ...(this.axe() === 'stand' && this.standView() === 'treemap'
+              ? {}
+              : TREEMAP_KEYS_CLEARED),
+          },
+    );
+    // Back on the plan from « Calculer » or « Versions »: re-read it.
+    let ongletPrecedent = this.ongletsPage.onglet();
+    effect(() => {
+      const onglet = this.ongletsPage.onglet();
+      if (onglet === 'plan' && ongletPrecedent !== 'plan') {
+        untracked(() => void this.refresh());
+      }
+      ongletPrecedent = onglet;
+    });
   }
 
   ngOnInit(): void {
-    void this.refresh();
+    if (this.ongletsPage.onglet() === 'plan') {
+      void this.refresh();
+    }
   }
 
   /**
-   * The keys only « Par personne » writes: every column of the synthesis, the
-   * people without rest, the plan the hours are read from.
+   * The key only « Par personne » writes: the people without rest.
    */
-  private personAxisParams(): {
-    colonnes: string | null;
-    sansRepos: string | null;
-    source: string | null;
-  } {
-    const personne = this.axe() === 'personne';
-    return {
-      colonnes: personne && this.personView() === 'synthese' && this.allColumns() ? 'toutes' : null,
-      sansRepos: personne && this.noRestOnly() ? '1' : null,
-      source: personne ? this.hoursSource() : null,
-    };
+  private personAxisParams(): { sansRepos: string | null } {
+    return { sansRepos: this.axe() === 'personne' && this.noRestOnly() ? '1' : null };
   }
 
   /**
@@ -770,6 +777,24 @@ export class JourneePage implements OnInit {
     this.axe() === 'jour' ? tabOf(this.view()) : this.axe(),
   );
 
+  /** The toggle's value: the view on screen, or the tab that replaced the plan. */
+  protected readonly toggleValue = computed<PlanningView | OngletPlanning>(() => {
+    const onglet = this.ongletsPage.onglet();
+    return onglet === 'plan' ? this.currentView() : onglet;
+  });
+
+  /** The toggle: a view of the plan, « Calculer » or « Versions du plan ». */
+  protected async selectToggle(value: PlanningView | OngletPlanning): Promise<void> {
+    if (value === 'calculer' || value === 'versions' || value === 'plan') {
+      await this.ongletsPage.changer(value);
+      return;
+    }
+    if (this.ongletsPage.onglet() !== 'plan') {
+      await this.ongletsPage.changer('plan');
+    }
+    this.selectView(value);
+  }
+
   /** The view toggle: « Jour » comes back in the mode it was left in, the rail at first. */
   protected selectView(view: PlanningView): void {
     if (view === this.currentView()) {
@@ -809,7 +834,9 @@ export class JourneePage implements OnInit {
     if (this.axe() === 'stand') {
       this.standView.set(readStandView(rendu));
     } else if (this.axe() === 'personne') {
-      this.personView.set(readPersonView(rendu ?? impliedPersonView(query)));
+      // The synthesis is the Diagnostic's Charge: the route's guard sends its addresses there.
+      const personView = readPersonView(rendu);
+      this.personView.set(personView === 'synthese' ? 'grille' : personView);
     } else {
       this.view.set(readView(query.get('vue'), query.get('mode')));
     }
@@ -901,9 +928,7 @@ export class JourneePage implements OnInit {
     this.densitePersonne.set('detail');
     this.gridSpan.set('semaine');
     this.triPersonne.set(NO_SORT);
-    this.allColumns.set(false);
     this.noRestOnly.set(false);
-    this.hoursSource.set(null);
     this.lignesRail.set('tous');
     this.instantCarte.set(null);
     this.chargeCarte.set('jour');

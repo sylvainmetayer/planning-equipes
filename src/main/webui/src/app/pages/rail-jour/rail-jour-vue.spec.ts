@@ -368,7 +368,7 @@ describe('RailJourView', () => {
     await rendre({ animateurs: [ALICE], postes: [], score: null });
 
     expect(racine().querySelector('.rail-table')).toBeNull();
-    expect(racine().textContent!).toContain('Lancez une résolution depuis la page Solveur');
+    expect(racine().textContent!).toContain('Lancez une résolution depuis Planning › Calculer');
   });
 
   describe('pauses', () => {

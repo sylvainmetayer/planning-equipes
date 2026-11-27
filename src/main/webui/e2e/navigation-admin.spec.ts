@@ -30,7 +30,11 @@ test.afterAll(async () => {
  */
 const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/', marker: "État de l'édition", sheet: 'accueil-ligne' },
-  { path: '/solveur', marker: 'Ce calcul tiendra compte de', sheet: 'solver-modes' },
+  {
+    path: '/journee?onglet=calculer',
+    marker: 'Ce calcul tiendra compte de',
+    sheet: 'solver-modes',
+  },
   { path: '/publication', marker: 'Qui a reçu quelle version', sheet: 'diffuser-onglets' },
   {
     path: '/publication?onglet=documents',
@@ -48,7 +52,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/regles?onglet=regles&avance=1', marker: 'Avancé' },
   { path: '/parametres?onglet=calcul', marker: 'Budget de calcul', sheet: 'parametres-save-bar' },
   { path: '/echanges', marker: 'Échanges de créneaux', sheet: 'espace-demande-horsgroupe' },
-  { path: '/solveur?onglet=versions', marker: 'Plan en place', sheet: 'versions-toolbar' },
+  { path: '/journee?onglet=versions', marker: 'Plan en place', sheet: 'versions-toolbar' },
   { path: '/aide', marker: "Aide à l'utilisation", sheet: 'aide-search' },
   { path: '/nouveautes', marker: 'Nouveautés', sheet: 'news-release' },
   { path: '/editions', marker: 'Nouvelle édition', sheet: 'edition-nom-input' },
@@ -98,11 +102,13 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/journee?vue=stand&rendu=treemap', sheet: 'repartition-toolbar' },
   {
     path: '/journee?vue=personne',
-    marker: 'Heures pour la paie (CSV)',
+    marker: 'Jour de repos',
     sheet: 'planning-personne-travaille',
   },
   { path: '/journee?vue=personne&rendu=frise', sheet: 'personne-frise-ligne' },
-  { path: '/journee?vue=personne&rendu=synthese', marker: 'Écart méd.', sheet: 'planning-grille' },
+  { path: '/diagnostic?onglet=charge', marker: 'Écart méd.', sheet: 'planning-grille' },
+  // The former synthesis of « Par personne » lands on Charge.
+  { path: '/journee?vue=personne&rendu=synthese', marker: 'Écart méd.' },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },
   // Fragilité, « À former » and Tension are the three sections of Risques: the old tabs land there.
   { path: '/diagnostic?onglet=risques', marker: 'Fragilité', sheet: 'fragilite-message' },

@@ -16,6 +16,8 @@ import {
   pageAdmin,
   planningPersiste,
   seedReferentielSolveur,
+  calculerLePlanning,
+  PAGE_CALCULER,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -111,8 +113,8 @@ async function agrandirLeStand(standId: string, effectif: number): Promise<void>
 
 /** Runs a solve from the page itself, so the recap lands on screen as a user sees it. */
 async function resoudreDepuisLaPage(page: Page): Promise<void> {
-  await page.goto('/solveur');
-  await page.getByRole('button', { name: 'Calculer le planning' }).click();
+  await page.goto(PAGE_CALCULER);
+  await calculerLePlanning(page);
   // The server-side lock is the source of truth: see the job hold it, then
   // release it. Polling the result alone could pass before the solve ran.
   await expect
@@ -210,48 +212,89 @@ test("une résolution qui dégrade le plan le dit, et le retour en arrière rét
   await page.context().close();
 });
 
+/** Waits for the solver to take a job, then to release it: the server's lock is the truth. */
+async function attendreLaFin(page: Page): Promise<void> {
+  await expect
+    .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 15_000 })
+    .toBe(200);
+  await expect
+    .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 90_000 })
+    .toBe(204);
+}
+
 /**
- * Issue #174, as a user sees it: the page says where the next calculation
- * starts from, « Recommencer de zéro » asks before throwing the saved plan
- * away, and the recap says which starting point the run actually used.
+ * The whole solve as a user goes through it (Q49, Q50): the Planning page's
+ * « Calculer » tab, its two buttons, « Recommencer de zéro » a box of the
+ * first one's confirmation, and the recap saying which starting point each
+ * run actually used (issue #174).
  */
-test('« Calculer » repart du plan enregistré, « Recommencer de zéro » demande confirmation', async ({
+test('le parcours complet du calcul : Calculer, Corriger, puis recommencer de zéro', async ({
   browser,
 }) => {
   test.slow();
   await reseed();
   const page = await pageAdmin(browser, admin);
   try {
-    await page.goto('/solveur');
+    // The tab is reached from the Planning page itself.
+    await page.goto('/journee');
+    await page
+      .getByRole('radiogroup', { name: 'Vue du planning' })
+      .getByRole('radio', { name: 'Calculer' })
+      .click();
+    await expect(page).toHaveURL(/\/journee\?onglet=calculer$/);
     await expect(page.locator('#contenu')).toContainText(
       'Aucun plan enregistré : le calcul part de zéro.',
     );
-    await expect(page.getByRole('button', { name: 'Recommencer de zéro' })).toBeDisabled();
+    // Two buttons; starting over is not one of them.
+    await expect(page.getByRole('button', { name: 'Corriger après un changement' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Recommencer de zéro' })).toHaveCount(0);
 
-    await resoudreDepuisLaPage(page);
+    // 1. No plan: « Calculer » asks nothing and starts cold.
+    await page.getByRole('button', { name: 'Calculer le planning' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await attendreLaFin(page);
     await expect(page.locator('#contenu')).toContainText(
       'Point de départ : aucun, calcul de zéro.',
     );
     await expect(page.locator('#contenu')).toContainText(
       /repart du plan enregistré le .* \(\d+ affectations\)/,
     );
-    await expect(page.getByRole('button', { name: 'Recommencer de zéro' })).toBeEnabled();
+    // A plan exists: the relecture's progress shows.
+    await expect(page.locator('.relecture-banniere')).toBeVisible();
 
-    await resoudreDepuisLaPage(page);
+    // 2. A plan: « Calculer » asks, the box unticked, and starts from the plan.
+    await page.getByRole('button', { name: 'Calculer le planning' }).click();
+    let confirmation = page.getByRole('dialog', { name: 'Calculer le planning ?' });
+    await expect(confirmation).toContainText(/\d+ affectations/);
+    await expect(
+      confirmation.getByRole('checkbox', { name: /Recommencer de zéro/ }),
+    ).not.toBeChecked();
+    await confirmation.getByRole('button', { name: 'Calculer', exact: true }).click();
+    await attendreLaFin(page);
     await expect(page.locator('#contenu')).toContainText(
       /Point de départ : le plan enregistré, \d+ postes repris\./,
     );
 
-    await page.getByRole('button', { name: 'Recommencer de zéro' }).click();
-    const confirmation = page.getByRole('dialog');
-    await expect(confirmation).toContainText('Recommencer de zéro ?');
-    await confirmation.getByRole('button', { name: 'Recommencer de zéro' }).click();
+    // 3. « Corriger » repairs the seats in breach only.
+    await page.getByRole('button', { name: 'Corriger après un changement' }).click();
+    const perimetre = page.getByRole('dialog', { name: 'Corriger après un changement' });
+    await perimetre.getByRole('button', { name: 'Lancer la replanification' }).click();
+    // Everything else pinned, the run can end before a poll sees it: its recap is the sign.
+    await expect(
+      page.getByRole('heading', { name: 'Dernière replanification incrémentale' }),
+    ).toBeVisible({ timeout: 90_000 });
     await expect
-      .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 15_000 })
-      .toBe(200);
-    await expect
-      .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 90_000 })
+      .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 30_000 })
       .toBe(204);
+
+    // 4. The box ticked: starting over asks once more, in its own words.
+    await page.getByRole('button', { name: 'Calculer le planning' }).click();
+    confirmation = page.getByRole('dialog', { name: 'Calculer le planning ?' });
+    await confirmation.getByRole('checkbox', { name: /Recommencer de zéro/ }).check();
+    await confirmation.getByRole('button', { name: 'Calculer', exact: true }).click();
+    const aFroid = page.getByRole('dialog', { name: 'Recommencer de zéro ?' });
+    await aFroid.getByRole('button', { name: 'Recommencer de zéro' }).click();
+    await attendreLaFin(page);
     await expect(page.locator('#contenu')).toContainText(
       'Point de départ : aucun, calcul de zéro.',
     );

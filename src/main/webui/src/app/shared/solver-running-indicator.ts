@@ -27,7 +27,7 @@ import { SolverJobService } from '../core/solver-job.service';
     @if (jobs.activeJob()) {
       <a
         matIconButton
-        routerLink="/solveur"
+        routerLink="/journee" [queryParams]="{ onglet: 'calculer' }"
         class="solver-running-indicator"
         [matTooltip]="description()"
         matTooltipPosition="below"

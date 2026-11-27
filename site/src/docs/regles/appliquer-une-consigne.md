@@ -20,7 +20,7 @@ La consigne ne détruit rien de la grille. Les vacations fermées perdent leurs 
 
 Il existe aussi des raccourcis :
 
-- « fermer des stands demain » est proposé sur le Solveur et sur l'écran Aujourd'hui ;
+- « fermer des stands demain » est proposé sur l'onglet *Calculer* et sur l'écran Aujourd'hui ;
 - un **préréglage nommé** (« Plan canicule ») rend chaque vague identique au geste près.
 
 ## Ce que voient les animateurs

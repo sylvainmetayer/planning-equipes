@@ -55,7 +55,7 @@ In the *Table* view, each name and each empty seat opens the seat panel. "Simula
 
 A read-only user sees the state of the day, with no button to change it.
 
-Progress is read in the Solver ("3 days out of 12") and by a tick on each reviewed day of the Planning page's mini-month. The state always covers the whole day, whatever the filter displayed.
+Progress is read in the *Calculate* tab of the Planning page, as soon as a plan exists ("3 days out of 12"), and by a tick on each reviewed day of the Planning page's mini-month. The state always covers the whole day, whatever the filter displayed.
 
 Reviewing freezes nothing: only the "Frozen" value lays the whole-day lock (see [Set exceptions and locks](ajustements-et-verrous.md)).
 
