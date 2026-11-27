@@ -251,10 +251,7 @@ describe('EspaceAnimateurShell — accessibility groundwork', () => {
     expect(alert!.textContent).toContain('Code incorrect');
   });
   it('shows and fills in the code a demo instance hands back, since no mail leaves there', async () => {
-    const espace = TestBed.inject(EspaceAnimateurService) as unknown as {
-      demanderCode: ReturnType<typeof vi.fn>;
-    };
-    espace.demanderCode.mockResolvedValueOnce({
+    vi.mocked(TestBed.inject(EspaceAnimateurService).demanderCode).mockResolvedValueOnce({
       emailMasque: 'a***@example.org',
       codeDemo: '123456',
     });

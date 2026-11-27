@@ -22,7 +22,7 @@ Never use this mode for an instance in service: it accepts the example passwords
 | `OIDC_ENABLED=false` | no sign-in provider: the `admin` account's form stays open |
 | `PLANNING_MCP_API_KEY` ignored, MCP OAuth closed | no key opens `/mcp`, and the configured one is not revealed |
 
-The mode also refuses, with a message starting with « Instance de démonstration : »:
+The mode also refuses, with a message starting with `Instance de démonstration :`:
 
 - creating, deactivating or reactivating an account, granting or withdrawing a right;
 - sending a password link, choosing a password, the « forgot my password » request included;
