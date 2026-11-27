@@ -3,11 +3,13 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import dev.sylvain.planning.observability.NulCharacterRefusal;
 import dev.sylvain.planning.service.BusinessError;
 import io.quarkiverse.mcp.server.ToolCallException;
 import jakarta.interceptor.InvocationContext;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import org.junit.jupiter.api.Test;
@@ -51,6 +53,37 @@ class RefusMetierInterceptorTest {
                             throw bug;
                         })))
                 .isSameAs(bug);
+    }
+
+    /**
+     * A U+0000 in an argument is refused by PostgreSQL, which the REST side
+     * answers with a 400: over MCP it is the same refusal, with the same
+     * sentence, not « Internal error ».
+     */
+    @Test
+    void aNulCharacterTheDatabaseRefusedComesBackAsARefusal() {
+        RuntimeException refusEnBase =
+                new RuntimeException(new SQLException("invalid byte sequence for encoding \"UTF8\": 0x00", "22021"));
+
+        assertThatThrownBy(() ->
+                        interceptor.reportBusinessError(contexte(OutilsMcp.all().getFirst(), () -> {
+                            throw refusEnBase;
+                        })))
+                .isInstanceOf(ToolCallException.class)
+                .hasMessage(NulCharacterRefusal.MESSAGE)
+                .hasCause(refusEnBase);
+    }
+
+    /** Any other database failure stays a bug. */
+    @Test
+    void anotherDatabaseFailureStaysABug() {
+        RuntimeException panne = new RuntimeException(new SQLException("connection lost", "08006"));
+
+        assertThatThrownBy(() ->
+                        interceptor.reportBusinessError(contexte(OutilsMcp.all().getFirst(), () -> {
+                            throw panne;
+                        })))
+                .isSameAs(panne);
     }
 
     /** Helpers of a tool class are intercepted too; only the tool boundary answers the MCP client. */
