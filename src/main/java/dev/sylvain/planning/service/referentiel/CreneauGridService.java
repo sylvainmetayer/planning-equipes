@@ -137,7 +137,7 @@ public class CreneauGridService {
     /**
      * The opening report's anomalies {@link #validate} folds in — without the
      * informational ones, which say how a stand's rules are written and nothing
-     * about the grid: a grid check, a series preview or {@code valider_creneaux}
+     * about the grid: a grid check, a series preview or {@code diagnostiquer_creneaux}
      * listing them would warn about what no grid can fix. The Ouvertures screen
      * and the coherence checklist read them from the report itself.
      */

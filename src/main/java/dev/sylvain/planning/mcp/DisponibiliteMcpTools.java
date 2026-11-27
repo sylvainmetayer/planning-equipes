@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
@@ -9,6 +10,7 @@ import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.Decla
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DeclarationAdminView;
 import dev.sylvain.planning.service.espace.TeammateRequestService;
+import dev.sylvain.planning.service.journal.CurrentAction;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -31,6 +33,11 @@ import java.util.List;
  * <p>A declaration names its author, so it is reported here by id only, and
  * the invitation report is counted rather than listed: it names the people it
  * could not reach.</p>
+ *
+ * <p>One tool per object and per verb (ADR 0127): the Disponibilités screen is read under a
+ * {@code section}, a declaration is decided under a {@code decision}. Opening the collection stays a
+ * tool of its own, since it may send mail — never a mode of another tool. The 3.x names stay
+ * published as aliases until 5.0.</p>
  */
 @EditionCiblee
 @RefusMetier
@@ -38,25 +45,120 @@ import java.util.List;
 @ApplicationScoped
 public class DisponibiliteMcpTools {
 
+    /** The sections of {@code consulter_disponibilites}, as it names them. */
+    private static final String DECLARATIONS = "declarations";
+
+    private static final String COVOITURAGE = "covoiturage";
+
     private final DeclarationDisponibiliteService declarationService;
 
     private final EspaceAnimateurService espaceAnimateurService;
 
     private final TeammateRequestService teammateRequestService;
 
+    private final CurrentAction currentAction;
+
     @Inject
     DisponibiliteMcpTools(
             DeclarationDisponibiliteService declarationService,
             EspaceAnimateurService espaceAnimateurService,
-            TeammateRequestService teammateRequestService) {
+            TeammateRequestService teammateRequestService,
+            CurrentAction currentAction) {
         this.declarationService = declarationService;
         this.espaceAnimateurService = espaceAnimateurService;
         this.teammateRequestService = teammateRequestService;
+        this.currentAction = currentAction;
     }
 
     @Tool(
+            name = "consulter_disponibilites",
+            description = "L'écran Disponibilités, sous la section demandée ; les animateurs y sont désignés par id "
+                    + "seul. collecte (défaut) : la fenêtre de collecte, ouverte ou non, ses dates si elle en porte "
+                    + "et la relance automatique ; fermée tant que personne ne l'a ouverte — un formulaire ouvert sur "
+                    + "Internet ne s'ouvre pas par omission. declarations : les déclarations envoyées depuis l'espace "
+                    + "animateur, de la plus récente à la plus ancienne, chacune avec ce qui a été déclaré et, en "
+                    + "regard, ce que la fiche dit aujourd'hui ; statut (EN_ATTENTE, APPLIQUEE, REFUSEE) ne vaut que "
+                    + "pour cette section. covoiturage : les demandes « Je viens avec… » (un à trois coéquipiers), du "
+                    + "plus récent au plus ancien, avec les membres, le statut (EN_ATTENTE pour non validée, ou "
+                    + "VALIDEE), si chacun a nommé les autres (confirmedByAll), les jours où leurs indisponibilités "
+                    + "déclarées divergent et l'ajustement ARRIVEE_GROUPEE créé par la validation ; une demande est "
+                    + "distincte de la déclaration, et sa validation, qui prévient par courriel, reste un geste "
+                    + "d'écran.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    DisponibilitesView consultAvailability(
+            @ToolArg(description = "collecte (défaut), declarations ou covoiturage", required = false) String section,
+            @ToolArg(
+                            description =
+                                    "Section declarations : statut pour filtrer, EN_ATTENTE, APPLIQUEE ou REFUSEE",
+                            required = false)
+                    String statut,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        String choisie = McpArgs.choix(section, "section", "collecte", "collecte", DECLARATIONS, COVOITURAGE);
+        if (!DECLARATIONS.equals(choisie)) {
+            McpArgs.onlyFor("la section declarations", "statut", statut);
+        }
+        return switch (choisie) {
+            case DECLARATIONS ->
+                new DisponibilitesView(choisie, null, listAvailabilityDeclarations(statut, edition), null);
+            case COVOITURAGE -> new DisponibilitesView(choisie, null, null, listCarpoolRequests(edition));
+            default -> new DisponibilitesView(choisie, getAvailabilityCollection(edition), null, null);
+        };
+    }
+
+    /** One section of the Disponibilités screen, the others left out. */
+    public record DisponibilitesView(
+            String section,
+            @JsonInclude(JsonInclude.Include.NON_NULL) CollecteView collecte,
+            @JsonInclude(JsonInclude.Include.NON_NULL) List<DeclarationMcpView> declarations,
+            @JsonInclude(JsonInclude.Include.NON_NULL) List<CarpoolRequestMcpView> covoiturage) {}
+
+    @Tool(
+            name = "modifier_declaration_disponibilite",
+            description = "Décide une déclaration de disponibilité en attente. decision appliquer : jours "
+                    + "indisponibles et souhaits déclarés remplacent ceux de la fiche de l'animateur, tout ou rien, "
+                    + "comme dans l'interface ; les données de référence sont marquées modifiées, le planning déjà "
+                    + "résolu devient périmé, et les avertissements de cohérence reviennent en codes, comme pour "
+                    + "modifier_animateur ; refusé pendant une résolution de l'édition. decision refuser : le "
+                    + "référentiel n'est pas touché ; le commentaire, qui ne vaut que pour un refus, est ce que "
+                    + "l'animateur lira, et il peut renvoyer une version corrigée tant que la collecte est ouverte. "
+                    + "Rien n'est envoyé.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = false,
+                            openWorldHint = false))
+    DeclarationAppliqueeMcpView decideAvailabilityDeclaration(
+            @ToolArg(description = "Id de la déclaration") String id,
+            @ToolArg(description = "appliquer ou refuser") String decision,
+            @ToolArg(description = "Commentaire pour l'animateur, sur un refus", required = false) String commentaire,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        // The services, not the alias tools: an intercepted call on this would journal twice.
+        if ("appliquer".equals(McpArgs.choix(decision, "decision", null, "appliquer", "refuser"))) {
+            McpArgs.onlyFor("la décision refuser", "commentaire", commentaire);
+            return applied(declarationService.apply(id));
+        }
+        DeclarationMcpView refusee = view(declarationService.refuse(id, commentaire));
+        // The catalogue files the tool under the application; a refusal is its own line.
+        currentAction.action("DECLARATION_REFUSEE");
+        return new DeclarationAppliqueeMcpView(refusee, List.of());
+    }
+
+    private DeclarationAppliqueeMcpView applied(DeclarationAppliquee appliquee) {
+        return new DeclarationAppliqueeMcpView(
+                view(appliquee.declaration()), WarningCodes.of(appliquee.avertissements()));
+    }
+
+    @Deprecated
+    @Tool(
             name = "lister_demandes_covoiturage",
-            description = "Liste les demandes de covoiturage (« Je viens avec… », un à trois coéquipiers) "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_disponibilites (section covoiturage). "
+                    + "Liste les demandes de covoiturage (« Je viens avec… », un à trois coéquipiers) "
                     + "envoyées depuis l'onglet Covoiturage de l'espace animateur pendant la collecte, du plus "
                     + "récent au plus ancien : les membres, le statut (EN_ATTENTE pour non validée, ou VALIDEE), si chacun a "
                     + "nommé les autres (confirmedByAll), les jours où leurs indisponibilités déclarées divergent, "
@@ -102,9 +204,11 @@ public class DisponibiliteMcpTools {
             Instant createdAt,
             Instant decidedAt) {}
 
+    @Deprecated
     @Tool(
             name = "lister_declarations_disponibilite",
-            description = "Liste les déclarations de disponibilité envoyées par les animateurs depuis leur "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_disponibilites (section declarations). "
+                    + "Liste les déclarations de disponibilité envoyées par les animateurs depuis leur "
                     + "espace, de la plus récente à la plus ancienne. Chaque déclaration porte ce qui a été déclaré et, "
                     + "en regard, ce que la fiche dit aujourd'hui. Filtrable par statut : EN_ATTENTE, APPLIQUEE, "
                     + "REFUSEE. Les animateurs y sont désignés par id seul.",
@@ -126,9 +230,11 @@ public class DisponibiliteMcpTools {
                 .toList();
     }
 
+    @Deprecated
     @Tool(
             name = "consulter_collecte_disponibilites",
-            description = "Consulte la fenêtre de collecte des disponibilités : ouverte ou non, et ses dates si "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_disponibilites (section collecte). "
+                    + "Consulte la fenêtre de collecte des disponibilités : ouverte ou non, et ses dates si "
                     + "elle en porte. Fermée tant que personne ne l'a ouverte — un formulaire ouvert sur Internet ne "
                     + "s'ouvre pas par omission.",
             annotations =
@@ -176,12 +282,15 @@ public class DisponibiliteMcpTools {
         return toView(appliquee.fenetre(), appliquee.invitation());
     }
 
+    @Deprecated
     @Tool(
             name = "appliquer_declaration_disponibilite",
-            description = "Applique une déclaration en attente sur la fiche de l'animateur : jours indisponibles "
-                    + "et souhaits déclarés y remplacent ceux qui s'y trouvaient. Tout ou rien, comme dans l'interface. "
-                    + "Les données de référence sont marquées modifiées : le planning déjà résolu devient périmé. "
-                    + "Rend les avertissements de cohérence en codes, comme modifier_animateur.",
+            description =
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_declaration_disponibilite (decision appliquer). "
+                            + "Applique une déclaration en attente sur la fiche de l'animateur : jours indisponibles "
+                            + "et souhaits déclarés y remplacent ceux qui s'y trouvaient. Tout ou rien, comme dans l'interface. "
+                            + "Les données de référence sont marquées modifiées : le planning déjà résolu devient périmé. "
+                            + "Rend les avertissements de cohérence en codes, comme modifier_animateur.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -191,16 +300,17 @@ public class DisponibiliteMcpTools {
     DeclarationAppliqueeMcpView applyAvailabilityDeclaration(
             @ToolArg(description = "Id de la déclaration") String id,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        DeclarationAppliquee appliquee = declarationService.apply(id);
-        return new DeclarationAppliqueeMcpView(
-                view(appliquee.declaration()), WarningCodes.of(appliquee.avertissements()));
+        return applied(declarationService.apply(id));
     }
 
+    @Deprecated
     @Tool(
             name = "refuser_declaration_disponibilite",
-            description = "Refuse une déclaration en attente : le référentiel n'est pas touché. Le commentaire "
-                    + "est ce que l'animateur lira, et il peut renvoyer une version corrigée tant que la collecte est "
-                    + "ouverte.",
+            description =
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_declaration_disponibilite (decision refuser). "
+                            + "Refuse une déclaration en attente : le référentiel n'est pas touché. Le commentaire "
+                            + "est ce que l'animateur lira, et il peut renvoyer une version corrigée tant que la collecte est "
+                            + "ouverte.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,

@@ -1,6 +1,6 @@
 # 0127 — Un outil MCP par objet et par verbe, les anciens noms en alias jusqu'en 5.0
 
-- **Statut** : accepté, implémenté (plan, calcul, règles, échanges ; diagnostic et rapports ; les autres familles suivent)
+- **Statut** : accepté, implémenté (plan, calcul, règles, échanges ; diagnostic et rapports ; stands, animateurs, disponibilités et créneaux ; les autres familles suivent)
 - **Date** : novembre 2026
 - **Portée** : outils MCP, table `mcp-renommages.tsv`, invites et ressources MCP, guide de migration 4.0
 - **Révise** : [0100](0100-convention-de-nommage-des-outils-mcp.md) § 5 (« pas d'alias »)
@@ -18,6 +18,7 @@ La 3.1 publie 157 outils. Un assistant les relit tous à chaque connexion, et be
 4. **Les anciens noms restent publiés jusqu'en 5.0**, avec leurs arguments et leurs réponses, la description commençant par « Ancien nom, gardé jusqu'en 5.0 : utiliser … ». La table `mcp-renommages.tsv` donne pour chacun le nouvel outil ; un outil ajouté en 4.0 et regroupé avant toute version publiée (`modifier_niveau_contrainte`) disparaît sans alias.
 5. **Un outil regroupé journalise le geste fait** : le catalogue lui donne une action par défaut, et l'outil déclare l'autre (`CurrentAction`) quand l'argument en choisit une autre — un déplacement, un refus d'échange, une activation de règle.
 6. **Un onglet ou un rapport est un objet, sa partie une `section`** : `consulter_besoin` et `consulter_risques` suivent les onglets Besoin et Risques du Diagnostic, `consulter_charge` et `consulter_repas_pauses` les rapports du même nom. Un argument qui ne vaut que pour une partie (`mode` de la marge, `source` des heures, filtres des pauses) est refusé hors d'elle plutôt qu'ignoré, comme les filtres de `consulter_planning`. Une partie lue sur un rapport qui nomme des personnes passe par une vue à elle, par ids : la fragilité, que MCP ne lisait pas, perd le nom de chaque ligne et la phrase de l'écran.
+7. **Un sous-objet est un argument de son objet, lire une fiche est lister avec son id.** Les horaires d'un stand sont un objet sous deux formes, `creer_horaire_stand` et `supprimer_horaire_stand` avec `forme` = `plage` ou `modele` ; `lister_stands` et `lister_animateurs` rendent une seule fiche avec `id`, ce que faisaient `consulter_stand` et `consulter_animateur` ; `creer_stand` prend les arguments de `creer_stand_complet`. Un nom gardé ne change ni ses arguments ni sa réponse : la réponse ne gagne que des clés, et quand elle devrait en perdre, le regroupement prend un nouveau nom (`supprimer_creneaux` pour `supprimer_creneau`, `diagnostiquer_creneaux` pour `diagnostiquer_grille_creneaux`). Un outil qui peut écrire aux animateurs reste à part (`configurer_collecte_disponibilites`, à côté de `consulter_disponibilites` et `modifier_declaration_disponibilite`).
 
 ## Options écartées
 
@@ -28,4 +29,5 @@ La 3.1 publie 157 outils. Un assistant les relit tous à chaque connexion, et be
 
 - Plan, calcul, règles et échanges passent de 33 outils à 21, plus 23 anciens noms publiés jusqu'en 5.0.
 - Diagnostic et rapports passent de 11 outils à 5, plus 11 anciens noms publiés jusqu'en 5.0 ; la faisabilité, que l'écran montre dans Problèmes, est une section de `consulter_besoin` comme le prévoyait l'onglet Besoin.
+- Stands, emplacements, typologies, animateurs, disponibilités et créneaux passent de 36 outils à 26, plus 11 anciens noms publiés jusqu'en 5.0 ; trois outils de plages nés en 4.0 (`creer_plage_stand`, `supprimer_plage_stand`, `supprimer_horaires_stand`) disparaissent sans alias, selon le point 4.
 - En 5.0, les méthodes `@Deprecated` des classes `mcp` partent avec leurs lignes des listes structurelles.

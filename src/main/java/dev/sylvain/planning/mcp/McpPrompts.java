@@ -165,12 +165,12 @@ public class McpPrompts {
                 2. consulter_besoin (section volumetrie) : y a-t-il des animateurs et des postes à pourvoir ?
                 3. lister_anomalies_referentiel : traite d'abord les lignes BLOQUANT, puis dis-moi \
                 combien restent A_VERIFIER.
-                4. lister_declarations_disponibilite avec statut EN_ATTENTE : une déclaration non \
-                décidée n'est pas dans le référentiel, et résoudre avant de la traiter, c'est résoudre \
-                le mauvais problème. lister_demandes_covoiturage de même : une arrivée groupée encore \
+                4. consulter_disponibilites (section declarations, statut EN_ATTENTE) : une déclaration \
+                non décidée n'est pas dans le référentiel, et résoudre avant de la traiter, c'est \
+                résoudre le mauvais problème. La section covoiturage de même : une arrivée groupée encore \
                 EN_ATTENTE ne pèse rien tant qu'elle n'est pas validée depuis l'onglet Covoiturage de \
                 l'écran Disponibilités. Dis-moi combien il en reste de chaque.
-                5. valider_creneaux : la grille est-elle cohérente ?
+                5. diagnostiquer_creneaux (section controle) : la grille est-elle cohérente ?
                 6. analyser_ouvertures_stands : y a-t-il des stands jamais ouverts, des fenêtres sans \
                 effet, des segments trop courts ?
                 7. lister_consignes : une consigne posée sur une date à venir change les horaires de \
@@ -229,7 +229,7 @@ public class McpPrompts {
                 1. etat_edition : la famille CRENEAUX est-elle figée (bloc gel) ? Si oui, toute \
                 création ou modification de créneau sera refusée : dis-le-moi et arrête-toi. \
                 modifier_phase_edition n'est à proposer que si je le demande.
-                2. diagnostiquer_grille_creneaux pour voir ce qui existe déjà, et lister_gabarits \
+                2. diagnostiquer_creneaux pour voir ce qui existe déjà, et lister_gabarits \
                 pour savoir si un calendrier de gabarits (journées types) est déjà en place.
                 3. Si les journées de l'évènement se ressemblent, propose-moi des gabarits :
                    - une grille existe déjà : previsualiser_generateur_creneaux (source grille) montre \
@@ -246,7 +246,8 @@ public class McpPrompts {
                 qui se trompe d'une heure crée des dizaines de lignes d'un coup. \
                 appliquer_generateur_creneaux seulement après mon accord explicite, et jamais \
                 remplacer=true sans me dire qu'il efface le planning résolu.
-                5. valider_creneaux pour finir, et explique-moi chaque anomalie — doublon, vacation trop \
+                5. diagnostiquer_creneaux (section controle) pour finir, et explique-moi chaque anomalie — \
+                doublon, vacation trop \
                 longue, trou dans une journée, date isolée, stand que personne ne pourra tenir, \
                 sous-effectif — en disant pour chacune si c'est une vraie erreur ou un choix légitime \
                 de ma part.
@@ -268,7 +269,7 @@ public class McpPrompts {
 
                 1. lister_editions : l'espace animateur n'est ouvert que sur l'édition active. Sur une \
                 autre, une collecte ouverte ne recevrait rien.
-                2. consulter_collecte_disponibilites : ouverte ou non, et sur quelles dates.
+                2. consulter_disponibilites : la collecte est-elle ouverte, et sur quelles dates ?
                 3. configurer_collecte_disponibilites pour l'ouvrir, bornée par des dates si je t'en \
                 donne. prevenirAnimateurs envoie à chacun le lien de son espace : c'est une décision à \
                 chaque ouverture, à prendre seulement avec mon accord, et jamais pour une collecte qu'on \
@@ -293,17 +294,19 @@ public class McpPrompts {
 
                 %s
 
-                1. consulter_collecte_disponibilites : la collecte est-elle encore ouverte ? Une \
+                1. consulter_disponibilites : la collecte est-elle encore ouverte ? Une \
                 déclaration peut encore arriver après celles que nous allons lire.
-                2. lister_declarations_disponibilite avec statut EN_ATTENTE. Pour chacune, compare ce \
+                2. consulter_disponibilites (section declarations, statut EN_ATTENTE). Pour chacune, \
+                compare ce \
                 qui est déclaré (joursIndisponibles, souhaits) avec ce que la fiche dit aujourd'hui \
                 (joursActuels) : dis-moi ce qui changerait vraiment.
                 3. Signale-moi celles qui coûtent cher avant de les appliquer : un jour retiré sur une \
                 journée déjà tendue se voit avec consulter_besoin (sections borne et faisabilite).
-                4. appliquer_declaration_disponibilite ou refuser_declaration_disponibilite, une par \
-                une et seulement après mon accord — appliquer écrit sur la fiche, tout ou rien, et il \
+                4. modifier_declaration_disponibilite (decision appliquer ou refuser), une par une et \
+                seulement après mon accord — appliquer écrit sur la fiche, tout ou rien, et il \
                 n'y a pas de retour en arrière.
-                5. lister_demandes_covoiturage : les demandes « Je viens avec… » sont distinctes des \
+                5. consulter_disponibilites (section covoiturage) : les demandes « Je viens avec… » sont \
+                distinctes des \
                 déclarations, et appliquer une déclaration ne les touche pas. Dis-moi celles qui sont \
                 EN_ATTENTE : elles se valident depuis l'onglet Covoiturage de l'écran Disponibilités, \
                 pas ici.
@@ -340,7 +343,7 @@ public class McpPrompts {
                 PUBLIEE, avec structure DEBLOQUER) seulement si je le demande explicitement : après \
                 une publication, toute modification fait bouger des plannings déjà envoyés. Fermer \
                 une bande horaire à tous les stands reste possible sous gel, par une consigne (prompt \
-                preparer_un_plan_de_repli) ; fermer un seul stand, non : creer_plage_stand est \
+                preparer_un_plan_de_repli) ; fermer un seul stand, non : creer_horaire_stand est \
                 refusé tant que la phase fige les stands.""".formatted(suffixe(edition), editionFrame(edition)));
     }
 
@@ -445,12 +448,12 @@ public class McpPrompts {
                 si je le demande.
                 2. lister_stands puis analyser_ouvertures_stands : pars de ce qui existe déjà plutôt \
                 que d'une page blanche, et dis-moi ce que le planning retiendrait en l'état.
-                3. Pour chaque stand à régler, creer_horaire_stand écrit un horaire récurrent — la \
+                3. Pour chaque stand à régler, creer_horaire_stand (forme modele) écrit un horaire récurrent — la \
                 forme normale, « tous les jours de 10 h à 12 h puis de 14 h à la fermeture » — sous la \
                 forme d'une plage datée par jour d'événement. Une fenêtre peut nommer son propre \
                 effectif ; sans effectif, elle reprend le minimum du stand. Garde \
-                creer_plage_stand (mode OUVERTURE ou FERMETURE) pour les jours à part : un jour qui \
-                porte déjà une plage n'est pas modifié par creer_horaire_stand.
+                la forme plage (mode OUVERTURE ou FERMETURE) pour les jours à part : un jour qui \
+                porte déjà une plage n'est pas modifié par la forme modele.
                 4. Relance analyser_ouvertures_stands et traite les trois erreurs habituelles : un \
                 stand finalement ouvert aucun jour, une fenêtre hors des heures du jour donc sans \
                 effet, une plage trop courte pour être une vraie vacation.
@@ -537,7 +540,8 @@ public class McpPrompts {
 
                 %s
 
-                1. lister_demandes_covoiturage : les demandes EN_ATTENTE ne pèsent rien tant qu'elles \
+                1. consulter_disponibilites (section covoiturage) : les demandes EN_ATTENTE ne pèsent \
+                rien tant qu'elles \
                 ne sont pas validées, depuis l'onglet Covoiturage de l'écran Disponibilités. Signale \
                 celles dont les membres ne se sont pas tous nommés, ou dont les jours d'indisponibilité \
                 divergent.
@@ -707,7 +711,7 @@ public class McpPrompts {
                 ont peut-être déjà lu.
                 2. Applique le changement, après mon accord :
                    - un désistement : modifier_animateur, pour le jour indisponible ;
-                   - un seul stand qui ferme à une date à venir : creer_plage_stand sur ce stand. \
+                   - un seul stand qui ferme à une date à venir : creer_horaire_stand (forme plage) sur ce stand. \
                 Il est refusé quand la famille STANDS est figée (etat_edition dit lesquelles le sont) : \
                 dis-le-moi, modifier_phase_edition ne se fait que si je le demande ;
                    - une bande horaire fermée à tous les stands (arrêté, alerte météo) : une consigne — \

@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.IdGenerator;
+import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer;
 import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer.EtatTypologie;
 import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer.TypologieUsage;
@@ -41,6 +42,10 @@ import java.util.stream.Collectors;
  * {@code ReferenceDataResource}: stands (with their dated closure/opening plages), emplacements and
  * typologies de jeu.
  *
+ * <p>One tool per object and per verb (ADR 0127): a stand's opening hours are one object, created and removed
+ * under a {@code forme} — a dated plage or a rule of the stand's model —, and the 3.x names stay published as
+ * aliases until 5.0.
+ *
  * <p>Like every mutating tool of this package, updates are <em>merges</em>:
  * only the arguments actually provided are applied, the rest keeps its
  * persisted value. An assistant editing one attribute out of a sentence
@@ -59,11 +64,23 @@ public class StandMcpTools {
 
     private static final String ARG_MODIFIE_LE = "modifieLe";
 
+    /** The two forms of a stand's opening hours, as {@code forme} names them. */
+    private static final String PLAGE = "plage";
+
+    private static final String MODELE = "modele";
+
+    private static final String FORME_PLAGE = "la forme plage";
+
+    private static final String FORME_MODELE = "la forme modele";
+
     private final ReferenceDataService referenceDataService;
 
+    private final CurrentAction currentAction;
+
     @Inject
-    StandMcpTools(ReferenceDataService referenceDataService) {
+    StandMcpTools(ReferenceDataService referenceDataService, CurrentAction currentAction) {
         this.referenceDataService = referenceDataService;
+        this.currentAction = currentAction;
     }
 
     /* -------------------------------- Stands ------------------------------- */
@@ -72,8 +89,8 @@ public class StandMcpTools {
             name = "lister_stands",
             description = "Liste les stands, avec leurs typologies proposées, effectifs requis, "
                     + "réserve majeurs/premium, niveau d'effort, emplacement et plages datées "
-                    + "(avec leur origine : saisie ou dépliée du modèle) et modèle d'horaires récurrents. Sans limite, renvoie tous les stands ; total dit "
-                    + "toujours combien il y en a.",
+                    + "(avec leur origine : saisie ou dépliée du modèle) et modèle d'horaires récurrents. Avec id, "
+                    + "renvoie ce seul stand ; sans limite, tous les stands ; total dit toujours combien il y en a.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -81,10 +98,15 @@ public class StandMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     StandsView listStands(
+            @ToolArg(description = "Id d'un seul stand à renvoyer (défaut : tous)", required = false) String id,
             @ToolArg(description = "Nombre maximum de stands renvoyés (défaut : tous)", required = false)
                     Integer limite,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         List<Stand> stands = referenceDataService.listStands();
+        if (id != null && !id.isBlank()) {
+            McpArgs.onlyFor("une liste sans id", "limite", limite);
+            return new StandsView(stands.size(), List.of(toView(findStand(id))));
+        }
         return new StandsView(
                 stands.size(),
                 stands.stream()
@@ -93,9 +115,10 @@ public class StandMcpTools {
                         .toList());
     }
 
+    @Deprecated
     @Tool(
             name = "consulter_stand",
-            description = "Consulte un stand par son id.",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser lister_stands (id). Consulte un stand par son id.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -110,9 +133,16 @@ public class StandMcpTools {
 
     @Tool(
             name = "creer_stand",
-            description = "Crée un stand ; son id (S suivi d'un nombre) est attribué par l'application et figure "
-                    + "dans la réponse. Les typologies proposées doivent exister dans le référentiel des typologies, "
-                    + "désignées par leur id ou leur code.",
+            description = "Crée un stand, et au besoin ce dont il dépend, en un seul appel ; son id (S suivi d'un "
+                    + "nombre) est attribué par l'application et figure dans la réponse. Les typologies proposées sont "
+                    + "désignées par leur id ou leur code et doivent exister, sauf creerTypologiesManquantes=true qui "
+                    + "crée les absentes (une typologie inventée sur une faute de frappe est un référentiel pollué). "
+                    + "L'emplacement est créé s'il n'existe pas ET que emplacementNom est fourni. horaires prend les "
+                    + "fenêtres d'OUVERTURE au format « 10:00-12:00,14:00- » : le stand est alors fermé en dehors, posées "
+                    + "en plages datées sur les jours des créneaux, ou gardées comme modèle du stand tant qu'il n'y en a "
+                    + "pas ; pour une fermeture, ou plusieurs règles de portées différentes, utiliser "
+                    + "creer_horaire_stand. Une typologie ou un emplacement créé au passage reçoit pour code la valeur "
+                    + "citée, et la réponse les énumère, pour que rien ne soit créé à l'insu de l'utilisateur.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -120,69 +150,12 @@ public class StandMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     @WarnsWhileSolving
-    WrittenStandView createStand(
+    CreationStandComplet createStand(
             @ToolArg(description = "Nom affiché") String nom,
             @ToolArg(description = "Code lisible, unique dans l'édition (ex. « JEU-LIBRE »)", required = false)
                     String code,
             @ToolArg(description = "Typologies de jeu proposées : ids ou codes", required = false)
                     List<String> typologiesProposees,
-            @ToolArg(description = "Nombre minimum d'animateurs par créneau", required = false) Integer effectifMin,
-            @ToolArg(description = "Nombre maximum d'animateurs par créneau", required = false) Integer effectifMax,
-            @ToolArg(description = "Réservé aux animateurs majeurs", required = false) Boolean reserveMajeurs,
-            @ToolArg(description = "Stand premium (nécessite un animateur référent)", required = false) Boolean premium,
-            @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
-            @ToolArg(description = "Emplacement géographique : son id ou son code", required = false)
-                    String emplacementId,
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        Stand stand = new Stand();
-        stand.setNom(nom);
-        stand.setCode(code);
-        // Ids or codes: StandService resolves them on the write.
-        stand.setTypologiesProposees(
-                typologiesProposees == null ? new LinkedHashSet<>() : new LinkedHashSet<>(typologiesProposees));
-        stand.setEffectifMin(effectifMin == null ? 1 : effectifMin);
-        stand.setEffectifMax(effectifMax == null ? Math.max(1, stand.getEffectifMin()) : effectifMax);
-        stand.setReserveMajeurs(Boolean.TRUE.equals(reserveMajeurs));
-        stand.setPremium(Boolean.TRUE.equals(premium));
-        stand.setNiveauEffort(
-                niveauEffort == null
-                        ? NiveauEffort.NORMAL
-                        : McpArgs.enumeration(NiveauEffort.class, niveauEffort, ARG_NIVEAU_EFFORT));
-        stand.setEmplacement(emplacementId == null ? null : findEmplacement(emplacementId));
-        return written(referenceDataService.writeStand(stand));
-    }
-
-    @Tool(
-            name = "creer_stand_complet",
-            description = "Crée un stand ET tout ce dont il dépend en un seul appel : son emplacement, ses "
-                    + "typologies, et ses horaires d'ouverture (posés en plages datées sur les jours des créneaux, ou gardés comme modèle du stand tant qu'il n'y en a pas). Conçu pour la mise en place d'une édition, où "
-                    + "créer un stand demande sinon quatre allers-retours — et où creer_stand échoue tant que les "
-                    + "typologies citées n'existent pas. "
-                    + "L'emplacement est créé s'il n'existe pas ET que emplacementNom est fourni ; les typologies "
-                    + "manquantes ne sont créées que si creerTypologiesManquantes vaut true, sinon leur absence reste une "
-                    + "erreur (une typologie inventée sur une faute de frappe est un référentiel pollué). "
-                    + "horaires prend les fenêtres d'OUVERTURE au format « 10:00-12:00,14:00- » : le stand est alors fermé "
-                    + "en dehors, ce qui est la façon d'exprimer « ce stand n\u0027ouvre que de tant à tant ». Pour une règle "
-                    + "de fermeture, ou plusieurs règles de portées différentes, utiliser creer_horaire_stand. "
-                    + "Les ids (stand, typologies, emplacement) sont attribués par l'application ; une typologie ou "
-                    + "un emplacement créé au passage reçoit pour code la valeur citée. "
-                    + "La réponse énumère ce qui a été créé au passage, pour que rien ne soit créé à l\u0027insu de "
-                    + "l\u0027utilisateur.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = false,
-                            destructiveHint = false,
-                            idempotentHint = false,
-                            openWorldHint = false))
-    @WarnsWhileSolving
-    CreationStandComplet createCompleteStand(
-            @ToolArg(description = "Nom affiché") String nom,
-            @ToolArg(description = "Code lisible, unique dans l'édition (ex. « JEU-LIBRE »)", required = false)
-                    String code,
-            @ToolArg(description = "Typologies de jeu proposées : ids ou codes", required = false)
-                    List<String> typologiesProposees,
-            @ToolArg(description = "Créer les typologies absentes du référentiel au lieu d'échouer", required = false)
-                    Boolean creerTypologiesManquantes,
             @ToolArg(description = "Nombre minimum d'animateurs par créneau", required = false) Integer effectifMin,
             @ToolArg(description = "Nombre maximum d'animateurs par créneau", required = false) Integer effectifMax,
             @ToolArg(description = "Réservé aux animateurs majeurs", required = false) Boolean reserveMajeurs,
@@ -193,6 +166,8 @@ public class StandMcpTools {
                                     + "créé s'il n'existe pas",
                             required = false)
                     String emplacementId,
+            @ToolArg(description = "Créer les typologies absentes du référentiel au lieu d'échouer", required = false)
+                    Boolean creerTypologiesManquantes,
             @ToolArg(description = "Nom de l'emplacement, à créer s'il n'existe pas encore", required = false)
                     String emplacementNom,
             @ToolArg(description = "Latitude de l'emplacement créé", required = false) Double latitude,
@@ -213,6 +188,53 @@ public class StandMcpTools {
                     String horairesDateFin,
             @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> horairesDates,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return writeStand(
+                nom,
+                code,
+                typologiesProposees,
+                effectifMin,
+                effectifMax,
+                reserveMajeurs,
+                premium,
+                niveauEffort,
+                emplacementId,
+                creerTypologiesManquantes,
+                emplacementNom,
+                latitude,
+                longitude,
+                horaires,
+                horairesJours,
+                horairesJoursSemaine,
+                horairesDateDebut,
+                horairesDateFin,
+                horairesDates);
+    }
+
+    /**
+     * The write both {@code creer_stand} and its alias run. Not one tool calling the other: an
+     * intercepted call on {@code this} would journal the creation twice.
+     */
+    @SuppressWarnings("java:S107") // the tool's own arguments, passed through
+    private CreationStandComplet writeStand(
+            String nom,
+            String code,
+            List<String> typologiesProposees,
+            Integer effectifMin,
+            Integer effectifMax,
+            Boolean reserveMajeurs,
+            Boolean premium,
+            String niveauEffort,
+            String emplacementId,
+            Boolean creerTypologiesManquantes,
+            String emplacementNom,
+            Double latitude,
+            Double longitude,
+            String horaires,
+            String horairesJours,
+            List<String> horairesJoursSemaine,
+            String horairesDateDebut,
+            String horairesDateFin,
+            List<String> horairesDates) {
         List<TypologieItem> typologiesACreer =
                 missingTypologies(typologiesProposees, Boolean.TRUE.equals(creerTypologiesManquantes));
         Emplacement emplacementACreer = missingEmplacement(emplacementId, emplacementNom, latitude, longitude);
@@ -262,6 +284,80 @@ public class StandMcpTools {
                         .sorted()
                         .toList(),
                 WarningCodes.of(ecrit.avertissements()));
+    }
+
+    @Deprecated
+    @Tool(
+            name = "creer_stand_complet",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser creer_stand, qui prend les mêmes arguments. "
+                    + "Crée un stand ET tout ce dont il dépend en un seul appel : son emplacement, ses typologies, et "
+                    + "ses horaires d'ouverture. L'emplacement est créé s'il n'existe pas ET que emplacementNom est "
+                    + "fourni ; les typologies manquantes ne sont créées que si creerTypologiesManquantes vaut true.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = false,
+                            openWorldHint = false))
+    @WarnsWhileSolving
+    CreationStandComplet createCompleteStand(
+            @ToolArg(description = "Nom affiché") String nom,
+            @ToolArg(description = "Code lisible, unique dans l'édition (ex. « JEU-LIBRE »)", required = false)
+                    String code,
+            @ToolArg(description = "Typologies de jeu proposées : ids ou codes", required = false)
+                    List<String> typologiesProposees,
+            @ToolArg(description = "Créer les typologies absentes du référentiel au lieu d'échouer", required = false)
+                    Boolean creerTypologiesManquantes,
+            @ToolArg(description = "Nombre minimum d'animateurs par créneau", required = false) Integer effectifMin,
+            @ToolArg(description = "Nombre maximum d'animateurs par créneau", required = false) Integer effectifMax,
+            @ToolArg(description = "Réservé aux animateurs majeurs", required = false) Boolean reserveMajeurs,
+            @ToolArg(description = "Stand premium (nécessite un animateur référent)", required = false) Boolean premium,
+            @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
+            @ToolArg(
+                            description = "Emplacement géographique : son id ou son code ; le code de l'emplacement "
+                                    + "créé s'il n'existe pas",
+                            required = false)
+                    String emplacementId,
+            @ToolArg(description = "Nom de l'emplacement, à créer s'il n'existe pas encore", required = false)
+                    String emplacementNom,
+            @ToolArg(description = "Latitude de l'emplacement créé", required = false) Double latitude,
+            @ToolArg(description = "Longitude de l'emplacement créé", required = false) Double longitude,
+            @ToolArg(
+                            description =
+                                    "Fenêtres d'ouverture, ex. « 10:00-12:00,14:00- » ; « @N » nomme l'effectif d'une "
+                                            + "fenêtre (ex. « 10:00-12:00@2,14:00-@4 »)",
+                            required = false)
+                    String horaires,
+            @ToolArg(description = "Portée des horaires : TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false)
+                    String horairesJours,
+            @ToolArg(description = "Jours de la semaine (MONDAY…SUNDAY) si portée JOURS_SEMAINE", required = false)
+                    List<String> horairesJoursSemaine,
+            @ToolArg(description = "Début de la plage (AAAA-MM-JJ) si portée PLAGE", required = false)
+                    String horairesDateDebut,
+            @ToolArg(description = "Fin de la plage (AAAA-MM-JJ) si portée PLAGE", required = false)
+                    String horairesDateFin,
+            @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> horairesDates,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return writeStand(
+                nom,
+                code,
+                typologiesProposees,
+                effectifMin,
+                effectifMax,
+                reserveMajeurs,
+                premium,
+                niveauEffort,
+                emplacementId,
+                creerTypologiesManquantes,
+                emplacementNom,
+                latitude,
+                longitude,
+                horaires,
+                horairesJours,
+                horairesJoursSemaine,
+                horairesDateDebut,
+                horairesDateFin,
+                horairesDates);
     }
 
     /**
@@ -369,7 +465,7 @@ public class StandMcpTools {
     @Tool(
             name = "modifier_stand",
             description = "Modifie un stand. Seuls les champs fournis sont modifiés ; les plages datées et le "
-                    + "modèle d'horaires se gèrent avec les outils dédiés (creer_plage_stand, creer_horaire_stand…).",
+                    + "modèle d'horaires se gèrent avec creer_horaire_stand et supprimer_horaire_stand.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -450,33 +546,88 @@ public class StandMcpTools {
     }
 
     @Tool(
-            name = "creer_plage_stand",
-            description = "Ajoute une plage datée à un stand : mode=FERMETURE, le stand ne peut pas être tenu entre "
-                    + "ces heures ce jour-là ; mode=OUVERTURE, ce jour-là le stand n'est ouvert QUE sur cette plage. "
-                    + "Un même jour ne peut pas porter à la fois une fermeture et une ouverture. Une fenêtre ne peut pas "
-                    + "chevaucher minuit — dans ce cas, en saisir deux. Omettre heureFin va jusqu'à la fermeture du jour. "
-                    + "La plage est saisie à la main (depliee=false). Pour un motif qui se répète sur plusieurs jours, "
-                    + "préférer creer_horaire_stand.",
+            name = "creer_horaire_stand",
+            description = "Ajoute un horaire à un stand, sous la forme demandée. mode=OUVERTURE : ce jour-là le stand "
+                    + "n'est ouvert QUE sur ces heures ; mode=FERMETURE : il ne peut pas être tenu entre ces heures. "
+                    + "forme=plage : une plage datée d'un seul jour (date, heureDebut, heureFin omise = jusqu'à la "
+                    + "fermeture, effectif sur une ouverture seulement), saisie à la main (depliee=false) ; un même jour "
+                    + "ne porte pas à la fois une fermeture et une ouverture, et une fenêtre ne chevauche pas minuit — "
+                    + "dans ce cas, en saisir deux. forme=modele : une règle du modèle récurrent du stand, posée en "
+                    + "plage datée sur chaque jour d'événement concerné (les jours des créneaux de l'édition) ; la "
+                    + "portée jours vaut TOUS, JOURS_SEMAINE (avec joursSemaine), PLAGE (avec dateDebut/dateFin) ou "
+                    + "DATES (avec dates) ; les fenêtres s'écrivent « HH:MM-HH:MM », ou « HH:MM- » jusqu'à la fermeture, "
+                    + "séparées par une virgule (ex. « 10:00-12:00,14:00- » pour une coupure méridienne). Un jour qui "
+                    + "porte déjà une plage n'est pas modifié, une règle identique à une règle du modèle est sans effet, "
+                    + "et sans créneau dans l'édition la règle est gardée et posée sur les jours des créneaux à venir. "
+                    + "Un argument d'une forme est refusé avec l'autre.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    WrittenStandView createStandPlage(
+    WrittenStandView createStandHoraire(
             @ToolArg(description = "Id du stand") String standId,
+            @ToolArg(description = "plage (un jour daté) ou modele (une règle récurrente)") String forme,
             @ToolArg(description = "OUVERTURE ou FERMETURE") String mode,
-            @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
-            @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
-            @ToolArg(description = "Heure de fin (HH:MM) ; omise = jusqu'à la fermeture", required = false)
-                    String heureFin,
-            @ToolArg(description = "Motif, purement informatif", required = false) String motif,
+            @ToolArg(description = "Forme plage : date (AAAA-MM-JJ)", required = false) String date,
+            @ToolArg(description = "Forme plage : heure de début (HH:MM)", required = false) String heureDebut,
             @ToolArg(
-                            description = "Effectif à pourvoir sur une ouverture (au moins 1) ; omis = l'effectif "
-                                    + "minimum du stand ; refusé sur une fermeture",
+                            description = "Forme plage : heure de fin (HH:MM) ; omise = jusqu'à la fermeture",
+                            required = false)
+                    String heureFin,
+            @ToolArg(
+                            description = "Forme plage : effectif à pourvoir sur une ouverture (au moins 1) ; omis = "
+                                    + "l'effectif minimum du stand ; refusé sur une fermeture",
                             required = false)
                     Integer effectif,
+            @ToolArg(
+                            description =
+                                    "Forme modele : fenêtres, ex. « 10:00-12:00,14:00- » ; un suffixe « @N » nomme "
+                                            + "l'effectif à pourvoir sur la fenêtre (ex. « 10:00-12:00@2,14:00-@4 »), sans lui "
+                                            + "c'est l'effectif minimum du stand",
+                            required = false)
+                    String fenetres,
+            @ToolArg(description = "Forme modele : portée TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false)
+                    String jours,
+            @ToolArg(
+                            description = "Forme modele : jours de la semaine (MONDAY…SUNDAY) si portée JOURS_SEMAINE",
+                            required = false)
+                    List<String> joursSemaine,
+            @ToolArg(description = "Forme modele : début de la plage (AAAA-MM-JJ) si portée PLAGE", required = false)
+                    String dateDebut,
+            @ToolArg(description = "Forme modele : fin de la plage (AAAA-MM-JJ) si portée PLAGE", required = false)
+                    String dateFin,
+            @ToolArg(description = "Forme modele : dates (AAAA-MM-JJ) si portée DATES", required = false)
+                    List<String> dates,
+            @ToolArg(description = "Motif, purement informatif", required = false) String motif,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        if (PLAGE.equals(McpArgs.choix(forme, "forme", null, PLAGE, MODELE))) {
+            McpArgs.onlyFor(FORME_MODELE, "fenetres", fenetres);
+            McpArgs.onlyFor(FORME_MODELE, "jours", jours);
+            McpArgs.onlyFor(FORME_MODELE, "joursSemaine", joursSemaine);
+            McpArgs.onlyFor(FORME_MODELE, "dateDebut", dateDebut);
+            McpArgs.onlyFor(FORME_MODELE, "dateFin", dateFin);
+            McpArgs.onlyFor(FORME_MODELE, "dates", dates);
+            // The catalogue files the tool under the model; a dated plage is its own line.
+            currentAction.action("STAND_PLAGE_AJOUTEE");
+            return addPlage(standId, mode, date, heureDebut, heureFin, motif, effectif);
+        }
+        McpArgs.onlyFor(FORME_PLAGE, "date", date);
+        McpArgs.onlyFor(FORME_PLAGE, "heureDebut", heureDebut);
+        McpArgs.onlyFor(FORME_PLAGE, "heureFin", heureFin);
+        McpArgs.onlyFor(FORME_PLAGE, "effectif", effectif);
+        return addRule(standId, mode, fenetres, jours, joursSemaine, dateDebut, dateFin, dates, motif);
+    }
+
+    private WrittenStandView addPlage(
+            String standId,
+            String mode,
+            String date,
+            String heureDebut,
+            String heureFin,
+            String motif,
+            Integer effectif) {
         ModeHoraire modeHoraire = McpArgs.enumeration(ModeHoraire.class, mode, "mode");
         if (modeHoraire == ModeHoraire.FERMETURE && effectif != null) {
             throw new BusinessError.Invalid("Une fermeture ne porte pas d'effectif");
@@ -486,8 +637,8 @@ public class StandMcpTools {
                 new PlageStand(
                         null,
                         modeHoraire,
-                        McpArgs.date(date, "date"),
-                        McpArgs.heure(heureDebut, "heureDebut"),
+                        McpArgs.requiredFor(FORME_PLAGE, "date", McpArgs.date(date, "date")),
+                        McpArgs.requiredFor(FORME_PLAGE, "heureDebut", McpArgs.heure(heureDebut, "heureDebut")),
                         endTimeOrClosing(heureFin),
                         motif,
                         effectif)));
@@ -498,58 +649,16 @@ public class StandMcpTools {
         return heureFin == null || heureFin.isBlank() ? null : McpArgs.heure(heureFin, "heureFin");
     }
 
-    @Tool(
-            name = "supprimer_plage_stand",
-            description = "Retire une plage datée d'un stand (plageId, lue dans consulter_stand) ou toutes les plages "
-                    + "d'un jour (date) : le stand redevient ouvert toute la journée ce jour-là. Indiquer l'un des "
-                    + "deux, pas les deux. Une plage dépliée du modèle du stand qu'on retire ne revient pas.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = false,
-                            destructiveHint = true,
-                            idempotentHint = false,
-                            openWorldHint = false))
-    WrittenStandView deleteStandPlage(
-            @ToolArg(description = "Id du stand") String standId,
-            @ToolArg(description = "Id de la plage à retirer", required = false) Long plageId,
-            @ToolArg(description = "Date (AAAA-MM-JJ) dont retirer toutes les plages", required = false) String date,
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return written(referenceDataService.removeStandPlages(
-                standId, plageId, date == null ? null : McpArgs.date(date, "date")));
-    }
-
-    @Tool(
-            name = "creer_horaire_stand",
-            description =
-                    "Pose un horaire récurrent sur un stand : il est écrit sous forme d'une plage datée par "
-                            + "jour d'événement concerné (les jours des créneaux de l'édition). mode=OUVERTURE veut dire « fermé sauf sur ces fenêtres », mode=FERMETURE « ouvert "
-                            + "sauf sur ces fenêtres ». La portée jours vaut TOUS (tous les jours), JOURS_SEMAINE (avec "
-                            + "joursSemaine), PLAGE (avec dateDebut/dateFin) ou DATES (avec dates). Les fenêtres se saisissent "
-                            + "« HH:MM-HH:MM », ou « HH:MM- » pour courir jusqu'à la fermeture du jour ; plusieurs fenêtres se "
-                            + "séparent par une virgule (ex. « 10:00-12:00,14:00- » pour une coupure méridienne). Un jour qui porte "
-                            + "déjà une plage n'est pas modifié ; sans créneau dans l'édition, l'horaire est gardé comme modèle du stand et posé sur les jours des créneaux qui seront créés.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = false,
-                            destructiveHint = false,
-                            idempotentHint = false,
-                            openWorldHint = false))
-    WrittenStandView addStandHoraire(
-            @ToolArg(description = "Id du stand") String standId,
-            @ToolArg(description = "OUVERTURE ou FERMETURE") String mode,
-            @ToolArg(
-                            description = "Fenêtres, ex. « 10:00-12:00,14:00- » ; un suffixe « @N » nomme l'effectif à "
-                                    + "pourvoir sur la fenêtre (ex. « 10:00-12:00@2,14:00-@4 »), sans lui c'est l'effectif minimum "
-                                    + "du stand")
-                    String fenetres,
-            @ToolArg(description = "Portée : TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false) String jours,
-            @ToolArg(description = "Jours de la semaine (MONDAY…SUNDAY) si portée JOURS_SEMAINE", required = false)
-                    List<String> joursSemaine,
-            @ToolArg(description = "Début de la plage (AAAA-MM-JJ) si portée PLAGE", required = false) String dateDebut,
-            @ToolArg(description = "Fin de la plage (AAAA-MM-JJ) si portée PLAGE", required = false) String dateFin,
-            @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> dates,
-            @ToolArg(description = "Motif, purement informatif", required = false) String motif,
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+    private WrittenStandView addRule(
+            String standId,
+            String mode,
+            String fenetres,
+            String jours,
+            List<String> joursSemaine,
+            String dateDebut,
+            String dateFin,
+            List<String> dates,
+            String motif) {
         Stand stand = findStand(standId);
         TypeJoursHoraire portee =
                 jours == null ? TypeJoursHoraire.TOUS : McpArgs.enumeration(TypeJoursHoraire.class, jours, "jours");
@@ -576,19 +685,34 @@ public class StandMcpTools {
     }
 
     @Tool(
-            name = "supprimer_horaires_stand",
-            description = "Efface le modèle d'horaires d'un stand (ses règles récurrentes) et les plages datées que "
-                    + "ce modèle a posées sur les jours de l'édition. Les plages saisies à la main (fermetures, "
-                    + "ouvertures) restent en place.",
+            name = "supprimer_horaire_stand",
+            description =
+                    "Retire un horaire d'un stand, sous la forme demandée. forme=plage : une plage datée "
+                            + "(plageId, lue dans lister_stands) ou toutes les plages d'un jour (date), l'un des deux, pas les "
+                            + "deux ; le stand redevient ouvert toute la journée ce jour-là, et une plage dépliée du modèle "
+                            + "qu'on retire ne revient pas. forme=modele : efface le modèle d'horaires du stand (ses règles "
+                            + "récurrentes) et les plages datées qu'il a posées ; les plages saisies à la main restent en place.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
                             destructiveHint = true,
-                            idempotentHint = true,
+                            idempotentHint = false,
                             openWorldHint = false))
-    WrittenStandView clearStandHoraires(
+    WrittenStandView deleteStandHoraire(
             @ToolArg(description = "Id du stand") String standId,
+            @ToolArg(description = "plage (une plage ou un jour) ou modele (tout le modèle)") String forme,
+            @ToolArg(description = "Forme plage : id de la plage à retirer", required = false) Long plageId,
+            @ToolArg(description = "Forme plage : date (AAAA-MM-JJ) dont retirer toutes les plages", required = false)
+                    String date,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        if (PLAGE.equals(McpArgs.choix(forme, "forme", null, PLAGE, MODELE))) {
+            return written(referenceDataService.removeStandPlages(
+                    standId, plageId, date == null ? null : McpArgs.date(date, "date")));
+        }
+        McpArgs.onlyFor(FORME_PLAGE, "plageId", plageId);
+        McpArgs.onlyFor(FORME_PLAGE, "date", date);
+        // The catalogue files the tool under the plages; clearing the model is its own line.
+        currentAction.action("STAND_HORAIRES_EFFACES");
         Stand stand = findStand(standId);
         // An empty list clears the model; StandService withdraws the plages it had unfolded.
         stand.setHoraires(List.of());

@@ -757,10 +757,9 @@ public final class CatalogueActions {
         outil("creer_stand_complet", STAND_CREE);
         outil("modifier_stand", STAND_MODIFIE);
         outil("supprimer_stand", STAND_SUPPRIME);
-        outil("creer_plage_stand", STAND_PLAGE_AJOUTEE);
-        outil("supprimer_plage_stand", STAND_PLAGES_EFFACEES);
+        // A dated plage (forme plage) and clearing the model (forme modele) state their own action (CurrentAction).
         outil("creer_horaire_stand", STAND_HORAIRE_AJOUTE);
-        outil("supprimer_horaires_stand", STAND_HORAIRES_EFFACES);
+        outil("supprimer_horaire_stand", STAND_PLAGES_EFFACEES);
 
         outil("creer_creneau", CRENEAU_CREE);
         outil("modifier_creneau", CRENEAU_MODIFIE);
@@ -841,6 +840,8 @@ public final class CatalogueActions {
         outil("modifier_sauvegardes", SAUVEGARDE_BASCULEE);
 
         outil("configurer_collecte_disponibilites", COLLECTE_CONFIGUREE);
+        // A refusal states its own action (CurrentAction); the application is the default.
+        outil("modifier_declaration_disponibilite", DECLARATION_APPLIQUEE);
         outil("appliquer_declaration_disponibilite", DECLARATION_APPLIQUEE);
         outil("refuser_declaration_disponibilite", DECLARATION_REFUSEE);
         outil("modifier_foire_echanges", FOIRE_CONFIGUREE);

@@ -43,15 +43,15 @@ La pause se règle par `consulter_parametres` et `modifier_parametres` (section 
 
 ## Construire la grille et les horaires
 
-Une grille est faite de vacations et ne se demande plus en mode : un créneau est une vacation, et deux créneaux qui se chevauchent le même jour sont deux relèves décalées, jamais une anomalie ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). Le contrôle (`valider_creneaux`, `previsualiser_generateur_creneaux`, `diagnostiquer_grille_creneaux`) signale toujours une vacation au-delà de `dureeVacationMaxMinutes` (6 h par défaut), une vacation que le repos quotidien rend intenable, un relais repas hors fenêtre, un doublon, un trou, une date isolée. `diagnostiquer_grille_creneaux` est le premier appel pour découvrir une édition.
+Une grille est faite de vacations et ne se demande plus en mode : un créneau est une vacation, et deux créneaux qui se chevauchent le même jour sont deux relèves décalées, jamais une anomalie ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). Le contrôle (`diagnostiquer_creneaux` en section `controle`, `previsualiser_generateur_creneaux`) signale toujours une vacation au-delà de `dureeVacationMaxMinutes` (6 h par défaut), une vacation que le repos quotidien rend intenable, un relais repas hors fenêtre, un doublon, un trou, une date isolée. `diagnostiquer_creneaux`, en section `grille` (le défaut), est le premier appel pour découvrir une édition. `supprimer_creneaux` retire des créneaux avec leurs sièges, nommés par `ids` ou désignés par des filtres (dates, heure de début, ou `all=true` pour toute la grille), jamais les deux à la fois.
 
 Un seul générateur produit la grille en lot ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)) : `previsualiser_generateur_creneaux` montre ce qu'il produirait et contrôle la grille obtenue, `appliquer_generateur_creneaux` l'écrit, avec les mêmes arguments et une `source`. `stands` découpe la grille que les horaires des stands impliquent (une coupure à chaque heure où un stand ouvre ou ferme), en ajout ou, avec `remplacer=true`, à la place de la grille et du plan avec elle ; `recurrence` ajoute des fenêtres répétées sur des dates ; `gabarits` applique le calendrier des gabarits ; `grille` lit les gabarits que la grille implique. `creer_creneau` et `modifier_creneau` prennent un `couverturePause` facultatif : le relais repas garde le stand ouvert à la moitié de son effectif, arrondie au supérieur.
 
-Le modèle d'horaires d'un stand (ses règles récurrentes, ADR 0104) figure dans `consulter_stand` et `lister_stands` sous `horaires`. `creer_horaire_stand` d'une règle identique à une règle existante ne change rien ; `supprimer_horaires_stand` efface le modèle **et** les plages qu'il a dépliées, et garde les plages saisies à la main (`creer_plage_stand`).
+Les horaires d'un stand sont un seul objet, sous deux formes : son **modèle** (ses règles récurrentes, ADR 0104) et ses **plages** datées. `lister_stands` les rend sous `horaires` et `plages` (identifiant, mode, jour, heures, effectif, et `depliee` : dépliée du modèle ou saisie à la main), pour tous les stands ou pour un seul avec `id`. `creer_horaire_stand` ajoute, selon `forme`, une règle au modèle (`modele` : fenêtres et portée ; une règle identique à une règle existante ne change rien) ou une plage d'un jour (`plage` : date, heures, effectif d'une ouverture), ouverture ou fermeture (`mode`). `supprimer_horaire_stand` retire une plage (`forme=plage`, par `plageId`) ou toutes celles d'un jour (`date`), ou efface le modèle (`forme=modele`) **et** les plages qu'il a dépliées, en gardant celles saisies à la main. Un argument d'une forme est refusé avec l'autre, et ces écritures sont refusées pendant un calcul et quand la phase de l'édition fige les stands.
 
-Les plages datées d'un stand figurent dans `consulter_stand` et `lister_stands` sous `plages` (identifiant, mode, jour, heures, effectif, et `depliee` : dépliée du modèle ou saisie à la main). `creer_plage_stand` en pose une, ouverture ou fermeture (`mode`) ; `supprimer_plage_stand` en retire une (`plageId`) ou toutes celles d'un jour (`date`). Les trois écritures de plages sont refusées pendant un calcul et quand la phase de l'édition fige les stands.
+`creer_stand` crée aussi, au besoin, ce dont le stand dépend : son emplacement (avec `emplacementNom`), ses typologies absentes (avec `creerTypologiesManquantes=true`) et ses fenêtres d'ouverture (`horaires`) ; la réponse énumère ce qu'il a créé au passage.
 
-Une fenêtre d'ouverture (`creer_horaire_stand`, `creer_stand_complet`, `creer_plage_stand`) peut nommer son effectif par le suffixe `@N` (`10:00-12:00@2,14:00-@4`) ou l'argument `effectif` d'une ouverture datée ; sans lui elle reprend le minimum du stand. Zéro est refusé (un stand sans personne est une fermeture) et le suffixe est rejeté sur la récurrence d'un créneau.
+Une fenêtre d'ouverture (`creer_horaire_stand`, `creer_stand`) peut nommer son effectif par le suffixe `@N` (`10:00-12:00@2,14:00-@4`) ou l'argument `effectif` d'une ouverture datée ; sans lui elle reprend le minimum du stand. Zéro est refusé (un stand sans personne est une fermeture) et le suffixe est rejeté sur la récurrence d'un créneau.
 
 Les gabarits sont les journées types de la 3.x. `modifier_gabarit` crée ou remplace un gabarit par son nom et ses vacations sur une ligne (« 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 », `R` marquant un relais repas aux sièges divisés par deux), et le pose sur une plage ou des dates ; `supprimer_gabarit` retire un gabarit, ou seulement des dates du calendrier. Rien de cela n'écrit un créneau : `appliquer_generateur_creneaux` avec la source `gabarits` le fait, après l'aperçu. `lister_gabarits` rend les dates en écart ou sous consigne, que l'application ne touche pas ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)).
 
@@ -70,13 +70,13 @@ Lever suit le même pli : `simuler_levee_consigne` nomme les créneaux ajoutés 
 
 ## Décider ce que les animateurs ont demandé
 
-Les déclarations de disponibilité et les demandes d'échange arrivent de l'espace animateur. `appliquer_declaration_disponibilite` écrit la déclaration sur la fiche par le même `write*` que l'écran de saisie : les données sont marquées modifiées, `consulter_planning` signale le plan périmé, le journal porte les champs remplacés (`joursIndisponibles`, `souhaits`) et l'outil rend les avertissements en codes.
+Les déclarations de disponibilité et les demandes d'échange arrivent de l'espace animateur. `consulter_disponibilites` lit l'écran Disponibilités sous une `section` : `collecte` (défaut : la fenêtre, ses dates, la relance automatique), `declarations` (filtrables par `statut`) ou `covoiturage`. `modifier_declaration_disponibilite` décide une déclaration : `decision=appliquer` l'écrit sur la fiche par le même `write*` que l'écran de saisie (les données sont marquées modifiées, `consulter_planning` signale le plan périmé, le journal porte les champs remplacés, `joursIndisponibles` et `souhaits`, et l'outil rend les avertissements en codes) ; `decision=refuser` laisse la fiche intacte, avec le `commentaire` que l'animateur lira. Ouvrir la collecte reste `configurer_collecte_disponibilites`, à part, parce qu'il peut écrire aux animateurs.
 
 `consulter_foire_echanges` rend la fenêtre de la foire et ses statistiques (volumes, taux, délais, répartitions par jour et par stand) sur une période de création (`du`, `au`, ou `touteEdition`, refusé avec les deux autres). Aucun animateur n'y figure, pas même par id.
 
 `synthese_confirmations` compte, parmi les animateurs qui ont un poste sur le plan publié, les confirmés, relancés, silencieux et les **échecs d'envoi** (comptés à part, sans adresse) et date la publication à laquelle ils répondent ; `jamaisPublie` vrai veut dire que la question n'a encore été posée à personne.
 
-`lister_demandes_covoiturage` rend les « Je viens avec… » de la collecte, à part de la déclaration : membres, statut, `confirmedByAll`, jours où les indisponibilités divergent, ajustement créé, le tout par id et avec le statut `EN_ATTENTE` (non validée) ou `VALIDEE`. La validation, l'écart et l'annulation restent des gestes d'écran, parce que la validation prévient les animateurs par courriel ; un assistant crée directement un `ARRIVEE_GROUPEE` par `creer_contrainte_ad_hoc`. En revanche, `supprimer_contrainte_ad_hoc` sur une arrivée groupée qu'une demande validée soutient rend un résultat en erreur portant la phrase de l'écran Ajustements manuels (annulez-la depuis Disponibilités > Covoiturage).
+La section `covoiturage` de `consulter_disponibilites` rend les « Je viens avec… » de la collecte, à part de la déclaration : membres, statut, `confirmedByAll`, jours où les indisponibilités divergent, ajustement créé, le tout par id et avec le statut `EN_ATTENTE` (non validée) ou `VALIDEE`. La validation, l'écart et l'annulation restent des gestes d'écran, parce que la validation prévient les animateurs par courriel ; un assistant crée directement un `ARRIVEE_GROUPEE` par `creer_contrainte_ad_hoc`. En revanche, `supprimer_contrainte_ad_hoc` sur une arrivée groupée qu'une demande validée soutient rend un résultat en erreur portant la phrase de l'écran Ajustements manuels (annulez-la depuis Disponibilités > Covoiturage).
 
 ## Les prompts et les ressources
 
@@ -95,7 +95,7 @@ Deux **ressources**, à attacher une fois pour informer tous les appels suivants
 
 ## Anciens noms d'outils
 
-La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Un outil regroupé fait sous un seul nom, avec un argument (`vue`, `section`, `mode`, `decision`), ce que faisaient plusieurs ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)) ; ses anciens noms restent publiés jusqu'en 5.0 à côté du nouveau, leur description commençant par « Ancien nom » : ceux de la relecture des journées, ceux des journées types, des créneaux récurrents et de la dérivation, que le générateur de créneaux a regroupés ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), ceux du plan, du calcul, des règles et des échanges, et ceux du diagnostic et de ses rapports. Le mode `tension` d'`analyser_marge` est devenu la section `tension` de `consulter_risques`. Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
+La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Un outil regroupé fait sous un seul nom, avec un argument (`vue`, `section`, `mode`, `decision`), ce que faisaient plusieurs ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)) ; ses anciens noms restent publiés jusqu'en 5.0 à côté du nouveau, leur description commençant par « Ancien nom » : ceux de la relecture des journées, ceux des journées types, des créneaux récurrents et de la dérivation, que le générateur de créneaux a regroupés ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), ceux du plan, du calcul, des règles et des échanges, ceux du diagnostic et de ses rapports, et ceux des stands, des animateurs, des disponibilités et des créneaux. Les outils de plages et de modèle d'un stand nés en 4.0 (`creer_plage_stand`, `supprimer_plage_stand`, `supprimer_horaires_stand`) ne sont pas gardés : aucune version publiée ne les a portés. Le mode `tension` d'`analyser_marge` est devenu la section `tension` de `consulter_risques`. Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
 
 <!-- mcp-renommages:debut -->
 | Nom en 3.x | Nom en 4.0 |
@@ -104,9 +104,9 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `activer_contrainte` | `modifier_contrainte` |
 | `affecter_journee_type` | `modifier_gabarit` |
 | `affecter_poste` | `modifier_affectation` |
-| `ajouter_fermeture_stand` | `creer_plage_stand` |
+| `ajouter_fermeture_stand` | `creer_horaire_stand` |
 | `ajouter_horaire_stand` | `creer_horaire_stand` |
-| `ajouter_ouverture_stand` | `creer_plage_stand` |
+| `ajouter_ouverture_stand` | `creer_horaire_stand` |
 | `ajouter_validation_journee` | `modifier_etat_journee` |
 | `analyser_effectifs` | `consulter_besoin` |
 | `analyser_enchainements` | `consulter_repas_pauses` |
@@ -114,24 +114,30 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `analyser_marge` | `consulter_besoin` |
 | `analyser_pauses` | `consulter_repas_pauses` |
 | `analyser_typologies` | `consulter_besoin` |
+| `appliquer_declaration_disponibilite` | `modifier_declaration_disponibilite` |
 | `arreter_solveur` | `arreter_calcul` |
 | `capturer_instantane` | `creer_version` |
 | `changements_journee` | `comparer_journee` |
 | `compacter_horaires_stands` | retiré |
 | `comparer_instantanes` | `comparer_versions` |
 | `configurer_foire_echanges` | `modifier_foire_echanges` |
+| `consulter_animateur` | `lister_animateurs` |
+| `consulter_collecte_disponibilites` | `consulter_disponibilites` |
 | `consulter_historique_ponderation` | retiré |
 | `consulter_instantane` | `consulter_version` |
 | `consulter_parametres_legaux` | `consulter_parametres` |
 | `consulter_parametres_notifications` | `consulter_parametres` |
 | `consulter_parametres_qualite` | `consulter_parametres` |
 | `consulter_parametres_solveur` | `consulter_parametres` |
+| `consulter_stand` | `lister_stands` |
 | `creer_creneaux_recurrents` | `appliquer_generateur_creneaux` |
+| `creer_stand_complet` | `creer_stand` |
 | `definir_journee_type` | `modifier_gabarit` |
 | `deplacer_affectation` | `modifier_affectation` |
 | `desactiver_contrainte` | `modifier_contrainte` |
-| `effacer_horaires_stand` | `supprimer_horaires_stand` |
-| `effacer_plages_stand` | `supprimer_plage_stand` |
+| `diagnostiquer_grille_creneaux` | `diagnostiquer_creneaux` |
+| `effacer_horaires_stand` | `supprimer_horaire_stand` |
+| `effacer_plages_stand` | `supprimer_horaire_stand` |
 | `equite_planning` | `consulter_charge` |
 | `etat_planning` | `consulter_planning` |
 | `expliquer_affectation` | `analyser_affectation` |
@@ -142,6 +148,8 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `lancer_solveur` | `lancer_calcul` |
 | `lever_gel` | `modifier_phase_edition` |
 | `lister_affectations` | `consulter_planning` |
+| `lister_declarations_disponibilite` | `consulter_disponibilites` |
+| `lister_demandes_covoiturage` | `consulter_disponibilites` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_jobs` | `consulter_calcul` |
 | `lister_journees_types` | `lister_gabarits` |
@@ -160,6 +168,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `previsualiser_reconnaissance_journees_types` | `previsualiser_generateur_creneaux` |
 | `realise_vs_planifie` | `comparer_realise_planifie` |
 | `reconnaitre_journees_types` | `appliquer_generateur_creneaux` |
+| `refuser_declaration_disponibilite` | `modifier_declaration_disponibilite` |
 | `refuser_demande_echange` | `modifier_demande_echange` |
 | `resoudre_incremental` | `lancer_correction` |
 | `restaurer_instantane` | `restaurer_version` |
@@ -170,11 +179,13 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `simuler_swap` | `simuler_affectation` |
 | `statut_solveur` | `consulter_calcul` |
 | `suggerer_reparations` | `simuler_affectation` |
+| `supprimer_creneau` | `supprimer_creneaux` |
 | `supprimer_instantane` | `supprimer_version` |
 | `supprimer_job` | `supprimer_calcul` |
 | `supprimer_journee_type` | `supprimer_gabarit` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |
 | `synthese_affectations` | `consulter_planning` |
+| `valider_creneaux` | `diagnostiquer_creneaux` |
 | `volumes` | `consulter_besoin` |
 <!-- mcp-renommages:fin -->
 
