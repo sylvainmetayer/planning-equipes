@@ -1,13 +1,13 @@
 // Une édition saisie de bout en bout depuis l'écran, dans l'ordre de la prise
 // en main (ADR 0032) : l'édition, ses typologies et emplacements, ses journées
-// types posées sur un calendrier puis appliquées, ses stands et leur effectif
-// dans la grille des ouvertures — dont un stand aux heures particulières —,
+// types posées sur un calendrier puis appliquées, ses stands et leurs plages
+// d'ouverture — dont un stand aux heures particulières —,
 // ses animateurs, un solve court réel, et le planning relu sur l'axe du temps
 // et la page Problèmes. Trois jours, trois stands, trois animateurs : le plus
 // petit jeu qui passe par toutes les capacités de l'outil.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, shiftDate, dialogueOuvert, pageAdmin, rowAction } from './support';
+import { contexteAdmin, shiftDate, dialogueOuvert, pageAdmin } from './support';
 import { repartirDeLaReference } from './reference';
 
 /**
@@ -117,49 +117,7 @@ async function creerAnimateur(
   await expect(dialog).toBeHidden();
 }
 
-/**
- * L'effectif du stand un sur les deux matins de « Jour normal » : ce qu'une
- * seule case de la grille par gabarit doit avoir écrit sur les deux dates.
- */
-async function effectifsDesMatins(): Promise<(number | null)[]> {
-  const reponse = await admin.get('/api/ouvertures-stands', DANS_EDITION);
-  expect(reponse.ok()).toBeTruthy();
-  const rapport = (await reponse.json()) as {
-    jours: { date: string; creneaux: { id: number; heureDebut: string }[] }[];
-    stands: {
-      standId: string;
-      jours: { date: string; creneaux: { creneauId: number; effectif: number | null }[] }[];
-    }[];
-  };
-  const matins = new Set(
-    rapport.jours
-      .filter((jour) => jour.date === JOUR1 || jour.date === JOUR2)
-      .flatMap((jour) =>
-        jour.creneaux.filter((creneau) => creneau.heureDebut.startsWith('09:')).map((c) => c.id),
-      ),
-  );
-  expect(matins.size).toBe(2);
-  const stands = (await (await admin.get('/api/stands', DANS_EDITION)).json()) as {
-    id: string;
-    code: string | null;
-  }[];
-  const standUnId = stands.find((stand) => stand.code === STANDS[0].code)?.id;
-  const standUn = rapport.stands.find((ligne) => ligne.standId === standUnId)!;
-  return standUn.jours
-    .flatMap((jour) => jour.creneaux)
-    .filter((cellule) => matins.has(cellule.creneauId))
-    .map((cellule) => cellule.effectif);
-}
-
-/** Une case de la grille de saisie, désignée comme son aria-label la nomme : « Stand · JJ/MM colonne ». */
-function cellule(page: Page, stand: string, jour: string, colonne: string) {
-  const [, mois, jj] = jour.split('-');
-  return page.getByLabel(`${stand} · ${jj}/${mois} ${colonne}`);
-}
-
-test('an edition entered end to end, solved, and read back in the opening hours grid', async ({
-  browser,
-}) => {
+test('an edition entered end to end, solved, and read back', async ({ browser }) => {
   test.slow();
   const page = await pageAdmin(browser, admin);
 
@@ -227,114 +185,46 @@ test('an edition entered end to end, solved, and read back in the opening hours 
   // Le relais repas se lit sur la liste des créneaux.
   await expect(page.locator('.creneaux-table .relais-repas-icon')).toHaveCount(4);
 
-  // 4. Les stands, puis leur effectif par créneau dans la grille des ouvertures.
+  // 4. Les stands, puis leurs plages d'ouverture, posées par l'API comme la
+  // fiche les poserait : stand deux le matin seulement, stand trois l'après-midi
+  // seulement et fermé le premier jour.
   for (const stand of STANDS) {
     await creerStand(page, stand.code, stand.nom);
   }
+  const stands = (await (await admin.get('/api/stands', DANS_EDITION)).json()) as {
+    id: string;
+    code: string | null;
+  }[];
+  const poser = async (
+    code: string,
+    date: string,
+    mode: 'OUVERTURE' | 'FERMETURE',
+    heureDebut: string,
+    heureFin: string | null,
+  ) => {
+    const stand = stands.find((each) => each.code === code)?.id;
+    expect(stand, `stand ${code}`).toBeTruthy();
+    const reponse = await admin.post(`/api/stands/${stand}/plages`, {
+      ...DANS_EDITION,
+      data: { id: null, mode, date, heureDebut, heureFin, motif: null, effectif: null },
+    });
+    expect(reponse.ok(), `plage ${code} ${date}`).toBeTruthy();
+  };
+  await poser('E2E-JT-S2', JOUR1, 'OUVERTURE', '09:00', '12:00');
+  await poser('E2E-JT-S2', JOUR2, 'OUVERTURE', '09:00', '12:00');
+  await poser('E2E-JT-S2', JOUR3, 'FERMETURE', '00:00', null);
+  await poser('E2E-JT-S3', JOUR1, 'FERMETURE', '00:00', null);
+  await poser('E2E-JT-S3', JOUR2, 'OUVERTURE', '14:00', '18:00');
+  await poser('E2E-JT-S3', JOUR3, 'OUVERTURE', '14:00', '19:00');
+  // Une heure qu'aucune vacation ne couvre : enregistrée, et signalée sans effet.
+  await poser('E2E-JT-S3', JOUR3, 'OUVERTURE', '07:00', '08:00');
 
-  await page.goto('/creneaux?onglet=horaires&vue=saisie');
-  await expect(page.locator('.grille-saisie')).toBeVisible();
-  // Stand deux : le matin seulement. Stand trois : l'après-midi seulement, et
-  // fermé le premier jour.
-  for (const jour of [JOUR1, JOUR2]) {
-    for (const colonne of ['12-13', '13-14', '14-18']) {
-      await cellule(page, 'Stand deux E2E', jour, colonne).fill('-');
-    }
-  }
-  for (const colonne of ['14-19', '19-23']) {
-    await cellule(page, 'Stand deux E2E', JOUR3, colonne).fill('-');
-  }
-  for (const colonne of ['09-12', '12-13', '13-14', '14-18']) {
-    await cellule(page, 'Stand trois E2E', JOUR1, colonne).fill('-');
-  }
-  for (const colonne of ['09-12', '12-13', '13-14']) {
-    await cellule(page, 'Stand trois E2E', JOUR2, colonne).fill('-');
-  }
-  await cellule(page, 'Stand trois E2E', JOUR3, '19-23').fill('-');
-  await page.getByRole('button', { name: /^Enregistrer/ }).click();
-  await expect(page.getByText(/enregistré/i).last()).toBeVisible();
-
-  // 4 bis. La même grille lue par gabarit (ADR 0033) : six colonnes au
-  // lieu de dix, et une case qui vaut pour les deux jours normaux d'un coup.
-  await page.goto('/creneaux?onglet=horaires&vue=journees-types');
-  await expect(page.locator('.grille-gabarits')).toBeVisible();
-  // Six colonnes — quatre vacations de « Jour normal », deux de « Nocturne » —
-  // là où la grille par date en aligne dix.
-  await expect(page.locator('.grille-gabarits .entete-creneau')).toHaveCount(6);
-  const matinJourNormal = page.getByLabel('Stand un E2E · Jour normal 09:00-12:00');
-  const effectifInitial = await matinJourNormal.inputValue();
-
-  await matinJourNormal.fill('2');
-  await page.getByRole('button', { name: /^Enregistrer/ }).click();
-  await expect(page.getByText(/enregistré/i).last()).toBeVisible();
-  await expect.poll(effectifsDesMatins).toEqual([2, 2]);
-
-  // Et retour : la même case rend les deux jours à leur effectif de départ, pour
-  // que la suite de la spec lise l'édition qu'elle a saisie.
-  await matinJourNormal.fill(effectifInitial);
-  await page.getByRole('button', { name: /^Enregistrer/ }).click();
-  await expect(page.getByText(/enregistré/i).last()).toBeVisible();
-  await expect.poll(effectifsDesMatins).toEqual([Number(effectifInitial), Number(effectifInitial)]);
-
-  // Un stand aux heures particulières, déclaré après la grille — une case ne
-  // sait pas dire 07:00-08:00, et enregistrer la grille réécrit tout l'horaire
-  // du stand : ouvert 07:00-08:00 le soir de nocturne, une heure qu'aucune
-  // vacation ne couvre. Sur un jour où la grille a écrit une ouverture (l'après-
-  // midi), une ouverture de plus est permise ; sur le premier jour, fermé en
-  // entier, elle serait refusée — un jour ne porte pas les deux modes.
-  // Enregistrée, et signalée sans effet.
-  await page.goto('/stands');
-  await page.getByLabel('Filtrer').fill('E2E-JT-S3');
-  await (await rowAction(page.getByRole('row', { name: /E2E-JT-S3/ }), 'Modifier')).click();
-  const fiche = await dialogueOuvert(page);
-  // Le fieldset propre aux ouvertures : celui dont c'est la légende, pas le
-  // formulaire entier qui la contient aussi.
-  const ouvertures = fiche.locator('legend', { hasText: 'Ouvertures ponctuelles' }).locator('..');
-  const dates = ouvertures.getByLabel('Date', { exact: true });
-  const avant = await dates.count();
-  await fiche.getByRole('button', { name: 'Ajouter une ouverture' }).click();
-  // La ligne n'existe qu'au rendu suivant le clic : sans cette attente, `.last()`
-  // du premier fill désigne encore l'ancienne dernière ligne (la date y est
-  // réécrite), les deux autres champs la nouvelle, et sa date reste vide — le
-  // bouton de validation ne se dégrise jamais.
-  await expect(dates).toHaveCount(avant + 1);
-  // La grille vient d'écrire l'horaire du stand en ouvertures datées : la
-  // ligne ajoutée est la dernière.
-  await ouvertures.getByLabel('Date', { exact: true }).last().fill(JOUR3);
-  await ouvertures.getByLabel('Début', { exact: true }).last().fill('07:00');
-  await ouvertures.getByLabel("Fin (vide = jusqu'à la fermeture)").last().fill('08:00');
-  await fiche.getByRole('button', { name: 'Modifier le stand' }).click();
-  await expect(fiche).toBeHidden();
-  await expect(page.getByText(/ne recoupe aucun créneau/)).toBeVisible();
-
-  // 5. La grille relue : une case vide est fermée, et un clic sur une case
-  // explique d'où vient son ouverture — ici, la fenêtre de 07:00 qu'aucune
-  // vacation ne couvre, qu'aucune case ne sait dire.
-  await page.goto('/creneaux?onglet=horaires');
-  await expect(page.locator('.grille-saisie')).toBeVisible();
-  await expect(page.locator('.grille-saisie tbody tr:not(.ligne-masquee)')).toHaveCount(3);
-  await expect(cellule(page, 'Stand trois E2E', JOUR1, '09-12')).toHaveValue('');
-  await cellule(page, 'Stand trois E2E', JOUR3, '14-19').click();
-  const explication = page.locator('.ouvertures-explication');
-  await expect(explication).toContainText('Stand trois E2E');
-  await expect(explication).toContainText('07:00–08:00');
-  await expect(explication.getByRole('link', { name: /Fiche du stand/ })).toBeVisible();
-  await expect(page.locator('.ouvertures-anomalies-bloc summary')).toContainText('Anomalies');
-  // L'ancienne vue Journée, avant tout calcul, ouvre la grille sur ce jour.
-  await page.goto(`/creneaux?onglet=horaires&vue=journee&date=${JOUR3}`);
-  await expect(page).toHaveURL(new RegExp(`du=${JOUR3}&au=${JOUR3}`));
-  await expect(page.locator('.grille-saisie .entete-jour-saisie')).toHaveCount(1);
-
-  // La fiche du stand porte son anomalie, l'accueil la compte à part.
-  await page.goto('/stands');
-  await page.getByLabel('Filtrer').fill('E2E-JT-S3');
-  await page
-    .getByRole('row', { name: /E2E-JT-S3/ })
-    .getByRole('link', { name: 'Stand trois E2E' })
-    .click();
-  await expect(page.locator('#stand-section-anomalies')).toContainText('ne recoupe aucun créneau');
+  // 5. L'accueil compte la fenêtre sans effet, et les anciennes adresses des
+  // horaires mènent à la fiche du stand.
   await page.goto('/');
   await expect(page.locator('li[data-ligne="ouvertures"]')).toContainText('hors de toute vacation');
+  await page.goto('/creneaux?onglet=horaires&vue=saisie');
+  await expect(page).toHaveURL(/\/stands$/);
 
   // 6. Les animateurs.
   await page.goto('/animateurs');
@@ -383,11 +273,6 @@ test('an edition entered end to end, solved, and read back in the opening hours 
   await expect(page.getByRole('heading', { name: 'Diagnostic' })).toBeVisible();
   await expect(page.locator('app-problemes-page')).toBeVisible();
   await expect(page.locator('body')).not.toContainText('bloquant(s)');
-  // Le plan calculé, l'ancienne vue Journée des ouvertures mène au planning du
-  // jour. Le deuxième : l'adresse de la Journée tait le premier, son jour par défaut.
-  await page.goto(`/creneaux?onglet=horaires&vue=journee&date=${JOUR2}`);
-  await expect(page).toHaveURL(new RegExp(String.raw`/journee\?date=${JOUR2}`));
-
   await page.evaluate(() => localStorage.removeItem('planning-equipes.editionId'));
   await page.context().close();
 });

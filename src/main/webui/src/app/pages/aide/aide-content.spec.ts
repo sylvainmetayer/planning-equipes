@@ -389,7 +389,6 @@ describe('parametrer-pour-un-planning-complet', () => {
     expect(section.links.map((link) => link.route)).toEqual([
       '/stands',
       '/creneaux',
-      '/creneaux',
       '/regles',
       '/diagnostic',
       '/diagnostic',
@@ -399,12 +398,11 @@ describe('parametrer-pour-un-planning-complet', () => {
     // Four screens became two pages: a link names which tab or rendering.
     expect(section.links.map((link) => link.queryParams)).toEqual([
       undefined,
-      { onglet: 'horaires' },
       undefined,
       undefined,
       { onglet: 'besoin' },
       undefined,
-      { onglet: 'fragilite' },
+      { onglet: 'risques', section: 'fragilite' },
       { onglet: 'problemes' },
     ]);
   });

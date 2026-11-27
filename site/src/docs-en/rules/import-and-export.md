@@ -5,44 +5,28 @@ twin: regles/importer-exporter
 
 You fill an edition from your spreadsheets, export what you want to correct or share, and archive the edition at the end of the event.
 
-It all happens in *Files* (*Prepare* group), a screen with three tabs: *Import*, *Export*, *Archive*. Each reference data screen also has its own "Import" button, which opens the same import card without leaving the list. The full cycle comes down to three gestures: export, correct in the spreadsheet, re-import.
+It all happens in *Files* (*Prepare* group), a screen with three tabs: *Import*, *Export*, *Archive*. The staff screen also has its own "Import" button, which opens the same CSV card without leaving the list. The full cycle comes down to three gestures: export, correct, re-import.
 
 Is a spreadsheet your starting point? [Moving from a spreadsheet to scheduling software](/tableur-ou-logiciel-de-planning/) says what this change brings, and when it is not necessary.
 
 ## Import
 
-The *Import* tab offers one card per type of reference data, in the order the data depends on each other:
+The *Import* tab offers four cards:
 
-1. game categories;
-2. locations;
-3. stands;
-4. timeslots;
-5. template days;
-6. staff;
-7. the stand grid;
-8. finally the scenario file, **the only one that replaces the edition** instead of completing it.
+1. the **YAML scenario**, the complete workbook of an edition: game categories, locations, stands and their hours, timeslots, templates, staff, adjustments, settings. It is **the only one that replaces the edition** instead of completing it;
+2. the **staff**, from a CSV spreadsheet;
+3. the **examples** shipped with the application;
+4. the **check of a scenario file**, which writes nothing.
 
 ![The file import screen](/images/fr/docs/fichiers.webp "The Files screen, Import tab")
 
+The CSV imports of game categories, locations, stands, timeslots and template days, and the stand grid one, no longer exist since 4.0: the YAML file replaces them. To take your stand grid back, export the edition as YAML (*Export* tab), rewrite the stands' hours in that file, then import it again: [Moving from 3.x to 4.0](../installer/passer-a-la-4-0.md#les-imports-csv-des-référentiels-et-de-la-grille-des-stands-sont-retirés) gives the exact notation.
+
 The common rules:
 
-- The first three files ask for the minimum: a code and a label (game categories), a code and a name (locations), a code, a name and game categories (stands). A stand's headcount and a location's coordinates remain optional.
-- Timeslots are recognised by their date and their two times rather than by an identifier.
-- Template days are recognised by their name. Their shifts fit on one line ("09:00-12:00, 12:00-13:00 R, 14:00-20:00"). Their dates complete the calendar without replacing it: the grid only moves when you apply the calendar.
-- A missing column erases nothing, and a row whose code is known is updated.
-- A game category that is cited without existing is created, after being announced.
-- No identifier is ever entered or read in a file: the application assigns its own (A1, A2... for staff, S1... for stands), numbered within each edition. A row is designated by its code, otherwise by its name; a staff member by their e-mail address, otherwise by their last and first name.
-- Each card also accepts cells copied from a spreadsheet, read like a file. Once the import is written, a link opens the screen of the imported rows.
-
-### Import the stand grid
-
-The matrix of your workbook arrives as it is: stands in rows, days and timeslots in columns, one headcount per cell.
-
-1. Each column is placed on its timeslot; an unknown column is ignored and listed.
-2. Review the preview row by row: each stand has its hours rewritten from its cells.
-3. Confirm.
-
-The current grid can be downloaded as a template.
+- No identifier is ever entered or read in a CSV file: the application assigns its own (A1, A2... for staff), numbered within each edition. A staff member is designated by their e-mail address, otherwise by their last and first name.
+- A missing column erases nothing, and a row that is already known is updated.
+- The staff CSV also accepts cells copied from a spreadsheet, read like a file. Once the import is written, a link opens the staff list on the imported rows.
 
 ### Import your staff from a spreadsheet
 
@@ -66,8 +50,8 @@ Before replacing an edition with a scenario, the application keeps a copy of it:
 
 The *Export* tab offers two forms.
 
-- The ZIP archive: one CSV per type of reference data (game categories, locations, stands, timeslots, template days, staff), each one tickable, and each in the exact form the matching import tab reads back. This lets you copy one edition onto another, replay a year's calendar the next year, or correct in bulk in a spreadsheet and then re-import.
-- The scenario file: the whole edition in a single file, the one the Scenario card of the imports reads back.
+- The ZIP archive: one CSV per type of reference data (game categories, locations, stands, timeslots, templates, staff), each one tickable, to open in a spreadsheet. Only the staff file reads back in.
+- The scenario file: the whole edition in a single file, the one the Scenario card of the imports reads back. It is what lets you copy one edition onto another, replay a year's calendar the next year, or correct in bulk and then re-import.
 
 Each reference data list also offers "Export this list", which downloads as CSV what the table shows.
 
@@ -81,4 +65,4 @@ The files are those each screen would have downloaded. No access token appears i
 
 ## The formats in detail
 
-The exact columns of the CSV files are described in [cSV imports](../comprendre/imports-csv.md), the scenario schema in [the scenario file](../comprendre/scenario-yaml.md) and how to go back on an import in [restoring an edition](../comprendre/restaurer-une-edition.md).
+The exact columns of the staff CSV file are described in [cSV imports](../comprendre/imports-csv.md), the scenario schema in [the scenario file](../comprendre/scenario-yaml.md) and how to go back on an import in [restoring an edition](../comprendre/restaurer-une-edition.md).

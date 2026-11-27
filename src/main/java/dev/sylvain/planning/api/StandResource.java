@@ -5,12 +5,6 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferenceUsage;
-import dev.sylvain.planning.service.referentiel.ReferentielCsvImportReport;
-import dev.sylvain.planning.service.referentiel.ReferentielCsvImportRequest;
-import dev.sylvain.planning.service.referentiel.ReferentielCsvImportService;
-import dev.sylvain.planning.service.referentiel.StandGrilleImportReport;
-import dev.sylvain.planning.service.referentiel.StandGrilleImportRequest;
-import dev.sylvain.planning.service.referentiel.StandGrilleImportService;
 import dev.sylvain.planning.service.referentiel.WrittenStand;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -28,7 +22,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * CRUD of the stands, and the import of their opening hours as a matrix.
+ * CRUD of the stands.
  */
 @Path("/stands")
 @Produces(MediaType.APPLICATION_JSON)
@@ -37,14 +31,9 @@ public class StandResource {
 
     private final ReferenceDataService referenceDataService;
 
-    private static final ReferentielCsvImportReport.ImportTarget CIBLE = ReferentielCsvImportReport.ImportTarget.STANDS;
-
-    private final StandGrilleImportService grilleImport;
-
     @Inject
-    public StandResource(ReferenceDataService referenceDataService, StandGrilleImportService grilleImport) {
+    public StandResource(ReferenceDataService referenceDataService) {
         this.referenceDataService = referenceDataService;
-        this.grilleImport = grilleImport;
     }
 
     @GET
@@ -118,66 +107,5 @@ public class StandResource {
     @Path("/usages")
     public ReferenceUsage countStandUsages(@QueryParam("id") List<String> ids) {
         return referenceDataService.countStandUsages(ids);
-    }
-
-    /* ----------------------------- Matrix import ----------------------------- */
-
-    /**
-     * What the stand matrix would do, without doing any of it: the columns
-     * read and the créneau each landed on, one line of report per stand row.
-     * A pure read — no transaction is opened.
-     */
-    @POST
-    @Path("/import-grille/analyse")
-    public StandGrilleImportReport analyseGrille(StandGrilleImportRequest request) {
-        return grilleImport.preview(request);
-    }
-
-    /**
-     * Applies the same request the preview was computed from — file included,
-     * re-read and re-checked — and writes the accepted stands in one
-     * transaction. {@code 409} while a solve runs.
-     */
-    @POST
-    @Path("/import-grille")
-    public StandGrilleImportReport importGrille(StandGrilleImportRequest request) {
-        return grilleImport.apply(request);
-    }
-
-    /** The edition's own matrix as a CSV to start from: its créneaux as columns, its stands as rows. */
-    @GET
-    @Path("/import-grille/exemple")
-    @NotForLecteur
-    @Produces("text/csv")
-    public Response exempleGrille() {
-        return CsvDownload.attachment(grilleImport.exemple(), StandGrilleImportService.EXEMPLE_FICHIER);
-    }
-
-    /* ------------------------------ Import CSV ------------------------------ */
-
-    /** The shape the import expects, shown rather than described. */
-    @GET
-    @Path("/import-csv/exemple")
-    @NotForLecteur
-    @Produces("text/csv")
-    public Response exempleCsv() {
-        return CsvDownload.attachment(
-                referenceDataService.exempleCsvReferentiel(CIBLE), ReferentielCsvImportService.exampleFileName(CIBLE));
-    }
-
-    /** What the file would do, line by line, without writing any of it. */
-    @POST
-    @Path("/import-csv/analyse")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public ReferentielCsvImportReport analyseCsv(ReferentielCsvImportRequest request) {
-        return referenceDataService.previewCsvReferentiel(CIBLE, request);
-    }
-
-    /** Applies the same file the preview was computed from; the server reads it again before writing. */
-    @POST
-    @Path("/import-csv")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public ReferentielCsvImportReport importCsv(ReferentielCsvImportRequest request) {
-        return referenceDataService.importCsvReferentiel(CIBLE, request);
     }
 }

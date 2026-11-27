@@ -256,11 +256,8 @@ describe('lienCellule', () => {
     });
   });
 
-  it('opens that day of the stand openings before a solve, where the margin is still moved', () => {
-    expect(lienCellule('AVANT', 42, '2026-07-10')).toEqual({
-      route: '/creneaux',
-      queryParams: { onglet: 'horaires', du: '2026-07-10', au: '2026-07-10' },
-    });
+  it('opens the stands before a solve, where the margin is still moved', () => {
+    expect(lienCellule('AVANT', 42, '2026-07-10')).toEqual({ route: '/stands', queryParams: {} });
   });
 
   it('leads nowhere from a cell holding no seat, rather than to an empty screen', () => {

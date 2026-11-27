@@ -22,13 +22,13 @@ Le budget est celui de l'**instance** (ADR 0110), le même pour toutes les édit
 
 ## Prévoir ce que le calcul va recevoir
 
-`GET /api/planning/volumetrie` (outil MCP `volumes`) décrit le problème que le prochain calcul construirait, jamais un produit stands × créneaux : `animateurCount` (les valeurs possibles d'un poste), `posteCount` (un poste par siège à pourvoir), `contrainteAdHocCount`, `hoursToFill` (durées effectives des postes, fermetures déduites) et `hoursAvailable`, le plafond légal de ce que les animateurs peuvent travailler les jours de l'événement (par animateur et par semaine ISO, au plus six jours non indisponibles, chacun au plafond quotidien de son âge ce jour-là, le tout borné par le plafond hebdomadaire). Leur rapport est un taux de remplissage, mais c'est un plafond et non une prévision : compétences, repos et pauses en retranchent encore, et un taux proche de 1 annonce déjà un planning infaisable.
+`GET /api/planning/volumetrie` (outil MCP `consulter_besoin`, section `volumetrie`) décrit le problème que le prochain calcul construirait, jamais un produit stands × créneaux : `animateurCount` (les valeurs possibles d'un poste), `posteCount` (un poste par siège à pourvoir), `contrainteAdHocCount`, `hoursToFill` (durées effectives des postes, fermetures déduites) et `hoursAvailable`, le plafond légal de ce que les animateurs peuvent travailler les jours de l'événement (par animateur et par semaine ISO, au plus six jours non indisponibles, chacun au plafond quotidien de son âge ce jour-là, le tout borné par le plafond hebdomadaire). Leur rapport est un taux de remplissage, mais c'est un plafond et non une prévision : compétences, repos et pauses en retranchent encore, et un taux proche de 1 annonce déjà un planning infaisable.
 
 Les postes ne dépendent que des stands et des créneaux : ils sont comptés avant la saisie d'aucun animateur (`hoursAvailable` vaut alors zéro), et tout est à zéro sans stand ni créneau. `GET /api/staffing` fait de même (`referentielsManquants` nomme ce qui manque). `GET /api/feasibility` et `GET /api/fragilite` disent au contraire explicitement que rien n'est réalisable sans animateur, plutôt que de ne détecter aucun problème, et `GET /api/feasibility` dit aussi une édition sans créneau ou dont aucun stand n'ouvre : rien à pourvoir n'est pas un feu vert.
 
 ### Le besoin en animateurs
 
-`GET /api/staffing` (outil MCP `analyser_effectifs`) rend des **minimums prouvés** : aucune équipe plus petite ne tient les sièges. Trois chiffres se lisent autrement qu'il n'y paraît :
+`GET /api/staffing` (outil MCP `consulter_besoin`, section `borne`) rend des **minimums prouvés** : aucune équipe plus petite ne tient les sièges. Trois chiffres se lisent autrement qu'il n'y paraît :
 
 - `mineursMax` est un plafond, calculé pour `effectifReference` (le minimum, ou les animateurs saisis s'ils sont plus nombreux) : au-delà, recruter des mineurs empêche de tenir. Il ne dit jamais combien de mineurs recruter, et il ignore les jours d'affilée et les 4 h 30 de travail continu des mineurs ;
 - `absentsMax` (par jour) et `budgetIndisponibilites` (par semaine) se lisent contre le même effectif. Le budget s'entend au-delà du jour de repos que chacun doit déjà prendre, et `indisponibilitesAuDela` compte les jours déclarés au-delà de ce repos ;
@@ -94,7 +94,7 @@ Les événements `score` sont des **deltas** : `depuis` est l'indice du premier 
 
 ### L'instant de faisabilité
 
-Le premier plan faisable (zéro dur) arrive souvent bien avant la fin, et c'est ce que l'organisateur attend : le planning est alors utilisable, le reste est de la qualité. Le job le porte dans `feasibleAtSeconds` (`JobView`, `statut_solveur` en MCP), `null` tant que le plan ne l'est pas, et pousse un événement d'état à cet instant. « Arrêter et garder ce plan » n'est que l'arrêt ordinaire, le solveur gardant toujours le meilleur plan atteint. Timefold n'annonçant une solution que lorsqu'elle change, un calcul qui part déjà d'un plan à zéro dur ne dirait rien : le plan de départ complet est donc noté une fois avant le démarrage (`SolveListener`).
+Le premier plan faisable (zéro dur) arrive souvent bien avant la fin, et c'est ce que l'organisateur attend : le planning est alors utilisable, le reste est de la qualité. Le job le porte dans `feasibleAtSeconds` (`JobView`, `consulter_calcul` en MCP), `null` tant que le plan ne l'est pas, et pousse un événement d'état à cet instant. « Arrêter et garder ce plan » n'est que l'arrêt ordinaire, le solveur gardant toujours le meilleur plan atteint. Timefold n'annonçant une solution que lorsqu'elle change, un calcul qui part déjà d'un plan à zéro dur ne dirait rien : le plan de départ complet est donc noté une fois avant le démarrage (`SolveListener`).
 
 ## La replanification incrémentale
 

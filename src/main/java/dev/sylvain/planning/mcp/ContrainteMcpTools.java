@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -64,6 +65,10 @@ public class ContrainteMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     List<ContrainteView> listContraintes(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return views(definition -> true);
+    }
+
+    private List<ContrainteView> views(Predicate<ConstraintDefinition> retenue) {
         StoredAnalysis analysis = analysisStore.latest();
         Map<String, ConstraintDiagnostic> byName = analysis == null
                 ? Map.of()
@@ -75,13 +80,87 @@ public class ContrainteMcpTools {
         Map<String, Boolean> niveaux = planningService.effectiveLevels();
 
         return ConstraintCatalog.definitions().stream()
+                .filter(retenue)
                 .map(definition -> toView(definition, byName.get(definition.name()), desactivees, poids, niveaux))
                 .toList();
     }
 
+    /**
+     * One setting of one rule per call — its activation, its weight or its
+     * level — so the journal line says exactly what moved, as the three REST
+     * routes do; the answer is the rule's line of {@code lister_contraintes}
+     * as it reads after the change.
+     */
+    @Tool(
+            name = "modifier_contrainte",
+            description = "Règle une contrainte pour la prochaine résolution, dans cette édition seulement, un "
+                    + "réglage par appel. actif : true la réactive, false la fait ignorer du solveur. poids : à niveau "
+                    + "égal, une contrainte de poids 10 pèse deux fois une contrainte de poids 5 ; l'écran propose "
+                    + "faible 1, normale 5 (le défaut d'une règle moyenne ou souple), forte 25, tout entier de 1 à 500 "
+                    + "est accepté ; poidsParDefaut=true revient au poids configuré. niveau, sur les règles dont "
+                    + "lister_contraintes donne niveauReglable : OBLIGATOIRE (le plan qui la viole n'est pas livrable, "
+                    + "comme une règle légale) ou PREFERENCE_FORTE, PREFERENCE_NORMALE, PREFERENCE_LEGERE (le poids de "
+                    + "cette position, 25, 5 ou 1) ; une règle rendue obligatoire que l'édition ne peut pas tenir "
+                    + "donne un plan infaisable : lire consulter_besoin (section faisabilite) avant le calcul. Rend la ligne de la "
+                    + "règle telle que lister_contraintes la lit après le changement.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    @WarnsWhileSolving
+    ContrainteModifieeView modifyContrainte(
+            @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
+            @ToolArg(description = "true : active, false : désactivée", required = false) Boolean actif,
+            @ToolArg(description = "Poids strictement positif", required = false) Integer poids,
+            @ToolArg(description = "true : rétablit le poids par défaut", required = false) Boolean poidsParDefaut,
+            @ToolArg(
+                            description = "OBLIGATOIRE, PREFERENCE_FORTE, PREFERENCE_NORMALE ou PREFERENCE_LEGERE",
+                            required = false)
+                    String niveau,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        boolean defaut = Boolean.TRUE.equals(poidsParDefaut);
+        // Stated first, so a refused call is journalled under the setting it asked for.
+        if (niveau != null) {
+            currentAction.action("CONTRAINTE_NIVEAU");
+        } else if (actif != null) {
+            currentAction.action(actif ? "CONTRAINTE_ACTIVEE" : "CONTRAINTE_DESACTIVEE");
+        }
+        int reglages = (actif != null ? 1 : 0) + (poids != null ? 1 : 0) + (defaut ? 1 : 0) + (niveau != null ? 1 : 0);
+        if (reglages != 1) {
+            throw new BusinessError.Invalid(
+                    "Un réglage par appel : actif, poids, poidsParDefaut ou niveau, exactement un des quatre");
+        }
+        String rule;
+        if (actif != null) {
+            rule = setActive(nom, actif).nom();
+        } else if (niveau != null) {
+            rule = setLevel(nom, niveau);
+        } else {
+            rule = setWeight(nom, poids);
+        }
+        return new ContrainteModifieeView(
+                views(definition -> definition.name().equals(rule)).get(0), List.of());
+    }
+
+    /** The rule as {@code lister_contraintes} reads it after a change. */
+    public record ContrainteModifieeView(
+            ContrainteView contrainte,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
+            implements WarningCarrier<ContrainteModifieeView> {
+
+        @Override
+        public ContrainteModifieeView withWarning(String code) {
+            return new ContrainteModifieeView(contrainte, WarningCodes.with(avertissements, code));
+        }
+    }
+
+    @Deprecated
     @Tool(
             name = "activer_contrainte",
-            description = "Active une contrainte pour le prochain solve (annule une désactivation précédente).",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_contrainte (actif true). "
+                    + "Active une contrainte pour le prochain solve (annule une désactivation précédente).",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -95,10 +174,11 @@ public class ContrainteMcpTools {
         return setActive(nom, true);
     }
 
+    @Deprecated
     @Tool(
             name = "desactiver_contrainte",
-            description =
-                    "Désactive une contrainte pour le prochain solve. Le solveur l'ignorera jusqu'à réactivation.",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_contrainte (actif false). "
+                    + "Désactive une contrainte pour le prochain solve. Le solveur l'ignorera jusqu'à réactivation.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -122,14 +202,16 @@ public class ContrainteMcpTools {
      * never touched them, which is what makes the dosage a per-event decision
      * rather than a per-deployment one.</p>
      */
+    @Deprecated
     @Tool(
             name = "modifier_poids_contrainte",
-            description = "Change le poids d'une contrainte pour la prochaine résolution, dans cette édition "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_contrainte (poids). "
+                    + "Change le poids d'une contrainte pour la prochaine résolution, dans cette édition "
                     + "seulement : à niveau égal, une contrainte de poids 10 pèse deux fois une contrainte de poids 5. "
                     + "L'écran propose trois positions (faible 1, normale 5 — le défaut d'une règle moyenne ou "
                     + "souple —, forte 25), tout entier de 1 à 500 est accepté. "
                     + "Sans poids, l'édition revient au poids configuré par défaut. Ne touche pas au niveau "
-                    + "(obligatoire ou préférence) : c'est modifier_niveau_contrainte.",
+                    + "(obligatoire ou préférence) : c'est modifier_contrainte (niveau).",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -142,6 +224,12 @@ public class ContrainteMcpTools {
             @ToolArg(description = "Poids strictement positif ; omis, rétablit le poids par défaut", required = false)
                     Integer poids,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        String rule = setWeight(nom, poids);
+        return new PoidsResult(
+                rule, planningService.effectiveConstraintWeights().getOrDefault(rule, 1), poids == null);
+    }
+
+    private String setWeight(String nom, Integer poids) {
         if (ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(nom)) {
             throw new BusinessError.Invalid(ConstraintCatalog.POIDS_FORME_DURE_REFUSE);
         }
@@ -150,31 +238,10 @@ public class ContrainteMcpTools {
             throw new BusinessError.Invalid("poids : attendu un entier strictement positif, reçu " + poids);
         }
         referenceDataService.setConstraintWeight(rule, poids);
-        return new PoidsResult(
-                rule, planningService.effectiveConstraintWeights().getOrDefault(rule, 1), poids == null);
+        return rule;
     }
 
-    @Tool(
-            name = "modifier_niveau_contrainte",
-            description = "Choisit le niveau d'une règle d'organisation dans cette édition : OBLIGATOIRE (le plan "
-                    + "qui la viole n'est pas livrable, comme une règle légale), ou une préférence "
-                    + "(PREFERENCE_FORTE, PREFERENCE_NORMALE, PREFERENCE_LEGERE : la règle pèse sur le score, avec "
-                    + "le poids de cette position, 25, 5 ou 1). Le niveau se règle sur les règles dont "
-                    + "lister_contraintes donne niveauReglable : jamais sur une règle légale, d'affectation, "
-                    + "ad hoc ou de verrou. Une règle rendue obligatoire sur une édition qui ne peut pas la "
-                    + "tenir donne un plan infaisable : lancer analyser_faisabilite avant le calcul.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = false,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    @WarnsWhileSolving
-    NiveauResult updateContrainteNiveau(
-            @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
-            @ToolArg(description = "OBLIGATOIRE, PREFERENCE_FORTE, PREFERENCE_NORMALE ou PREFERENCE_LEGERE")
-                    String niveau,
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+    private String setLevel(String nom, String niveau) {
         String rule = requireConnue(nom);
         ConstraintCatalog.NiveauRegle choisi;
         try {
@@ -185,7 +252,7 @@ public class ContrainteMcpTools {
                             + niveau);
         }
         referenceDataService.setNiveau(rule, choisi);
-        return new NiveauResult(rule, choisi.name());
+        return rule;
     }
 
     private ToggleResult setActive(String nom, boolean actif) {
@@ -224,22 +291,6 @@ public class ContrainteMcpTools {
         @Override
         public ToggleResult withWarning(String code) {
             return new ToggleResult(nom, actif, WarningCodes.with(avertissements, code));
-        }
-    }
-
-    public record NiveauResult(
-            String nom,
-            String niveau,
-            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
-            implements WarningCarrier<NiveauResult> {
-
-        NiveauResult(String nom, String niveau) {
-            this(nom, niveau, List.of());
-        }
-
-        @Override
-        public NiveauResult withWarning(String code) {
-            return new NiveauResult(nom, niveau, WarningCodes.with(avertissements, code));
         }
     }
 

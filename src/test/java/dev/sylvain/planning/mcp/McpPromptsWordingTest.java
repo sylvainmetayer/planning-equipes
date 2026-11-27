@@ -281,7 +281,7 @@ class McpPromptsWordingTest {
                 .contains("Seul publier_planning envoie le nouveau planning")
                 .contains("N'appelle pas envoyer_planning_animateur")
                 .contains("« Aujourd'hui »")
-                .contains("deplacer_affectation")
+                .contains("modifier_affectation (mode deplacer)")
                 .doesNotContain("Mode jour J");
     }
 

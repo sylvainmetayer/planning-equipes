@@ -2,43 +2,19 @@
   <mat-card-header>
     <h2 mat-card-title i18n="@@fichiers.importer.title">Importer</h2>
     <mat-card-subtitle i18n="@@imports.subtitle">
-      Remplir une édition depuis les fichiers que vous avez déjà, dans l'ordre où les données se tiennent. Rien n'est écrit avant votre validation, et aucun fichier n'est conservé.
+      Remplir une édition depuis un fichier : le scénario YAML contient toute l'édition, le CSV ne sert qu'aux animateurs. Rien n'est écrit avant votre validation, et aucun fichier n'est conservé.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
     <mat-button-toggle-group class="imports-onglets" [value]="card()" (change)="selectCard($event.value)"
                              aria-label="Ce qu'il faut importer" i18n-aria-label="@@imports.cible.label">
-      <mat-button-toggle value="typologies">
-        <mat-icon>category</mat-icon>
-        <ng-container i18n="@@nav.link.typologies">Typologies</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="emplacements">
-        <mat-icon>place</mat-icon>
-        <ng-container i18n="@@nav.link.emplacements">Emplacements</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="stands">
-        <mat-icon>storefront</mat-icon>
-        <ng-container i18n="@@nav.link.stands">Stands</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="creneaux">
-        <mat-icon>schedule</mat-icon>
-        <ng-container i18n="@@nav.link.creneaux">Créneaux</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="journees-types">
-        <mat-icon>event_repeat</mat-icon>
-        <ng-container i18n="@@gabarits.title">Gabarits</ng-container>
+      <mat-button-toggle value="scenario">
+        <mat-icon>description</mat-icon>
+        <ng-container i18n="@@imports.onglet.scenario">Scénario</ng-container>
       </mat-button-toggle>
       <mat-button-toggle value="animateurs">
         <mat-icon>groups</mat-icon>
         <ng-container i18n="@@nav.link.animateurs">Animateurs</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="grille-stands">
-        <mat-icon>grid_view</mat-icon>
-        <ng-container i18n="@@imports.onglet.grille">Grille des stands</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="scenario">
-        <mat-icon>description</mat-icon>
-        <ng-container i18n="@@imports.onglet.scenario">Scénario</ng-container>
       </mat-button-toggle>
       <mat-button-toggle value="exemples">
         <mat-icon>auto_awesome</mat-icon>
@@ -56,12 +32,6 @@
   @case ('animateurs') {
     <app-import-animateurs-page [entete]="false" />
   }
-  @case ('grille-stands') {
-    <app-import-grille-stands-page [entete]="false" />
-  }
-  @case ('scenario') {
-    <app-import-scenario-card />
-  }
   @case ('exemples') {
     <app-exemples-card />
   }
@@ -69,10 +39,6 @@
     <app-yaml-validator />
   }
   @default {
-    <!-- Tracked by target: a card of another referential is a new card, never
-         the previous one holding a file of the wrong kind. -->
-    @for (carte of referentialCard(); track carte.target) {
-      <app-import-referentiel [target]="carte.target" [colonnes]="carte.colonnes" [aide]="carte.aide" />
-    }
+    <app-import-scenario-card />
   }
 }

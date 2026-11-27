@@ -96,20 +96,12 @@ export function buildNavGroups(): NavGroup[] {
           ],
         },
         {
-          // The timeslots, their generator (templates, stands' hours, recurrence) and the stands' opening hours over them.
+          // The timeslots and their generator (templates, stands' hours, recurrence).
           path: '/creneaux',
           label: $localize`:@@nav.link.calendrier:Calendrier`,
           icon: 'schedule',
           shortcut: 'c',
-          keywords: $localize`:@@nav.keywords.calendrier:créneaux gabarits générateur horaires ouvertures`,
-          tabs: [
-            tab(
-              'onglet',
-              'horaires',
-              $localize`:@@nav.link.ouvertures:Horaires des stands`,
-              $localize`:@@nav.keywords.ouvertures:ouvertures saisie calendrier combiné`,
-            ),
-          ],
+          keywords: $localize`:@@nav.keywords.calendrier:créneaux gabarits générateur`,
         },
         {
           path: '/animateurs',
@@ -131,30 +123,12 @@ export function buildNavGroups(): NavGroup[] {
           shortcut: 'f',
           keywords: $localize`:@@nav.keywords.fichiers:importer exporter csv tableur`,
           tabs: [
-            tab(
-              'cible',
-              'typologies',
-              $localize`:@@nav.tab.importTypologies:Importer des typologies`,
-            ),
-            tab(
-              'cible',
-              'emplacements',
-              $localize`:@@nav.tab.importEmplacements:Importer des emplacements`,
-            ),
-            tab('cible', 'stands', $localize`:@@nav.tab.importStands:Importer des stands`),
-            tab('cible', 'creneaux', $localize`:@@nav.tab.importCreneaux:Importer des créneaux`),
-            tab(
-              'cible',
-              'journees-types',
-              $localize`:@@nav.tab.importJourneesTypes:Importer des gabarits`,
-            ),
+            tab('cible', 'scenario', $localize`:@@imports.onglet.scenario:Scénario`, 'yaml'),
             tab(
               'cible',
               'animateurs',
               $localize`:@@nav.tab.importAnimateurs:Importer des animateurs`,
             ),
-            tab('cible', 'grille-stands', $localize`:@@imports.onglet.grille:Grille des stands`),
-            tab('cible', 'scenario', $localize`:@@imports.onglet.scenario:Scénario`, 'yaml'),
             tab(
               'cible',
               'exemples',
@@ -249,15 +223,14 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'besoin',
               $localize`:@@diagnostic.onglet.besoin:Besoin en animateurs`,
-              $localize`:@@nav.keywords.besoin:staffing marge avant à former formation volumétrie typologie borne exacte`,
+              $localize`:@@nav.keywords.besoin:staffing marge avant volumétrie typologie borne exacte`,
             ),
             tab(
               'onglet',
-              'tension',
-              $localize`:@@diagnostic.onglet.tension:Tension`,
-              $localize`:@@nav.keywords.tension:marge disponible après résolution`,
+              'risques',
+              $localize`:@@diagnostic.onglet.risques:Risques`,
+              $localize`:@@nav.keywords.risques:fragilité à former formation tension marge disponible après résolution`,
             ),
-            tab('onglet', 'fragilite', $localize`:@@diagnostic.onglet.fragilite:Fragilité`),
             tab(
               'onglet',
               'conformite',

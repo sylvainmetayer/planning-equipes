@@ -43,7 +43,7 @@ Ce qu'une famille figée ne laisse plus écrire :
 | Typologies et emplacements | Création, suppression, plafond par typologie, typologie polyvalente |
 | Compétences | Niveaux de compétence des animateurs déjà inscrits (fiche, grille, import) |
 
-Une famille figée refuse l'écriture **par tous les chemins** (formulaire, édition en lot, import CSV, import de grille, MCP) en `409` avec le code `REFERENTIEL_FIGE`, et le message dit comment rouvrir. Restent libres dans toutes les phases : le nom, le lieu et le niveau d'effort d'un stand, le libellé et la description d'une typologie, le nom et la position d'un emplacement, les données des personnes hors compétences (disponibilités, souhaits, déclarations, e-mail), la **création** d'un animateur avec ses compétences, les ajustements, les verrous et les **consignes**, l'outil prévu pour fermer une bande tard sans rien détruire. L'import de scénario, la restauration d'une copie avant vidage et la remise à zéro, qui remplacent tout, sont refusés dès qu'une famille est figée.
+Une famille figée refuse l'écriture **par tous les chemins** (formulaire, édition en lot, import CSV des animateurs, grille des compétences, MCP) en `409` avec le code `REFERENTIEL_FIGE`, et le message dit comment rouvrir. Restent libres dans toutes les phases : le nom, le lieu et le niveau d'effort d'un stand, le libellé et la description d'une typologie, le nom et la position d'un emplacement, les données des personnes hors compétences (disponibilités, souhaits, déclarations, e-mail), la **création** d'un animateur avec ses compétences, les ajustements, les verrous et les **consignes**, l'outil prévu pour fermer une bande tard sans rien détruire. L'import de scénario, la restauration d'une copie avant vidage et la remise à zéro, qui remplacent tout, sont refusés dès qu'une famille est figée.
 
 **La première publication fait passer l'édition en Publiée**, de Préparation comme de Calcul ; une publication suivante l'y laisse, et une édition terminée le reste. Les autres changements de phase sont des gestes explicites, retour en arrière compris (`PUT /api/editions/courant/phase`). En Publiée, la structure se **débloque** pour un changement de dernière minute, sans quitter la phase (`PUT /api/editions/courant/deblocage-structure`), et se refige par `DELETE` sur la même route ou, d'office, à la publication suivante. Ces gestes sont journalisés.
 
@@ -51,7 +51,7 @@ La duplication d'une édition repart en Préparation. Une phase ne touche pas un
 
 ## Replanification incrémentale
 
-Elle répond à « il est 9 h, untel se désiste, que fait-on ? ». Elle **repart du planning persisté**, épingle tout ce qui reste valable et ne rouvre que le reste, d'où un budget par défaut de 60 s (`SolveBudgetPolicy`). Elle se lance par `POST /api/solve/incremental/async` ou par l'outil MCP `resoudre_incremental`.
+Elle répond à « il est 9 h, untel se désiste, que fait-on ? ». Elle **repart du planning persisté**, épingle tout ce qui reste valable et ne rouvre que le reste, d'où un budget par défaut de 60 s (`SolveBudgetPolicy`). Elle se lance par `POST /api/solve/incremental/async` ou par l'outil MCP `lancer_correction`.
 
 Le rapprochement est **positionnel**, sur stand × créneau, comme celui des verrous : les places d'un même stand sur un même créneau sont interchangeables, donc aucun identifiant de poste n'a besoin de survivre à un changement de référentiel.
 

@@ -451,7 +451,7 @@ describe('EmplacementsPage table', () => {
   it('distinguishes an empty referential from a filter that matched nothing', async () => {
     await rendre([]);
     // Its actions are the empty state's alone: the header leaves them out.
-    expectOnlyInEmptyState(racine(), ['Ajouter', 'Importer']);
+    expectOnlyInEmptyState(racine(), ['Ajouter']);
     expect(racine().querySelector('.empty-state')!.textContent).toContain(
       'Un emplacement est le lieu où se tient un stand',
     );

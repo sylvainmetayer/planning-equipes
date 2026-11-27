@@ -7,7 +7,7 @@
 
 import { formatHeure } from '../../core/time-of-day';
 import { JourAmplitude } from '../../core/models';
-import { Cellules, ColonneGrille, libelleColonne } from '../ouvertures/grille-horaires';
+import { Cellules, ColonneGrille, libelleColonne } from './grille-horaires';
 
 /** One window of the edition's timeslots, as the last step offers it. */
 export interface CreationWindow {

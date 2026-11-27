@@ -4,8 +4,7 @@ import { responsableGuard } from './core/responsable.guard';
 import { CanActivateFn, Params, RedirectFunction, Router, Routes } from '@angular/router';
 import { TODAY_ANCHOR } from './core/date-mock.service';
 import type { AnimateursPage } from './pages/animateurs/animateurs-page';
-import type { CreneauxPage } from './pages/creneaux/creneaux-page';
-import { retiredOpeningsViews } from './pages/ouvertures/vues-retirees';
+import { IMPORT_CARDS } from './pages/imports/imports';
 import type { ReglesPage } from './pages/regles/regles-page';
 import type { StandFichePage } from './pages/stand-fiche/stand-fiche-page';
 
@@ -183,6 +182,25 @@ export function standEditToFicheUrl(queryParams: Params): string | null {
   return `/stands/${encodeURIComponent(edit.trim())}?modifier=1`;
 }
 
+/**
+ * The former opening hours screen (`/ouvertures`, then the « Horaires des
+ * stands » tab of `/creneaux`) is gone with its grid: an address of it lands on
+ * the fiche of the stand it names (`stand`, else the first of `stands`), or on
+ * the list of the stands.
+ */
+export function openingsToStandsUrl(queryParams: Params): string {
+  const named = [queryParams['stand'], String(queryParams['stands'] ?? '').split(',')[0]]
+    .map((value) => (typeof value === 'string' ? value.trim() : ''))
+    .find((value) => value !== '');
+  return named ? `/stands/${encodeURIComponent(named)}` : '/stands';
+}
+
+/** Guard of `/creneaux`: `?onglet=horaires`, the retired tab, is redirected. */
+export const retiredHorairesTab: CanActivateFn = (route) =>
+  route.queryParamMap.get('onglet') === 'horaires'
+    ? inject(Router).parseUrl(openingsToStandsUrl(route.queryParams))
+    : true;
+
 export const standEditToFiche: CanActivateFn = (route) => {
   const url = standEditToFicheUrl(route.queryParams);
   return url ? inject(Router).parseUrl(url) : true;
@@ -271,7 +289,9 @@ function redirectKeepingQuery(path: string): RedirectFunction {
  * A former screen of what Fichiers gathers: its address lands on a tab of the
  * page (`onglet`), and on one card of the Importer tab (`cible`) when the
  * former screen named one — the Imports page's own `onglet` becomes that
- * `cible`. Every other query param travels along.
+ * `cible`, unless that card was withdrawn in 4.0 (the CSV of every referential
+ * but the animateurs', the stand matrix): the address then lands on the tab
+ * alone. Every other query param travels along.
  */
 function redirectToFichiers(onglet: string, importCard?: string): RedirectFunction {
   return ({ queryParams, fragment }) => {
@@ -279,7 +299,12 @@ function redirectToFichiers(onglet: string, importCard?: string): RedirectFuncti
     // The end-of-event archive was a fragment of the Export page.
     params.set('onglet', fragment === 'archive-evenement' ? 'archive' : onglet);
     const former = queryParams['onglet'];
-    const card = importCard ?? (onglet === 'importer' && former ? paramText(former) : undefined);
+    const formerCard = onglet === 'importer' && former ? paramText(former) : undefined;
+    const card =
+      importCard ??
+      (formerCard !== undefined && (IMPORT_CARDS as readonly string[]).includes(formerCard)
+        ? formerCard
+        : undefined);
     if (card !== undefined) {
       params.set('cible', card);
     }
@@ -422,34 +447,49 @@ export const redirectCalculToParametres: CanActivateFn = (route) => {
 };
 
 /**
- * `/diagnostic?onglet=former…`: « À former » is a section of the Besoin tab
- * now, at its foot — the address opens that tab scrolled to it
- * (`section=former`), its other params kept.
+ * `/diagnostic?onglet=fragilite|former|tension…`: the three are sections of the
+ * Risques tab now — the address opens that tab scrolled to the section
+ * (`section=`), its other params kept (the fragility filters, the day) — as
+ * does `?onglet=besoin&section=former`, where « À former » sat before.
  */
-export const trainingTabToNeed: CanActivateFn = (route) => {
-  if (route.queryParamMap.get('onglet') !== 'former') {
+export const formerTabsToRisques: CanActivateFn = (route) => {
+  const onglet = route.queryParamMap.get('onglet');
+  // P82's landing on « À former », the foot of Besoin before it moved here.
+  if (onglet === 'besoin' && route.queryParamMap.get('section') === 'former') {
+    return inject(Router).parseUrl(risquesUrl('former', route.queryParams));
+  }
+  if (onglet !== 'fragilite' && onglet !== 'former' && onglet !== 'tension') {
     return true;
   }
+  return inject(Router).parseUrl(risquesUrl(onglet, route.queryParams));
+};
+
+/** The Risques tab on one section, the other params travelling with it. */
+function risquesUrl(section: string, queryParams: Params): string {
   const params = new URLSearchParams();
-  params.set('onglet', 'besoin');
-  params.set('section', 'former');
-  for (const [key, value] of Object.entries(route.queryParams)) {
+  params.set('onglet', 'risques');
+  params.set('section', section);
+  for (const [key, value] of Object.entries(queryParams)) {
     if (key !== 'onglet' && key !== 'section' && value !== undefined && value !== null) {
       params.set(key, paramText(value as string | readonly string[]));
     }
   }
-  return inject(Router).parseUrl(`/diagnostic?${params.toString()}`);
-};
+  return `/diagnostic?${params.toString()}`;
+}
 
 /**
- * The Marge disponible screen became two tabs of the Diagnostic: its « avant »
+ * The Marge disponible screen became two places of the Diagnostic: its « avant »
  * reading is a column of Besoin, its « après » and « tension » readings merged
- * into Tension. `mode` names the tab, and goes; every other param travels.
+ * into the Tension section of Risques. `mode` names where, and goes; every
+ * other param travels.
  */
 export function margeToDiagnostic(queryParams: Params): string {
   const mode = queryParams['mode'];
+  if (mode === 'apres' || mode === 'tension') {
+    return risquesUrl('tension', { ...queryParams, mode: undefined });
+  }
   const params = new URLSearchParams();
-  params.set('onglet', mode === 'apres' || mode === 'tension' ? 'tension' : 'besoin');
+  params.set('onglet', 'besoin');
   for (const [key, value] of Object.entries(queryParams)) {
     if (key !== 'mode' && key !== 'onglet' && value !== undefined && value !== null) {
       params.set(key, paramText(value as string | readonly string[]));
@@ -512,14 +552,17 @@ const adminRoutes: Routes = [
     path: 'diagnostic',
     title: () => $localize`:@@route.diagnostic:Diagnostic`,
     data: { aide: 'lire-les-resultats' },
-    canActivate: [benchTabToJournee, trainingTabToNeed],
+    canActivate: [benchTabToJournee, formerTabsToRisques],
+    // An old `onglet=` followed from inside the page changes the query alone:
+    // the redirections above must run on it too, not only on the way in.
+    runGuardsAndResolvers: 'paramsOrQueryParamsChange',
     loadComponent: () => import('./pages/diagnostic/diagnostic-page').then((m) => m.DiagnosticPage),
   },
   // The screens the Diagnostic page gathers, kept for the bookmarks; the
   // bench's own went on to the Journée with it.
   { path: 'problemes', redirectTo: redirectToDiagnostic('problemes') },
   { path: 'staffing', redirectTo: redirectToDiagnostic('besoin') },
-  { path: 'fragilite', redirectTo: redirectToDiagnostic('fragilite') },
+  { path: 'fragilite', redirectTo: ({ queryParams }) => risquesUrl('fragilite', queryParams) },
   { path: 'marge', redirectTo: ({ queryParams }) => margeToDiagnostic(queryParams) },
   { path: 'banc-de-touche', redirectTo: ({ queryParams }) => benchToJournee(queryParams) },
   {
@@ -662,17 +705,14 @@ const adminRoutes: Routes = [
   // The grid of competences became a tab of Animateurs.
   { path: 'competences', redirectTo: redirectToOnglet('animateurs', 'competences') },
   {
-    // « Calendrier »: the timeslots, and the stands' opening hours over them
-    // (`?onglet=horaires`, the former `/ouvertures`).
+    // « Calendrier »: the timeslots. The stands' opening hours are read and
+    // written on the fiche stand.
     path: 'creneaux',
     title: () => $localize`:@@route.calendrier:Calendrier`,
     data: { aide: 'calendrier' },
-    // `?vue=journee` and `?vue=calendrier` of the openings were folded into
-    // the grid: their addresses land where the same question is now answered.
-    canActivate: [retiredOpeningsViews],
+    // The stands' hours tab is gone: a bookmark on it lands on the fiche stand.
+    canActivate: [retiredHorairesTab],
     loadComponent: () => import('./pages/creneaux/creneaux-page').then((m) => m.CreneauxPage),
-    // The opening grid carries links away (a stand's fiche, an anomaly's): unsaved cells ask first.
-    canDeactivate: [(page: CreneauxPage) => page.canLeave()],
   },
   {
     // Imports, Export and the end-of-event archive: the two halves of one
@@ -766,8 +806,8 @@ const adminRoutes: Routes = [
     canDeactivate: [(page: ReglesPage) => page.canLeave()],
   },
   { path: 'constraints', redirectTo: redirectConstraintsToRegles },
-  // The opening hours became the « Horaires des stands » tab of the Calendrier.
-  { path: 'ouvertures', redirectTo: redirectToOnglet('creneaux', 'horaires') },
+  // The opening screen is gone: a stand's hours are its fiche's plages.
+  { path: 'ouvertures', redirectTo: ({ queryParams }) => openingsToStandsUrl(queryParams) },
   // The timeline became the « Planning » section of the fiche animateur.
   { path: 'timeline', redirectTo: ({ queryParams }) => timelineToFiche(queryParams) },
   { path: '**', redirectTo: '' },

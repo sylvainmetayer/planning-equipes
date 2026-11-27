@@ -1,12 +1,9 @@
-// Les trois référentiels remplis depuis un fichier, vus du navigateur : l'écran
-// à onglets, l'aperçu qui n'écrit rien, et l'écriture qui crée les fiches.
-//
-// Ce que la suite tient au-delà du chemin heureux : une typologie qu'un stand
-// cite sans qu'elle existe est créée et annoncée avant l'écriture, et une
-// colonne que le fichier ne porte pas n'efface pas ce que la fiche tenait
-// déjà — un fichier de trois colonnes ne doit pas emporter des horaires.
+// Les imports qui restent, vus du navigateur : le YAML est le classeur complet
+// de l'édition, le CSV ne sert plus qu'aux animateurs. Les anciennes routes
+// d'import (un CSV par référentiel, la grille des stands) répondent 410 en
+// montrant la sortie, et un signet sur leur carte tombe sur l'onglet Importer.
 
-import { APIRequestContext, Page, expect, test } from '@playwright/test';
+import { APIRequestContext, expect, test } from '@playwright/test';
 import { contexteAdmin, idCree, pageAdmin } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -40,143 +37,91 @@ test.afterAll(async () => {
 
 const dansEdition = () => ({ headers: { 'X-Edition-Id': EDITION } });
 
-/** A row of a referential as the assertions read it: found by its code, never by its id. */
-interface Ligne {
-  id: string;
-  code: string | null;
-  label?: string;
-  nom?: string;
-  effectifMin?: number;
-  effectifMax?: number;
-  horaires?: unknown[];
-}
+const ROUTES_RETIREES = [
+  '/api/typologies/import-csv',
+  '/api/emplacements/import-csv',
+  '/api/stands/import-csv',
+  '/api/creneaux/import-csv',
+  '/api/journees-types/import-csv',
+  '/api/stands/import-grille',
+];
 
-async function lire(page: Page, ressource: string): Promise<Ligne[]> {
-  return (await (await page.request.get(`/api/${ressource}`, dansEdition())).json()) as Ligne[];
-}
+test('les imports CSV retirés répondent 410 et montrent le YAML', async () => {
+  for (const route of ROUTES_RETIREES) {
+    for (const chemin of [route, `${route}/analyse`]) {
+      const reponse = await admin.post(chemin, { ...dansEdition(), data: {} });
+      expect(reponse.status(), chemin).toBe(410);
+      const { message } = (await reponse.json()) as { message: string };
+      expect(message, chemin).toContain('YAML');
+    }
+    const exemple = await admin.get(`${route}/exemple`, dansEdition());
+    expect(exemple.status(), `${route}/exemple`).toBe(410);
+  }
+});
 
-/** Dépose un contenu CSV sur l'onglet ouvert, sans passer par le disque. */
-async function deposer(page: Page, nom: string, contenu: string): Promise<void> {
-  await page.locator('input[type="file"]').setInputFiles({
-    name: nom,
-    mimeType: 'text/csv',
-    buffer: Buffer.from(contenu, 'utf8'),
-  });
-}
-
-test('les trois référentiels se remplissent depuis un fichier, sur un seul écran', async ({
+test("un signet sur une carte d'import retirée tombe sur le scénario, et il ne reste que quatre cartes", async ({
   browser,
 }) => {
-  test.slow();
   const page = await pageAdmin(browser, admin);
-  // L'édition se désigne avant la première navigation : `localStorage` n'existe
-  // pas sur `about:blank`, d'où le script d'amorçage plutôt qu'un `evaluate`.
   await page.addInitScript(
     (id) => localStorage.setItem('planning-equipes.editionId', id as string),
     EDITION,
   );
+  for (const carte of ['typologies', 'stands', 'creneaux', 'journees-types', 'grille-stands']) {
+    await page.goto(`/fichiers?cible=${carte}`);
+    await expect(page.locator('#contenu')).toContainText('Un fichier scénario');
+  }
+  await expect(page.locator('.imports-onglets mat-button-toggle')).toHaveCount(4);
+  // L'écran des stands ne propose plus d'importer la grille, ni le menu « Plus » qui la portait.
+  await page.goto('/stands');
+  await expect(page.getByRole('button', { name: 'Édition groupée' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Plus', exact: true })).toHaveCount(0);
+  await page.context().close();
+});
 
-  // 1. Typologies — l'onglet d'ouverture, puisque tout en part.
-  await page.goto('/fichiers');
-  await expect(page.locator('.imports-onglets')).toBeVisible();
-  await deposer(
-    page,
-    'typologies.csv',
-    'code;libelle\nE2EIMP-A;Jeux d’ambiance\nE2EIMP-B;Stratégie\n',
-  );
-  await expect(page.locator('#contenu')).toContainText('2 ligne(s)');
-  await expect(page.locator('.import-ligne-creation')).toHaveCount(2);
-
-  // L'aperçu n'écrit rien : le référentiel est encore vide.
-  let typologies = await lire(page, 'typologies');
-  expect(typologies.filter((t) => t.code?.startsWith('E2EIMP-'))).toHaveLength(0);
-
-  await page.getByRole('button', { name: 'Importer', exact: true }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Confirmer' }).click();
-  await expect(page.locator('#contenu')).toContainText('Import effectué');
-  typologies = await lire(page, 'typologies');
-  expect(typologies.find((t) => t.code === 'E2EIMP-A')?.label).toBe('Jeux d’ambiance');
-
-  // 2. Emplacements — les coordonnées restent facultatives.
-  await page.goto('/fichiers?cible=emplacements');
-  await deposer(
-    page,
-    'emplacements.csv',
-    'code;nom;latitude;longitude\nE2EIMP-P;Pavillon;46,65;-0,24\nE2EIMP-E;Esplanade;;\n',
-  );
-  await expect(page.locator('.import-ligne-creation')).toHaveCount(2);
-  await page.getByRole('button', { name: 'Importer', exact: true }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Confirmer' }).click();
-  await expect(page.locator('#contenu')).toContainText('Import effectué');
-
-  // 3. Stands — effectif facultatif, et une typologie inconnue annoncée puis créée.
-  await page.goto('/fichiers?cible=stands');
-  await deposer(
-    page,
-    'stands.csv',
-    'code;nom;typologies;effectifMin;effectifMax\n' +
-      'E2EIMP-S1;Stand un;E2EIMP-A;2;3\n' +
-      'E2EIMP-S2;Stand deux;E2EIMP-NOUVELLE;;\n',
-  );
-  await expect(page.locator('#contenu')).toContainText('E2EIMP-NOUVELLE');
-  await expect(page.locator('#contenu')).toContainText('une personne');
-  await page.getByRole('button', { name: 'Importer', exact: true }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Confirmer' }).click();
-  await expect(page.locator('#contenu')).toContainText('Import effectué');
-
-  // The rows written are one click away: the screen of the referential,
-  // narrowed to them, and « Tout afficher » brings the rest back.
-  await page.getByRole('link', { name: 'Voir les 2 lignes importées' }).click();
-  await expect(page).toHaveURL(/\/stands\?ids=[^&]+$/);
-  await expect(page.locator('#contenu')).toContainText('Filtre : lignes importées (2)');
-  await expect(page.locator('#contenu')).toContainText('Stand deux');
-  await page.getByRole('button', { name: 'Tout afficher' }).click();
-  await expect(page).toHaveURL(/\/stands$/);
-  await expect(page.locator('#contenu')).not.toContainText('lignes importées');
-
-  const stands = await lire(page, 'stands');
-  const standUn = stands.find((s) => s.code === 'E2EIMP-S1');
-  expect(standUn?.effectifMin).toBe(2);
-  // Sans effectif dans le fichier : une personne.
-  expect(stands.find((s) => s.code === 'E2EIMP-S2')?.effectifMax).toBe(1);
-  typologies = await lire(page, 'typologies');
-  // A typologie a stand cited without it existing is created under that code,
-  // and takes it for its label.
-  expect(typologies.find((t) => t.code === 'E2EIMP-NOUVELLE')?.label).toBe('E2EIMP-NOUVELLE');
-
-  // 4. Une colonne absente n'efface rien : on donne un horaire au stand, puis
-  // on le renomme par un fichier de trois colonnes.
-  // A PUT replaces the whole row: the code goes back with it, or the file
-  // below would no longer designate the stand.
-  const avecHoraire = await page.request.put(`/api/stands/${standUn?.id}`, {
+/**
+ * Le YAML remplit tout d'un coup : typologies, stands et horaires, là où il
+ * fallait un fichier CSV par référentiel.
+ */
+test("le YAML porte le référentiel d'une édition : typologies, stands et horaires", async ({
+  browser,
+}) => {
+  test.slow();
+  const yaml = [
+    'schemaVersion: 2',
+    'festival:',
+    '  dateDebut: 2027-07-03',
+    'typologies:',
+    '  - id: E2EIMP-A',
+    '    label: Jeux d’ambiance',
+    'creneaux:',
+    '  - id: C1',
+    '    jour: 1',
+    '    date: 2027-07-03',
+    '    heureDebut: "10:00"',
+    '    heureFin: "12:00"',
+    'stands:',
+    '  - id: E2EIMP-S1',
+    '    nom: Stand un',
+    '    typologiesProposees: [E2EIMP-A]',
+    '    effectifMin: 2',
+    '    effectifMax: 3',
+    'animateurs: []',
+    '',
+  ].join('\n');
+  const reponse = await admin.post('/api/reference-data/import-scenario-fichier', {
     ...dansEdition(),
-    data: {
-      id: standUn?.id,
-      code: 'E2EIMP-S1',
-      nom: 'Stand un',
-      typologiesProposees: ['E2EIMP-A'],
-      effectifMin: 2,
-      effectifMax: 3,
-      horaires: [{ mode: 'OUVERTURE', jours: 'TOUS', fenetres: [{ heureDebut: '10:00:00' }] }],
-    },
+    headers: { ...dansEdition().headers, 'Content-Type': 'text/plain' },
+    data: yaml,
   });
-  expect(avecHoraire.ok(), await avecHoraire.text()).toBe(true);
+  expect(reponse.ok(), await reponse.text()).toBe(true);
 
-  await page.goto('/fichiers?cible=stands');
-  await deposer(page, 'renommage.csv', 'code;nom;typologies\nE2EIMP-S1;Stand renommé;E2EIMP-A\n');
-  await expect(page.locator('.import-ligne-maj')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Importer', exact: true }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Confirmer' }).click();
-  await expect(page.locator('#contenu')).toContainText('Import effectué');
-
-  const apres = await lire(page, 'stands');
-  const renomme = apres.find((s) => s.code === 'E2EIMP-S1');
-  // Designated by its code, the stand was updated in place, not recreated.
-  expect(renomme?.id).toBe(standUn?.id);
-  expect(renomme?.nom).toBe('Stand renommé');
-  expect(renomme?.effectifMin).toBe(2);
-  expect(renomme?.horaires).toHaveLength(1);
-
+  const page = await pageAdmin(browser, admin);
+  const stands = (await (await page.request.get('/api/stands', dansEdition())).json()) as {
+    code: string | null;
+    effectifMin: number;
+  }[];
+  expect(stands.find((s) => s.code === 'E2EIMP-S1')?.effectifMin).toBe(2);
   await page.context().close();
 });
 
@@ -201,23 +146,5 @@ test("« Importer » ouvre la carte d'import sans quitter la page", async ({ bro
 
   await dialog.getByRole('button', { name: 'Fermer' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.context().close();
-});
-
-/** A spreadsheet paste is read as a file: tabs become the separator the import expects. */
-test('un collage de tableur se lit comme un fichier', async ({ browser }) => {
-  const page = await pageAdmin(browser, admin);
-  await page.addInitScript(
-    (id) => localStorage.setItem('planning-equipes.editionId', id as string),
-    EDITION,
-  );
-  await page.goto('/fichiers?cible=typologies');
-  await page.getByRole('button', { name: 'Coller depuis un tableur' }).click();
-  await page
-    .getByLabel('Cellules copiées depuis le tableur, en-têtes compris')
-    .fill('code\tlibelle\nE2EIMP-C\tJeux collés, en tableur\n');
-  await page.getByRole('button', { name: 'Lire le collage' }).click();
-  await expect(page.locator('.import-ligne-creation')).toHaveCount(1);
-  await expect(page.locator('#contenu')).toContainText('Jeux collés, en tableur');
   await page.context().close();
 });

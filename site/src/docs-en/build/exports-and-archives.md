@@ -17,9 +17,9 @@ A text that a spreadsheet would execute as a formula (it starts with `=`, `+`, `
 
 ### The six reference data sets
 
-`GET /api/reference-data/export-csv` rewrites the edition's six reference data sets (staff, timeslots, locations, templates, stands, game categories) into a ZIP, one file per set, each one tickable, in the exact form that the [CSV imports](imports-csv.md) read back. The staff file reuses the header of `exemple-animateurs.csv`. It can only be re-imported into an edition that already has its timeslots, since without dates a day of unavailability would be refused: `creneaux.csv`, ticked just above, puts them there.
+`GET /api/reference-data/export-csv` rewrites the edition's six reference data sets (staff, timeslots, locations, templates, stands, game categories) into a ZIP, one file per set, each one tickable, for a spreadsheet. Only the staff file reads back in, through the [CSV import](imports-csv.md): it reuses the header of `exemple-animateurs.csv` and needs an edition that already has its timeslots, since without dates a day of unavailability would be refused. The other five are not read back: the edition's YAML is their way in.
 
-`ReferentielCsvExportServiceTest` runs each export back through its own import and requires zero rejected lines. For templates it requires more: applying the calendar right after the round trip changes nothing, otherwise the two files would not describe the same edition.
+`ReferentielCsvExportServiceTest` replays the staff file into another edition (zero rejected lines) and checks that the records come out identical, multi-value cells included.
 
 A cell that contains a possible separator (`;`, comma, tab) comes out in quotation marks, and not only when it contains the file's own. The reader guesses the dialect by counting the three candidates outside quotation marks over the whole file: a column of shifts puts three commas per line against two semicolons in the header, and the file you had just written was read back as a comma file.
 

@@ -83,8 +83,6 @@ const EXCEPTIONS_ASSUMEES = {
     'une part du bilan du contrôle, annoncé en bloc par le role="status" de `.controle-bilan`',
   'app/pages/creneaux/creneaux-page.html {{ anomalie.message }}':
     "une ligne de la liste qui détaille le bilan, lequel est déjà annoncé : l'annoncer aussi la lirait deux fois",
-  'app/pages/ouvertures/ouvertures-page.html {{ anomalie.message }}':
-    "une ligne de la liste d'anomalies de l'écran, du contenu et non le résultat d'une action",
   'app/pages/stand-fiche/stand-fiche-page.html {{ probleme.message }}':
     "la cause de faisabilité qui nomme ce stand, du contenu lu avec la fiche et non le résultat d'une action",
   'app/pages/accueil/messages-recents.html {{ notification.message }}':

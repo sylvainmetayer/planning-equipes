@@ -13,35 +13,32 @@ Everywhere, a tool that reads a plan reads the **saved plan**, and a person come
 
 - The `coherence` block counts the input anomalies; `lister_anomalies_referentiel` gives the detail (family, severity, code, record concerned by `objet` and `objetId`) without the sentence or the date that the screen displays. This is the rule of `WarningCodes` applied to the whole list: the warning about a minor dates their coming of age.
 - The `aTraiter` block answers "what must I do this morning?": declarations and swaps pending, unreviewed days of the next seven days, silent staff to remind. "Today" is that of `JourJClock`, simulated date included.
-- `etat_planning` says when the solver last ran, `etat_publication` when the staff were notified. Only the second describes what people have under their eyes: a plan computed this morning and published last week is, for them, last week's. `etat_publication` also says who would be concerned by the next publication, without sending anything.
-- `changements_journee` says what moved on a date, since the last publication (`reference=publication`) or since the plan before the last solve (`reference=resolution`), by seat and by staff member. A seat kept by the same person at other hours is a `HORAIRES` line. `referenceDisponible` false means "nothing to compare", never "no change".
+- `consulter_planning` says when the solver last ran, `etat_publication` when the staff were notified. Only the second describes what people have under their eyes: a plan computed this morning and published last week is, for them, last week's. `etat_publication` also says who would be concerned by the next publication, without sending anything.
+- `comparer_journee` says what moved on a date, since the last publication (`reference=publication`) or since the plan before the last solve (`reference=resolution`), by seat and by staff member. A seat kept by the same person at other hours is a `HORAIRES` line. `referenceDisponible` false means "nothing to compare", never "no change".
 - `comparer_realise_planifie` returns the screen of the same name for each stand and each **elapsed** day: seats published, held, absences, replacements, empty, removed (consigne, deleted timeslot: never an absence) or added, minutes published, done and lost. Each day is compared with the publication in force at its first timeslot; a day begun before any publication (`lateReference`) enters no total. `nature` is `DECLARED`: what was recorded, not a clock-in.
-- `synthese_affectations` answers in a few dozen lines (seats filled in total, per stand and per day), where `lister_affectations` would spend the assistant's context before it sees that a stand is understaffed on Saturday.
+- `consulter_planning`, view `synthese`, answers in a few dozen lines (seats filled in total, per stand and per day), where the `affectations` view would spend the assistant's context before it sees that a stand is understaffed on Saturday.
 
-## Solving and correcting the plan
+## Computing and correcting the plan
 
-`lancer_solveur` and `resoudre_incremental` start a solve, `statut_solveur`, `lister_jobs`, `arreter_solveur` and `supprimer_job` follow it, `resultats_animateur` and `expliquer_echec_contraintes_dures` read its result. The scope of `resoudre_incremental` (staff, days, stands) applies only to that job and **does not touch locks**: what is frozen durably is set with `verrouiller`.
+`lancer_calcul` starts the full solve from the plan in place: locks and the frozen past are respected, everything else may move; `deZero` starts from scratch and loses the quality already reached. `lancer_correction` reopens only the seats in default, those a change has invalidated, and freezes the rest for that solve; its `animateurIds`, `jours` and `standIds` also reopen everything they name, apply only to that solve and **do not touch locks**: what is frozen durably is set with `verrouiller`. `consulter_calcul` follows a solve (or the active one, `IDLE` when nothing runs) and returns the history with `historique`, `arreter_calcul` and `supprimer_calcul` stop and forget it.
 
-`diagnostiquer_plan` solves nothing: it recomputes the score of the saved plan, the one `etat_planning` and `lister_affectations` talk about. It returns the **score reading** (`lecture`), the same sentences as the Solver page, written from templates: they name only rules, days and numbers, never a person. Each rule at fault carries its typical `actions` (code, gesture, explanation), as in `expliquer_echec_contraintes_dures`.
+`diagnostiquer_plan` solves nothing: it recomputes the score of the saved plan, the one `consulter_planning` talks about. It returns the **score reading** (`lecture`), the same sentences as the Solver page, written from templates: they name only rules, days and numbers, never a person. Each rule at fault carries its typical `actions` (code, gesture, explanation); with `ecartsDurs`, it also returns the anonymised message of each hard default.
 
-To retouch a seat without starting the solve again, `suggerer_reparations` looks for who could hold it and prices each candidate, `affecter_poste` applies the choice. Two tools and not one: an assistant that evaluates and applies in the same call leaves no step where a human can say no. `affecter_poste` refuses a **locked** seat, the lock being what it is asked to respect, and a seat whose timeslot has begun. `accepter_demande_echange` is, with it, one of the only two tools that write into the plan without a solver: it applies the swap then freezes it with `ANIMATEUR_CRENEAU` locks. Hence `analyser_impact_echange` alongside, because the prevalidation stored with the request describes the plan of the day it was sent.
+`consulter_planning` reads the saved plan under a `vue`: `etat` (when it was computed, and whether it is stale), `synthese` (a few dozen lines, per stand and per day) or `affectations` (the seats, filtered and capped). `analyser_affectation` explains the score of a seat. To retouch a seat without starting the solve again, `simuler_affectation` prices a change without writing anything (`mode` `affecter`: another holder; `deplacer`: towards another seat or another person; `candidats`: who could hold it), and `modifier_affectation` applies it (`affecter`, or `deplacer`, refused if it breaks a hard rule). Two tools and not one: an assistant that evaluates and applies in the same call leaves no step where a human can say no. `modifier_affectation` refuses a **locked** seat, the lock being what it is asked to respect, and a seat whose timeslot has begun. `modifier_demande_echange` (`decision` `accepter`) is, with it, one of the only two tools that write into the plan without a solver: it applies the swap then freezes it with `ANIMATEUR_CRENEAU` locks. Hence `analyser_impact_echange` alongside, because the prevalidation stored with the request describes the plan of the day it was sent.
 
-`modifier_niveau_contrainte` chooses the level of an organisation rule for the edition: `OBLIGATOIRE`, `PREFERENCE_FORTE`, `PREFERENCE_NORMALE` or `PREFERENCE_LEGERE` (a preference writes the weight of its position). `lister_contraintes` gives `niveauReglable` and `niveauChoisi`; a legal, assignment, ad hoc or lock rule, or a soft preference, refuses the level. Like `modifier_poids_contrainte`, the tool is accepted during a computation and says so (`RESOLUTION_EN_COURS`).
+`modifier_contrainte` sets a rule for the edition, one setting per call: `actif`, `poids` (or `poidsParDefaut`), or the `niveau` of an organisation rule: `OBLIGATOIRE`, `PREFERENCE_FORTE`, `PREFERENCE_NORMALE` or `PREFERENCE_LEGERE` (a preference writes the weight of its position). `lister_contraintes` gives `niveauReglable` and `niveauChoisi`; a legal, assignment, ad hoc or lock rule, or a soft preference, refuses the level. The tool is accepted during a computation and says so (`RESOLUTION_EN_COURS`), and returns the rule's line as `lister_contraintes` reads it after the change.
 
-A setting made by `modifier_poids_contrainte`, `modifier_niveau_contrainte`, `activer_contrainte` or `desactiver_contrainte` is read in the application's action journal ("Rules" filter), under the `ASSISTANT` actor and with the rule's name, without the value. The former `consulter_historique_ponderation` tool is removed: the journal keeps no value, and no tool reads it.
+A setting made by `modifier_contrainte` is read in the application's action journal ("Rules" filter), under the `ASSISTANT` actor, with the rule's name and what changed (activation, weight or level), without the value. The former `consulter_historique_ponderation` tool is removed: the journal keeps no value, and no tool reads it.
 
 ## Reading the plan from different angles
 
 | Tool | What it returns |
 | --- | --- |
-| `heures_travaillees` | per staff member designated by id, hours per ISO week and total, maximum daily opening span, days beyond 12 h (a display, no rule). `source=persiste` by default, `source=publie` for the publication in force, refused as long as nothing is published; the response says which plan it read (`source`, `planDate`) |
-| `equite_planning` | one row per assigned staff member (total hours, per week, evening, weekend, public holiday, hard seats, runs) and, per column, median, minimum, maximum, standard deviation. `colonnesSolveur` says which columns a rule measures and whether it is active: a column that the solver does not weigh is information, not a defect |
-| `analyser_typologies` | the reading by game category of the Typologies tab of the Stands page: hours and seats held, `heuresParJour`, and four lists of people reduced to `nombre` and `animateurIds` (`affectes`, `competents`, `competentsJamaisAffectes`, `affectesSansCompetence`) |
+| `consulter_besoin` | the Need tab of Diagnosis, under a `section`: `borne` (default: the proven minimum team, what sets it and the bottleneck per game category), `marge` (per day and slice, `mode` `avant` by default or `apres`), `typologie` (hours and seats held, `heuresParJour`, and four lists of people reduced to `nombre` and `animateurIds`: `affectes`, `competents`, `competentsJamaisAffectes`, `affectesSansCompetence`), `volumetrie` (the size of the next solve's problem) or `faisabilite` (the blocking causes before solving). `mode` outside the `marge` section is refused |
+| `consulter_risques` | the Risks tab, under a `section`: `fragilite` (default: per assigned staff member, the seats a withdrawal would collapse and those nobody takes over, then the stand × timeslot pairs at most one specialist can hold; without the name or the sentence of the screen, which names the most fragile person), `former` (per game category that is short or held by a single specialist, the candidates ranked by available tension days, wish then level, `DEBUTANT` or `AUTONOME`, never `REFERENT`; with no saved plan, `planPersiste` is `false`) or `tension` (the `apres` margin crossed with the fragility, each cell carrying a `gravite` `CRITIQUE`, `ELEVEE`, `SURVEILLEE` or `CALME` and its `motifs`) |
+| `consulter_charge` | the Load report, under a `vue`: `equite` (default: one row per assigned staff member, total hours, per week, evening, weekend, public holiday, hard seats, runs, and per column median, minimum, maximum, standard deviation; `colonnesSolveur` says which columns a rule measures, a column the solver does not weigh being information, not a defect) or `heures` (hours per ISO week and total, maximum daily opening span, days beyond 12 h, a display with no rule; `source=persiste` by default, `source=publie` for the publication in force, refused as long as nothing is published, and the response says which plan it read). `source` outside the `heures` view is refused |
+| `consulter_repas_pauses` | the Meals and breaks report, under a `section`: `pauses` (default: per staff member and per day, where the due break falls, on which stand, who can relay; a break nobody can relay is a hard breach, `sansRelaisSeulement` returns only those) or `enchainements` (two consecutive seats on two geolocated locations whose gap leaves no time to walk, or only by taking it from the break, `walkOnBreak`; `geolocated=false` says that no trip could be computed, rather than an empty list that would read as "all is well"; speed, detour and tolerance are set by `modifier_parametres`, section `organisation`) |
 | `lister_typologies` | each game category with its counters (`competents`, `polyvalents`, `souhaits`, `stands`) and its `etat`: `ORPHELINE`, `FRAGILE`, `INUTILISEE`, `SANS_COMPETENT_INUTILISEE`, `NORMALE` |
-| `analyser_marge` | the margin per day and slice, in `avant` mode (default) or `apres`; the `tension` mode crosses it with the plan's fragility, each cell carrying a `gravite` (`CRITIQUE`, `ELEVEE`, `SURVEILLEE`, `CALME`) and its `motifs`, the irreplaceable seats all being counted there |
-| `plan_formation` | per game category that is short or held by a single specialist, the figures of the analyses and the ranked candidates (available tension days, then wish, then level); a candidate is `DEBUTANT` or `AUTONOME`, never `REFERENT`. With no saved plan, `planPersiste` is `false` and only the need part speaks |
-| `analyser_pauses` | per staff member and per day, where the due break falls, on which stand, who can relay (`relaisAnimateurIds`); a break that nobody can relay is a hard breach, the `sansRelais` filter returns only those |
-| `analyser_enchainements` | two consecutive seats of a staff member on two geolocated locations whose gap leaves no time to walk, or only by taking it from the break (`walkOnBreak`); `geolocated=false` says that no trip could be computed, rather than an empty list that would read as "all is well". Speed, detour and tolerance are set by `modifier_parametres` (section `organisation`) |
 | `analyser_arrivees_groupees` | for each group, day by day, who works, who is missing, the gap in arrivals and departures |
 | `comparer_editions` | the delta of the Editions view of the Compare two versions screen, with no name at all: a staff row carries its ids in each edition and the names of the fields that differ, never their values. Nothing is matched by id; `matching` says on what two rows were matched (`CODE`, `NOM`, `EMAIL`, `IDENTITE`, `POSITION`) |
 
@@ -70,13 +67,13 @@ An arrêté (an official order) closes a time band for all stands, and the quest
 1. `consulter_preselection_consigne` on each date: what the band takes from each stand, the stands proposed, those set aside for hours set by hand. Writes nothing.
 2. `simuler_consigne`: per day, seats and minutes before and after, timeslots to add, locks and ad hoc rules touched. This is the full validation without writing: a request that the simulation accepts will be accepted as is.
 3. `appliquer_consigne`, same arguments: lays down or replaces the consigne of a date and adds to the grid only the timeslots that the openings require. The dates must be in the future and are all written together or not at all.
-4. `resoudre_incremental`, then `etat_publication` and `publier_planning`.
+4. `lancer_correction`, then `etat_publication` and `publier_planning`.
 
 Lifting follows the same pattern: `simuler_levee_consigne` names the added timeslots that would leave with their seats and warns when the frozen days exhaust the available people, `lever_consigne` removes them and refuses a past or current date, a worked day keeping the consigne that governed it. A preset ("Heatwave plan") memorises band, reason and windows and follows the edition's duplication. `consulter_alertes_meteo` returns the alerts raised in the morning with the preset suggested for the phenomenon; it lays nothing down, applying the suggestion remains an explicit `appliquer_consigne`.
 
 ## Deciding what staff have asked for
 
-Availability declarations and swap requests arrive from the staff espace. `appliquer_declaration_disponibilite` writes the declaration onto the record through the same `write*` as the entry screen: the data is marked modified, `etat_planning` flags the plan as stale, the journal carries the fields replaced (`joursIndisponibles`, `souhaits`) and the tool returns the warnings as codes.
+Availability declarations and swap requests arrive from the staff espace. `appliquer_declaration_disponibilite` writes the declaration onto the record through the same `write*` as the entry screen: the data is marked modified, `consulter_planning` flags the plan as stale, the journal carries the fields replaced (`joursIndisponibles`, `souhaits`) and the tool returns the warnings as codes.
 
 `consulter_foire_echanges` returns the fair's window and its statistics (volumes, rates, delays, breakdowns by day and by stand) over a creation period (`du`, `au`, or `touteEdition`, refused together with the other two). No staff member appears there, not even by id.
 
@@ -101,19 +98,32 @@ Two **resources**, to attach once to inform all following calls:
 
 ## Old tool names
 
-4.0 renames, groups or removes tools of 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). A few old names stay published until 5.0 next to the new one, their description starting with « Ancien nom »: those of the day review, and those of the day templates, the recurring timeslots and the derivation, which the timeslot generator grouped ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)). This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
+4.0 renames, groups or removes tools of 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). A grouped tool does under one name, with an argument (`vue`, `section`, `mode`, `decision`), what several used to do ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)); its old names stay published until 5.0 next to the new one, their description starting with « Ancien nom »: those of the day review, those of the day templates, the recurring timeslots and the derivation, which the timeslot generator grouped ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), those of the plan, the solve, the rules and the swaps, and those of the diagnosis and its reports. The `tension` mode of `analyser_marge` became the `tension` section of `consulter_risques`. This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
 
 <!-- mcp-renommages:debut -->
 | Name in 3.x | Name in 4.0 |
 | --- | --- |
+| `accepter_demande_echange` | `modifier_demande_echange` |
+| `activer_contrainte` | `modifier_contrainte` |
 | `affecter_journee_type` | `modifier_gabarit` |
+| `affecter_poste` | `modifier_affectation` |
 | `ajouter_fermeture_stand` | `creer_plage_stand` |
 | `ajouter_horaire_stand` | `creer_horaire_stand` |
 | `ajouter_ouverture_stand` | `creer_plage_stand` |
 | `ajouter_validation_journee` | `modifier_etat_journee` |
+| `analyser_effectifs` | `consulter_besoin` |
+| `analyser_enchainements` | `consulter_repas_pauses` |
+| `analyser_faisabilite` | `consulter_besoin` |
+| `analyser_marge` | `consulter_besoin` |
+| `analyser_ouvertures_stands` | removed |
+| `analyser_pauses` | `consulter_repas_pauses` |
+| `analyser_typologies` | `consulter_besoin` |
+| `arreter_solveur` | `arreter_calcul` |
 | `capturer_instantane` | `creer_version` |
+| `changements_journee` | `comparer_journee` |
 | `compacter_horaires_stands` | removed |
 | `comparer_instantanes` | `comparer_versions` |
+| `configurer_foire_echanges` | `modifier_foire_echanges` |
 | `consulter_historique_ponderation` | removed |
 | `consulter_instantane` | `consulter_version` |
 | `consulter_parametres_legaux` | `consulter_parametres` |
@@ -122,12 +132,22 @@ Two **resources**, to attach once to inform all following calls:
 | `consulter_parametres_solveur` | `consulter_parametres` |
 | `creer_creneaux_recurrents` | `appliquer_generateur_creneaux` |
 | `definir_journee_type` | `modifier_gabarit` |
+| `deplacer_affectation` | `modifier_affectation` |
+| `desactiver_contrainte` | `modifier_contrainte` |
 | `effacer_horaires_stand` | `supprimer_horaires_stand` |
 | `effacer_plages_stand` | `supprimer_plage_stand` |
+| `equite_planning` | `consulter_charge` |
+| `etat_planning` | `consulter_planning` |
+| `expliquer_affectation` | `analyser_affectation` |
+| `expliquer_echec_contraintes_dures` | `diagnostiquer_plan` |
 | `figer_referentiel` | `modifier_phase_edition` |
 | `generer_creneaux_depuis_stands` | `appliquer_generateur_creneaux` |
+| `heures_travaillees` | `consulter_charge` |
+| `lancer_solveur` | `lancer_calcul` |
 | `lever_gel` | `modifier_phase_edition` |
+| `lister_affectations` | `consulter_planning` |
 | `lister_instantanes` | `lister_versions` |
+| `lister_jobs` | `consulter_calcul` |
 | `lister_journees_types` | `lister_gabarits` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
 | `lister_validations_journee` | `consulter_etats_journee` |
@@ -136,18 +156,30 @@ Two **resources**, to attach once to inform all following calls:
 | `modifier_parametres_notifications` | `modifier_parametres` |
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
+| `modifier_poids_contrainte` | `modifier_contrainte` |
+| `plan_formation` | `consulter_risques` |
 | `previsualiser_application_journees_types` | `previsualiser_generateur_creneaux` |
 | `previsualiser_creneaux_recurrents` | `previsualiser_generateur_creneaux` |
 | `previsualiser_derivation_creneaux` | `previsualiser_generateur_creneaux` |
 | `previsualiser_reconnaissance_journees_types` | `previsualiser_generateur_creneaux` |
 | `realise_vs_planifie` | `comparer_realise_planifie` |
 | `reconnaitre_journees_types` | `appliquer_generateur_creneaux` |
+| `refuser_demande_echange` | `modifier_demande_echange` |
+| `resoudre_incremental` | `lancer_correction` |
 | `restaurer_instantane` | `restaurer_version` |
+| `resultats_animateur` | `consulter_planning` |
 | `retirer_dates_journee_type` | `supprimer_gabarit` |
 | `retirer_validation_journee` | `modifier_etat_journee` |
+| `simuler_deplacement` | `simuler_affectation` |
+| `simuler_swap` | `simuler_affectation` |
+| `statut_solveur` | `consulter_calcul` |
+| `suggerer_reparations` | `simuler_affectation` |
 | `supprimer_instantane` | `supprimer_version` |
+| `supprimer_job` | `supprimer_calcul` |
 | `supprimer_journee_type` | `supprimer_gabarit` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |
+| `synthese_affectations` | `consulter_planning` |
+| `volumes` | `consulter_besoin` |
 <!-- mcp-renommages:fin -->
 
 ## What has no tool
@@ -158,7 +190,7 @@ Two **resources**, to attach once to inform all following calls:
 | Backups before emptying | each is a scenario export. `reinitialiser_donnees` and the imports write one, but only an administrator reads, restores or deletes it, through the API ([ADR 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) |
 | SQL dump, PDF, ICS and CSV exports | all the personal data, or binaries meant for download from the interface |
 | CSV import of volunteers | the spreadsheet carries last name, first name, date of birth and address: a tool that accepted it would let in through MCP what does not leave through it |
-| `/api/planning/sample`, `/persisted` | a whole `PlanningEvenement`, several dozen MB with the personal data; `lister_affectations` covers the need while staying filtered |
+| `/api/planning/sample`, `/persisted` | a whole `PlanningEvenement`, several dozen MB with the personal data; `consulter_planning` (view `affectations`) covers the need while staying filtered |
 | Staff espace and ICS subscription | the staff side, behind a personal token: MCP sees the requests and declarations on the admin side, never someone's espace |
 | Rotating a staff member's espace token | it invalidates the link already printed on a distributed PDF, a consequence that cannot be undone from a conversation |
 | Outgoing webhooks | a Slack, Discord or Matrix address is a secret, and a webhook opens a network exit from the server: configuring it from a conversation would be a ready-made exfiltration route. They are set in Settings › Instance |

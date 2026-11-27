@@ -46,7 +46,7 @@ What a frozen family no longer lets you write:
 | Game categories and locations | Creation, deletion, cap per game category, all-rounder game category |
 | Skills | Skill levels of staff members already registered (record, grid, import) |
 
-A frozen family refuses writes **by every path** (form, bulk edit, CSV import, grid import, MCP) with a `409` carrying the code `REFERENTIEL_FIGE`, and the message says how to reopen it. Still free in every phase: a stand's name, place and effort level, a game category's label and description, a location's name and position, personal data other than skills (availability, wishes, declarations, e-mail), the **creation** of a staff member with their skills, adjustments, locks and **consignes**, and the tool provided to close a band late without destroying anything. Scenario import, restoring a copy taken before a wipe and the reset, which replace everything, are refused as soon as a family is frozen.
+A frozen family refuses writes **by every path** (form, bulk edit, staff CSV import, competence grid, MCP) with a `409` carrying the code `REFERENTIEL_FIGE`, and the message says how to reopen it. Still free in every phase: a stand's name, place and effort level, a game category's label and description, a location's name and position, personal data other than skills (availability, wishes, declarations, e-mail), the **creation** of a staff member with their skills, adjustments, locks and **consignes**, and the tool provided to close a band late without destroying anything. Scenario import, restoring a copy taken before a wipe and the reset, which replace everything, are refused as soon as a family is frozen.
 
 **The first publication moves the edition to Published**, from Preparation as from Solving; a later publication keeps it there, and a finished edition stays finished. Every other change of phase is an explicit gesture, going back included (`PUT /api/editions/courant/phase`). In Published, the structure can be **unblocked** for a last-minute change without leaving the phase (`PUT /api/editions/courant/deblocage-structure`), and is frozen again by `DELETE` on the same route or, automatically, by the next publication. These gestures are journalled.
 
@@ -54,7 +54,7 @@ Duplicating an edition starts again in Preparation. A phase does not affect a so
 
 ## Incremental replanning
 
-It answers "it is 9:00, someone has dropped out, what do we do?". It **starts from the persisted schedule**, pins everything that is still valid and reopens only the rest, hence a default budget of 60 s (`SolveBudgetPolicy`). It is started by `POST /api/solve/incremental/async` or by the MCP tool `resoudre_incremental`.
+It answers "it is 9:00, someone has dropped out, what do we do?". It **starts from the persisted schedule**, pins everything that is still valid and reopens only the rest, hence a default budget of 60 s (`SolveBudgetPolicy`). It is started by `POST /api/solve/incremental/async` or by the MCP tool `lancer_correction`.
 
 Matching is **positional**, on stand × timeslot, like that of locks: seats of the same stand on the same timeslot are interchangeable, so no seat identifier needs to survive a change in the reference data.
 

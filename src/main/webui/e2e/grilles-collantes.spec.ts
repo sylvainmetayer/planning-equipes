@@ -1,15 +1,11 @@
-// Les deux grilles de saisie — les ouvertures des stands, les compétences des
-// animateurs — sur assez de données pour qu'elles défilent : l'en-tête et la
-// colonne de gauche restent en place, et une case atteinte aux flèches ne
-// finit pas cachée dessous.
+// La grille de saisie des compétences des animateurs, sur assez de données pour
+// qu'elle défile : l'en-tête et la colonne de gauche restent en place, et une
+// case atteinte aux flèches ne finit pas cachée dessous.
 //
 // Rien de cela n'est visible ailleurs : les tests unitaires rendent sans CSS,
 // et `position: sticky` n'est un comportement que là où il y a une mise en
-// page. La spec mesure aussi ce que la feuille de style tient pour acquis :
-// la seconde ligne d'en-tête des ouvertures est épinglée sous la première à
-// une hauteur écrite en dur (`--entete-jour-hauteur`, styles/ouvertures.css),
-// et le `scroll-padding-top` de `.grille-defilement` (styles/pages.css) vaut
-// pour la plus haute des deux bandes d'en-tête.
+// page. Le `scroll-padding-top` de `.grille-defilement` (styles/pages.css) vaut
+// pour la plus haute des bandes d'en-tête.
 
 import { APIRequestContext, Locator, Page, expect, test } from '@playwright/test';
 import { contexteAdmin, shiftDate, pageAdmin, seedReferentielSolveur } from './support';
@@ -167,48 +163,6 @@ function casesCachees(ecarts: number[]): string[] {
     .filter(({ ecart }) => Number.isNaN(ecart) || ecart < -TOLERANCE)
     .map(({ ecart, pas }) => `remontée ${pas + 1} : ${ecart} px`);
 }
-
-test('la grille de saisie des ouvertures garde son en-tête et sa colonne de stands', async ({
-  browser,
-}) => {
-  const page = await pageAdmin(browser, admin);
-  await page.goto('/creneaux?onglet=horaires&vue=saisie');
-  const grille = page.locator('.grille-saisie');
-  await expect(grille).toBeVisible();
-  await expect(grille.locator('tbody tr').nth(LIGNE_DEPART)).toBeVisible();
-
-  const mesures = await mesurer(
-    grille,
-    [
-      { nom: "l'en-tête de jour", selecteur: '.entete-jour-saisie', enHaut: true },
-      // Le coin appartient aux deux bandes : il tient sur les deux arêtes.
-      { nom: 'le coin', selecteur: 'thead .colonne-stand', enHaut: true, aGauche: true },
-      { nom: 'le nom du stand', selecteur: 'tbody .colonne-stand', aGauche: true },
-    ],
-    { premiere: '.entete-jour-saisie', seconde: '.entete-creneau' },
-  );
-
-  expect(mesures.defile, `${LIGNES} stands devraient déborder la boîte`).toBe(true);
-  verifierLesCollants(mesures.ecarts);
-  // La seconde ligne d'en-tête exactement sous la première : un décalage faux
-  // laisserait entre les deux un trou où des cases défilent, ou un
-  // recouvrement.
-  expect(
-    mesures.sousLaPremiereLigne,
-    'la ligne des créneaux est collée sous celle du jour',
-  ).toBeLessThanOrEqual(TOLERANCE);
-
-  // Et la saisie au clavier : le navigateur juge « déjà visible » une case qui
-  // n'est que sous l'en-tête collant, et ne défile donc pas — la saisie se
-  // poursuivrait là où on ne la voit plus.
-  await grille.locator('tbody tr').nth(LIGNE_DEPART).locator('input').first().focus();
-  expect(
-    casesCachees(await remonterAuClavier(page, '.cellule-saisie', '.entete-creneau')),
-    'cases focalisées finissant sous l’en-tête',
-  ).toEqual([]);
-
-  await page.close();
-});
 
 test('la grille des compétences garde son en-tête et sa colonne d’animateurs', async ({
   browser,

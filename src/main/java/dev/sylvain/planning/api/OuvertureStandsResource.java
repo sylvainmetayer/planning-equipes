@@ -2,8 +2,6 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
-import dev.sylvain.planning.service.consigne.LayerCalendar.OpeningLayers;
-import dev.sylvain.planning.service.consigne.LayerCalendarService;
 import dev.sylvain.planning.service.referentiel.GrilleHorairesStands;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.inject.Inject;
@@ -12,21 +10,16 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 
 /**
- * Stand × jour view of the opening schedule actually in force, for the
- * "Ouvertures des stands" screen: what a solve would see once recurring
- * horaires are expanded, dated exceptions applied and every window clamped to
- * its créneaux — plus the anomalies worth a second look.
- *
- * <p>No solve involved: it exists so an administrator can validate an opening
- * schedule <em>before</em> spending minutes on a solver run, the same way
- * {@link FeasibilityResource} does for staffing capacity — and, since the
- * same grid is also where the schedule is typed, {@link #saisir} writes it
- * back, one integer per créneau.</p>
+ * Stand × jour view of the opening schedule actually in force, read by the
+ * stands list, the stand fiche and the Calendrier: what a solve would see once
+ * the dated plages are applied and every window clamped to its créneaux — plus
+ * the anomalies worth a second look. No solve involved. {@link #saisir} writes a
+ * stand's schedule back from a grid, one integer per créneau, which the guided
+ * creation of a stand uses.
  */
 @Path("/ouvertures-stands")
 @Produces(MediaType.APPLICATION_JSON)
@@ -34,12 +27,9 @@ public class OuvertureStandsResource {
 
     private final ReferenceDataService referenceDataService;
 
-    private final LayerCalendarService layerCalendar;
-
     @Inject
-    public OuvertureStandsResource(ReferenceDataService referenceDataService, LayerCalendarService layerCalendar) {
+    public OuvertureStandsResource(ReferenceDataService referenceDataService) {
         this.referenceDataService = referenceDataService;
-        this.layerCalendar = layerCalendar;
     }
 
     /** The grid as submitted: only the stands that were edited, each with all its cells. */
@@ -72,20 +62,5 @@ public class OuvertureStandsResource {
     public RapportOuvertures analyze() {
         return OuvertureStandsAnalyzer.analyze(
                 referenceDataService.listSolvedStands(), referenceDataService.listCreneaux());
-    }
-
-    /**
-     * The combined calendar: for every stand and day of {@code [du, au]}
-     * (both optional, {@code AAAA-MM-JJ}), the stand's own windows with where
-     * they come from, the consigne's band and reopenings, the windows left
-     * once it has run, and the grid's timeslots. Read-only and solve-free; the
-     * seats stay those of {@link #analyze}. {@code 400} on an unreadable date or an
-     * inverted range; no cap on the span, since only the event days in it are
-     * computed.
-     */
-    @GET
-    @Path("/couches")
-    public OpeningLayers layers(@QueryParam("du") String du, @QueryParam("au") String au) {
-        return layerCalendar.build(DateQueryParam.parse("du", du), DateQueryParam.parse("au", au));
     }
 }

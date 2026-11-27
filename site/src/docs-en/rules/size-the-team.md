@@ -19,7 +19,7 @@ The minimum headcount is **proven**: no smaller team can hold the seats, even wh
 
 Each day carries its **margin before the solve**: the people available minus the seats, on its tightest band, expandable band by band. It depends on no solve.
 
-Each figure leads to the screen that changes it: a bound leads to the stand hours of the busiest day, or to the row of its rule in Planning rules; each day leads to its stand hours; a bottleneck leads to the skills grid.
+Each figure leads to the screen that changes it: a bound leads to the stands list, or to the row of its rule in Planning rules; each day leads there too; a bottleneck leads to the skills grid.
 
 ## Check the minimum with a real solve
 
@@ -31,7 +31,7 @@ Each trial is recorded in the history with its team, its duration and its result
 
 ## Know who to train
 
-The "To train" section closes the tab. It lists, game category by game category, those that the need says are short or that fragility shows are held by a single specialist. For each:
+The "To train" section is in the Diagnostic's *Risks* tab, with fragility and tension. It lists, game category by game category, those that the need says are short or that fragility shows are held by a single specialist. For each:
 
 - the figures of these two readings and the days under tension;
 - a link to the skills grid filtered on it;

@@ -26,8 +26,9 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
- * {@code heures_travaillees} reads the plan its {@code source} names — the
- * persisted one by default, unlike the screen — and says which, with its date.
+ * {@code heures_travaillees}, the hours view of {@code consulter_charge}, reads
+ * the plan its {@code source} names — the persisted one by default, unlike the
+ * screen — and says which, with its date.
  */
 class PlanningMcpToolsHeuresTest {
 
@@ -76,6 +77,28 @@ class PlanningMcpToolsHeuresTest {
                 .hasMessageContaining("navigateur");
     }
 
+    @Test
+    void theLoadReportReadsTheHoursUnderItsHoursView() {
+        PlanningMcpTools.ChargeView charge = tools(true).consultLoad("heures", "publie", "E1");
+
+        assertThat(charge.vue()).isEqualTo("heures");
+        assertThat(charge.equite()).isNull();
+        assertThat(charge.heures().source()).isEqualTo("publie");
+        assertThat(total(charge.heures(), "B")).isEqualTo(3.0);
+    }
+
+    @Test
+    void theLoadReportRefusesASourceOutsideTheHoursViewAndAnUnknownView() {
+        PlanningMcpTools tools = tools(true);
+
+        assertThatThrownBy(() -> tools.consultLoad(null, "publie", "E1"))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("vue heures");
+        assertThatThrownBy(() -> tools.consultLoad("repos", null, "E1"))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("repos");
+    }
+
     private static double total(HeuresView view, String animateurId) {
         return view.animateurs().stream()
                 .filter(ligne -> ligne.animateurId().equals(animateurId))
@@ -109,7 +132,7 @@ class PlanningMcpToolsHeuresTest {
             }
         };
         PlanningHoursReader reader = new PlanningHoursReader(new PlanningHoursService(), persistence, publications);
-        return new PlanningMcpTools(null, null, persistence, null, null, reader, null, null, null);
+        return new PlanningMcpTools(null, null, persistence, null, reader, null, null, null);
     }
 
     private static PlanSnapshotService.SnapshotMeta publication() {

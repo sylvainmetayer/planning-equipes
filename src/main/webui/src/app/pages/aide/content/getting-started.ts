@@ -28,7 +28,7 @@ export function buildGettingStartedSections(): HelpSection[] {
           kind: 'steps',
           items: [
             $localize`:@@aide.start.step1:Choisir ou créer l'édition. Rien ne circule d'une édition à l'autre. Seule l'édition active publie, écrit aux animateurs et ouvre leur espace : activez-la sur la page Éditions avant d'ouvrir la collecte.`,
-            $localize`:@@aide.start.step2.fichiers:Saisir les référentiels dans l'ordre du groupe Préparer : typologies, créneaux (c'est là que l'édition prend ses dates), emplacements, stands, animateurs. Chacun s'importe aussi depuis un fichier CSV ou un collage de tableur, par le bouton « Importer » de son écran ou par la page Fichiers ; un scénario YAML remplace l'étape entière.`,
+            $localize`:@@aide.start.step2.fichiers:Saisir les référentiels dans l'ordre du groupe Préparer : typologies, créneaux (c'est là que l'édition prend ses dates), emplacements, stands, animateurs. Les animateurs s'importent aussi depuis un fichier CSV ou un collage de tableur, par le bouton « Importer » de leur écran ou par la page Fichiers ; un scénario YAML remplace l'étape entière et reprend tout le reste (typologies, emplacements, stands et leurs horaires, créneaux).`,
             $localize`:@@aide.start.step3:Ouvrir la collecte des disponibilités, case « prévenir » cochée : chacun reçoit le lien de son espace et y déclare ses absences et ses souhaits. Les fiches animateurs et les créneaux doivent donc déjà exister.`,
             $localize`:@@aide.start.step4:Appliquer ou refuser les déclarations reçues, puis fermer la collecte.`,
             $localize`:@@aide.start.step5:Vérifier les ouvertures des stands, puis le besoin en animateurs. Ces deux écrans répondent avant tout calcul.`,

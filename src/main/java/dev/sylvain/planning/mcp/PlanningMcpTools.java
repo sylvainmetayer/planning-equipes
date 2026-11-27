@@ -1,20 +1,21 @@
 package dev.sylvain.planning.mcp;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.SeatPlaces;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.analyse.EquiteService;
 import dev.sylvain.planning.service.analyse.EquiteService.ColonneSolveur;
 import dev.sylvain.planning.service.analyse.EquiteService.LigneEquite;
 import dev.sylvain.planning.service.analyse.EquiteService.RapportEquite;
 import dev.sylvain.planning.service.analyse.EquiteService.SyntheseColonne;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.analyse.PlanningHoursReader;
 import dev.sylvain.planning.service.analyse.PlanningHoursReader.HoursReading;
 import dev.sylvain.planning.service.analyse.PlanningHoursReader.Source;
 import dev.sylvain.planning.service.analyse.PlanningHoursService.HeuresAnimateur;
+import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.DeplacementService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
@@ -24,7 +25,6 @@ import dev.sylvain.planning.service.solve.PlanningWhatIf.ContrainteImpact;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.DeplacementSimulation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SwapSimulation;
-import dev.sylvain.planning.service.solve.ProblemScaleService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -40,9 +40,8 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * MCP tools around the planning itself: the size of the problem the next
- * solve will build, the pre-solve feasibility report, what is persisted from
- * the last solve, the hours worked per animateur, and the per-poste
+ * MCP tools around the planning itself: what is persisted from the last
+ * solve, the load it gives each animateur (hours and fairness), and the per-poste
  * explanation/swap simulation of {@code AffectationExplanationResource}.
  *
  * <p>The explanation/swap REST endpoints take a whole
@@ -80,15 +79,13 @@ public class PlanningMcpTools {
 
     private final ReferenceDataService referenceDataService;
 
-    private final FeasibilityAnalyzer feasibilityAnalyzer;
-
     private final PlanningHoursReader hoursReader;
 
     private final EquiteService equiteService;
 
     private final ReferenceDataChangeTracker changeTracker;
 
-    private final ProblemScaleService problemScaleService;
+    private final CurrentAction currentAction;
 
     @Inject
     PlanningMcpTools(
@@ -96,73 +93,210 @@ public class PlanningMcpTools {
             PlanningService planningService,
             PlanningPersistenceService persistenceService,
             ReferenceDataService referenceDataService,
-            FeasibilityAnalyzer feasibilityAnalyzer,
             PlanningHoursReader hoursReader,
             EquiteService equiteService,
             ReferenceDataChangeTracker changeTracker,
-            ProblemScaleService problemScaleService) {
+            CurrentAction currentAction) {
         this.deplacementService = deplacementService;
         this.planningService = planningService;
         this.persistenceService = persistenceService;
         this.referenceDataService = referenceDataService;
-        this.feasibilityAnalyzer = feasibilityAnalyzer;
         this.hoursReader = hoursReader;
         this.equiteService = equiteService;
         this.changeTracker = changeTracker;
-        this.problemScaleService = problemScaleService;
+        this.currentAction = currentAction;
     }
 
     @Tool(
-            name = "volumes",
-            description =
-                    "Volumétrie réelle du problème que construirait la prochaine résolution : nombre "
-                            + "d'animateurs, de postes à pourvoir et de contraintes ad hoc, heures à pourvoir (somme des durées "
-                            + "effectives des postes) et heures offertes (plafond légal de ce que les animateurs peuvent travailler "
-                            + "sur l'événement, jours d'indisponibilité déduits). Les postes ne dépendent que des stands et des créneaux : "
-                            + "ils sont comptés avant la saisie d'aucun animateur, et tout est à zéro sans stand ou sans créneau.",
+            name = "consulter_planning",
+            description = "Lit le dernier planning persisté, sous la vue demandée. etat (défaut) : quand la "
+                    + "dernière résolution a tourné, combien d'affectations sont stockées, et quand les données de "
+                    + "référence ont changé pour la dernière fois (après la résolution, le planning est périmé). "
+                    + "synthese : postes pourvus au total, par stand et par jour, quelques dizaines de lignes pour "
+                    + "repérer où il manque du monde. affectations : les sièges, filtrables par stand, créneau, "
+                    + "animateur ou postes non pourvus (animateurId nul), plafonnés (200 par défaut), total disant "
+                    + "combien correspondent aux filtres. Des ids seulement, jamais de données personnelles ; les "
+                    + "filtres ne valent que pour la vue affectations.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ProblemScaleService.ProblemScale volumes(
+    PlanningConsultationView consultPlanning(
+            @ToolArg(description = "etat (défaut), synthese ou affectations", required = false) String vue,
+            @ToolArg(description = "Id de stand pour filtrer (vue affectations)", required = false) String standId,
+            @ToolArg(description = "Id de créneau pour filtrer (vue affectations)", required = false) Long creneauId,
+            @ToolArg(description = "Id d'animateur pour filtrer (vue affectations)", required = false)
+                    String animateurId,
+            @ToolArg(description = "Ne garder que les postes non pourvus (vue affectations)", required = false)
+                    Boolean seulementNonPourvus,
+            @ToolArg(description = "Nombre maximum d'affectations renvoyées (défaut 200)", required = false)
+                    Integer limite,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return problemScaleService.compute();
+        String choisie = McpArgs.choix(vue, "vue", "etat", "etat", "synthese", "affectations");
+        // Refused rather than ignored: a synthesis read as the one of the stand filtered would mislead.
+        if (!"affectations".equals(choisie)
+                && (standId != null
+                        || creneauId != null
+                        || animateurId != null
+                        || seulementNonPourvus != null
+                        || limite != null)) {
+            throw new BusinessError.Invalid("Les filtres ne valent que pour la vue affectations");
+        }
+        return switch (choisie) {
+            case "etat" -> new PlanningConsultationView(choisie, planningState(edition), null, null);
+            case "synthese" -> new PlanningConsultationView(choisie, null, summarizeAffectations(edition), null);
+            default ->
+                new PlanningConsultationView(
+                        choisie,
+                        null,
+                        null,
+                        listAffectations(standId, creneauId, animateurId, seulementNonPourvus, limite, edition));
+        };
     }
 
     @Tool(
-            name = "analyser_faisabilite",
-            description = "Diagnostic de faisabilité avant résolution : calcul de capacité en Java pur (aucune "
-                    + "résolution lancée) sur les données de référence courantes, listant les causes structurellement "
-                    + "bloquantes : créneau en sous-effectif, contraintes ad hoc contradictoires, affectation forcée "
-                    + "intenable (jour déclaré indisponible, règle dure sur toutes les places de sa portée, "
-                    + "emploi du temps verrouillé), plafond de jours travaillés d'affilée intenable ou tendu sur "
-                    + "la grille ou le plan en place.",
+            name = "analyser_affectation",
+            description = "Explique le score d'un siège du dernier planning persisté, lu sous les règles de "
+                    + "l'édition (contraintes désactivées, poids) : contraintes non tenues et contraintes respectées le "
+                    + "concernant. Ne relance aucune résolution ; pour chiffrer un autre titulaire, "
+                    + "simuler_affectation.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    FeasibilityReport analyzeFeasibility(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return feasibilityAnalyzer.analyze(
-                referenceDataService.listAnimateurs(),
-                referenceDataService.listSolvedStands(),
-                referenceDataService.listCreneaux(),
-                referenceDataService.listContraintesAdHoc(),
-                FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
-                FeasibilityAnalyzer.ConsecutiveDaysRule.of(
-                        referenceDataService.getContraintesDesactivees(),
-                        referenceDataService.getNiveauxObligatoires(),
-                        referenceDataService.getParametresQualite()),
-                new FeasibilityAnalyzer.PlanContext(
-                        planningService.pastHorizon(), persistenceService::loadEmployedByDay));
+    ExplicationView analyzeAffectation(
+            @ToolArg(description = "Id du poste") String posteId,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return explainAffectation(posteId, edition);
     }
 
+    @Computes
+    @Tool(
+            name = "simuler_affectation",
+            description = "Chiffre un changement de titulaire d'un siège du planning persisté, sans rien écrire ni "
+                    + "relancer de résolution. mode affecter : le siège posteId donné à animateurId, nul autre ne "
+                    + "bouge ; impact sur le score. mode deplacer : le siège posteId déposé sur un autre siège "
+                    + "(posteCibleId — vide, l'animateur y va et son siège se libère ; occupé, les deux échangent) ou "
+                    + "sur une personne (animateurId, qui prend le siège, ou échange le sien si elle en tient un sur le "
+                    + "même créneau) ; casseContrainteDure vrai veut dire que modifier_affectation refusera. mode "
+                    + "candidats : cherche qui pourrait tenir le siège et chiffre chaque candidat (écarts résolus et "
+                    + "introduits), borné par plafond ; sans candidat viable, rappeler avec depuis = depuis + "
+                    + "candidatsEvalues.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    SimulationAffectationView simulateAffectation(
+            @ToolArg(description = "Id du poste") String posteId,
+            @ToolArg(description = "affecter, deplacer ou candidats") String mode,
+            @ToolArg(
+                            description = "Id de l'animateur candidat (mode affecter) ou qui reçoit le siège (mode "
+                                    + "deplacer, si aucun poste n'est donné)",
+                            required = false)
+                    String animateurId,
+            @ToolArg(description = "Id du poste qui reçoit l'affectation (mode deplacer)", required = false)
+                    String posteCibleId,
+            @ToolArg(
+                            description = "Nombre maximum de candidats simulés (mode candidats ; défaut : "
+                                    + "configuration serveur)",
+                            required = false)
+                    Integer plafond,
+            @ToolArg(
+                            description = "Rang du premier candidat éligible à simuler (mode candidats, défaut 0)",
+                            required = false)
+                    Integer depuis,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        String choisi = McpArgs.choix(mode, "mode", null, AFFECTER, DEPLACER, CANDIDATS);
+        return switch (choisi) {
+            case AFFECTER ->
+                new SimulationAffectationView(
+                        choisi,
+                        simulateSwap(posteId, required(animateurId, "animateurId", choisi), edition),
+                        null,
+                        null);
+            case DEPLACER ->
+                new SimulationAffectationView(
+                        choisi, null, simulateMove(posteId, posteCibleId, animateurId, edition), null);
+            default ->
+                new SimulationAffectationView(choisi, null, null, suggestRepairs(posteId, plafond, depuis, edition));
+        };
+    }
+
+    /**
+     * Kept apart from {@code simuler_affectation} rather than added to it as a
+     * flag: an assistant that scores a change and applies it in the same call
+     * has no step left at which a human could say no.
+     */
+    @Tool(
+            name = "modifier_affectation",
+            description = "Change le titulaire d'un siège du planning persisté et l'écrit, sans relancer de "
+                    + "résolution. mode affecter : le siège posteId passe à animateurId — ou se vide si aucun "
+                    + "animateur n'est donné —, aucun autre siège n'est touché. mode deplacer : comme "
+                    + "simuler_affectation le décrit, deux sièges au plus changent de main ; refusé si le déplacement "
+                    + "casserait une règle dure. Refusé sur un siège verrouillé, sur un créneau commencé, et pendant "
+                    + "une résolution de l'édition.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = false,
+                            openWorldHint = false))
+    ModificationAffectationView modifyAffectation(
+            @ToolArg(description = "Id du poste") String posteId,
+            @ToolArg(description = "affecter ou deplacer") String mode,
+            @ToolArg(
+                            description = "Id de l'animateur qui prend le siège ; omis en mode affecter, le siège "
+                                    + "est vidé",
+                            required = false)
+                    String animateurId,
+            @ToolArg(description = "Id du poste qui reçoit l'affectation (mode deplacer)", required = false)
+                    String posteCibleId,
+            @ToolArg(
+                            description = "Id de l'animateur que l'appelant croit sur le siège de départ (mode "
+                                    + "deplacer ; précondition : refusé si quelqu'un d'autre l'occupe)",
+                            required = false)
+                    String occupantAttendu,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        String choisi = McpArgs.choix(mode, "mode", null, AFFECTER, DEPLACER);
+        if (AFFECTER.equals(choisi)) {
+            // Refused rather than ignored: occupantAttendu is a precondition, and a write that drops it is
+            // unconditional.
+            if (posteCibleId != null && !posteCibleId.isBlank()
+                    || occupantAttendu != null && !occupantAttendu.isBlank()) {
+                throw new BusinessError.Invalid(
+                        "posteCibleId et occupantAttendu ne valent qu'en mode deplacer : en mode affecter, le siège "
+                                + "posteId passe à animateurId, sans contrôle de l'occupant");
+            }
+            return new ModificationAffectationView(choisi, assignPoste(posteId, animateurId, edition), null);
+        }
+        // The catalogue files the tool under the seat handed over; a move is its own line.
+        currentAction.action("AFFECTATION_DEPLACEE");
+        return new ModificationAffectationView(
+                choisi, null, moveAffectation(posteId, posteCibleId, animateurId, occupantAttendu, edition));
+    }
+
+    private static final String AFFECTER = "affecter";
+    private static final String DEPLACER = "deplacer";
+    private static final String CANDIDATS = "candidats";
+
+    private static String required(String valeur, String champ, String mode) {
+        if (valeur == null || valeur.isBlank()) {
+            throw new BusinessError.Invalid(champ + " est requis en mode " + mode);
+        }
+        return valeur;
+    }
+
+    @Deprecated
     @Tool(
             name = "etat_planning",
-            description = "État du planning persisté : pour quel groupe de créneaux la dernière résolution a "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_planning (vue etat). "
+                    + "État du planning persisté : pour quel groupe de créneaux la dernière résolution a "
                     + "tourné, quand, combien d'affectations sont stockées, et quand les données de référence ont été "
                     + "modifiées pour la dernière fois (si c'est après la résolution, le planning affiché est périmé).",
             annotations =
@@ -181,9 +315,11 @@ public class PlanningMcpTools {
         return new EtatPlanningView(true, resolution.resoluLe(), affectations, derniereModificationDonnees);
     }
 
+    @Deprecated
     @Tool(
             name = "lister_affectations",
-            description = "Affectations du dernier planning persisté, filtrables par stand, par créneau ou par "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_planning (vue affectations). "
+                    + "Affectations du dernier planning persisté, filtrables par stand, par créneau ou par "
                     + "animateur. Ne renvoie que des ids, jamais de données personnelles. Les postes non pourvus ont un "
                     + "animateurId nul. La liste est plafonnée (200 par défaut) : total dit combien de postes "
                     + "correspondent réellement aux filtres. Pour une vue d'ensemble, préférer synthese_affectations.",
@@ -217,9 +353,11 @@ public class PlanningMcpTools {
      * with {@code lister_affectations} costs an assistant its whole context
      * before it can even see that one stand is short on Saturday.
      */
+    @Deprecated
     @Tool(
             name = "synthese_affectations",
-            description = "Synthèse du dernier planning persisté : combien de postes sont pourvus, au total puis "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_planning (vue synthese). "
+                    + "Synthèse du dernier planning persisté : combien de postes sont pourvus, au total puis "
                     + "par stand et par jour. Quelques dizaines de lignes au lieu de plusieurs milliers d'affectations, "
                     + "pour repérer d'un coup d'œil où il manque du monde.",
             annotations =
@@ -297,13 +435,50 @@ public class PlanningMcpTools {
     }
 
     @Tool(
+            name = "consulter_charge",
+            description = "Le rapport Charge du planning, sous la vue demandée, animateurs désignés par id seul. "
+                    + "equite (défaut) : par animateur affecté du dernier planning persisté, heures totales et par "
+                    + "semaine ISO, heures de soirée, de week-end et de jour férié, postes et postes pénibles, stands, "
+                    + "typologies et emplacements distincts, part des postes sur une typologie souhaitée ou appréciée, "
+                    + "jours travaillés, de repos et plus longue série ; par colonne, médiane, min, max, écart-type, et "
+                    + "si le solveur la mesure. heures : heures par animateur, par semaine ISO et au total, amplitude "
+                    + "journalière maximale et jours au-delà de 12 h (affichage, aucune règle), sur le plan persisté "
+                    + "(source persiste, défaut) ou sur la publication en vigueur (source publie, refusée tant que rien "
+                    + "n'a été publié) ; la réponse dit quel plan elle a lu et sa date. source ne vaut que pour la vue "
+                    + "heures.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ChargeView consultLoad(
+            @ToolArg(description = "equite (défaut) ou heures", required = false) String vue,
+            @ToolArg(
+                            description = "Vue heures : « persiste » (le plan enregistré, par défaut) ou « publie »"
+                                    + " (la publication en vigueur)",
+                            required = false)
+                    String source,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        String choisie = McpArgs.choix(vue, "vue", "equite", "equite", "heures");
+        if ("equite".equals(choisie)) {
+            if (source != null && !source.isBlank()) {
+                throw new BusinessError.Invalid("source ne vaut que pour la vue heures");
+            }
+            return new ChargeView(choisie, planningFairness(edition), null);
+        }
+        return new ChargeView(choisie, null, workedHours(edition, source));
+    }
+
+    @Deprecated
+    @Tool(
             name = "heures_travaillees",
-            description =
-                    "Heures travaillées par animateur, par semaine ISO et au total, avec l'amplitude journalière maximale et le "
-                            + "nombre de jours au-delà de 12 h (affichage, aucune règle), lues côté serveur : sur le "
-                            + "dernier planning persisté par défaut (source « persiste »), ou sur la publication en vigueur, ce "
-                            + "que les animateurs ont reçu (source « publie »), refusée tant que rien n'a été publié. La réponse "
-                            + "dit quel plan elle a lu et sa date. Les animateurs sont désignés par id seul.",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_charge (vue heures). "
+                    + "Heures travaillées par animateur, par semaine ISO et au total, avec l'amplitude journalière maximale et le "
+                    + "nombre de jours au-delà de 12 h (affichage, aucune règle), lues côté serveur : sur le "
+                    + "dernier planning persisté par défaut (source « persiste »), ou sur la publication en vigueur, ce "
+                    + "que les animateurs ont reçu (source « publie »), refusée tant que rien n'a été publié. La réponse "
+                    + "dit quel plan elle a lu et sa date. Les animateurs sont désignés par id seul.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -327,10 +502,12 @@ public class PlanningMcpTools {
                         .toList());
     }
 
+    @Deprecated
     @Tool(
             name = "equite_planning",
             description =
-                    "Tableau d'équité du dernier planning persisté : par animateur affecté, heures totales "
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_charge (vue equite). "
+                            + "Tableau d'équité du dernier planning persisté : par animateur affecté, heures totales "
                             + "et par semaine ISO, heures de soirée (après l'heure paramétrée), de week-end et de jour férié, "
                             + "postes et postes pénibles, stands, typologies et emplacements distincts, part des postes sur une "
                             + "typologie souhaitée ou appréciée, jours travaillés, de repos et plus longue série ; par colonne, "
@@ -345,9 +522,11 @@ public class PlanningMcpTools {
         return toView(equiteService.rapport());
     }
 
+    @Deprecated
     @Tool(
             name = "expliquer_affectation",
-            description = "Explique le score d'un poste du dernier planning persisté, lu sous les règles de "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser analyser_affectation. "
+                    + "Explique le score d'un poste du dernier planning persisté, lu sous les règles de "
                     + "l'édition (contraintes désactivées, poids) : contraintes non tenues et contraintes respectées le "
                     + "concernant. Ne relance aucune résolution.",
             annotations =
@@ -369,9 +548,11 @@ public class PlanningMcpTools {
     }
 
     @Computes
+    @Deprecated
     @Tool(
             name = "simuler_swap",
-            description = "Simule l'affectation d'un poste à un autre animateur sur le dernier planning persisté, "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser simuler_affectation (mode affecter). "
+                    + "Simule l'affectation d'un poste à un autre animateur sur le dernier planning persisté, "
                     + "et renvoie l'impact sur le score. Ne persiste rien et ne relance aucune résolution.",
             annotations =
                     @Tool.Annotations(
@@ -396,9 +577,11 @@ public class PlanningMcpTools {
     }
 
     @Computes
+    @Deprecated
     @Tool(
             name = "suggerer_reparations",
-            description = "Cherche qui pourrait tenir un poste du dernier planning persisté et chiffre chaque "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser simuler_affectation (mode candidats). "
+                    + "Cherche qui pourrait tenir un poste du dernier planning persisté et chiffre chaque "
                     + "candidat : score après, delta, écarts résolus et écarts introduits. Là où simuler_swap "
                     + "note un animateur qu'on lui désigne, celui-ci les cherche. Ne persiste rien et ne relance aucune "
                     + "résolution ; le coût est borné par plafond, et candidatsEligibles/candidatsEvalues disent si la "
@@ -448,9 +631,11 @@ public class PlanningMcpTools {
      * that scores a move and applies it in the same call has no step left at
      * which a human could say no.
      */
+    @Deprecated
     @Tool(
             name = "affecter_poste",
-            description = "Affecte un poste du planning persisté à un animateur — ou le vide si aucun animateur "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_affectation (mode affecter). "
+                    + "Affecte un poste du planning persisté à un animateur — ou le vide si aucun animateur "
                     + "n'est donné. Ce poste seul change de main, aucun autre n'est touché et aucune résolution n'est "
                     + "relancée. Refusé si le poste est verrouillé.",
             annotations =
@@ -475,9 +660,11 @@ public class PlanningMcpTools {
     }
 
     @Computes
+    @Deprecated
     @Tool(
             name = "simuler_deplacement",
-            description = "Chiffre le déplacement d'une affectation du planning persisté sans rien écrire : "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser simuler_affectation (mode deplacer). "
+                    + "Chiffre le déplacement d'une affectation du planning persisté sans rien écrire : "
                     + "le siège posteId déposé sur un autre siège (posteCibleId — vide, l'animateur y va et son siège se "
                     + "libère ; occupé, les deux échangent) ou sur une personne (animateurId, qui prend le siège, ou "
                     + "échange le sien si elle en tient un sur le même créneau). Verdict sur tout le planning : "
@@ -503,10 +690,12 @@ public class PlanningMcpTools {
      * that scores a move and applies it in the same call leaves no step at
      * which a human could say no.
      */
+    @Deprecated
     @Tool(
             name = "deplacer_affectation",
             description =
-                    "Déplace une affectation du planning persisté, comme simuler_deplacement le décrit, "
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_affectation (mode deplacer). "
+                            + "Déplace une affectation du planning persisté, comme simuler_deplacement le décrit, "
                             + "et l'écrit : deux sièges au plus changent de main, aucune résolution n'est relancée. Refusé si le "
                             + "déplacement casserait une règle dure, si un des sièges est verrouillé, ou pendant une résolution.",
             annotations =
@@ -621,6 +810,32 @@ public class PlanningMcpTools {
                 ligne.joursRepos(),
                 ligne.plusLongueSerie());
     }
+
+    /** What {@code consulter_charge} answers: the view asked, the other left out. */
+    public record ChargeView(
+            String vue,
+            @JsonInclude(JsonInclude.Include.NON_NULL) EquiteView equite,
+            @JsonInclude(JsonInclude.Include.NON_NULL) HeuresView heures) {}
+
+    /** What {@code consulter_planning} answers: the view asked, the other two left out. */
+    public record PlanningConsultationView(
+            String vue,
+            @JsonInclude(JsonInclude.Include.NON_NULL) EtatPlanningView etat,
+            @JsonInclude(JsonInclude.Include.NON_NULL) SyntheseView synthese,
+            @JsonInclude(JsonInclude.Include.NON_NULL) AffectationsView affectations) {}
+
+    /** What {@code simuler_affectation} answers: the simulation of the mode asked, the others left out. */
+    public record SimulationAffectationView(
+            String mode,
+            @JsonInclude(JsonInclude.Include.NON_NULL) SwapView affectation,
+            @JsonInclude(JsonInclude.Include.NON_NULL) DeplacementView deplacement,
+            @JsonInclude(JsonInclude.Include.NON_NULL) SuggestionsView candidats) {}
+
+    /** What {@code modifier_affectation} answers: the write of the mode asked, the other left out. */
+    public record ModificationAffectationView(
+            String mode,
+            @JsonInclude(JsonInclude.Include.NON_NULL) ReaffectationView affectation,
+            @JsonInclude(JsonInclude.Include.NON_NULL) DeplacementView deplacement) {}
 
     /** @param resolu false when nothing has ever been solved */
     public record EtatPlanningView(

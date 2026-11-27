@@ -26,13 +26,13 @@ The budget is the **instance's** (ADR 0110), the same for every edition: `planni
 
 ## Predicting what the solve will receive
 
-`GET /api/planning/volumetrie` (MCP tool `volumes`) describes the problem the next solve would build, never a stands × timeslots product: `animateurCount` (the possible values of a seat), `posteCount` (one seat per seat to fill), `contrainteAdHocCount`, `hoursToFill` (effective durations of the seats, closures deducted) and `hoursAvailable`, the legal ceiling of what the staff can work on the event days (per staff member and per ISO week, at most six non-unavailable days, each at the daily ceiling for their age that day, all bounded by the weekly ceiling). Their ratio is a fill rate, but it is a ceiling and not a forecast: skills, rest and breaks still subtract from it, and a rate close to 1 already announces an infeasible schedule.
+`GET /api/planning/volumetrie` (MCP tool `consulter_besoin`, section `volumetrie`) describes the problem the next solve would build, never a stands × timeslots product: `animateurCount` (the possible values of a seat), `posteCount` (one seat per seat to fill), `contrainteAdHocCount`, `hoursToFill` (effective durations of the seats, closures deducted) and `hoursAvailable`, the legal ceiling of what the staff can work on the event days (per staff member and per ISO week, at most six non-unavailable days, each at the daily ceiling for their age that day, all bounded by the weekly ceiling). Their ratio is a fill rate, but it is a ceiling and not a forecast: skills, rest and breaks still subtract from it, and a rate close to 1 already announces an infeasible schedule.
 
 Seats depend only on the stands and timeslots: they are counted before any staff member is entered (`hoursAvailable` is then zero), and everything is zero with no stand or timeslot. `GET /api/staffing` does the same (`referentielsManquants` names what is missing). `GET /api/feasibility` and `GET /api/fragilite`, by contrast, say explicitly that nothing is feasible without staff, rather than detecting no problem, and `GET /api/feasibility` also reports an edition with no timeslot or whose stands never open: nothing to fill is not a green light.
 
 ### The staffing need
 
-`GET /api/staffing` (MCP tool `analyser_effectifs`) returns **proven minimums**: no smaller team can hold the seats. Three figures read differently from what they seem:
+`GET /api/staffing` (MCP tool `consulter_besoin`, section `borne`) returns **proven minimums**: no smaller team can hold the seats. Three figures read differently from what they seem:
 
 - `mineursMax` is a ceiling, computed for `effectifReference` (the minimum, or the staff entered if there are more): beyond it, recruiting minors makes it impossible to hold. It never says how many minors to recruit, and it ignores days in a row and the minors' 4 h 30 of continuous work;
 - `absentsMax` (per day) and `budgetIndisponibilites` (per week) are read against the same headcount. The budget is understood beyond the rest day that everyone must already take, and `indisponibilitesAuDela` counts the days declared beyond that rest;
@@ -98,7 +98,7 @@ The `score` events are **deltas**: `depuis` is the index of the first point sent
 
 ### The feasibility moment
 
-The first feasible plan (zero hard) often arrives well before the end, and it is what the organiser is waiting for: the schedule is then usable, the rest is quality. The job carries it in `feasibleAtSeconds` (`JobView`, `statut_solveur` in MCP), `null` as long as the plan is not feasible, and pushes a state event at that moment. "Stop and keep this plan" is only the ordinary stop, the solver always keeping the best plan reached. Timefold announcing a solution only when it changes, a solve that already starts from a zero-hard plan would say nothing: the complete starting plan is therefore scored once before the start (`SolveListener`).
+The first feasible plan (zero hard) often arrives well before the end, and it is what the organiser is waiting for: the schedule is then usable, the rest is quality. The job carries it in `feasibleAtSeconds` (`JobView`, `consulter_calcul` in MCP), `null` as long as the plan is not feasible, and pushes a state event at that moment. "Stop and keep this plan" is only the ordinary stop, the solver always keeping the best plan reached. Timefold announcing a solution only when it changes, a solve that already starts from a zero-hard plan would say nothing: the complete starting plan is therefore scored once before the start (`SolveListener`).
 
 ## Incremental replanning
 

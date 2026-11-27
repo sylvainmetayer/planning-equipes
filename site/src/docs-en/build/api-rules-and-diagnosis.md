@@ -79,15 +79,15 @@ Saving a constraint again **under its own id** is never refused: the submitted v
 
 ## Explaining an assignment
 
-`GET /api/postes/{posteId}/explication` targets a single seat of the saved plan, **already solved and never solved again**. The plan is prepared on the server side as a solve prepares it (disabled constraints, the edition's weights and quotas); the MCP tool `expliquer_affectation` reads the same thing. A plan sent by the screen would not carry these rules: explained bare, it would blame the holder for a constraint the organiser has switched off.
+`GET /api/postes/{posteId}/explication` targets a single seat of the saved plan, **already solved and never solved again**. The plan is prepared on the server side as a solve prepares it (disabled constraints, the edition's weights and quotas); the MCP tool `analyser_affectation` reads the same thing. A plan sent by the screen would not carry these rules: explained bare, it would blame the holder for a constraint the organiser has switched off.
 
 "Respected" only means that no breach was found for this precise seat, not that the constraint applies to it: the UI does not present it as a mark of satisfaction.
 
-`POST /api/postes/{posteId}/simulation-swap` scores a candidate it is pointed to, without persisting anything. No screen calls it (the UI exposes only the assistant's viable replacements, so as not to let anyone choose a replacement that breaks a hard rule); it remains open to the API and to the MCP tool `simuler_swap`.
+`POST /api/postes/{posteId}/simulation-swap` scores a candidate it is pointed to, without persisting anything. No screen calls it (the UI exposes only the assistant's viable replacements, so as not to let anyone choose a replacement that breaks a hard rule); it remains open to the API and to the MCP tool `simuler_affectation`.
 
 ## Moving an assignment by hand
 
-Two routes: `POST /api/postes/{posteId}/deplacement/simulation` computes, `POST /api/postes/{posteId}/deplacement` writes. The gesture is designated by `?cible=P` (a seat) or `?animateur=A` (a person). The MCP tools are `simuler_deplacement` and `deplacer_affectation`.
+Two routes: `POST /api/postes/{posteId}/deplacement/simulation` computes, `POST /api/postes/{posteId}/deplacement` writes. The gesture is designated by `?cible=P` (a seat) or `?animateur=A` (a person). The MCP tools are `simuler_affectation` and `modifier_affectation`.
 
 The simulation persists nothing. With no body, it reads the verdict on the edition's rules, those the organiser has disabled included: the caller does not have to supply them. The write applies to the saved plan; `&occupant=X` says who the caller believes to be on the origin seat, and if someone else holds it, the answer is `409` with no write.
 
@@ -108,7 +108,7 @@ The refusals:
 
 ## Placing someone on an empty seat
 
-`POST /api/postes/{posteId}/placement?animateur=A` sits `A` on the empty seat of the saved plan, writes and answers like a move (`animateurSourceId` null, scores before and after). It carries the same checks as the direct write of the repair assistant and of the MCP tool `affecter_poste`, of which it is the service:
+`POST /api/postes/{posteId}/placement?animateur=A` sits `A` on the empty seat of the saved plan, writes and answers like a move (`animateurSourceId` null, scores before and after). It carries the same checks as the direct write of the repair assistant and of the MCP tool `modifier_affectation`, of which it is the service:
 
 - solve in progress (`409`), timeslot started ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)), seat locked;
 - **hard rule read twice**, on the whole schedule and on the seat. Filling an empty seat gives back its `posteDoitEtrePourvu` point; the global verdict alone would let a minor placed on a night shift through (`400`, rule named);
@@ -138,6 +138,6 @@ Applying a suggestion reassigns **that seat only** in `poste_affectation`, with 
 - **A seat whose timeslot is under way is split, not refused** ([ADR 0066](repo:docs/decisions/0066-le-passe-est-fige-a-la-minute.md)). The write cuts the seat at the current minute of the event-day clock: the origin keeps its holder until that minute and the **continuation**, a new seat with identifier `<id>~HHmm` that carries `suiteDe`, receives the write. The identifier written is therefore not the one that was sent. To find it, read the plan again (`GET /api/planning/persisted`) or the response of `POST /api/jour-j/absences`, whose `postesLiberes` names the continuations. The suggestions of such a seat are computed on its continuation, as the write will do.
 - **No candidate that would break a hard rule on this seat is offered**, even when the global hard score does not move: on an empty seat, filling the place settles one hard point (`posteDoitEtrePourvu`) and may spend it a second time elsewhere, which would put at the top of the list, at zero delta, the staff member just declared unavailable. `violationsIntroduites` therefore never carries a `HARD`.
 
-**`occupant` is a precondition carried by the write itself.** The seat panel shows a plan read earlier: "Free" and "Replace then Apply" send the person displayed, and the server answers `409` without writing anything if someone else holds the seat in the meantime (an accepted swap, an event-day repair, another tab). The check on the plan read gives the message; the `animateur_id IS NOT DISTINCT FROM ?` clause of the `UPDATE` closes the window between that read and the write, same principle as `placement`, which writes only on a seat that is still empty. Without `occupant`, no precondition: the MCP tool `affecter_poste` and the event-day mode write this way.
+**`occupant` is a precondition carried by the write itself.** The seat panel shows a plan read earlier: "Free" and "Replace then Apply" send the person displayed, and the server answers `409` without writing anything if someone else holds the seat in the meantime (an accepted swap, an event-day repair, another tab). The check on the plan read gives the message; the `animateur_id IS NOT DISTINCT FROM ?` clause of the `UPDATE` closes the window between that read and the write, same principle as `placement`, which writes only on a seat that is still empty. Without `occupant`, no precondition: the MCP tool `modifier_affectation` and the event-day mode write this way.
 
 The `UPDATE` rechecks nothing else, locks apart. A suggestion list computed **before** another write is stale, and applying it can create an overlap that nobody flags. A UI that keeps several lists on screen invalidates them after each application, as the event-day mode does ([event-day API](api-jour-j-et-animateurs.md)).

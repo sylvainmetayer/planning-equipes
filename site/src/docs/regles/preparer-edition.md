@@ -10,7 +10,7 @@ Le type d'événement change les priorités : voir [un planning de festival](/pl
 
 - Choisissez l'édition de travail dans la barre d'édition, au-dessus de chaque page. Deux onglets du navigateur peuvent travailler sur deux éditions à la fois ; elles ne se mélangent jamais. Pour en créer une, voir [Enchaîner les éditions](enchainer-les-editions.md).
 - Sur une édition vide, l'accueil propose un bloc « Démarrer » : importer un fichier, repartir d'une édition précédente ou charger un exemple. Chaque liste de référentiel vide dit ce qu'elle contiendra, mène à l'étape précédente quand elle manque, et propose elle aussi un exemple.
-- Si vous avez déjà un tableur, [Importer et exporter des fichiers](importer-exporter.md) évite la saisie à la main.
+- Si vous avez déjà un tableur de bénévoles ou une édition à reprendre, [Importer et exporter des fichiers](importer-exporter.md) évite la saisie à la main : le CSV pour les animateurs, le fichier YAML pour tout le reste.
 
 ## Créer vos typologies
 
@@ -44,9 +44,7 @@ Chaque stand a sa fiche, qui réunit :
 
 - son **modèle récurrent**, en haut, modifiable sur place : la règle que le stand garde, par exemple « chaque samedi et dimanche de 10 h à 18 h, effectif 2 ». Enregistré, il est posé en plages sur les jours de l'événement ;
 - ses **plages datées**, en dessous : une ligne par ouverture ou fermeture, avec son origine, *modèle* (posée par le modèle) ou *saisie* (ajoutée à la main). On filtre par jour, on ajoute une plage, on en retire une ou tout un jour. Une plage posée par le modèle et retirée à la main ne revient pas, jusqu'à ce que les règles du modèle changent ;
-- ses anomalies d'ouverture, dont une fenêtre déclarée à une heure qu'aucune vacation ne couvre ;
 - ses sièges après calcul ;
-- la comparaison avec un autre stand ;
 - l'historique de ses modifications.
 
 Pendant un calcul, ou quand les stands sont figés (phase *Calcul*, ou *Publiée* sans déblocage), la fiche se lit sans rien pouvoir écrire, et un bandeau dit pourquoi. Un lecteur voit tout, sans bouton. Si quelqu'un a modifié le stand entre-temps, l'enregistrement du modèle propose de recharger ou d'écraser en connaissance de cause.

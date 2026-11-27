@@ -5,11 +5,9 @@ twin: regles/calendrier-et-horaires
 
 You lay down the timeslots of the edition (the shifts the solve will fill) and set when each stand is open.
 
-The calendar and the stand hours are kept on the same page, *Calendar* (*Prepare* group). A **shift** is a real slice of work: there is no other kind of timeslot.
+The calendar is kept on the *Calendar* page (*Prepare* group), a stand's hours on its fiche. A **shift** is a real slice of work: there is no other kind of timeslot.
 
 ## Lay down timeslots: the generator and timeslots by hand
-
-![The stand hours grid](/images/fr/horaires.webp "The stand hours")
 
 The grid is produced by one **generator**, the *Generate timeslots* menu. It starts from one of three sources:
 
@@ -28,24 +26,18 @@ Whatever the source, the gesture is the same: a figures **preview** that writes 
 
 Removing a date from a template's calendar does not delete its timeslots: they stay, the date is simply no longer governed. Templates can also be recognised in a grid that is already written (*Generate timeslots* menu). A single timeslot is added or edited by hand, in the list, as before.
 
-The page describes the grid in place and shows its consistency check as a banner, re-read on its own at each visit and after each write. Each timeslot counts the open stands and the seats it carries, with a link to the stand hours that day. Public holidays are marked on entry, and the check reminds you that a minor does not work on one when the edition has one that day.
+The page describes the grid in place and shows its consistency check as a banner, re-read on its own at each visit and after each write. Each timeslot counts the open stands and the seats it carries, with a link to the list of stands. Public holidays are marked on entry, and the check reminds you that a minor does not work on one when the edition has one that day.
 
 ## Set the stand opening hours
 
-The *Stand hours* tab is a stand × timeslot grid, entered and reviewed in the same place as in a spreadsheet.
+A stand's hours are set on its fiche (*Stands*, then the stand's name), and nowhere else: there is no stand × timeslot grid any more.
 
-- Paste a block, copy a day over, take the row above, apply a cell to its whole column.
-- An empty cell is closed.
-- Behind each headcount, thin bars show the opening retained, the stand's hours and the band of the day's consigne.
-- A click on a cell explains in one sentence where its opening comes from, and leads to the stand's profile, the template or the consigne.
-- A public holiday is marked there by its name, without forbidding anything.
-- The same grid can be entered by template.
+- Its **recurring model**, at the top, says its normal regime ("every Saturday and Sunday from 10:00 to 18:00, headcount 2").
+- Its **dated windows**, below, are what the solve reads: one line per opening or closure, marked *model* or *typed*. You add one by hand, and remove a window or a whole day.
+- A day with no window, the stand is open all day.
+- The fiche says how many open days and seats the stand carries, before any solve. A stand never open or a window outside every timeslot is counted on the home page and in the calendar check.
 
-Above the grid, the summary and the three usual hour-entry mistakes are worth checking before starting a solve.
-
-A last view compares two to eight stands with a reference stand, day by day and cell by cell, then opens the copy of the reference's hours to the others.
-
-An organiser's workbook grid can also arrive as is by file: see [Import and export files](importer-exporter.md#importer-la-grille-des-stands).
+An organiser's workbook grid is no longer imported as CSV: it is rewritten in the edition's YAML file, see [Moving from 3.x to 4.0](../installer/passer-a-la-4-0.md#les-imports-csv-des-référentiels-et-de-la-grille-des-stands-sont-retirés).
 
 ## When a consigne from the authority changes the hours
 

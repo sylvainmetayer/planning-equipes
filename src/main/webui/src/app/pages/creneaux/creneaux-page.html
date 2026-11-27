@@ -1,19 +1,4 @@
 <h1 class="page-title" i18n="@@nav.link.calendrier">Calendrier</h1>
-<mat-button-toggle-group class="page-onglets" [value]="ongletsPage.onglet()" (change)="changerOnglet($event)"
-                         aria-label="Onglet de la page Calendrier" i18n-aria-label="@@calendrier.onglet.label">
-  <mat-button-toggle value="creneaux">
-    <mat-icon>schedule</mat-icon>
-    <ng-container i18n="@@nav.link.creneaux">Créneaux</ng-container>
-  </mat-button-toggle>
-  <mat-button-toggle value="horaires">
-    <mat-icon>door_front</mat-icon>
-    <ng-container i18n="@@nav.link.ouvertures">Horaires des stands</ng-container>
-  </mat-button-toggle>
-</mat-button-toggle-group>
-
-@if (ongletsPage.onglet() === 'horaires') {
-  <app-ouvertures-page />
-} @else {
 
 <app-gel-notice family="CRENEAUX" />
 
@@ -72,9 +57,9 @@
             </li>
           }
         </ul>
-        <a matButton routerLink="/creneaux" [queryParams]="{ onglet: 'horaires' }">
+        <a matButton routerLink="/stands">
           <mat-icon>storefront</mat-icon>
-          <ng-container i18n="@@creneaux.controle.versOuvertures">Voir les horaires des stands</ng-container>
+          <ng-container i18n="@@creneaux.controle.versOuvertures">Voir les stands</ng-container>
         </a>
       }
     </details>
@@ -122,11 +107,6 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@creneaux.ajouterUn">Ajouter un créneau</ng-container>
     </button>
-    <!-- On an empty grid the empty state below carries « Importer »: one
-         button of that name on the screen. -->
-    @if (store.creneaux().length > 0) {
-      <app-import-button card="creneaux" [disabled]="gridLocked()" />
-    }
     <button matButton type="button" [disabled]="creneauxAffiches().length === 0" (click)="exportList()">
       <mat-icon>download</mat-icon>
       <ng-container i18n="@@referentiel.exporterListe">Exporter cette liste</ng-container>
@@ -213,8 +193,7 @@
           <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@creneaux.column.ouvertures">Stands ouverts · postes</th>
           <td mat-cell *matCellDef="let creneau">
             @let ouvert = ouvertures().get(creneau.id);
-            <a routerLink="/creneaux" [queryParams]="{ onglet: 'horaires', du: creneau.date, au: creneau.date }"
-               [attr.aria-label]="openingsLabel(creneau)">{{ ouvert?.stands ?? 0 }} · {{ ouvert?.postes ?? 0 }}</a>
+            <a routerLink="/stands" [matTooltip]="openingsLabel(creneau)" [attr.aria-label]="openingsLabel(creneau)">{{ ouvert?.stands ?? 0 }} · {{ ouvert?.postes ?? 0 }}</a>
           </td>
         </ng-container>
         <ng-container matColumnDef="actions" stickyEnd>
@@ -238,11 +217,9 @@
     @if (store.creneaux().length === 0) {
       <app-empty-state [addDisabled]="gridLocked()" (add)="openCreate()">
         <ng-container i18n="@@creneaux.empty">Les créneaux donnent ses dates à l'édition : commencez ici, par un gabarit posé sur le calendrier ci-dessus.</ng-container>
-        <app-import-button empty-state-import card="creneaux" [disabled]="gridLocked()" />
       </app-empty-state>
     } @else if (creneauxAffiches().length === 0) {
       <p class="empty-hint" i18n="@@filter.noMatch">Aucune ligne ne correspond au filtre.</p>
     }
   </mat-card-content>
 </mat-card>
-}

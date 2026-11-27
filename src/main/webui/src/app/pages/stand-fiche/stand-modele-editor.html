@@ -1,7 +1,7 @@
 <form (ngSubmit)="save()" class="stand-modele">
   <p class="empty-hint" i18n="@@standFiche.modele.aide">Sans règle, le stand est ouvert sur chaque créneau. Une règle vaut tous les jours, ou certains seulement. Enregistrée, elle est posée en plages ci-dessous ; celles saisies restent.</p>
   <app-horaire-regles-editor [horaires]="horaires()" [effectifMax]="stand().effectifMax" [effectifMin]="stand().effectifMin"
-                             [jours]="jours()" [exceptions]="stand()" [disabled]="locked() || lectureSeule()"
+                             [jours]="jours()" [disabled]="locked() || lectureSeule()"
                              (horairesChange)="change($event)" />
   @if (!lectureSeule()) {
     <div class="stand-modele-actions">

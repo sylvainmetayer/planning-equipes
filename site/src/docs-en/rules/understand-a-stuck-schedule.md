@@ -40,15 +40,15 @@ When a rule ran into exceptions entered by hand, they are named one by one, alon
 Under each problem, the application lists the real actions that fix it, in the order the rule catalogue gives them, each with its reason.
 
 - "Qui peut tenir ce siège ?" (who can hold this seat?) opens on the spot, and "Place" fills the seat without leaving the Diagnostic.
-- The other actions open the screen already positioned: the Skills grid on the stand's game category, the stand's profile, the rule's row to set its ceiling, the Stand hours, the load per person, the locks, the adjustments involved shown alone, the missing data of a floor.
+- The other actions open the screen already positioned: the Skills grid on the stand's game category, the stand's profile, the rule's row to set its ceiling, the load per person, the locks, the adjustments involved shown alone, the missing data of a floor.
 - "Baisser l'importance" (lower the importance) always comes last, and disappears when the importance is already at its lowest.
 - A day already under way offers nothing that would change it.
 
 Other links connect a symptom to the screen that handles it: an empty seat, a break without relay or a stand on the map open the seat panel without leaving the Planning page; a game category bottleneck or a rare skill lead to the staff who hold it; a warning on save reopens the profile; a cause of infeasibility opens the timeslot or stand concerned.
 
-## Spot single points of failure: the Fragility tab
+## Spot single points of failure: the Fragility section
 
-The *Fragility* tab says who is a single point of failure. For each person, it lists the timeslots that would fall below the minimum headcount if they dropped out, and above all those nobody else could take over. It also lists the stands held by a single skilled person.
+The Diagnostic's *Risks* tab gathers three readings, from top to bottom: fragility, "To train" (see [Know how many people to recruit](dimensionner-l-equipe.md)) and tension. The *Fragility* section says who is a single point of failure. For each person, it lists the timeslots that would fall below the minimum headcount if they dropped out, and above all those nobody else could take over. It also lists the stands held by a single skilled person.
 
 Per person, three actions:
 
@@ -58,9 +58,9 @@ Per person, three actions:
 
 Their name leads to their profile.
 
-## See the tension hour by hour: the Tension tab
+## See the tension hour by hour: the Tension section
 
-The *Tension* tab crosses the day with the time band, on the saved schedule. In each cell: the people actually free minus the seats left empty, crossed with the plan's fragility.
+The *Tension* section, at the foot of the *Risks* tab, crosses the day with the time band, on the saved schedule. In each cell: the people actually free minus the seats left empty, crossed with the plan's fragility.
 
 - One column per start hour of the grid: an evening that ends at 22:00 on weekdays and at midnight on Saturday stays a single column.
 - The colour follows the sign of the margin: red below zero, green above.

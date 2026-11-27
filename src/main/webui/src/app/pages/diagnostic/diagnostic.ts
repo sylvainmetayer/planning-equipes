@@ -2,21 +2,24 @@
 
 /**
  * The four tabs, and the values of the `onglet` query param: what blocks, what
- * is missing, where it is tight, what is fragile. Two former tabs live on
+ * is missing, what is at risk, whether it is legal. Former tabs live on
  * elsewhere, their addresses redirected by the routes: the bench (`banc`) is
- * « Qui peut tenir ce siège ? » in the Siège panel, and « À former »
- * (`former`) a section at the foot of Besoin. Tension is the former Marge
- * disponible screen's « après » and « tension » readings, merged.
+ * « Qui peut tenir ce siège ? » in the Siège panel, and `fragilite`,
+ * `former` and `tension` are the three sections of Risques.
  */
-export type OngletDiagnostic = 'problemes' | 'besoin' | 'tension' | 'fragilite' | 'conformite';
+export type OngletDiagnostic = 'problemes' | 'besoin' | 'risques' | 'conformite';
 
 export const ONGLETS_DIAGNOSTIC: readonly OngletDiagnostic[] = [
   'problemes',
   'besoin',
-  'tension',
-  'fragilite',
+  'risques',
   'conformite',
 ];
+
+/** The sections of the Risques tab, in reading order: `section=` scrolls to one. */
+export type SectionRisques = 'fragilite' | 'former' | 'tension';
+
+export const SECTIONS_RISQUES: readonly SectionRisques[] = ['fragilite', 'former', 'tension'];
 
 /** Reads the `onglet` query param; anything unknown is the problems tab, the one the page opens on. */
 export function readOnglet(value: string | null): OngletDiagnostic {

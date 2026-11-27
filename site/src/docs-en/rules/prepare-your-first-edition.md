@@ -13,7 +13,7 @@ The type of event changes the priorities: see [a festival schedule](/planning-fe
 
 - Choose the working edition in the edition bar, above every page. Two browser tabs can work on two editions at once; they never mix. To create one, see [Chain editions](enchainer-les-editions.md).
 - On an empty edition, the home screen offers a "Get started" block: import a file, start from a previous edition or load an example. Each empty reference data list says what it will contain, leads to the previous step when it is missing, and also offers an example.
-- If you already have a spreadsheet, [Import and export files](importer-exporter.md) saves you typing by hand.
+- If you already have a volunteers' spreadsheet or an edition to take back, [Import and export files](importer-exporter.md) saves you typing by hand: the CSV for staff, the YAML file for everything else.
 
 ## Create your game categories
 
@@ -47,9 +47,7 @@ Each stand has its fiche, which gathers:
 
 - its **recurring model**, at the top, editable in place: the rule the stand keeps, for instance "every Saturday and Sunday from 10:00 to 18:00, headcount 2". Once saved, it is laid as windows on the days of the event;
 - its **dated windows**, below: one line per opening or closure, with its origin, *model* (laid by the model) or *typed* (added by hand). You filter by day, add a window, remove one or a whole day. A window laid by the model and removed by hand does not come back, until the model's rules change;
-- its opening anomalies, including a window declared at a time that no shift covers;
 - its seats after a solve;
-- the comparison with another stand;
 - the history of its changes.
 
 During a solve, or when the stands are frozen (the *Solve* phase, or *Published* without unblocking), the fiche can be read but not written, and a banner says why. A reader sees everything, with no button. If somebody changed the stand in the meantime, saving the model offers to reload or overwrite knowingly.

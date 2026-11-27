@@ -36,7 +36,7 @@ export const lienStaffing = (): HelpLink => ({
 
 export const lienFragilite = (): HelpLink => ({
   route: '/diagnostic',
-  queryParams: { onglet: 'fragilite' },
+  queryParams: { onglet: 'risques', section: 'fragilite' },
   label: $localize`:@@aide.link.fragilite:Fragilité du planning`,
 });
 
@@ -44,12 +44,6 @@ export const lienPauses = (): HelpLink => ({
   route: '/diagnostic',
   queryParams: { onglet: 'problemes' },
   label: $localize`:@@aide.link.pausesProblemes:Pauses sans relais (Problèmes)`,
-});
-
-export const lienHoraires = (): HelpLink => ({
-  route: '/creneaux',
-  queryParams: { onglet: 'horaires' },
-  label: $localize`:@@nav.link.ouvertures:Horaires des stands`,
 });
 
 export const lienTypologies = (): HelpLink => ({

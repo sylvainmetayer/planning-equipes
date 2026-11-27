@@ -15,7 +15,6 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -53,10 +52,8 @@ import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { ImportedRowsFilter } from '../../shared/imported-rows-filter';
 import { TableFilter } from '../../shared/table-filter';
 import { StandBulkEditData, StandBulkEditDialog } from './stand-bulk-edit-dialog';
-import { MAX_STANDS_COMPARES, MIN_STANDS_COMPARES } from '../ouvertures/comparaison-ouvertures';
 import { StandCreationDialog } from './stand-creation-dialog';
 import { StandFormData, StandFormDialog } from './stand-form-dialog';
-import { ImportButton } from '../../shared/import-button';
 import {
   StandSortContext,
   coverageRate,
@@ -101,13 +98,11 @@ const SORTED_COLUMNS = [
   selector: 'app-stands-page',
   imports: [
     ImportedRowsFilter,
-    ImportButton,
     MatCardModule,
     MatButtonModule,
     MatButtonToggleModule,
     MatCheckboxModule,
     MatIconModule,
-    MatMenuModule,
     MatSortModule,
     MatTableModule,
     MatTooltipModule,
@@ -528,18 +523,6 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
   protected emplacementLabel(stand: Stand): string {
     return stand.emplacement?.nom || '—';
   }
-
-  /**
-   * The link to the openings comparator for the ticked stands, or null outside
-   * two to eight — one stand has nothing to be compared with, and past eight
-   * the Consulter grid, filtered, is the tool.
-   */
-  protected readonly comparaisonParams = computed(() => {
-    const ids = this.selection.selectedIds();
-    return ids.length >= MIN_STANDS_COMPARES && ids.length <= MAX_STANDS_COMPARES
-      ? { onglet: 'horaires', vue: 'comparer', stands: ids.join(',') }
-      : null;
-  });
 
   protected editSelection(): void {
     const selectionnes = new Set(this.selection.selectedIds());

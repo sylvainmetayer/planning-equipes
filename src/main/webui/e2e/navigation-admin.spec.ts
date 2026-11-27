@@ -64,15 +64,11 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/animateurs?onglet=competences', marker: 'Compétences', sheet: 'competences-legende' },
   { path: '/creneaux', marker: 'Créneaux (', sheet: 'creneau-probleme' },
   { path: '/stands?onglet=typologies', marker: 'Typologies (' },
-  // Fichiers: three tabs, and under Importer one card per file (the
-  // referentials share a card, the two older imports are rendered as they are).
+  // Fichiers: three tabs, and under Importer one card per file (the scenario,
+  // the animateurs, the examples and the validator).
   { path: '/fichiers', marker: 'Fichiers', sheet: 'fichiers-onglets' },
-  { path: '/fichiers?cible=typologies', sheet: 'imports-onglets' },
-  { path: '/fichiers?cible=stands' },
-  // Les deux cartes du calendrier partagent la carte des référentiels, et
-  // leur marqueur vise ce que seule la carte visée dit.
-  { path: '/fichiers?cible=creneaux', marker: 'heureDebut' },
-  { path: '/fichiers?cible=journees-types', marker: 'relais repas' },
+  // A card withdrawn in 4.0 lands on the scenario card.
+  { path: '/fichiers?cible=stands', marker: 'Un fichier scénario', sheet: 'imports-onglets' },
   {
     // Le titre de l'écran est celui des onglets : le marqueur vise ce que
     // seule cette carte-ci dit.
@@ -80,7 +76,6 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     marker: 'date de naissance est obligatoire',
     sheet: 'import-compteurs',
   },
-  { path: '/fichiers?cible=grille-stands', sheet: 'import-compteurs' },
   { path: '/fichiers?cible=scenario', marker: 'Un fichier scénario' },
   { path: '/fichiers?cible=exemples', marker: 'Charger cet exemple', sheet: 'exemples-select' },
   {
@@ -108,14 +103,10 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   },
   { path: '/journee?vue=personne&rendu=frise', sheet: 'personne-frise-ligne' },
   { path: '/journee?vue=personne&rendu=synthese', marker: 'Écart méd.', sheet: 'planning-grille' },
-  {
-    path: '/creneaux?onglet=horaires',
-    marker: 'Horaires des stands',
-    sheet: 'ouvertures-synthese',
-  },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },
-  // « À former » is the foot of Besoin now: the old tab lands there.
-  { path: '/diagnostic?onglet=former', marker: 'À former', sheet: 'staffing-former' },
+  // Fragilité, « À former » and Tension are the three sections of Risques: the old tabs land there.
+  { path: '/diagnostic?onglet=risques', marker: 'Fragilité', sheet: 'fragilite-message' },
+  { path: '/diagnostic?onglet=former', marker: 'À former', sheet: 'risques-titre' },
   {
     path: '/diagnostic?onglet=tension',
     marker: 'Tension, tranche par tranche',
@@ -124,7 +115,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/diagnostic?onglet=fragilite', marker: 'Fragilité', sheet: 'fragilite-message' },
   { path: '/aujourdhui', marker: "Aujourd'hui", sheet: 'jour-j-entete' },
   { path: '/mesures', marker: "Mesures d'édition", sheet: 'realise-toolbar' },
-  // The former Marge disponible lands on the Diagnostic's Tension tab.
+  // The former Marge disponible lands on the Tension section of the Diagnostic's Risques tab.
   { path: '/marge?mode=tension', marker: 'Tension, tranche par tranche' },
   // The former timeline lands on a fiche's planning section; its own sheet is gone.
   { path: '/animateurs/E2E-A?section=timeline', marker: 'Planning', sheet: 'timeline-day' },

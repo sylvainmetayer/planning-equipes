@@ -2,50 +2,23 @@
 
 Vous savez ce que chaque import CSV écrit, comment une ligne reconnaît une fiche existante, quels contrôles tournent avant l'écriture et pourquoi certains choix (colonnes absentes, dates sur deux chiffres, remplacement complet refusé) protègent les données d'une édition.
 
-Le scénario YAML décrit un événement entier et remplace le référentiel de l'édition ([Le fichier de scénario YAML](scenario-yaml.md)). Les imports CSV font l'inverse : ils ne touchent qu'un référentiel, ligne par ligne, et n'effacent rien par défaut. C'est ce qu'on utilise quand un organisateur arrive avec son tableur de bénévoles. Tout est lu et écrit dans l'édition désignée par `X-Edition-Id`.
+Le scénario YAML décrit un événement entier et remplace le référentiel de l'édition ([Le fichier de scénario YAML](scenario-yaml.md)). Le seul import CSV qui reste fait l'inverse : il ne touche que les animateurs, ligne par ligne, et n'efface rien par défaut. C'est ce qu'on utilise quand un organisateur arrive avec son tableur de bénévoles. Tout est lu et écrit dans l'édition désignée par `X-Edition-Id`.
 
 Un tableur de bénévoles est le cas typique ; pour décider s'il faut quitter le tableur, voir [tableur ou logiciel de planning](/tableur-ou-logiciel-de-planning/).
 
-L'onglet Importer de l'écran Fichiers (`/fichiers`) réunit sept imports CSV, une carte chacun, la carte ouverte étant portée par `?cible=`. Cinq sont des référentiels courts (typologies, emplacements, stands, créneaux, gabarits), deux sont des imports plus riches (animateurs, grille des stands). Chaque écran de référentiel ouvre la même carte dans un dialogue par son bouton « Importer ». Les routes sont `/api/<référentiel>/import-csv/analyse` (aperçu, aucune écriture), `/api/<référentiel>/import-csv` (écriture) et `/api/<référentiel>/import-csv/exemple` ; la liste exacte est dans le contrat OpenAPI ([Les référentiels côté API](api-referentiels.md)).
+L'onglet Importer de l'écran Fichiers (`/fichiers`) réunit le scénario YAML, le CSV des animateurs, les exemples et le validateur, une carte chacun, la carte ouverte étant portée par `?cible=`. Le bouton « Importer » de l'écran Animateurs ouvre la carte du CSV dans un dialogue. Les routes sont `/api/animateurs/import-csv/analyse` (aperçu, aucune écriture), `/api/animateurs/import-csv` (écriture) et `/api/animateurs/import-csv/exemple` ; la liste exacte est dans le contrat OpenAPI ([Les référentiels côté API](api-referentiels.md)).
 
-## Ce que partagent les cinq référentiels courts
+## Ce que la 4.0 a retiré
 
-| Référentiel | Colonnes obligatoires | Facultatives |
-| --- | --- | --- |
-| Typologies | `code`, `libelle` | `polyvalent` (l'ancien en-tête `ninja` est encore lu en 4.x) |
-| Emplacements | `code`, `nom` | `latitude`, `longitude` |
-| Stands | `code`, `nom`, `typologies` | `effectifMin`, `effectifMax` |
-| Créneaux | `date`, `heureDebut`, `heureFin` | `couverturePause` |
-| Gabarits | `nom`, `vacations` | `dates` |
+Six imports ont disparu : le CSV des typologies, celui des emplacements, des stands, des créneaux, des journées types, et la matrice de la grille des stands ([décision 0128](repo:docs/decisions/0128-le-yaml-est-le-classeur-complet-le-csv-ne-sert-qu-aux-animateurs.md)). Le fichier YAML décrit l'édition entière ; l'écrire une fois, c'est l'écrire pour tous les référentiels, dans l'ordre où l'application l'applique, avec un contrôle de cohérence que six formats séparés ne pouvaient pas offrir. Le CSV des animateurs reste, parce qu'un tableur de bénévoles est le seul fichier que les organisateurs tiennent déjà et qui porte des personnes.
 
-Les en-têtes se reconnaissent à la casse et aux accents près, et plusieurs valeurs dans une case se séparent par `|`, `;` ou une virgule. Les imports se rangent dans l'ordre où les données se tiennent, et les dates passent avant les animateurs : un jour d'indisponibilité importé n'est conservé que si l'édition porte déjà le créneau correspondant.
-
-- Une colonne absente, ou une case vide, n'efface rien. Un fichier de trois colonnes qui renomme des stands ne touche ni leurs horaires, ni leur emplacement, ni leurs indicateurs. C'est la doctrine de l'import additif de la grille des compétences ([ADR 0030](repo:docs/decisions/0030-grille-competences-import-additif.md)) appliquée à une fiche.
-- Une ligne se reconnaît à son `code`, sinon à son nom, et une ligne connue est mise à jour au lieu d'être refusée : réimporter un fichier corrigé est le geste normal. La colonne `code` est obligatoire mais une case peut rester vide : la ligne désigne alors la seule ligne de l'édition qui porte ce nom (ce libellé, pour une typologie) à la casse et aux accents près, et en garde le code. Deux homonymes refusent la ligne en demandant un code, un nom inconnu crée une ligne.
-- Aucune colonne `id` n'est lue et l'export n'en écrit plus : les identifiants sont numérotés dans chaque édition ([ADR 0050](repo:docs/decisions/0050-identifiants-generes-par-edition.md)) et `S4` désigne un autre stand dans l'édition voisine. Un fichier avec une colonne `id` et sans colonne `code` (un export ancien) est refusé, avec la consigne de renommer l'en-tête.
-- Un code est unique dans l'édition, ne contient ni virgule, ni point-virgule, ni barre verticale, et n'a pas la forme d'un identifiant de son référentiel (`S4` pour un stand), pour ne jamais se confondre avec l'identifiant que les écrans affichent.
-- Une typologie qu'un stand cite sans qu'elle existe est créée, libellé et code égaux à la valeur citée, et l'aperçu la nomme avant l'écriture. La colonne `typologies` cite une typologie par son code, ou par son libellé quand elle n'a pas de code (c'est ce que l'export écrit). Un stand sans effectif tient à une personne, ce que l'aperçu dit aussi.
-
-L'aperçu n'écrit rien. L'écriture relit le fichier et refait tous les contrôles. Chaque ligne fautive est refusée seule, avec sa raison, sans bloquer les autres, et une ligne refusée ne laisse rien derrière elle, pas même la typologie qu'elle citait.
-
-Un collage depuis un tableur est accepté sur chaque carte : les cellules, séparées par des tabulations, sont réécrites en CSV à `;` avec chaque cellule entre guillemets, puis envoyées comme un fichier `collage.csv`. Les guillemets sont nécessaires, car le serveur reconnaît le séparateur en comptant `,`, `;` et la tabulation hors guillemets et ne doit pas prendre les virgules de `09:00-12:00, 12:00-13:00 R` pour lui. Une fois l'import écrit, « Voir les N lignes importées » ouvre l'écran du référentiel filtré par `?ids=` ; « Tout afficher » retire le filtre.
-
-### Créneaux et gabarits
-
-Ces deux référentiels n'ont pas de `code` que le fichier nomme, ce qui décide de leur clé :
-
-- Un créneau est reconnu à son triplet `(date, heureDebut, heureFin)`. Son identifiant est engendré par la base et un import de scénario le réattribue, donc il ne voyage pas. Une ligne déjà présente n'écrit que son `couverturePause`, le reste étant la clé. Une fin antérieure ou égale au début passe minuit, comme dans le formulaire, mais un début égal à la fin est refusé : c'est une vacation sans durée.
-- Un gabarit est reconnu à son `nom`, à la casse près. Ses `vacations` tiennent sur une ligne (`09:00-12:00, 12:00-13:00 R, 14:00-20:00`, `R` marquant un relais repas), la même écriture compacte que celle des outils MCP. Ses `dates` sont fusionnées dans le calendrier : une date que le fichier nomme change de gabarit, une date qu'il ne nomme pas garde la sienne.
-
-L'import des gabarits ne déplace aucun créneau. Un modèle est un générateur, jamais la vérité ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)) : matérialiser le calendrier reste le geste explicite « Appliquer » de l'écran Calendrier, qui montre d'abord ce qu'il changerait. C'est aussi pourquoi cet import ne marque pas l'édition comme modifiée depuis la dernière résolution : rien de ce que le solveur lit n'a bougé.
-
-### Dates et heures
-
-Les dates se lisent dans les dialectes qu'un tableur écrit (`2026-07-10`, `10/07/2026`, `10-07-2026`, `10.07.2026`), les heures aussi (`09:00`, `9:00`, `9h`, `9h30`, `9`, `09:00:00`). Une année sur deux chiffres est résolue vers l'avenir (les dix dernières années et les quatre-vingt-neuf prochaines) : sur une date d'édition, `27` est la saison prochaine, pas 1927. C'est l'inverse d'une date de naissance, détaillée plus bas.
+Leurs dix-huit routes (`/api/<référentiel>/import-csv`, `/analyse` et `/exemple`, pour les cinq référentiels, et `/api/stands/import-grille` avec ses deux sœurs) répondent `410 Gone`, quel que soit le corps envoyé, avec un message qui renvoie vers l'import YAML : un script écrit pour la 3.x apprend où aller au lieu de se heurter à un `404`. Elles ne lisent ni n'écrivent rien et n'ont plus de ligne au journal des actions. Sur l'écran, un signet vers l'une de leurs cartes (`/fichiers?cible=stands`) tombe sur la carte Scénario. Les exports CSV ne sont pas touchés : ils servent à un tableur, et seul celui des animateurs se réimporte.
 
 ## L'import CSV des animateurs
 
 Un import partiel : il ne touche que les animateurs, une ligne à la fois, et ne supprime rien tant qu'on ne le lui demande pas. Carte Animateurs de Fichiers (`/fichiers?cible=animateurs`), bouton « Importer » de la page Animateurs, routes `POST /api/animateurs/import-csv/analyse` (aperçu en lecture pure) et `POST /api/animateurs/import-csv` (écriture).
+
+Un collage depuis un tableur est accepté sur la carte : les cellules, séparées par des tabulations, sont réécrites en CSV à `;` avec chaque cellule entre guillemets, puis envoyées comme un fichier `collage.csv`. Les guillemets sont nécessaires, car le serveur reconnaît le séparateur en comptant `,`, `;` et la tabulation hors guillemets et ne doit pas prendre une virgule dans une case pour lui. Une fois l'import écrit, « Voir les N lignes importées » ouvre l'écran des animateurs filtré par `?ids=` ; « Tout afficher » retire le filtre.
 
 ![Import CSV des animateurs : prévisualiser puis écrire](repo:docs/diagrammes/import-csv.svg)
 
@@ -68,6 +41,10 @@ Le fichier doit être en UTF-8. Excel en français enregistre encore en Windows-
 L'écran propose une correspondance à partir des en-têtes, en français comme en anglais, puis laisse tout modifier, y compris tout effacer (une correspondance vide envoyée explicitement est respectée). Elle désigne les colonnes par leur rang, jamais par leur nom : un fichier peut porter deux fois le même en-tête, ou aucun. Une colonne déjà prise par un autre champ est déplacée, jamais partagée. Une colonne non associée n'est pas une colonne vide : le champ n'est pas touché sur les fiches existantes, ce qui rend un fichier de rattrapage à trois colonnes inoffensif.
 
 `competences`, `souhaits` et `joursIndisponibles` acceptent plusieurs valeurs par cellule, séparées par `|`, `;`, `,` ou un retour à la ligne, jamais `/` que les dates `18/07/2030` utilisent. Une compétence s'écrit `typologie` ou `typologie:REFERENT`.
+
+### Dates et heures
+
+Les dates se lisent dans les dialectes qu'un tableur écrit (`2026-07-10`, `10/07/2026`, `10-07-2026`, `10.07.2026`), les heures aussi (`09:00`, `9:00`, `9h`, `9h30`, `9`, `09:00:00`). Une année sur deux chiffres est résolue vers l'avenir (les dix dernières années et les quatre-vingt-neuf prochaines) : sur une date d'édition, `27` est la saison prochaine, pas 1927. C'est l'inverse d'une date de naissance, détaillée plus bas.
 
 ### L'année sur deux chiffres est lue, et dite
 
@@ -128,18 +105,6 @@ L'aperçu chiffre ce que la suppression emporte (places libérées, verrouillage
 ### Deux appels, une transaction
 
 L'analyse et l'écriture sont deux endpoints, et le second reçoit le fichier plutôt que le rapport : il relit tout et rejoue chaque vérification, si bien qu'un rechargement de page, un rejeu ou un corps fabriqué à la main ne fait passer aucune ligne devant un contrôle. L'écriture est atomique (une seule transaction), et le rapport n'annonce jamais 148 lignes écrites après un retour arrière. Le fichier est traité en mémoire et jamais écrit sur disque, car il porte des noms, des dates de naissance et parfois des mineurs. Deux plafonds le bornent : 1 000 000 de caractères et 5 000 lignes de données.
-
-## L'import de la grille des stands
-
-La carte Grille des stands (`/fichiers?cible=grille-stands`, `POST /api/stands/import-grille/analyse` puis `POST /api/stands/import-grille`) importe la matrice que l'organisateur tient dans son classeur : stands en lignes, jours et créneaux en colonnes, un effectif par case. Il transpose les règles de l'import des animateurs (deux appels, rejoué, en mémoire, sans suppression) et diffère sur trois points ([ADR 0022](repo:docs/decisions/0022-import-de-la-grille-des-stands.md)) :
-
-- l'identité d'une ligne est le code du stand, sinon son nom exact, jamais son identifiant ;
-- une colonne sans créneau est ignorée et listée, pas refusée ;
-- un créneau sans colonne garde la case actuelle du stand, segments compris : un stand qui n'y ouvre que de 14 h à 15 h, ou à deux effectifs successifs, en ressort tel quel.
-
-Une colonne plus étroite que son créneau (sept tranches du classeur sous quatre ou cinq créneaux) écrit une fenêtre à ses propres bornes et laisse le reste du créneau en l'état : le classeur s'importe colonne pour colonne et la grille de saisie montre ensuite les mêmes colonnes. Une bande dont la minute n'a qu'un chiffre (`9:5`) est refusée plutôt que complétée. Le bouton « Télécharger la grille actuelle comme modèle » rend l'édition telle qu'elle est, réimportable telle quelle ; le fichier d'exemple est servi par `GET /api/stands/import-grille/exemple`. Le plafond est de 2 000 lignes.
-
-Le modèle écrit ses bandes `10h00-12h00` et non `10:00-12:00`, volontairement : Excel retype `13:00-16:00` en la date `30/11/1999 13:16:00`, la bande est perdue et le fichier revient avec des en-têtes qui ne nomment plus aucun créneau. Les deux formes sont lues à l'import, seule celle en `h` survit à un aller-retour par un tableur, et un test verrouille l'absence de `:` dans la ligne des bandes.
 
 ## La grille des compétences ne passe plus par un fichier
 

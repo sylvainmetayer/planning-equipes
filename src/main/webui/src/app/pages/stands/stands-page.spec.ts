@@ -468,18 +468,6 @@ describe('StandsPage table', () => {
     return rowMenuItem(fixture, racine().querySelectorAll('tbody tr')[indexLigne], nom);
   }
 
-  /** An entry of the header's « Plus » menu, rendered in the overlay once opened. */
-  async function moreMenuItem(libelle: string): Promise<HTMLButtonElement> {
-    racine().querySelector<HTMLButtonElement>('button.stands-plus')!.click();
-    await fixture.whenStable();
-    const panel = Array.from(document.querySelectorAll('.mat-mdc-menu-panel')).at(-1);
-    const item = Array.from(
-      panel?.querySelectorAll<HTMLButtonElement>('.mat-mdc-menu-item') ?? [],
-    ).find((each) => each.textContent?.includes(libelle));
-    expect(item, `entrée « ${libelle} » du menu Plus`).toBeDefined();
-    return item!;
-  }
-
   function boutonCarte(libelle: string): HTMLButtonElement {
     const bouton = Array.from(racine().querySelectorAll('mat-card-actions button')).find((each) =>
       each.textContent!.includes(libelle),
@@ -632,7 +620,7 @@ describe('StandsPage table', () => {
   it('distinguishes an empty referential from a filter that matched nothing', async () => {
     await rendre([]);
     // Its actions are the empty state's alone: the header leaves them out.
-    expectOnlyInEmptyState(racine(), ['Ajouter', 'Importer']);
+    expectOnlyInEmptyState(racine(), ['Ajouter']);
     // The step before the stands is named, and still to do.
     const vide = racine().querySelector('.empty-state')!;
     expect(vide.textContent).toContain('Un stand propose des typologies');
@@ -756,7 +744,7 @@ describe('StandsPage table', () => {
     expect(racine().querySelectorAll('th[mat-sort-header]')).toHaveLength(7);
   });
 
-  it('keeps in its header Ajouter, Importer and Édition groupée, the rest under « Plus »', async () => {
+  it('keeps in its header Ajouter and Édition groupée, and no menu « Plus » any more', async () => {
     await rendre([stand({ id: 's1', nom: 'Loup-Garou' }), stand({ id: 's2', nom: 'Dixit' })]);
 
     const header = Array.from(
@@ -766,9 +754,10 @@ describe('StandsPage table', () => {
       .filter((texte) => texte !== '');
     expect(header.some((texte) => texte.endsWith('Compacter les horaires'))).toBe(false);
     expect(header.some((texte) => texte.endsWith('Saisir en grille'))).toBe(false);
-    expect((await moreMenuItem('Saisir en grille')).getAttribute('href')).toBe(
-      '/creneaux?onglet=horaires&vue=saisie',
-    );
+    // The CSV import of the stands and of their grid left in 4.0: the YAML replaces them,
+    // and the « Plus » menu that carried it went with it.
+    expect(header.some((texte) => texte.endsWith('Importer'))).toBe(false);
+    expect(racine().querySelector('button.stands-plus')).toBeNull();
 
     // Nothing ticked: the bulk edit takes every stand the table shows.
     boutonCarte('Édition groupée').click();

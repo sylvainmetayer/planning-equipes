@@ -28,9 +28,10 @@ import {
   redirectEditionComparison,
   redirectFormerRealiseTab,
   redirectKpiToVersions,
+  openingsToStandsUrl,
   standEditToFicheUrl,
   routes,
-  trainingTabToNeed,
+  formerTabsToRisques,
 } from './app.routes';
 import { BRANDING } from './core/branding';
 import { MesuresPage } from './pages/mesures/mesures-page';
@@ -233,6 +234,14 @@ describe('app.routes', () => {
     expect(TestBed.inject(Title).getTitle()).toBe('Titre résolu — Produit');
   });
 
+  /** The opening hours screen is gone: its addresses land on the fiche stand or the stands list. */
+  it('sends the former opening hours addresses to the fiche stand or the stands', () => {
+    expect(redirectTarget('ouvertures', {})).toBe('/stands');
+    expect(redirectTarget('ouvertures', { vue: 'saisie', stand: 'S 1' })).toBe('/stands/S%201');
+    expect(redirectTarget('ouvertures', { vue: 'comparer', stands: 'S2,S3' })).toBe('/stands/S2');
+    expect(openingsToStandsUrl({ onglet: 'horaires', du: '2026-07-10' })).toBe('/stands');
+  });
+
   /** « Mode jour J » became Aujourd'hui: its bookmarks land there, whatever they carried. */
   it('sends the former event-day address to Aujourd’hui with its query params', () => {
     expect(redirectTarget('jour-j', {})).toBe('/aujourdhui');
@@ -377,7 +386,9 @@ describe('app.routes', () => {
     it("mène aux onglets du diagnostic avec l'état de chacun", () => {
       expect(
         redirectTarget('fragilite', { vue: 'COMPETENCES', filtre: 'CRITIQUES', q: 'Alice' }),
-      ).toBe('/diagnostic?onglet=fragilite&vue=COMPETENCES&filtre=CRITIQUES&q=Alice');
+      ).toBe(
+        '/diagnostic?onglet=risques&section=fragilite&vue=COMPETENCES&filtre=CRITIQUES&q=Alice',
+      );
     });
 
     // The bench became the Siège panel of the Journée: both of its addresses
@@ -471,27 +482,44 @@ describe('app.routes', () => {
     });
 
     // Marge disponible became two tabs of the Diagnostic: its « avant » reading
-    // a column of Besoin, its « après » and « tension » readings the Tension tab.
-    it('sends the margin to Besoin, and its after-solve readings to Tension, params kept', () => {
+    // a column of Besoin, its « après » and « tension » readings the Tension section of Risques.
+    it('sends the margin to Besoin, and its after-solve readings to Risques, params kept', () => {
       expect(redirectTarget('marge', {})).toBe('/diagnostic?onglet=besoin');
-      expect(redirectTarget('marge', { mode: 'apres' })).toBe('/diagnostic?onglet=tension');
+      expect(redirectTarget('marge', { mode: 'apres' })).toBe(
+        '/diagnostic?onglet=risques&section=tension',
+      );
       expect(redirectTarget('marge', { mode: 'tension', date: '2026-08-02' })).toBe(
-        '/diagnostic?onglet=tension&date=2026-08-02',
+        '/diagnostic?onglet=risques&section=tension&date=2026-08-02',
       );
     });
 
-    it('sends the former « À former » tab to the foot of Besoin, and no other tab', () => {
+    it('sends the former Fragilité, « À former » and Tension tabs to Risques, and no other tab', () => {
       TestBed.configureTestingModule({
         providers: [provideZonelessChangeDetection(), provideRouter([])],
       });
       const guard = (queryParams: Record<string, string>): unknown =>
         TestBed.runInInjectionContext(() =>
-          trainingTabToNeed(snapshotOf(queryParams), TestBed.inject(Router).routerState.snapshot),
+          formerTabsToRisques(snapshotOf(queryParams), TestBed.inject(Router).routerState.snapshot),
         );
 
-      expect(String(guard({ onglet: 'former' }))).toBe('/diagnostic?onglet=besoin&section=former');
-      expect(guard({ onglet: 'tension' })).toBe(true);
+      expect(String(guard({ onglet: 'former' }))).toBe('/diagnostic?onglet=risques&section=former');
+      expect(String(guard({ onglet: 'tension', date: '2026-08-02' }))).toBe(
+        '/diagnostic?onglet=risques&section=tension&date=2026-08-02',
+      );
+      expect(String(guard({ onglet: 'fragilite', q: 'Alice' }))).toBe(
+        '/diagnostic?onglet=risques&section=fragilite&q=Alice',
+      );
+      expect(String(guard({ onglet: 'besoin', section: 'former' }))).toBe(
+        '/diagnostic?onglet=risques&section=former',
+      );
+      expect(guard({ onglet: 'besoin' })).toBe(true);
+      expect(guard({ onglet: 'besoin', section: 'typologie' })).toBe(true);
       expect(guard({})).toBe(true);
+    });
+
+    it('runs its redirections again when only the query changes', () => {
+      const diagnostic = allRoutes(routes).find((route) => route.path === 'diagnostic');
+      expect(diagnostic?.runGuardsAndResolvers).toBe('paramsOrQueryParamsChange');
     });
   });
 
@@ -501,10 +529,23 @@ describe('app.routes', () => {
    */
   describe('les anciennes adresses de Fichiers', () => {
     it("mène d'Imports à la carte de l'onglet Importer qu'il nommait", () => {
-      expect(redirectTarget('imports', { onglet: 'stands' })).toBe(
-        '/fichiers?onglet=importer&cible=stands',
+      expect(redirectTarget('imports', { onglet: 'animateurs' })).toBe(
+        '/fichiers?onglet=importer&cible=animateurs',
       );
       expect(redirectTarget('imports', {})).toBe('/fichiers?onglet=importer');
+    });
+
+    // The cards withdrawn in 4.0: a bookmark on the CSV of a referential or on
+    // the stand matrix lands on the Importer tab, where the YAML is the way in.
+    it.each([
+      'typologies',
+      'emplacements',
+      'stands',
+      'creneaux',
+      'journees-types',
+      'grille-stands',
+    ])("mène d'Imports, carte %s retirée, à l'onglet Importer", (carte) => {
+      expect(redirectTarget('imports', { onglet: carte })).toBe('/fichiers?onglet=importer');
     });
 
     it("mène d'Export à l'onglet Exporter, ou à l'archive par son ancien fragment", () => {
@@ -683,12 +724,22 @@ describe('the screens that became tabs', () => {
     );
   });
 
+  it('sends the retired hours tab of the Calendrier to the fiche stand, and lets the timeslots through', () => {
+    const guard = allRoutes(routes).find((route) => route.path === 'creneaux')
+      ?.canActivate?.[0] as (route: unknown) => unknown;
+    const run = (params: Record<string, string>) =>
+      TestBed.runInInjectionContext(() =>
+        guard({ queryParams: params, queryParamMap: convertToParamMap(params) }),
+      );
+    expect(String(run({ onglet: 'horaires', stand: 'S1' }))).toBe('/stands/S1');
+    expect(String(run({ onglet: 'horaires' }))).toBe('/stands');
+    expect(run({})).toBe(true);
+  });
+
   // A hosted tab's unsaved cells must not leave silently with the route.
   it.each([
     ['animateurs', true],
     ['animateurs', false],
-    ['creneaux', true],
-    ['creneaux', false],
   ])('asks the %s page whether it can be left (%s)', async (path, answer) => {
     const guard = allRoutes(routes).find((route) => route.path === path)?.canDeactivate?.[0];
     const page: Leavable = { canLeave: () => Promise.resolve(answer) };

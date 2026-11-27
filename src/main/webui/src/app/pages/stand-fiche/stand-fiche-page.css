@@ -20,11 +20,6 @@
   align-items: center;
 }
 
-.stand-fiche-comparer {
-  width: 16rem;
-  max-width: 100%;
-}
-
 .stand-fiche-introuvable {
   color: var(--mat-sys-error);
 }
