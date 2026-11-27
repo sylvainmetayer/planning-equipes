@@ -389,7 +389,7 @@ describe('TypologiesPage table', () => {
   it('distinguishes an empty referential from a filter that matched nothing', async () => {
     await rendre([]);
     // Its actions are the empty state's alone: the header leaves them out.
-    expectOnlyInEmptyState(racine(), ['Ajouter', 'Importer']);
+    expectOnlyInEmptyState(racine(), ['Ajouter']);
     // An empty referential says where to begin, and offers to.
     expect(racine().querySelector('.empty-state')!.textContent).toContain('Commencez ici');
     expect(racine().querySelector('.empty-state')!.textContent).toContain('Ajouter');

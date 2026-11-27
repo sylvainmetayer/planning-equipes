@@ -14,9 +14,9 @@ Un texte qu'un tableur exécuterait comme une formule (il commence par `=`, `+`,
 
 ### Les six référentiels
 
-`GET /api/reference-data/export-csv` réécrit les six référentiels de l'édition (animateurs, créneaux, emplacements, journées types, stands, typologies) dans un ZIP, un fichier par référentiel, chacun à cocher, dans la forme exacte que les [imports CSV](imports-csv.md) relisent. Le fichier des animateurs reprend l'en-tête de `exemple-animateurs.csv`. Il ne se réimporte que dans une édition qui a déjà ses créneaux, puisque sans dates un jour d'indisponibilité serait refusé : `creneaux.csv`, coché juste au-dessus, les y met.
+`GET /api/reference-data/export-csv` réécrit les six référentiels de l'édition (animateurs, créneaux, emplacements, journées types, stands, typologies) dans un ZIP, un fichier par référentiel, chacun à cocher, pour un tableur. Seul celui des animateurs se réimporte, par l'[import CSV](imports-csv.md) : il reprend l'en-tête de `exemple-animateurs.csv` et exige une édition qui a déjà ses créneaux, puisque sans dates un jour d'indisponibilité serait refusé. Les cinq autres ne se relisent pas : le YAML de l'édition est leur chemin d'entrée.
 
-`ReferentielCsvExportServiceTest` repasse chaque export par son propre import et exige zéro ligne refusée. Pour les journées types il exige davantage : appliquer le calendrier juste après l'aller-retour ne change rien, faute de quoi les deux fichiers ne décriraient pas la même édition.
+`ReferentielCsvExportServiceTest` rejoue le fichier des animateurs dans une autre édition (zéro ligne refusée) et vérifie que les fiches s'y retrouvent à l'identique, cellules à valeurs multiples comprises.
 
 Une case qui contient un séparateur possible (`;`, virgule, tabulation) sort entre guillemets, et pas seulement quand elle contient celui du fichier. Le lecteur devine le dialecte en comptant les trois candidats hors guillemets sur tout le fichier : une colonne de vacations pose trois virgules par ligne contre deux points-virgules d'en-tête, et le fichier qu'on venait d'écrire se relisait comme un fichier à virgules.
 

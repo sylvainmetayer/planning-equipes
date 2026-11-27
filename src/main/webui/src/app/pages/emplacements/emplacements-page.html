@@ -10,14 +10,12 @@
     }
   </mat-card-content>
   <mat-card-actions class="card-actions">
-    <!-- On an empty referential the empty state below carries « Ajouter » and
-         « Importer »: one button of each name on the screen. -->
+    <!-- On an empty referential the empty state below carries « Ajouter »: one button of that name on the screen. -->
     @if (store.emplacements().length > 0) {
       <button matButton="filled" type="button" [disabled]="creationLocked()" (click)="openCreate()">
         <mat-icon>add</mat-icon>
         <ng-container i18n="@@common.add">Ajouter</ng-container>
       </button>
-      <app-import-button card="emplacements" [disabled]="creationLocked()" />
     }
     <button matButton type="button" [disabled]="emplacementsFiltres().length === 0" (click)="exportList()">
       <mat-icon>download</mat-icon>
@@ -111,7 +109,6 @@
     @if (store.emplacements().length === 0) {
       <app-empty-state [addDisabled]="creationLocked()" (add)="openCreate()">
         <ng-container i18n="@@emplacements.empty">Un emplacement est le lieu où se tient un stand, repéré sur la carte : saisissez-les avant de les rattacher aux stands.</ng-container>
-        <app-import-button empty-state-import card="emplacements" [disabled]="creationLocked()" />
       </app-empty-state>
     } @else if (emplacementsFiltres().length === 0) {
       <p class="empty-hint" i18n="@@filter.noMatch">Aucune ligne ne correspond au filtre.</p>

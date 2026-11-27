@@ -293,20 +293,21 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/fichiers` (« Fichiers » — the two halves of one gesture, export, correct
   in the spreadsheet, import back, and what closes an edition: three tabs
   chosen by `?onglet=importer|exporter|archive`. « Importer » is
-  `pages/imports/importer-panel`, one card chosen by `?cible=` — the referential
-  imports in the order data is entered, the stand matrix, the scenario file,
+  `pages/imports/importer-panel`, one card chosen by `?cible=` — the scenario
+  file (the default, the workbook of a whole edition), the animateurs' CSV,
   « Exemples » (`pages/imports/exemples-card`, the bundled scenarios under a
   readable name and one sentence from the pure `exemples.ts`, never a file
-  name) and « Vérifier un fichier » (the YAML validator); every referential
-  card also takes cells pasted from a spreadsheet (`collage-tableur.ts` over
-  the pure `collage.ts`, which reads the quoting of Excel and LibreOffice) and,
-  once written, links to the screen of its rows narrowed to them — `?ids=`
-  (`core/imported-rows.ts`), read by the Stands, Typologies, Emplacements,
-  Créneaux and Animateurs lists and shown there as a filter to drop.
+  name) and « Vérifier un fichier » (the YAML validator). The CSV of every
+  other referential and the stand matrix are gone (ADR 0128): a `?cible=`
+  naming one falls back to the scenario card, and `/imports?onglet=` drops it;
+  the animateurs card takes cells pasted from a spreadsheet (`collage-tableur.ts`
+  over the pure `collage.ts`, which reads the quoting of Excel and LibreOffice)
+  and, once written, links to the Animateurs list narrowed to its rows —
+  `?ids=` (`core/imported-rows.ts`).
   « Exporter » is `pages/exports/exporter-panel`, the CSV archive and the
   scenario file; « Archive » the end-of-event ZIP the server streams,
   `pages/exports/archive-evenement-card`, which the home screen links to once
-  the event's last day is past. The referential screens open the same import
+  the event's last day is past. The Animateurs screen opens the same import
   card in a dialog through `shared/import-button.ts`, without leaving the
   list),
   `/publication` (« Diffuser » — what reaches real people, two tabs chosen by

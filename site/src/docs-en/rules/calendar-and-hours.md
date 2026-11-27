@@ -37,7 +37,7 @@ Above the grid, the summary and the three usual hour-entry mistakes are worth ch
 
 A last view compares two to eight stands with a reference stand, day by day and cell by cell, then opens the copy of the reference's hours to the others.
 
-An organiser's workbook grid can also arrive as is by file: see [Import and export files](importer-exporter.md#importer-la-grille-des-stands).
+An organiser's workbook grid is no longer imported as CSV: it is rewritten in the edition's YAML file, see [Moving from 3.x to 4.0](../installer/passer-a-la-4-0.md#les-imports-csv-des-référentiels-et-de-la-grille-des-stands-sont-retirés).
 
 ## When a consigne from the authority changes the hours
 

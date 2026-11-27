@@ -5,8 +5,6 @@ import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
 import {
   OpeningLayers,
-  ImportGrilleDemande,
-  ImportGrilleRapport,
   EmplacementsManquants,
   RapportOuvertures,
   PlageStand,
@@ -18,23 +16,6 @@ import {
 @Injectable({ providedIn: 'root' })
 export class StandsApi {
   private readonly api = inject(ApiService);
-
-  downloadGridExample(): Promise<string> {
-    return this.api.downloadGet(
-      '/api/stands/import-grille/exemple',
-      'grille-stands.csv',
-      'text/csv',
-    );
-  }
-
-  /** What the grid import would do, without writing anything. */
-  analyseGridImport(demande: ImportGrilleDemande): Promise<ImportGrilleRapport> {
-    return this.api.post<ImportGrilleRapport>('/api/stands/import-grille/analyse', demande);
-  }
-
-  applyGridImport(demande: ImportGrilleDemande): Promise<ImportGrilleRapport> {
-    return this.api.post<ImportGrilleRapport>('/api/stands/import-grille', demande);
-  }
 
   /** The stands without an emplacement, with the one their neighbours suggest (never written). */
   emplacementSuggestions(): Promise<EmplacementsManquants> {

@@ -30,6 +30,7 @@ public class BusinessErrorMapper implements ExceptionMapper<BusinessError> {
                     case BusinessError.Invalid _ -> Response.Status.BAD_REQUEST;
                     case BusinessError.NotFound _ -> Response.Status.NOT_FOUND;
                     case BusinessError.Conflict _ -> Response.Status.CONFLICT;
+                    case BusinessError.Gone _ -> Response.Status.GONE;
                     case BusinessError.Stale _ -> Response.Status.CONFLICT;
                     case BusinessError.Frozen _ -> Response.Status.CONFLICT;
                     case BusinessError.EditionRefused refus ->
