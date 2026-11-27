@@ -90,6 +90,16 @@ Two CSV exports: "Hours for the payroll" and "Fairness".
 
 The Solver counts the changes made since the saved solve. "Fix after a change" shows them before offering what to reopen, by family and with the last lines of the history. See [Solve the schedule](calculer-planning.md#choisir-comment-lancer).
 
+## Read breaks and meals: the Meals and breaks tab
+
+The Diagnostic's *Meals and breaks* tab says where the legal breaks and the meals of a given day fall. Everything is read on the saved plan, nothing is recomputed; the day is chosen at the top and stays in the address.
+
+- **The breaks**, stand by stand: who steps out, at what time at the latest, and who relays. A break nobody can relay is a hard breach; "Open the seat" leads to the Planning page, on that seat, to look for who could come. Below, the meal break owed to anyone working on both sides of a meal window (those the day has no room for come first), and the breaks the grid already gives.
+- **The catering**: how many people are on their meal break, hour by hour and emplacement by emplacement, to know what to prepare and where to bring it. Minors are counted in brackets, never named. "The whole event as CSV" exports every day.
+- **The tight walks**: the trips between two consecutive seats that leave little time, those that do not fit first, with the walking time and what is missing.
+
+The preferred placement of the meal break in its window is set in *Settings*, *Organisation* tab; the "Coupure repas" (meal break) rule and its importance are in *Planning rules*. The tab links to both.
+
 ## When a solve degrades the plan
 
 The previous score is shown next to the new one. If the new plan is worse without any mandatory rule being broken, the screen says so and offers to go back to the previous plan. Versions and their comparison are described in [Solve the schedule](calculer-planning.md#garder-des-versions-du-plan).

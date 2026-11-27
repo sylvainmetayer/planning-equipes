@@ -43,6 +43,7 @@ describe('DiagnosticPage', () => {
     fragility: vi.fn(() => Promise.resolve(null)),
     breaks: vi.fn(() => Promise.resolve(null)),
     walks: vi.fn(() => Promise.resolve(null)),
+    intendance: vi.fn(() => Promise.resolve(null)),
     groupedArrivals: vi.fn(() => Promise.resolve(null)),
     trainingPlan: vi.fn(() => Promise.resolve(null)),
     margin: vi.fn(() => Promise.resolve(null)),
@@ -204,13 +205,47 @@ describe('DiagnosticPage', () => {
     expect(planningApi.equityReport).toHaveBeenCalled();
   });
 
-  it('offers four tabs, and none of the former Fragilité, Tension, « À former » or bench', async () => {
+  it('opens Repas et pauses from ?onglet=repas-pauses: breaks, meals and walks, under the page heading alone', async () => {
+    const page = await monter({ onglet: 'repas-pauses' });
+
+    expect(page['onglet']()).toBe('repas-pauses');
+    expect(racine().querySelector('app-repas-pauses-tab app-pauses-vue')).not.toBeNull();
+    expect(racine().querySelector('app-repas-pauses-tab app-intendance-jour')).not.toBeNull();
+    expect(racine().querySelectorAll('h1')).toHaveLength(1);
+    expect(analysesApi.breaks).toHaveBeenCalled();
+    expect(analysesApi.walks).toHaveBeenCalled();
+    expect(
+      racine().querySelector('a[href="/regles?regle=coupureRepasObligatoire"]'),
+    ).not.toBeNull();
+    expect(racine().querySelector('a[href="/parametres?onglet=organisation"]')).not.toBeNull();
+  });
+
+  // Charge and the fragility filter each wrote `q`: the one typed on a tab was read, and written
+  // back, by the other as soon as the reader moved between them.
+  it('keeps the Charge name filter and the Risques one apart when changing tab', async () => {
+    const page = await monter({ onglet: 'charge', nom: 'Ali' });
+
+    page['changerOnglet']('risques');
+    TestBed.tick();
+    await fixture.whenStable();
+
+    const url = TestBed.inject(Location).path();
+    expect(url).toContain('nom=Ali');
+    expect(url).not.toContain('q=');
+    expect(
+      racine().querySelector<HTMLInputElement>(
+        'app-fragilite-page input[type="search"], app-fragilite-page app-table-filter input',
+      )?.value ?? '',
+    ).toBe('');
+  });
+
+  it('offers five tabs, and none of the former Fragilité, Tension, « À former » or bench', async () => {
     await monter();
 
     const onglets = [...racine().querySelectorAll('mat-button-toggle')].map((toggle) =>
       toggle.getAttribute('value'),
     );
-    expect(onglets).toEqual(['problemes', 'besoin', 'risques', 'charge']);
+    expect(onglets).toEqual(['problemes', 'besoin', 'risques', 'charge', 'repas-pauses']);
   });
 
   it("opens on the tab the URL names, and keeps that tab's own state next to it", async () => {

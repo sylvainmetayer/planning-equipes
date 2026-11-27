@@ -1,5 +1,5 @@
 // The two pages that gathered eight screens: the day under its four
-// renderings, and the diagnostic under its four tabs. What a unit test cannot
+// renderings, and the diagnostic under its tabs. What a unit test cannot
 // see is pinned here — that switching the rendering fetches nothing again,
 // that the addresses of the former screens still land on the right tab or
 // rendering with their parameters, and that Leaflet only travels with the map.
@@ -103,11 +103,15 @@ test('the addresses of former screens lead to the right rendering, parameters in
 
   // The views the page gave up (4.0) land on the screen holding their reading
   // today: no bookmark falls on an empty page.
-  // Problèmes is the default tab of the Diagnostic, so its address drops `onglet`.
-  await page.goto('/pauses?vue=sans-relais');
-  await expect(page).toHaveURL(/\/diagnostic$/);
+  // The breaks and the meals are the Diagnostic's « Repas et pauses », the day kept.
+  await page.goto(`/pauses?vue=sans-relais&jour=${SEED.jour}`);
+  await expect(page).toHaveURL(
+    new RegExp(String.raw`/diagnostic\?onglet=repas-pauses&jour=${SEED.jour}`),
+  );
   await page.goto('/journee?vue=pauses');
-  await expect(page).toHaveURL(/\/diagnostic$/);
+  await expect(page).toHaveURL(/\/diagnostic\?onglet=repas-pauses/);
+  await page.goto('/intendance');
+  await expect(page).toHaveURL(/\/diagnostic\?onglet=repas-pauses/);
   await page.goto('/journee?axe=typologie');
   await expect(page).toHaveURL(/\/diagnostic\?onglet=besoin/);
   // The synthesis of « Par personne » is the Diagnostic's Charge, its sort kept.
@@ -134,9 +138,6 @@ test('the addresses of former screens lead to the right rendering, parameters in
   // The first day of the edition is the page's default: it writes no `date=`.
   await page.goto(`/calendar?date=${SEED.jour}&stand=${SEED.standDemandeur}`);
   await expect(page).toHaveURL(new RegExp(String.raw`/journee\?.*stand=${SEED.standDemandeur}`));
-
-  await page.goto('/intendance');
-  await expect(page).toHaveURL(/\/diagnostic$/);
 
   await page.goto('/graphe');
   await expect(page).toHaveURL(/\/journee\?.*vue=carte/);
@@ -271,6 +272,21 @@ test('le diagnostic ouvre ses onglets sans changer de page, chacun avec son éta
   await onglets.getByText('Charge').click();
   await expect(page).toHaveURL(/onglet=charge/);
   await expect(page.locator('#contenu')).toContainText('Heures pour la paie (CSV)');
+  await expect(page.locator('#contenu h1')).toHaveCount(1);
+  // Charge reads its own name filter, not the one typed on Risques (`q`).
+  await expect(page.getByLabel('Filtrer par nom')).toHaveValue('');
+  await page.getByLabel('Filtrer par nom').fill('Bruno');
+  await expect(page).toHaveURL(/[?&]nom=Bruno/);
+  await onglets.getByText('Risques').click();
+  await expect(page.getByLabel('Filtrer', { exact: true })).toHaveValue('Alice');
+
+  await onglets.getByText('Repas et pauses').click();
+  await expect(page).toHaveURL(/onglet=repas-pauses/);
+  await expect(page.locator('#contenu')).toContainText('Enchaînements serrés entre deux stands');
+  await expect(page.locator('#contenu')).toContainText('Combien de personnes mangent');
+  await expect(
+    page.locator('#contenu').getByRole('link', { name: 'Règles du planning' }),
+  ).toBeVisible();
   await expect(page.locator('#contenu h1')).toHaveCount(1);
   await page.context().close();
 });

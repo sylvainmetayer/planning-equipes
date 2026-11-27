@@ -403,7 +403,7 @@ describe('parametrer-pour-un-planning-complet', () => {
       { onglet: 'besoin' },
       undefined,
       { onglet: 'risques', section: 'fragilite' },
-      { onglet: 'problemes' },
+      { onglet: 'repas-pauses' },
     ]);
   });
 

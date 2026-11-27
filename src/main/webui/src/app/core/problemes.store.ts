@@ -131,7 +131,7 @@ export class ProblemesStore {
     if (manquants === 0) {
       return '';
     }
-    return $localize`:@@problemes.pauses.alerte:${manquants}:count: pause(s) légale(s) sans relais : une personne seule sur son stand pendant sa pause. Voir l'écran Pauses.`;
+    return $localize`:@@problemes.pauses.alerteOnglet:${manquants}:count: pause(s) légale(s) sans relais : une personne seule sur son stand pendant sa pause. Voir l'onglet Repas et pauses du Diagnostic.`;
   });
 
   readonly alerteReglesLegales = computed(() => {

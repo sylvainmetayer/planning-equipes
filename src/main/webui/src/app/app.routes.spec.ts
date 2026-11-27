@@ -261,11 +261,12 @@ describe('app.routes', () => {
       );
     });
 
-    it('mène les pauses et l’intendance aux problèmes du Diagnostic, faute de vue à elles', () => {
+    it('mène les pauses et l’intendance à l’onglet Repas et pauses, le jour gardé', () => {
       expect(redirectTarget('pauses', { vue: 'sans-relais', jour: '2026-08-02' })).toBe(
-        '/diagnostic?onglet=problemes',
+        '/diagnostic?onglet=repas-pauses&jour=2026-08-02',
       );
-      expect(redirectTarget('intendance', {})).toBe('/diagnostic?onglet=problemes');
+      expect(redirectTarget('intendance', {})).toBe('/diagnostic?onglet=repas-pauses');
+      expect(redirectTarget('pauses', { jour: 'demain' })).toBe('/diagnostic?onglet=repas-pauses');
     });
 
     it('mène au tableau de la vue Jour sans paramètre superflu', () => {
@@ -309,7 +310,7 @@ describe('app.routes', () => {
           dir: 'asc',
           colonnes: 'toutes',
         }),
-      ).toBe('/diagnostic?onglet=charge&q=ali&sort=heuresSoiree&dir=asc&colonnes=toutes');
+      ).toBe('/diagnostic?onglet=charge&nom=ali&sort=heuresSoiree&dir=asc&colonnes=toutes');
       expect(redirectTarget('equite', {})).toBe('/diagnostic?onglet=charge');
     });
 
@@ -352,7 +353,7 @@ describe('app.routes', () => {
         const charge = '/diagnostic?onglet=charge';
         expect(formerView({ vue: 'personne', rendu: 'synthese' })).toBe(charge);
         expect(formerView({ axe: 'personne', vue: 'synthese', q: 'ali', date: '2026-08-02' })).toBe(
-          `${charge}&q=ali`,
+          `${charge}&nom=ali`,
         );
         expect(
           formerView({ vue: 'personne', rendu: 'synthese', sort: 'heuresNuit', dir: 'desc' }),
@@ -366,10 +367,11 @@ describe('app.routes', () => {
         );
       });
 
-      it('mène les pauses aux problèmes du Diagnostic', () => {
+      it('mène les pauses à l’onglet Repas et pauses du Diagnostic, le jour gardé', () => {
         expect(formerView({ vue: 'pauses', date: '2026-08-02', relais: 'sans' })).toBe(
-          '/diagnostic?onglet=problemes',
+          '/diagnostic?onglet=repas-pauses&jour=2026-08-02',
         );
+        expect(formerView({ vue: 'pauses' })).toBe('/diagnostic?onglet=repas-pauses');
       });
 
       it('mène les changements à Diffuser, le jour gardé', () => {
@@ -610,7 +612,7 @@ describe('app.routes', () => {
       await router.navigateByUrl('/equite?vue=fiche&animateur=a1&comparer=a2');
       expect(TestBed.inject(Router).url).toBe('/animateurs/a1?section=equite&comparer=a2');
       await router.navigateByUrl('/equite?q=Alice');
-      expect(TestBed.inject(Router).url).toBe('/diagnostic?onglet=charge&q=Alice');
+      expect(TestBed.inject(Router).url).toBe('/diagnostic?onglet=charge&nom=Alice');
     });
   });
 

@@ -410,8 +410,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   them exist: `?axe=typologie` (and `/typologies-planning`) to
   `/stands?onglet=typologies` — the table read by game category is that tab's,
   it will move into the Diagnostic's Besoin —, `?vue=pauses` (and `/pauses`,
-  `/intendance`) to `/diagnostic?onglet=problemes` — a « Repas et pauses » screen
-  will take the rotation and the intendance —, `?vue=changements` to
+  `/intendance`) to `/diagnostic?onglet=repas-pauses` through `repasPausesUrl`,
+  the day of `jour`/`date` kept, `?vue=changements` to
   `/publication?onglet=envoyer&jour=` — what moved since the publication is the
   Envoyer table's, since the last solve the « Calculer » tab's result —, and
   « Comparer deux jours » (`?comparer=`, `?ecarts=`) is gone and ignored; the page
@@ -500,12 +500,20 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   Charge (`pages/diagnostic/charge-tab.ts`) hosts the synthesis of the person
   axis as it was — `PlanningPersonneView` with `view="synthese"`, the Équité and
   Heures reports joined person by person, the two CSV files, the plan the hours
-  are read on — and keeps its own state (`q`, `sort`/`dir`, `colonnes`,
+  are read on — and keeps its own state (`nom`, `sort`/`dir`, `colonnes`,
   `sansRepos`, `source`) in the address; `/hours`, `/equite` and the former
   `?rendu=synthese` land on `?onglet=charge` through `chargeUrl`, and the
   playbook's « Voir la charge par personne » opens it. The classes of the axis
   bar and legend are the shared partial `styles/planning-axe.css`, attached
-  by both pages), `/echanges` (« Échanges » —
+  by both pages; its name filter is `nom` because `q` is the fragility's, and
+  `chargeUrl` renames the former screens' `q`). « Repas et pauses »
+  (`pages/diagnostic/repas-pauses-tab.ts`, `?onglet=repas-pauses`, one day at a
+  time in `?jour=`) stacks the legal breaks and the meal breaks owed
+  (`pages/pauses`), the intendance counted per emplacement
+  (`pages/intendance`) and the tight walks (`repas-pauses.ts`), each the
+  server's analysis read on the persisted plan; it links to Paramètres ›
+  Organisation, where the meal placement is set, and to the « Coupure repas »
+  rule of Règles; « Ouvrir le siège » opens the Journée on the seat), `/echanges` (« Échanges » —
   opens on the queue, under the foire's one-line state (`shared/guichet-etat`);
   an accepted swap offers « Prévenir les 2 personnes », a publication
   aimed at those two through `PlanningApi.publishTo`, and « Corriger le

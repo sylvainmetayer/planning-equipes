@@ -25,6 +25,10 @@
         <mat-icon>balance</mat-icon>
         <ng-container i18n="@@diagnostic.onglet.charge">Charge</ng-container>
       </mat-button-toggle>
+      <mat-button-toggle value="repas-pauses">
+        <mat-icon>restaurant</mat-icon>
+        <ng-container i18n="@@diagnostic.onglet.repasPauses">Repas et pauses</ng-container>
+      </mat-button-toggle>
       @if (conformiteVisible()) {
         <mat-button-toggle value="conformite">
           <mat-icon>gavel</mat-icon>
@@ -44,6 +48,9 @@
   }
   @case ('charge') {
     <app-charge-tab />
+  }
+  @case ('repas-pauses') {
+    <app-repas-pauses-tab />
   }
   @case ('conformite') {
     @if (conformiteVisible() && editionStore.courant(); as edition) {
