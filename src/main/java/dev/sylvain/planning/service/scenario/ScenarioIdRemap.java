@@ -31,12 +31,13 @@ import java.util.function.Predicate;
  * <p>An id in a file is a <b>reference local to that file</b>: what its seats,
  * constraints and consignes cite. What it designates in the edition is decided
  * here, row by row, in this order:</p>
+ * For a stand, a typologie or an emplacement, step 2 runs first, for every
+ * reference of the file before any step 1: a code designates one row of the
+ * edition (ADR 0131, see {@link #mapCoded}).
  * <ol>
  *   <li>the row of that id, when the edition has one and it is plausibly the
  *       same thing — for an animateur, the same e-mail or the same name; for a
- *       stand, a typologie or an emplacement, no contradicting code, and only
- *       once every code of the file has claimed its row (step 2 comes first
- *       for those: a code designates one row, see {@link #mapCoded}). A file
+ *       stand, a typologie or an emplacement, no contradicting code. A file
  *       exported from this very edition is re-imported in place, tokens and
  *       all, which is what keeps the espace links printed on the PDFs alive.
  *       The check matters because every edition numbers from 1: {@code A3} of
@@ -276,6 +277,7 @@ final class ScenarioIdRemap {
             Map<String, String> existants,
             Map<String, String> ids,
             Map<String, String> codes) {
+        Set<String> pris = new HashSet<>(ids.values());
         Map<String, String> titulaires = new HashMap<>();
         existants.forEach((id, code) -> {
             if (code != null) {
@@ -286,7 +288,7 @@ final class ScenarioIdRemap {
             String code = blankAsNull(declares.get(reference));
             String cle = code != null ? code : implicitCode(kind, reference);
             String titulaire = cle != null ? titulaires.get(cle) : null;
-            if (titulaire != null && !ids.containsKey(reference) && !ids.containsValue(titulaire)) {
+            if (titulaire != null && !ids.containsKey(reference) && pris.add(titulaire)) {
                 ids.put(reference, titulaire);
                 codes.put(reference, code != null ? code : existants.get(titulaire));
             }
@@ -296,7 +298,6 @@ final class ScenarioIdRemap {
                 continue;
             }
             String code = blankAsNull(declares.get(reference));
-            Set<String> pris = new HashSet<>(ids.values());
             String cible;
             if (keepsItsId(reference, code, existants, pris)) {
                 cible = reference;
@@ -305,6 +306,7 @@ final class ScenarioIdRemap {
                 cible = newId(kind, reference, pris);
                 codes.put(reference, code != null ? code : implicitCode(kind, reference));
             }
+            pris.add(cible);
             ids.put(reference, cible);
         }
     }

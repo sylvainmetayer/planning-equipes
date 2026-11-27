@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.scenario.dto.EmplacementDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
+import dev.sylvain.planning.scenario.dto.StandDto;
 import dev.sylvain.planning.scenario.dto.TypologieDto;
 import dev.sylvain.planning.service.IdGenerator;
 import java.util.EnumMap;
@@ -30,6 +31,7 @@ class ScenarioIdRemapCodeTest {
         ScenarioDto remappe = remap(
                 Map.of(IdGenerator.Kind.EMPLACEMENT, existants),
                 List.of(new EmplacementDto("L1", "PLACE", "Place", null, null)),
+                List.of(),
                 List.of());
 
         assertThat(remappe.emplacements()).singleElement().satisfies(dto -> {
@@ -50,17 +52,40 @@ class ScenarioIdRemapCodeTest {
                 List.of(),
                 List.of(
                         new TypologieDto("T2", "STRATEGIE", "Stratégie", null, null, null),
-                        new TypologieDto("T1", null, "Sans code", null, null, null)));
+                        new TypologieDto("T1", null, "Sans code", null, null, null)),
+                List.of());
 
         assertThat(remappe.typologies())
                 .extracting(TypologieDto::id, TypologieDto::code)
                 .containsExactly(Tuple.tuple("T1", "STRATEGIE"), Tuple.tuple("T3", null));
     }
 
+    @Test
+    void aStandCodeIsClaimedBeforeAnIdWhateverTheOrderOfTheFile() {
+        Map<String, String> existants = new HashMap<>();
+        existants.put("S1", "STAND-A");
+        existants.put("S2", null);
+
+        ScenarioDto remappe = remap(
+                Map.of(IdGenerator.Kind.STAND, existants),
+                List.of(),
+                List.of(),
+                List.of(stand("S2", "STAND-A"), stand("S1", null)));
+
+        assertThat(remappe.stands())
+                .extracting(StandDto::id, StandDto::code)
+                .containsExactly(Tuple.tuple("S1", "STAND-A"), Tuple.tuple("S3", null));
+    }
+
+    private static StandDto stand(String id, String code) {
+        return new StandDto(id, code, "Stand", null, List.of("T1"), 1, 1, null, null, null, null, null);
+    }
+
     private static ScenarioDto remap(
             Map<IdGenerator.Kind, Map<String, String>> codes,
             List<EmplacementDto> emplacements,
-            List<TypologieDto> typologies) {
+            List<TypologieDto> typologies,
+            List<StandDto> stands) {
         ScenarioDto scenario = new ScenarioDto(
                 2,
                 null,
@@ -71,7 +96,7 @@ class ScenarioIdRemapCodeTest {
                 List.of(),
                 null,
                 emplacements,
-                List.of(),
+                stands,
                 List.of(),
                 null,
                 null,

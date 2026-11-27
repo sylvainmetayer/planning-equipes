@@ -1,6 +1,6 @@
 # 0050 — Les identifiants sont générés, numérotés par édition
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; **révisé en partie** par [0131](0131-le-code-avant-l-identifiant-a-l-import.md) : pour un stand, une typologie ou un emplacement, le code passe avant l'identifiant (§ D3)
 - **Date** : septembre 2026
 - **Portée** : schéma (migrations `V100` et `V101`), référentiels, import de scénario et imports CSV, MCP, API
 - **Prolonge** : [0001](0001-cloisonnement-par-edition.md) (les clés `(edition_id, id)`)
