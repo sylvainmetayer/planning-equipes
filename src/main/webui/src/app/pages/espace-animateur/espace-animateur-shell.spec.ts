@@ -73,7 +73,7 @@ describe('EspaceAnimateurShell — quelle édition', () => {
             erreur: signal(null),
             authRequise: signal(false),
             charger: vi.fn(() => Promise.resolve(undefined)),
-            demanderCode: vi.fn(),
+            requestCode: vi.fn(),
             validerCode: vi.fn(),
           },
         },
@@ -200,7 +200,7 @@ describe('EspaceAnimateurShell — accessibility groundwork', () => {
             erreur: signal(null),
             authRequise: signal(true),
             charger: vi.fn(() => Promise.resolve(undefined)),
-            demanderCode: vi.fn(() => Promise.resolve({ emailMasque: 'a***@example.org' })),
+            requestCode: vi.fn(() => Promise.resolve({ emailMasque: 'a***@example.org' })),
             validerCode: validateCode,
           },
         },
@@ -251,7 +251,7 @@ describe('EspaceAnimateurShell — accessibility groundwork', () => {
     expect(alert!.textContent).toContain('Code incorrect');
   });
   it('shows and fills in the code a demo instance hands back, since no mail leaves there', async () => {
-    vi.mocked(TestBed.inject(EspaceAnimateurService).demanderCode).mockResolvedValueOnce({
+    vi.mocked(TestBed.inject(EspaceAnimateurService).requestCode).mockResolvedValueOnce({
       emailMasque: 'a***@example.org',
       codeDemo: '123456',
     });

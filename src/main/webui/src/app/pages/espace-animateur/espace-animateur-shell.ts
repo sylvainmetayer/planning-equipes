@@ -155,7 +155,7 @@ export class EspaceAnimateurShell {
     this.erreurAuth.set(null);
     this.codeDemo.set(null);
     try {
-      const envoi = await this.espace.demanderCode();
+      const envoi = await this.espace.requestCode();
       this.codeEnvoyeA.set(envoi.emailMasque);
       this.codeDemo.set(envoi.codeDemo ?? null);
       this.codeSaisi.set(envoi.codeDemo ?? '');

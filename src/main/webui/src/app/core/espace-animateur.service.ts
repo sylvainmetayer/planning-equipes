@@ -86,7 +86,7 @@ export class EspaceAnimateurService {
    * it went to, for the confirmation line under the input — and, on a demo
    * instance whose mails never leave, the code itself.
    */
-  async demanderCode(): Promise<{ emailMasque: string; codeDemo?: string }> {
+  async requestCode(): Promise<{ emailMasque: string; codeDemo?: string }> {
     const jeton = this.requireJeton();
     return this.api.post<{ emailMasque: string; codeDemo?: string }>(
       `/api/espace-animateur/${jeton}/code`,
