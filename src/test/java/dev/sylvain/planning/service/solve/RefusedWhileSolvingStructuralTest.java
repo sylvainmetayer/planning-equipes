@@ -180,9 +180,6 @@ class RefusedWhileSolvingStructuralTest {
                     "ReferenceDataService#deleteCreneaux(Connection,Collection)",
                     "CreneauService#deleteInBulk(Connection,Collection)"),
             Map.entry(
-                    "ReferenceDataService#importCsvReferentiel(ImportTarget,ReferentielCsvImportRequest)",
-                    "ReferentielCsvImportService#apply(ImportTarget,ReferentielCsvImportRequest)"),
-            Map.entry(
                     "ReferenceDataService#importTypologie(TypologieItem)", "TypologieService#importer(TypologieItem)"),
             Map.entry("ReferenceDataService#createTypologie(TypologieItem)", "TypologieService#create(TypologieItem)"),
             Map.entry(
@@ -293,11 +290,6 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry("GenerateurCreneaux#importer(List,List)", "templates and their calendar only, as above"),
             Map.entry("GenerateurCreneaux#assign(long,Set)", "same, for the calendar of the day templates"),
             Map.entry("GenerateurCreneaux#withdraw(Set)", "same: a withdrawn date keeps its timeslots"),
-            Map.entry(
-                    "ReferentielCsvImportService#apply(ImportTarget,ReferentielCsvImportRequest)",
-                    "hands each row to the write of its own family, classified here: a stand edit"
-                            + " (StandService#update) or a timeslot file (CreneauService#importer) is refused there;"
-                            + " game categories, locations and new stands are not"),
             Map.entry("ReferentielCsvExportService#writeEntries(Set,ZipOutputStream,String)", "writes a ZIP stream"),
             Map.entry(
                     "CreneauGridService#validate(List,List,List,ParametresLegaux,List)",
@@ -943,7 +935,7 @@ class RefusedWhileSolvingStructuralTest {
     /**
      * A call on a field of this instance, unqualified or through
      * {@code this.} — not the same field read on another receiver:
-     * {@code ReferentielCsvImportService}'s analysis collects closures
+     * an analysis that collects closures
      * « service -> service.creneaux.importer(…) » that only {@code apply()}
      * runs, and a preview building them writes nothing.
      */

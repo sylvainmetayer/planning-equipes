@@ -352,21 +352,18 @@ export function buildReferenceDataSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.importCsv.ecran.fichiers:Tous les fichiers qui remplissent une édition sont sur l'écran « Fichiers », onglet Importer, une carte par référentiel et dans l'ordre où les données se tiennent ; le bouton « Importer » de chaque écran de référentiel ouvre la même carte sans quitter l'écran, et chaque carte accepte aussi un collage depuis un tableur. Rien n'est écrit tant que vous n'avez pas validé l'aperçu, et une colonne que le fichier ne porte pas n'efface rien : renommer des stands par un fichier de trois colonnes ne touche ni leurs horaires ni leur emplacement.`,
+          text: $localize`:@@aide.importCsv.ecran.fichiers:Les fichiers qui remplissent une édition sont sur l'écran « Fichiers », onglet Importer : le scénario YAML, qui porte l'édition entière (typologies, emplacements, stands, créneaux, journées types), et l'import CSV des animateurs, seul CSV encore importable ; le bouton « Importer » de l'écran Animateurs ouvre la même carte, qui accepte aussi un collage depuis un tableur. Rien n'est écrit tant que vous n'avez pas validé l'aperçu.`,
         },
         {
           kind: 'list',
           items: [
-            $localize`:@@aide.importCsv.onglet.typologies:Typologies, emplacements, stands : un code et un libellé suffisent, le code étant la clé que les autres fichiers citent. Une ligne sans code est désignée par son libellé ou son nom ; un identifiant n'est jamais lu, l'application l'attribue. Latitude et longitude sont facultatives pour un emplacement ; l'effectif l'est pour un stand, qui tient alors à une personne. Une typologie qu'un stand cite sans qu'elle existe est créée, et l'aperçu la nomme.`,
-            $localize`:@@aide.importCsv.onglet.creneaux:Créneaux et journées types : un créneau se reconnaît à sa date et à ses deux heures, si bien qu'un fichier rejoué met la grille à jour au lieu de la doubler. Une journée type se reconnaît à son nom. Attention : importer des journées types ne déplace aucun créneau. La grille ne bouge qu'en appliquant le calendrier.`,
             $localize`:@@aide.importCsv.onglet.animateurs:Animateurs : le plus utile, détaillé ci-dessous.`,
-            $localize`:@@aide.importCsv.onglet.grille:Grille des stands : la matrice du classeur, stands en lignes, jours et créneaux en colonnes. Elle a sa propre section dans ce guide.`,
             $localize`:@@aide.importCsv.onglet.scenario:Scénario : un fichier YAML qui porte l'édition entière et la remplace au lieu de la compléter.`,
           ],
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.importCsv.exports.fichiers:L'onglet Exporter de la même page fait le chemin inverse : une archive ZIP, un fichier par référentiel, dans la forme exacte que ces cartes relisent. C'est ce qui permet de recopier une édition sur l'autre, ou de corriger en masse dans un tableur puis de réimporter.`,
+          text: $localize`:@@aide.importCsv.exports.fichiers:L'onglet Exporter de la même page fait le chemin inverse : une archive ZIP, un fichier par référentiel, à ouvrir dans un tableur — seul celui des animateurs se réimporte — et l'édition entière en YAML, qui se corrige puis se réimporte.`,
         },
         {
           kind: 'steps',
@@ -411,40 +408,6 @@ export function buildReferenceDataSections(): HelpSection[] {
           label: $localize`:@@aide.lien.exporter:Fichiers — Exporter`,
         },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
-        { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
-      ],
-    },
-    {
-      id: 'import-grille-stands',
-      icon: 'grid_view',
-      title: $localize`:@@aide.importGrille.title:Import de la grille des stands`,
-      summary: $localize`:@@aide.importGrille.summary:Verser la matrice du classeur sans la ressaisir, avec les stands en lignes et les jours et créneaux en colonnes.`,
-      blocks: [
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.importGrille.format:L'onglet lit un CSV tel qu'un tableur l'exporte : une première colonne qui nomme le stand par son code, ou à défaut par son nom exact, puis une colonne par jour et par créneau, un effectif par case, vide, « - » ou 0 pour fermé. L'en-tête tient sur deux lignes (les dates, puis les bandes « 10h00-12h00 ») ou sur une seule, « 2026-07-08 10h00-12h00 ». Le plus simple est de partir de « Télécharger la grille actuelle comme modèle ».`,
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.importGrille.heures:Le modèle écrit ses bandes avec un « h » à dessein : Excel transforme « 13:00-16:00 » en une date, et la bande est alors perdue.`,
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.importGrille.colonnes:Chaque colonne se pose sur le créneau de même date qui contient ses heures ; une colonne plus étroite écrit une fenêtre à ses propres bornes. Une colonne sans créneau est ignorée et listée, sans faire refuser le fichier. Un créneau que le fichier ne nomme pas garde la case actuelle de chaque stand importé. Sans aucun créneau dans l'édition, l'import est refusé.`,
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.importGrille.stands:Un stand accepté est réécrit comme depuis la grille de saisie : tout son horaire suit ses cases, et ses effectifs minimum et maximum suivent la plus petite et la plus grande. Un stand absent du fichier n'est pas touché, et l'import n'en crée aucun : un code inconnu, ou un nom porté par deux stands, rejette la ligne en le disant.`,
-        },
-      ],
-      links: [
-        {
-          route: '/fichiers',
-          queryParams: { cible: 'grille-stands' },
-          label: $localize`:@@aide.lien.importGrille.fichiers:Fichiers — Grille des stands`,
-        },
-        { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        lienHoraires(),
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
     },

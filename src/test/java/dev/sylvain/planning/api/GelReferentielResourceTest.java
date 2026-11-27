@@ -215,20 +215,6 @@ class GelReferentielResourceTest {
         refused(edition().when().delete("/api/stands/" + strat + "/plages/1").then(), "STANDS");
         refused(
                 edition()
-                        .body(Map.of("fileName", "stands.csv", "content", "nom\nX"))
-                        .when()
-                        .post("/api/stands/import-csv")
-                        .then(),
-                "STANDS");
-        refused(
-                edition()
-                        .body(Map.of("fileName", "grille.csv", "content", "stand\nX"))
-                        .when()
-                        .post("/api/stands/import-grille")
-                        .then(),
-                "STANDS");
-        refused(
-                edition()
                         .body(Map.of("stands", List.of(Map.of("standId", strat, "cellules", List.of()))))
                         .when()
                         .put("/api/ouvertures-stands/grille")
@@ -271,13 +257,6 @@ class GelReferentielResourceTest {
         refused(edition().body("""
                                 {"jours":"TOUS","dateDebut":"2031-03-03","dateFin":"2031-03-04",
                                  "fenetres":[{"heureDebut":"09:00:00","heureFin":"12:00:00"}]}""").when().post("/api/creneaux/recurrence").then(), "CRENEAUX");
-        refused(
-                edition()
-                        .body(Map.of("fileName", "creneaux.csv", "content", "date;debut;fin"))
-                        .when()
-                        .post("/api/creneaux/import-csv")
-                        .then(),
-                "CRENEAUX");
         refused(edition().when().post("/api/journees-types/application").then(), "CRENEAUX");
     }
 
@@ -329,13 +308,6 @@ class GelReferentielResourceTest {
                 .put("/api/emplacements/" + centre)
                 .then()
                 .statusCode(200);
-        refused(
-                edition()
-                        .body(Map.of("fileName", "typologies.csv", "content", "libelle"))
-                        .when()
-                        .post("/api/typologies/import-csv")
-                        .then(),
-                "TYPOLOGIES_EMPLACEMENTS");
     }
 
     @Test

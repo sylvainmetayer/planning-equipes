@@ -42,7 +42,6 @@ import { buildEmplacementDetail } from './emplacement-detail';
 import { EmplacementFormData, EmplacementFormDialog } from './emplacement-form-dialog';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { GelNotice } from '../../shared/gel-notice';
-import { ImportButton } from '../../shared/import-button';
 
 /** Mirrors `QualiteConstraints.DISTANCE_ELOIGNEE_METRES` on the server. */
 const SEUIL_ELOIGNEMENT_METRES = 300;
@@ -65,7 +64,6 @@ const SEUIL_ELOIGNEMENT_METRES = 300;
   selector: 'app-emplacements-page',
   imports: [
     ImportedRowsFilter,
-    ImportButton,
     MatCardModule,
     MatButtonModule,
     MatCheckboxModule,

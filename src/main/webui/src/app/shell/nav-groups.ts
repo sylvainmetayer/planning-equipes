@@ -131,30 +131,12 @@ export function buildNavGroups(): NavGroup[] {
           shortcut: 'f',
           keywords: $localize`:@@nav.keywords.fichiers:importer exporter csv tableur`,
           tabs: [
-            tab(
-              'cible',
-              'typologies',
-              $localize`:@@nav.tab.importTypologies:Importer des typologies`,
-            ),
-            tab(
-              'cible',
-              'emplacements',
-              $localize`:@@nav.tab.importEmplacements:Importer des emplacements`,
-            ),
-            tab('cible', 'stands', $localize`:@@nav.tab.importStands:Importer des stands`),
-            tab('cible', 'creneaux', $localize`:@@nav.tab.importCreneaux:Importer des créneaux`),
-            tab(
-              'cible',
-              'journees-types',
-              $localize`:@@nav.tab.importJourneesTypes:Importer des journées types`,
-            ),
+            tab('cible', 'scenario', $localize`:@@imports.onglet.scenario:Scénario`, 'yaml'),
             tab(
               'cible',
               'animateurs',
               $localize`:@@nav.tab.importAnimateurs:Importer des animateurs`,
             ),
-            tab('cible', 'grille-stands', $localize`:@@imports.onglet.grille:Grille des stands`),
-            tab('cible', 'scenario', $localize`:@@imports.onglet.scenario:Scénario`, 'yaml'),
             tab(
               'cible',
               'exemples',

@@ -2,44 +2,28 @@
 
 Vous remplissez une édition depuis vos tableurs, vous exportez ce que vous voulez corriger ou partager, et vous archivez l'édition à la fin de l'événement.
 
-Tout se passe dans *Fichiers* (groupe *Préparer*), un écran à trois onglets : *Importer*, *Exporter*, *Archive*. Chaque écran de référentiel a en plus son bouton « Importer », qui ouvre la même carte d'import sans quitter la liste. Le cycle complet tient en trois gestes : exporter, corriger dans le tableur, réimporter.
+Tout se passe dans *Fichiers* (groupe *Préparer*), un écran à trois onglets : *Importer*, *Exporter*, *Archive*. L'écran des animateurs a en plus son bouton « Importer », qui ouvre le même CSV sans quitter la liste. Le cycle complet tient en trois gestes : exporter, corriger, réimporter.
 
 Votre point de départ est un tableur ? [Passer d'un tableur à un logiciel de planning](/tableur-ou-logiciel-de-planning/) dit ce que ce changement apporte, et quand il ne s'impose pas.
 
 ## Importer
 
-L'onglet *Importer* propose une carte par référentiel, dans l'ordre où les données se tiennent :
+L'onglet *Importer* propose quatre cartes :
 
-1. typologies ;
-2. emplacements ;
-3. stands ;
-4. créneaux ;
-5. journées types ;
-6. animateurs ;
-7. la grille des stands ;
-8. enfin le fichier scénario, **le seul qui remplace l'édition** au lieu de la compléter.
+1. le **scénario YAML**, le classeur complet d'une édition : typologies, emplacements, stands et leurs horaires, créneaux, journées types, animateurs, ajustements, paramètres. C'est **le seul qui remplace l'édition** au lieu de la compléter ;
+2. les **animateurs**, depuis un tableur CSV ;
+3. les **exemples** livrés avec l'application ;
+4. la **vérification d'un fichier** scénario, qui n'écrit rien.
 
 ![L'écran d'import de fichiers](/images/fr/docs/fichiers.webp "L'écran Fichiers, onglet Importer")
 
+Les imports CSV des typologies, des emplacements, des stands, des créneaux et des journées types, et celui de la grille des stands, n'existent plus depuis la 4.0 : le fichier YAML les remplace. Pour reprendre votre grille de stands, exportez l'édition en YAML (onglet *Exporter*), réécrivez les horaires des stands dans ce fichier, puis réimportez-le : [Passer de la 3.x à la 4.0](../installer/passer-a-la-4-0.md#les-imports-csv-des-référentiels-et-de-la-grille-des-stands-sont-retirés) donne l'écriture exacte.
+
 Les règles communes :
 
-- Les trois premiers fichiers demandent le minimum : un code et un libellé (typologies), un code et un nom (emplacements), un code, un nom et des typologies (stands). L'effectif d'un stand et les coordonnées d'un emplacement restent facultatifs.
-- Les créneaux se reconnaissent à leur date et à leurs deux heures plutôt qu'à un identifiant.
-- Les journées types se reconnaissent à leur nom. Leurs vacations tiennent sur une ligne (« 09:00-12:00, 12:00-13:00, 14:00-20:00 »). Leurs dates complètent le calendrier sans le remplacer : la grille ne bouge qu'à l'application du calendrier.
-- Une colonne absente n'efface rien, et une ligne dont le code est connu est mise à jour.
-- Une typologie citée sans exister est créée, après l'avoir annoncée.
-- Aucun identifiant n'est jamais saisi ni lu dans un fichier : l'application attribue les siens (A1, A2… pour les animateurs, S1… pour les stands), numérotés dans chaque édition. Une ligne se désigne par son code, sinon par son nom ; un animateur par son adresse e-mail, sinon par ses nom et prénom.
-- Chaque carte accepte aussi les cellules copiées depuis un tableur, lues comme un fichier. Une fois l'import écrit, un lien ouvre l'écran des lignes importées.
-
-### Importer la grille des stands
-
-La matrice de votre classeur arrive telle quelle : stands en lignes, jours et créneaux en colonnes, un effectif par case.
-
-1. Chaque colonne se pose sur son créneau ; une colonne inconnue est ignorée et listée.
-2. Relisez l'aperçu ligne par ligne : chaque stand voit son horaire réécrit depuis ses cases.
-3. Validez.
-
-La grille actuelle se télécharge comme modèle.
+- Aucun identifiant n'est jamais saisi ni lu dans un fichier CSV : l'application attribue les siens (A1, A2… pour les animateurs, S1… pour les stands), numérotés dans chaque édition. Un animateur se désigne par son adresse e-mail, sinon par ses nom et prénom.
+- Une colonne absente n'efface rien, et une ligne déjà connue est mise à jour.
+- Le CSV des animateurs accepte aussi les cellules copiées depuis un tableur, lues comme un fichier. Une fois l'import écrit, un lien ouvre la liste des animateurs sur les lignes importées.
 
 ### Importer vos animateurs depuis un tableur
 
@@ -63,8 +47,8 @@ Avant de remplacer une édition par un scénario, l'application en garde une cop
 
 L'onglet *Exporter* offre deux formes.
 
-- L'archive ZIP : un CSV par référentiel (typologies, emplacements, stands, créneaux, journées types, animateurs), chacun à cocher, et chacun dans la forme exacte que l'onglet d'import correspondant relit. De quoi recopier une édition sur l'autre, rejouer le calendrier d'une année sur l'autre, ou corriger en masse dans un tableur puis réimporter.
-- Le fichier scénario : l'édition entière dans un seul fichier, celui que la carte Scénario des imports relit.
+- L'archive ZIP : un CSV par référentiel (typologies, emplacements, stands, créneaux, journées types, animateurs), chacun à cocher, à ouvrir dans un tableur. Seul le fichier des animateurs se réimporte.
+- Le fichier scénario : l'édition entière dans un seul fichier, celui que la carte Scénario des imports relit. C'est lui qui permet de recopier une édition sur l'autre, de rejouer le calendrier d'une année sur l'autre, ou de corriger en masse puis de réimporter.
 
 Chaque liste de référentiel offre aussi « Exporter cette liste », qui télécharge en CSV ce que le tableau montre.
 
@@ -78,4 +62,4 @@ Les fichiers sont ceux que chaque écran aurait téléchargés. Aucun jeton d'ac
 
 ## Les formats en détail
 
-Les colonnes exactes des fichiers CSV sont décrites dans [les imports CSV](../comprendre/imports-csv.md), le schéma du scénario dans [le fichier de scénario](../comprendre/scenario-yaml.md) et la façon de revenir sur un import dans [restaurer une édition](../comprendre/restaurer-une-edition.md).
+Les colonnes exactes du CSV des animateurs sont décrites dans [les imports CSV](../comprendre/imports-csv.md), le schéma du scénario dans [le fichier de scénario](../comprendre/scenario-yaml.md) et la façon de revenir sur un import dans [restaurer une édition](../comprendre/restaurer-une-edition.md).

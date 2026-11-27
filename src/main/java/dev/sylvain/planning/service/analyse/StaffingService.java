@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * The staffing need of the current edition — what {@code GET /api/staffing}
- * and the MCP tool {@code analyser_effectifs} both return, computed here once
+ * and the MCP tool {@code consulter_besoin} both return, computed here once
  * so the two callers cannot drift (issue #416).
  *
  * <p>The seats come from the seat-only build, never from the problem a solve

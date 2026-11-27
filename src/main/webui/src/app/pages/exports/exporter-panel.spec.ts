@@ -7,7 +7,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExportCsvApi } from '../../core/api/export-csv-api';
-import { CIBLES_EXPORT_CSV } from '../../core/api/imports-api';
+import { CIBLES_EXPORT_CSV } from '../../core/api/export-csv-targets';
 import { ArchiveEvenementApi } from '../../core/api/archive-evenement-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { ExporterPanel } from './exporter-panel';

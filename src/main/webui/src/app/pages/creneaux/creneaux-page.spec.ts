@@ -618,7 +618,7 @@ describe('CreneauxPage rendering', () => {
   it('says the referential is empty, and where to begin, rather than showing a bare table', async () => {
     await rendre([]);
     // Its actions are the empty state's alone: the header leaves them out.
-    expectOnlyInEmptyState(racine(), ['Ajouter', 'Importer']);
+    expectOnlyInEmptyState(racine(), ['Ajouter']);
 
     expect(racine().querySelector('.creneaux-liste-card .empty-state')!.textContent).toContain(
       "Les créneaux donnent ses dates à l'édition : commencez ici",

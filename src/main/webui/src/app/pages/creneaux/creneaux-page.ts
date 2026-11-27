@@ -95,7 +95,6 @@ import {
   openingsByCreneau,
   trierAnomalies,
 } from './grille-creneaux';
-import { ImportButton } from '../../shared/import-button';
 import { HhmmPipe } from '../../shared/hhmm-pipe';
 
 /**
@@ -115,7 +114,6 @@ import { HhmmPipe } from '../../shared/hhmm-pipe';
   imports: [
     OuverturesPage,
     HhmmPipe,
-    ImportButton,
     ImportedRowsFilter,
     FormsModule,
     MatCardModule,

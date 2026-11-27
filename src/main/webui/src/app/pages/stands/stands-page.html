@@ -33,14 +33,12 @@
     <app-gel-notice family="STANDS" />
   </mat-card-content>
   <mat-card-actions class="card-actions">
-    <!-- On an empty referential the empty state below carries « Ajouter » and
-         « Importer »: one button of each name on the screen. -->
+    <!-- On an empty referential the empty state below carries « Ajouter »: one button of that name on the screen. -->
     @if (store.stands().length > 0) {
       <button matButton="filled" type="button" [disabled]="standsLocked()" (click)="openCreate()">
         <mat-icon>add</mat-icon>
         <ng-container i18n="@@common.add">Ajouter</ng-container>
       </button>
-      <app-import-button card="stands" [disabled]="standsLocked()" />
     }
     <button matButton type="button" [disabled]="standsLocked() || standsFiltres().length === 0" (click)="bulkEdit()"
             i18n-matTooltip="@@stands.editionGroupee.tooltip"
@@ -60,12 +58,6 @@
          matTooltip="Les horaires de tous les stands en une grille stand × jour × créneau, un effectif par case, comme dans un tableur.">
         <mat-icon>grid_on</mat-icon>
         <span i18n="@@stands.grille.action">Saisir en grille</span>
-      </a>
-      <a mat-menu-item routerLink="/fichiers" [queryParams]="{ cible: 'grille-stands' }"
-         i18n-matTooltip="@@stands.importGrille.tooltip"
-         matTooltip="Charger un fichier CSV — stands en lignes, jours et créneaux en colonnes — avec un aperçu avant d'écrire.">
-        <mat-icon>upload_file</mat-icon>
-        <span i18n="@@stands.importGrille.action">Importer la grille</span>
       </a>
     </mat-menu>
     <button matButton type="button" [disabled]="standsFiltres().length === 0" (click)="exportList()">
@@ -187,7 +179,6 @@
       <app-empty-state [addDisabled]="standsLocked()" (add)="openCreate()"
                        [previous]="{ route: '/stands', queryParams: { onglet: 'typologies' }, label: previousStepLabel(), missing: store.typologies().length === 0 }">
         <ng-container i18n="@@stands.empty">Un stand propose des typologies et ouvre sur les créneaux : saisissez-les d'abord, puis ajoutez les stands ici.</ng-container>
-        <app-import-button empty-state-import card="stands" [disabled]="standsLocked()" />
       </app-empty-state>
     } @else if (standsFiltres().length === 0) {
       <p class="empty-hint" i18n="@@filter.noMatch">Aucune ligne ne correspond au filtre.</p>

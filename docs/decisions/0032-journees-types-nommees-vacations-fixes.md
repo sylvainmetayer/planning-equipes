@@ -1,6 +1,6 @@
 # 0032 — Des journées types nommées génèrent les créneaux, qui restent la vérité
 
-- **Statut** : accepté, implémenté ; remplacé en partie par [0126](0126-un-generateur-de-creneaux-unique.md) (les journées types sont les gabarits du générateur de créneaux, sémantique gardée) ; et par [0128](0128-pas-de-couverture-de-pause-sur-un-creneau.md) (la vacation ne porte plus de relais repas)
+- **Statut** : accepté, implémenté ; remplacé en partie par [0126](0126-un-generateur-de-creneaux-unique.md) (les journées types sont les gabarits du générateur de créneaux, sémantique gardée) ; et par [0129](0129-pas-de-couverture-de-pause-sur-un-creneau.md) (la vacation ne porte plus de relais repas)
 - **Date** : septembre 2026
 - **Portée** : référentiel des créneaux, import de scénario, MCP, IHM
 

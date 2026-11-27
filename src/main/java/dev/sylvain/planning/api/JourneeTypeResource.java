@@ -8,9 +8,6 @@ import dev.sylvain.planning.service.referentiel.GenerateurCreneaux.RapportApplic
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation.Affectation;
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation.Reconnaissance;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.referentiel.ReferentielCsvImportReport;
-import dev.sylvain.planning.service.referentiel.ReferentielCsvImportRequest;
-import dev.sylvain.planning.service.referentiel.ReferentielCsvImportService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -160,44 +157,5 @@ public class JourneeTypeResource {
     @Deprecated
     public ReconnaissanceJourneesTypes reconnaitre() {
         return ReconnaissanceJourneesTypes.of(generateur.reconnaitre());
-    }
-
-    /* ------------------------------ Import CSV ------------------------------ */
-
-    private static final ReferentielCsvImportReport.ImportTarget CIBLE =
-            ReferentielCsvImportReport.ImportTarget.JOURNEES_TYPES;
-
-    /** The shape the import expects, shown rather than described. */
-    @GET
-    @Path("/import-csv/exemple")
-    @NotForLecteur
-    @Produces("text/csv")
-    public Response exempleCsv() {
-        return CsvDownload.attachment(
-                referenceDataService.exempleCsvReferentiel(CIBLE), ReferentielCsvImportService.exampleFileName(CIBLE));
-    }
-
-    /** What the file would do, line by line, without writing any of it. */
-    @POST
-    @Path("/import-csv/analyse")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public ReferentielCsvImportReport analyseCsv(ReferentielCsvImportRequest request) {
-        return referenceDataService.previewCsvReferentiel(CIBLE, request);
-    }
-
-    /**
-     * Applies the same file the preview was computed from; the server reads it
-     * again before writing.
-     *
-     * <p>Templates are matched on their name and their dates are <b>merged</b>
-     * into the calendar — a date the file does not name keeps whatever it had.
-     * <b>No timeslot moves</b>: materialising the calendar stays
-     * {@link #apply()}, which previews what it would change first (ADR 0032).</p>
-     */
-    @POST
-    @Path("/import-csv")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public ReferentielCsvImportReport importCsv(ReferentielCsvImportRequest request) {
-        return referenceDataService.importCsvReferentiel(CIBLE, request);
     }
 }

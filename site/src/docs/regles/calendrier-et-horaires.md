@@ -34,7 +34,7 @@ Au-dessus de la grille, la synthèse et les trois erreurs de saisie d'horaires h
 
 Une dernière vue compare deux à huit stands à un stand de référence, jour par jour et case par case, puis ouvre la copie des horaires de la référence vers les autres.
 
-La grille du classeur d'un organisateur peut aussi arriver telle quelle par fichier : voir [Importer et exporter des fichiers](importer-exporter.md#importer-la-grille-des-stands).
+La grille du classeur d'un organisateur ne s'importe plus en CSV : elle se réécrit dans le fichier YAML de l'édition, voir [Passer de la 3.x à la 4.0](../installer/passer-a-la-4-0.md#les-imports-csv-des-référentiels-et-de-la-grille-des-stands-sont-retirés).
 
 ## Quand une consigne de l'autorité change les horaires
 
