@@ -72,18 +72,19 @@ public class DisponibiliteMcpTools {
 
     @Tool(
             name = "consulter_disponibilites",
-            description = "L'écran Disponibilités, sous la section demandée ; les animateurs y sont désignés par id "
-                    + "seul. collecte (défaut) : la fenêtre de collecte, ouverte ou non, ses dates si elle en porte "
-                    + "et la relance automatique ; fermée tant que personne ne l'a ouverte — un formulaire ouvert sur "
-                    + "Internet ne s'ouvre pas par omission. declarations : les déclarations envoyées depuis l'espace "
-                    + "animateur, de la plus récente à la plus ancienne, chacune avec ce qui a été déclaré et, en "
-                    + "regard, ce que la fiche dit aujourd'hui ; statut (EN_ATTENTE, APPLIQUEE, REFUSEE) ne vaut que "
-                    + "pour cette section. covoiturage : les demandes « Je viens avec… » (un à trois coéquipiers), du "
-                    + "plus récent au plus ancien, avec les membres, le statut (EN_ATTENTE pour non validée, ou "
-                    + "VALIDEE), si chacun a nommé les autres (confirmedByAll), les jours où leurs indisponibilités "
-                    + "déclarées divergent et l'ajustement ARRIVEE_GROUPEE créé par la validation ; une demande est "
-                    + "distincte de la déclaration, et sa validation, qui prévient par courriel, reste un geste "
-                    + "d'écran.",
+            description =
+                    "L'onglet Disponibilités de la page Animateurs, sous la section demandée ; les animateurs y sont désignés par id "
+                            + "seul. collecte (défaut) : la fenêtre de collecte, ouverte ou non, ses dates si elle en porte "
+                            + "et la relance automatique ; fermée tant que personne ne l'a ouverte — un formulaire ouvert sur "
+                            + "Internet ne s'ouvre pas par omission. declarations : les déclarations envoyées depuis l'espace "
+                            + "animateur, de la plus récente à la plus ancienne, chacune avec ce qui a été déclaré et, en "
+                            + "regard, ce que la fiche dit aujourd'hui ; statut (EN_ATTENTE, APPLIQUEE, REFUSEE) ne vaut que "
+                            + "pour cette section. covoiturage : les demandes « Je viens avec… » (un à trois coéquipiers), du "
+                            + "plus récent au plus ancien, avec les membres, le statut (EN_ATTENTE pour non validée, ou "
+                            + "VALIDEE), si chacun a nommé les autres (confirmedByAll), les jours où leurs indisponibilités "
+                            + "déclarées divergent et l'ajustement ARRIVEE_GROUPEE créé par la validation ; une demande est "
+                            + "distincte de la déclaration, et sa validation, qui prévient par courriel, reste un geste "
+                            + "d'écran.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -164,7 +165,7 @@ public class DisponibiliteMcpTools {
                     + "nommé les autres (confirmedByAll), les jours où leurs indisponibilités déclarées divergent, "
                     + "et l'ajustement ARRIVEE_GROUPEE créé par la validation. Une demande est distincte de la "
                     + "déclaration de disponibilités : appliquer ou refuser une déclaration ne la touche pas, et "
-                    + "seule sa validation, depuis l'onglet Covoiturage de l'écran Disponibilités, crée "
+                    + "seule sa validation, depuis l'onglet Covoiturage de la page Animateurs, crée "
                     + "l'ajustement ; écarter une demande ou annuler une arrivée groupée validée se fait aussi depuis "
                     + "cet onglet, et la supprime. Un seul mail part, à la validation. Les animateurs y sont "
                     + "désignés par id seul.",
@@ -248,7 +249,7 @@ public class DisponibiliteMcpTools {
     }
 
     @Tool(
-            name = "configurer_collecte_disponibilites",
+            name = "modifier_collecte_disponibilites",
             description = "Ouvre ou ferme la collecte des disponibilités, et la borne éventuellement par des "
                     + "dates. prevenirAnimateurs ENVOIE UN COURRIEL à chaque animateur avec le lien de son espace : "
                     + "c'est une décision par ouverture, pas un réglage, et personne n'est invité à une collecte qu'on "
@@ -273,6 +274,44 @@ public class DisponibiliteMcpTools {
                             required = false)
                     Boolean relanceAutomatique,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return configureCollection(ouverte, debut, fin, prevenirAnimateurs, relanceAutomatique);
+    }
+
+    @Deprecated
+    @Tool(
+            name = "configurer_collecte_disponibilites",
+            description =
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_collecte_disponibilites, qui prend les mêmes arguments. "
+                            + "Ouvre ou ferme la collecte des disponibilités, et la borne éventuellement par des "
+                            + "dates. prevenirAnimateurs ENVOIE UN COURRIEL à chaque animateur avec le lien de son espace : "
+                            + "c'est une décision par ouverture, pas un réglage, et personne n'est invité à une collecte qu'on "
+                            + "ferme. L'invitation est comptée, jamais nominative. relanceAutomatique est un réglage "
+                            + "conservé : à trois jours de la fin, la tâche de nuit ENVOIE UN COURRIEL de relance aux invités "
+                            + "qui n'ont rien déclaré ; omis, il garde sa valeur.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = true))
+    CollecteView configureAvailabilityCollectionFormerName(
+            @ToolArg(description = "Collecte ouverte ou fermée") boolean ouverte,
+            @ToolArg(description = "Début de la collecte (AAAA-MM-JJ)", required = false) String debut,
+            @ToolArg(description = "Fin de la collecte (AAAA-MM-JJ)", required = false) String fin,
+            @ToolArg(description = "Envoyer maintenant l'invitation à déclarer (courriels)", required = false)
+                    Boolean prevenirAnimateurs,
+            @ToolArg(
+                            description = "Relance automatique à J-3 de la fin aux invités sans déclaration "
+                                    + "(omis : inchangée)",
+                            required = false)
+                    Boolean relanceAutomatique,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return configureCollection(ouverte, debut, fin, prevenirAnimateurs, relanceAutomatique);
+    }
+
+    /** Shared by the tool and its former name: never another @Tool, whose interceptor would journal twice. */
+    private CollecteView configureCollection(
+            boolean ouverte, String debut, String fin, Boolean prevenirAnimateurs, Boolean relanceAutomatique) {
         ConfigurationAppliquee appliquee = declarationService.configure(
                 ouverte,
                 McpArgs.date(debut, "debut"),

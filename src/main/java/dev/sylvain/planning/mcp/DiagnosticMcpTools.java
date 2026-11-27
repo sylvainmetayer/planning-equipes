@@ -407,7 +407,7 @@ public class DiagnosticMcpTools {
                     + "désactivée), jour et semaine critiques, le détail par jour "
                     + "et par semaine, plus le goulot par typologie : les mêmes bornes sur les sièges d'une seule typologie, "
                     + "face aux animateurs qui la déclarent. Calcul en Java pur, aucune résolution lancée. Le minimum "
-                    + "est la borne exacte (flot maximal sur les jours de repos) que l'écran Besoin donne pour réponse "
+                    + "est la borne exacte (flot maximal sur les jours de repos) que l'onglet Besoin du Diagnostic donne pour réponse "
                     + "par défaut ; il ignore compétences et repos quotidien, que seul un calcul par équipe fictive "
                     + "(option avancée de l'écran) vérifie ; minimumAvecIndisponibilites y "
                     + "ajoute, à part, une projection sur les indisponibilités déjà déclarées. Répond avant la saisie "

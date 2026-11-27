@@ -60,7 +60,7 @@ The templates (« gabarits ») are the day templates of 3.x. `modifier_gabarit` 
 
 ## Laying down a consigne
 
-An arrêté (an official order) closes a time band for all stands, and the question is whether the plan can be turned around before nightfall ([ADR 0043](repo:docs/decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)). Eight tools mirror the Consignes screen: `lister_consignes`, `consulter_preselection_consigne`, `simuler_consigne`, `appliquer_consigne`, `simuler_levee_consigne`, `lever_consigne`, `definir_prereglage_consigne`, `supprimer_prereglage_consigne`. None names a person.
+An arrêté (an official order) closes a time band for all stands, and the question is whether the plan can be turned around before nightfall ([ADR 0043](repo:docs/decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)). Eight tools mirror the Consignes tab of Rules: `lister_consignes`, `consulter_preselection_consigne`, `simuler_consigne`, `appliquer_consigne`, `simuler_levee_consigne`, `supprimer_consigne`, `modifier_prereglage_consigne`, `supprimer_prereglage_consigne`. None names a person.
 
 **Windows** are written `HH:MM-HH:MM` separated by commas, the end omitted or at `00:00` meaning "until midnight" (`08:00-10:00,18:00-`). **Openings** name the stand, its window and, after `*`, the headcount of that window: `BOURSE=08:00-10:00*2,BOURSE=18:00-22:00*7`. Without `*N`, the window inherits the highest headcount that the stand loses in the band, otherwise its minimum. The reason is mandatory: it is printed everywhere the day is said to be modified. The meal windows (`repasMidi`, `repasSoir`, `coupureRepasMinutes`, `justificationRepas`) apply only on the consigne's dates.
 
@@ -69,17 +69,17 @@ An arrêté (an official order) closes a time band for all stands, and the quest
 3. `appliquer_consigne`, same arguments: lays down or replaces the consigne of a date and adds to the grid only the timeslots that the openings require. The dates must be in the future and are all written together or not at all.
 4. `lancer_correction`, then `consulter_publication` and `publier_planning`.
 
-Lifting follows the same pattern: `simuler_levee_consigne` names the added timeslots that would leave with their seats and warns when the frozen days exhaust the available people, `lever_consigne` removes them and refuses a past or current date, a worked day keeping the consigne that governed it. A preset ("Heatwave plan") memorises band, reason and windows and follows the edition's duplication. `consulter_alertes_meteo` returns the alerts raised in the morning with the preset suggested for the phenomenon; it lays nothing down, applying the suggestion remains an explicit `appliquer_consigne`.
+Lifting follows the same pattern: `simuler_levee_consigne` names the added timeslots that would leave with their seats and warns when the frozen days exhaust the available people, `supprimer_consigne` removes them and refuses a past or current date, a worked day keeping the consigne that governed it. A preset ("Heatwave plan") memorises band, reason and windows and follows the edition's duplication. `consulter_alertes_meteo` returns the alerts raised in the morning with the preset suggested for the phenomenon; it lays nothing down, applying the suggestion remains an explicit `appliquer_consigne`.
 
 ## Deciding what staff have asked for
 
-Availability declarations and swap requests arrive from the staff espace. `consulter_disponibilites` reads the Availability tab of the Staff page under a `section`: `collecte` (default: the window, its dates, the automatic reminder), `declarations` (filterable by `statut`) or `covoiturage`. `modifier_declaration_disponibilite` decides a declaration: `decision=appliquer` writes it onto the record through the same `write*` as the entry screen (the data is marked modified, `consulter_planning` flags the plan as stale, the journal carries the fields replaced, `joursIndisponibles` and `souhaits`, and the tool returns the warnings as codes); `decision=refuser` leaves the record untouched, with the `commentaire` the staff member will read. Opening the collection stays `configurer_collecte_disponibilites`, apart, because it may write to the staff.
+Availability declarations and swap requests arrive from the staff espace. `consulter_disponibilites` reads the Availability tab of the Staff page under a `section`: `collecte` (default: the window, its dates, the automatic reminder), `declarations` (filterable by `statut`) or `covoiturage`. `modifier_declaration_disponibilite` decides a declaration: `decision=appliquer` writes it onto the record through the same `write*` as the entry screen (the data is marked modified, `consulter_planning` flags the plan as stale, the journal carries the fields replaced, `joursIndisponibles` and `souhaits`, and the tool returns the warnings as codes); `decision=refuser` leaves the record untouched, with the `commentaire` the staff member will read. Opening the collection stays `modifier_collecte_disponibilites`, apart, because it may write to the staff.
 
 `consulter_foire_echanges` returns the fair's window and its statistics (volumes, rates, delays, breakdowns by day and by stand) over a creation period (`du`, `au`, or `touteEdition`, refused together with the other two). No staff member appears there, not even by id.
 
 `consulter_publication`, view `confirmations`, counts, among the staff who have a seat on the published plan, those confirmed, reminded, silent and the **send failures** (counted apart, with no address) and dates the publication they are answering; `jamaisPublie` true means the question has not yet been put to anyone.
 
-The `covoiturage` section of `consulter_disponibilites` returns the "I'm coming with…" requests of the collection, apart from the declaration: members, status, `confirmedByAll`, days where unavailabilities diverge, adjustment created, all by id, with status `EN_ATTENTE` (not validated) or `VALIDEE`. Validation, set-aside and cancellation remain screen gestures, because validation notifies the staff by e-mail; an assistant creates an `ARRIVEE_GROUPEE` directly through `creer_contrainte_ad_hoc`. On the other hand, `supprimer_contrainte_ad_hoc` on a grouped arrival that a validated request supports returns a result in error carrying the sentence of the Manual adjustments screen (cancel it from Availability > Carpool).
+The `covoiturage` section of `consulter_disponibilites` returns the "I'm coming with…" requests of the collection, apart from the declaration: members, status, `confirmedByAll`, days where unavailabilities diverge, adjustment created, all by id, with status `EN_ATTENTE` (not validated) or `VALIDEE`. Validation, set-aside and cancellation remain screen gestures, because validation notifies the staff by e-mail; an assistant creates an `ARRIVEE_GROUPEE` directly through `creer_contrainte_ad_hoc`. On the other hand, `supprimer_contrainte_ad_hoc` on a grouped arrival that a validated request supports returns a result in error carrying the sentence of the Adjustments tab of Rules (cancel it from Availability > Carpool).
 
 ## Editions, scenarios and publication
 
@@ -104,7 +104,7 @@ Two **resources**, to attach once to inform all following calls:
 
 ## Old tool names
 
-4.0 renames, groups or removes tools of 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). A grouped tool does under one name, with an argument (`vue`, `section`, `mode`, `decision`), what several used to do ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)); its old names stay published until 5.0 next to the new one, their description starting with « Ancien nom »: those of the day review, those of the day templates, the recurring timeslots and the derivation, which the timeslot generator grouped ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), those of the plan, the solve, the rules and the swaps, those of the diagnosis and its reports, those of the parameters, the editions, the scenarios, the publication and the backups, and those of the stands, the staff, the availabilities and the timeslots. The `tension` mode of `analyser_marge` became the `tension` section of `consulter_risques`. The former solver settings tool is no longer published: the compute budget it set moved to the instance, and only the end-of-solve mail stays in `modifier_parametres` (section `calcul`). The three stand plage and model tools born in 4.0 are not kept: no published version carried them, and the [4.0 guide](../installer/passer-a-la-4-0.md) names them. This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
+4.0 renames, groups or removes tools of 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). A grouped tool does under one name, with an argument (`vue`, `section`, `mode`, `decision`), what several used to do ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)); its old names stay published until 5.0 next to the new one, their description starting with « Ancien nom »: those of the day review, those of the day templates, the recurring timeslots and the derivation, which the timeslot generator grouped ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), those of the plan, the solve, the rules and the swaps, those of the diagnosis and its reports, those of the parameters, the editions, the scenarios, the publication and the backups, those of the stands, the staff, the availabilities and the timeslots, and three names the closing audit brought back into the convention (`lever_consigne`, `definir_prereglage_consigne`, `configurer_collecte_disponibilites`). The `tension` mode of `analyser_marge` became the `tension` section of `consulter_risques`. The former solver settings tool is no longer published: the compute budget it set moved to the instance, and only the end-of-solve mail stays in `modifier_parametres` (section `calcul`). The three stand plage and model tools born in 4.0 are not kept: no published version carried them, and the [4.0 guide](../installer/passer-a-la-4-0.md) names them. This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
 
 <!-- mcp-renommages:debut -->
 | Name in 3.x | Name in 4.0 |
@@ -131,6 +131,7 @@ Two **resources**, to attach once to inform all following calls:
 | `changements_journee` | `comparer_journee` |
 | `compacter_horaires_stands` | removed |
 | `comparer_instantanes` | `comparer_versions` |
+| `configurer_collecte_disponibilites` | `modifier_collecte_disponibilites` |
 | `configurer_foire_echanges` | `modifier_foire_echanges` |
 | `consulter_animateur` | `lister_animateurs` |
 | `consulter_collecte_disponibilites` | `consulter_disponibilites` |
@@ -144,6 +145,7 @@ Two **resources**, to attach once to inform all following calls:
 | `creer_creneaux_recurrents` | `appliquer_generateur_creneaux` |
 | `creer_stand_complet` | `creer_stand` |
 | `definir_journee_type` | `modifier_gabarit` |
+| `definir_prereglage_consigne` | `modifier_prereglage_consigne` |
 | `deplacer_affectation` | `modifier_affectation` |
 | `desactiver_contrainte` | `modifier_contrainte` |
 | `desactiver_edition` | `modifier_edition` |
@@ -164,6 +166,7 @@ Two **resources**, to attach once to inform all following calls:
 | `heures_travaillees` | `consulter_charge` |
 | `importer_scenario_yaml` | `importer_scenario` |
 | `lancer_solveur` | `lancer_calcul` |
+| `lever_consigne` | `supprimer_consigne` |
 | `lever_gel` | `modifier_phase_edition` |
 | `lister_affectations` | `consulter_planning` |
 | `lister_declarations_disponibilite` | `consulter_disponibilites` |

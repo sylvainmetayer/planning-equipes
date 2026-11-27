@@ -132,6 +132,7 @@ class McpAnnotationsStructurelleTest {
             "publier_planning",
             "envoyer_planning_animateur",
             "envoyer_relance_animateurs",
+            "modifier_collecte_disponibilites",
             "configurer_collecte_disponibilites",
             "relancer_animateurs");
 

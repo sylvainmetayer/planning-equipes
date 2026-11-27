@@ -271,7 +271,7 @@ public class McpPrompts {
                 1. lister_editions : l'espace animateur n'est ouvert que sur l'édition active. Sur une \
                 autre, une collecte ouverte ne recevrait rien.
                 2. consulter_disponibilites : la collecte est-elle ouverte, et sur quelles dates ?
-                3. configurer_collecte_disponibilites pour l'ouvrir, bornée par des dates si je t'en \
+                3. modifier_collecte_disponibilites pour l'ouvrir, bornée par des dates si je t'en \
                 donne. prevenirAnimateurs envoie à chacun le lien de son espace : c'est une décision à \
                 chaque ouverture, à prendre seulement avec mon accord, et jamais pour une collecte qu'on \
                 ferme.
@@ -630,7 +630,7 @@ public class McpPrompts {
 
                 1. lister_consignes : ce qui est déjà posé, et les préréglages (« Plan canicule ») \
                 dont on peut partir.
-                2. Si le scénario risque de revenir, definir_prereglage_consigne le mémorise — bande, \
+                2. Si le scénario risque de revenir, modifier_prereglage_consigne le mémorise — bande, \
                 motif, fenêtres de compensation —, après mon accord. Rien n'est posé par là.
                 3. consulter_preselection_consigne pour la date et la bande : ce que la bande prend à \
                 chaque stand, et ceux qui sont proposés pour rouvrir.
@@ -648,7 +648,7 @@ public class McpPrompts {
                 animateurs continuent de lire le plan nominal.
 
                 Retour arrière, si l'alerte est levée : simuler_levee_consigne montre ce qui serait \
-                retiré et qui y est assis, lever_consigne après mon accord, puis lancer_correction \
+                retiré et qui y est assis, supprimer_consigne après mon accord, puis lancer_correction \
                 — la règle de stabilité rend les créneaux à leurs titulaires. Un jour déjà travaillé \
                 garde la consigne qui l'a gouverné.""".formatted(suffixe(edition), emittingEditionFrame(edition)));
     }

@@ -1,6 +1,6 @@
 # 0127 — Un outil MCP par objet et par verbe, les anciens noms en alias jusqu'en 5.0
 
-- **Statut** : accepté, implémenté (plan, calcul, règles, échanges ; paramètres, éditions, scénarios, publication, sauvegardes ; diagnostic et rapports ; stands, animateurs, disponibilités et créneaux ; les autres familles suivent)
+- **Statut** : accepté, implémenté pour toutes les familles ; l'inventaire de clôture est en annexe
 - **Date** : novembre 2026
 - **Portée** : outils MCP, table `mcp-renommages.tsv`, invites et ressources MCP, guide de migration 4.0
 - **Révise** : [0100](0100-convention-de-nommage-des-outils-mcp.md) § 5 (« pas d'alias »)
@@ -35,4 +35,43 @@ La 3.1 publie 157 outils. Un assistant les relit tous à chaque connexion, et be
 - Paramètres, éditions, scénarios, publication, météo et sauvegardes passent de 37 outils à 23, plus 21 anciens noms publiés jusqu'en 5.0.
 - Diagnostic et rapports passent de 11 outils à 5, plus 11 anciens noms publiés jusqu'en 5.0 ; la faisabilité, que l'écran montre dans Problèmes, est une section de `consulter_besoin` comme le prévoyait l'onglet Besoin.
 - Stands, emplacements, typologies, animateurs, disponibilités et créneaux passent de 36 outils à 26, plus 11 anciens noms publiés jusqu'en 5.0 ; trois outils de plages nés en 4.0 (`creer_plage_stand`, `supprimer_plage_stand`, `supprimer_horaires_stand`) disparaissent sans alias, selon le point 4.
+- L'audit de clôture (annexe) ne fusionne rien de plus : aucun outil restant ne répond à coup sûr à la question d'un autre ni n'en est un sous-ensemble ; les deux cas discutables sont en annexe. Il remet dans la convention de 0100 les trois noms dont le verbe n'est pas de la liste : `lever_consigne` devient `supprimer_consigne`, `definir_prereglage_consigne` devient `modifier_prereglage_consigne` (comme `definir_journee_type` est devenu `modifier_gabarit`), `configurer_collecte_disponibilites` devient `modifier_collecte_disponibilites` (comme `configurer_foire_echanges` est devenu `modifier_foire_echanges`), chacun gardant son ancien nom jusqu'en 5.0. `verrouiller` et `deverrouiller` gardent le leur : 0109 l'a jugé conforme, le verbe nommant déjà son objet, le planning.
+- `McpRenommageTest` tient désormais tous les noms publiés : un outil courant hors convention, un ancien nom sans `@Deprecated` ou dont la description ne désigne pas un outil courant, ou que la table renvoie ailleurs, font échouer la construction.
 - En 5.0, les méthodes `@Deprecated` des classes `mcp` partent avec leurs lignes des listes structurelles.
+
+## Annexe — inventaire de clôture
+
+Le serveur publie 103 outils courants et 82 anciens noms gardés jusqu'en 5.0, soit 185 outils. Des 157 noms de la 3.1, 52 n'ont pas changé, 82 restent publiés comme anciens noms, 20 ont un nouveau nom sans que l'ancien soit encore publié, et 3 sont retirés ; `mcp-renommages.tsv` donne la ligne de chacun. Une famille est une classe du paquet `mcp`.
+
+| Famille (classe) | Courants | Anciens noms | Outils courants |
+| --- | --- | --- | --- |
+| Animateurs (`AnimateurMcpTools`) | 4 | 1 | `lister_animateurs`, `creer_animateur`, `modifier_animateur`, `supprimer_animateur` |
+| Calcul (`SolveurMcpTools`) | 6 | 8 | `lancer_calcul`, `lancer_correction`, `arreter_calcul`, `consulter_calcul`, `supprimer_calcul`, `diagnostiquer_plan` |
+| Changements d'une journée (`ChangementsJourneeMcpTools`) | 1 | 1 | `comparer_journee` |
+| Consignes (`ConsigneMcpTools`) | 8 | 2 | `lister_consignes`, `consulter_preselection_consigne`, `simuler_consigne`, `appliquer_consigne`, `simuler_levee_consigne`, `supprimer_consigne`, `modifier_prereglage_consigne`, `supprimer_prereglage_consigne` |
+| Créneaux (`CreneauMcpTools`) | 5 | 7 | `lister_creneaux`, `creer_creneau`, `modifier_creneau`, `diagnostiquer_creneaux`, `supprimer_creneaux` |
+| Diagnostic et mesures (`DiagnosticMcpTools`) | 9 | 8 | `consulter_besoin`, `consulter_risques`, `consulter_repas_pauses`, `analyser_arrivees_groupees`, `lister_anomalies_referentiel`, `lister_mesures_edition`, `supprimer_mesure_edition`, `analyser_usages_suppression`, `previsualiser_import` |
+| Disponibilités (`DisponibiliteMcpTools`) | 3 | 6 | `consulter_disponibilites`, `modifier_declaration_disponibilite`, `modifier_collecte_disponibilites` |
+| Échanges (`EchangeMcpTools`) | 5 | 3 | `lister_demandes_echange`, `consulter_foire_echanges`, `modifier_foire_echanges`, `modifier_demande_echange`, `analyser_impact_echange` |
+| Éditions (`EditionMcpTools`) | 7 | 6 | `lister_editions`, `consulter_edition`, `modifier_phase_edition`, `creer_edition`, `comparer_editions`, `modifier_edition`, `supprimer_edition` |
+| État des journées (`ValidationJourneeMcpTools`) | 3 | 0 | `consulter_etats_journee`, `consulter_prerequis_validation`, `modifier_etat_journee` |
+| Générateur de créneaux (`GenerateurCreneauxMcpTools`) | 5 | 0 | `lister_gabarits`, `modifier_gabarit`, `supprimer_gabarit`, `previsualiser_generateur_creneaux`, `appliquer_generateur_creneaux` |
+| Journées types (3.x) (`JourneeTypeMcpTools`) | 0 | 9 | — |
+| Météo (`WeatherMcpTools`) | 1 | 0 | `consulter_alertes_meteo` |
+| Paramètres et ajustements (`ParametresMcpTools`) | 5 | 7 | `consulter_parametres`, `modifier_parametres`, `lister_contraintes_ad_hoc`, `creer_contrainte_ad_hoc`, `supprimer_contrainte_ad_hoc` |
+| Plan et charge (`PlanningMcpTools`) | 5 | 11 | `consulter_planning`, `analyser_affectation`, `simuler_affectation`, `modifier_affectation`, `consulter_charge` |
+| Publication (`PublicationMcpTools`) | 4 | 4 | `consulter_publication`, `publier_planning`, `envoyer_planning_animateur`, `envoyer_relance_animateurs` |
+| Réalisé (`RealiseMcpTools`) | 1 | 0 | `comparer_realise_planifie` |
+| Règles du calcul (`ContrainteMcpTools`) | 2 | 3 | `lister_contraintes`, `modifier_contrainte` |
+| Sauvegardes (`SauvegardeMcpTools`) | 2 | 1 | `consulter_sauvegardes`, `modifier_sauvegardes` |
+| Scénarios (`ScenarioMcpTools`) | 4 | 3 | `lister_scenarios`, `importer_scenario`, `diagnostiquer_scenario`, `supprimer_donnees_edition` |
+| Stands, emplacements, typologies (`StandMcpTools`) | 14 | 2 | `lister_stands`, `creer_stand`, `modifier_stand`, `supprimer_stand`, `creer_horaire_stand`, `supprimer_horaire_stand`, `lister_emplacements`, `creer_emplacement`, `modifier_emplacement`, `supprimer_emplacement`, `lister_typologies`, `creer_typologie`, `modifier_typologie`, `supprimer_typologie` |
+| Verrous (`VerrouillageMcpTools`) | 3 | 0 | `lister_verrouillages`, `verrouiller`, `deverrouiller` |
+| Versions du plan (`VersionMcpTools`) | 6 | 0 | `lister_versions`, `consulter_version`, `creer_version`, `restaurer_version`, `supprimer_version`, `comparer_versions` |
+| **Total** | **103** | **82** | 185 outils publiés |
+
+Deux cas ont été lus comme des doublons possibles et gardés, à confirmer :
+
+- `analyser_impact_echange` et `simuler_affectation` (mode `deplacer`) chiffrent tous deux un échange de sièges, mais le premier part d'une demande d'échange, son objet, et refait le calcul que la prévalidation a fait à l'envoi ; le second part de deux sièges. Les fondre ferait d'une demande un argument de l'affectation.
+- `verrouiller` (type `JOUR`) et `modifier_etat_journee` (état `FIGEE`) posent le même verrou de journée, mais le second porte aussi la relecture et son commentaire, et le premier fige d'autres cibles (un animateur sur un créneau, un stand sur un jour). Ni l'un ni l'autre n'est un sous-ensemble de l'autre.
+
