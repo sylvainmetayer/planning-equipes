@@ -6532,7 +6532,7 @@
       },
       "LocalDateTime" : {
         "type" : "string",
-        "format" : "date-time",
+        "format" : "local-date-time",
         "examples" : [ "2022-03-10T12:15:50" ]
       },
       "LocalTime" : {
@@ -11275,7 +11275,15 @@
           }
         },
         "summary" : "Planning Ics",
-        "tags" : [ "Abonnement Ics Resource" ]
+        "tags" : [ "Abonnement Ics Resource" ],
+        "parameters" : [ {
+          "name" : "token",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       }
     },
     "/api/affichage-mural" : {
@@ -14529,7 +14537,15 @@
           }
         },
         "summary" : "Espace",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       }
     },
     "/api/espace-animateur/{jeton}/abonnement" : {
@@ -14547,7 +14563,15 @@
           }
         },
         "summary" : "Regenerate Abonnement Token",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       }
     },
     "/api/espace-animateur/{jeton}/code" : {
@@ -14563,13 +14587,28 @@
           }
         },
         "summary" : "Request Code",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       }
     },
     "/api/espace-animateur/{jeton}/collegues/{collegueId}/postes" : {
       "get" : {
         "parameters" : [ {
           "name" : "collegueId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "jeton",
           "in" : "path",
           "required" : true,
           "schema" : {
@@ -14610,7 +14649,15 @@
           }
         },
         "summary" : "Confirmer Planning",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       }
     },
     "/api/espace-animateur/{jeton}/contacts" : {
@@ -14641,7 +14688,15 @@
           }
         },
         "summary" : "Save Contacts",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       },
       "get" : {
         "responses" : {
@@ -14657,7 +14712,15 @@
           }
         },
         "summary" : "Contacts",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       }
     },
     "/api/espace-animateur/{jeton}/covoiturage" : {
@@ -14686,7 +14749,15 @@
           }
         },
         "summary" : "Request Carpool",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       },
       "get" : {
         "responses" : {
@@ -14702,7 +14773,15 @@
           }
         },
         "summary" : "Carpool",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       }
     },
     "/api/espace-animateur/{jeton}/demandes" : {
@@ -14734,7 +14813,15 @@
           }
         },
         "summary" : "Submit",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       },
       "get" : {
         "responses" : {
@@ -14753,7 +14840,15 @@
           }
         },
         "summary" : "Demandes",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       }
     },
     "/api/espace-animateur/{jeton}/demandes-recues" : {
@@ -14774,13 +14869,28 @@
           }
         },
         "summary" : "Received Demandes",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       }
     },
     "/api/espace-animateur/{jeton}/demandes-recues/{demandeId}/accord" : {
       "post" : {
         "parameters" : [ {
           "name" : "demandeId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "jeton",
           "in" : "path",
           "required" : true,
           "schema" : {
@@ -14810,6 +14920,13 @@
           "schema" : {
             "type" : "string"
           }
+        }, {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -14829,6 +14946,13 @@
       "post" : {
         "parameters" : [ {
           "name" : "demandeId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "jeton",
           "in" : "path",
           "required" : true,
           "schema" : {
@@ -14875,7 +14999,15 @@
           }
         },
         "summary" : "Declarer",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       },
       "get" : {
         "responses" : {
@@ -14891,7 +15023,15 @@
           }
         },
         "summary" : "Declaration",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       }
     },
     "/api/espace-animateur/{jeton}/planning.ics" : {
@@ -14905,7 +15045,15 @@
           }
         },
         "summary" : "Planning Ics",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       }
     },
     "/api/espace-animateur/{jeton}/planning.pdf" : {
@@ -14919,6 +15067,13 @@
         }, {
           "name" : "format",
           "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
           "schema" : {
             "type" : "string"
           }
@@ -14961,7 +15116,15 @@
           }
         },
         "summary" : "Open Session",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       }
     },
     "/api/espace-animateur/{jeton}/signalements" : {
@@ -14990,7 +15153,15 @@
           }
         },
         "summary" : "Report Absence",
-        "tags" : [ "Espace Animateur Resource" ]
+        "tags" : [ "Espace Animateur Resource" ],
+        "parameters" : [ {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
       }
     },
     "/api/espace-animateur/{jeton}/signalements/{signalementId}" : {
@@ -15002,6 +15173,13 @@
           "schema" : {
             "type" : "integer",
             "format" : "int64"
+          }
+        }, {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -15042,6 +15220,13 @@
         }, {
           "name" : "standId",
           "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "jeton",
+          "in" : "path",
+          "required" : true,
           "schema" : {
             "type" : "string"
           }
