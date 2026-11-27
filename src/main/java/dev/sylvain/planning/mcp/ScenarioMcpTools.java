@@ -3,6 +3,7 @@ package dev.sylvain.planning.mcp;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.scenario.ScenarioFormatException;
 import dev.sylvain.planning.scenario.ScenarioValidator;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.scenario.ScenarioImportService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
@@ -78,9 +79,13 @@ public class ScenarioMcpTools {
 
     @Tool(
             name = "importer_scenario",
-            description = "Importe un scénario livré dans les données de référence : remplace stands, créneaux, "
-                    + "animateurs et postes existants. Applique aussi les paramètres légaux/découpage/solveur et le "
-                    + "découpage automatique que le scénario épingle éventuellement. Opération destructive.",
+            description = "Importe un scénario dans les données de référence de l'édition : un scénario livré "
+                    + "par son « nom » (voir lister_scenarios), ou un contenu YAML fourni dans « yaml » (même format "
+                    + "que l'export), l'un des deux. Remplace stands, créneaux, animateurs et postes existants, et "
+                    + "applique les paramètres que le scénario porte. Opération destructive : previsualiser_import "
+                    + "dit ce qui serait écrasé, diagnostiquer_scenario vérifie un YAML sans rien importer. Le "
+                    + "scénario peut nommer sa propre édition (section edition:), qui l'emporte sur l'argument ; la "
+                    + "réponse dit où les données ont atterri.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -88,14 +93,30 @@ public class ScenarioMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     ImportResult importScenario(
-            @ToolArg(description = "Nom du scénario (voir lister_scenarios)") String nom,
+            @ToolArg(
+                            description =
+                                    "Nom d'un scénario livré (voir lister_scenarios) ; absent quand « yaml » est donné",
+                            required = false)
+                    String nom,
+            @ToolArg(description = "Contenu YAML du scénario ; absent quand « nom » est donné", required = false)
+                    String yaml,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return toImportResult(scenarioImportService.importBundled(nom));
+        if ((nom == null || nom.isBlank()) == (yaml == null || yaml.isBlank())) {
+            throw new BusinessError.Invalid(
+                    "Donner « nom » (un scénario livré, voir lister_scenarios) ou « yaml », l'un des deux et pas"
+                            + " les deux.");
+        }
+        return toImportResult(
+                yaml == null || yaml.isBlank()
+                        ? scenarioImportService.importBundled(nom)
+                        : scenarioImportService.importYaml(yaml));
     }
 
+    @Deprecated
     @Tool(
             name = "importer_scenario_yaml",
-            description = "Importe un scénario fourni sous forme de contenu YAML (même format que l'export). "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser importer_scenario (yaml). "
+                    + "Importe un scénario fourni sous forme de contenu YAML (même format que l'export). "
                     + "Opération destructive : remplace les données de référence existantes.",
             annotations =
                     @Tool.Annotations(
@@ -111,8 +132,26 @@ public class ScenarioMcpTools {
 
     @Computes
     @Tool(
+            name = "diagnostiquer_scenario",
+            description =
+                    "Vérifie la structure d'un scénario YAML sans rien importer ni lire de l'édition. Renvoie la liste des erreurs "
+                            + "trouvées, vide si le fichier est valide.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ValidationResult diagnoseScenario(@ToolArg(description = "Contenu YAML du scénario") String yaml) {
+        return validateScenarioYaml(yaml);
+    }
+
+    @Deprecated
+    @Computes
+    @Tool(
             name = "valider_scenario_yaml",
-            description = "Valide la structure d'un scénario YAML sans rien importer. Renvoie la liste des erreurs "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser diagnostiquer_scenario. "
+                    + "Valide la structure d'un scénario YAML sans rien importer. Renvoie la liste des erreurs "
                     + "trouvées, vide si le fichier est valide.",
             annotations =
                     @Tool.Annotations(
@@ -133,8 +172,26 @@ public class ScenarioMcpTools {
     }
 
     @Tool(
-            name = "reinitialiser_donnees",
+            name = "supprimer_donnees_edition",
             description = "Vide entièrement UNE ÉDITION : stands, créneaux, animateurs, affectations et "
+                    + "contraintes ad hoc de l'édition ciblée, les autres éditions n'y touchent pas. Opération "
+                    + "destructive, à ne lancer que sur demande explicite : seul un administrateur peut la défaire, "
+                    + "en restaurant la sauvegarde prise juste avant le vidage, référentiel et planning compris.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = true,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ResetResult deleteEditionData(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return resetData(edition);
+    }
+
+    @Deprecated
+    @Tool(
+            name = "reinitialiser_donnees",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser supprimer_donnees_edition. "
+                    + "Vide entièrement UNE ÉDITION : stands, créneaux, animateurs, affectations et "
                     + "contraintes ad hoc de l'édition ciblée, les autres éditions n'y touchent pas. Opération "
                     + "destructive, à ne lancer que sur demande explicite : seul un administrateur peut la défaire, "
                     + "en restaurant la sauvegarde prise juste avant le vidage, référentiel et planning compris.",

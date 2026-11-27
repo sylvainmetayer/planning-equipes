@@ -24,7 +24,8 @@ class McpLecteurStructurelleTest {
             // Refreshes the analysis of the persisted plan: POST /api/constraints/diagnostic on screen.
             "diagnostiquer_plan",
             // Parses and checks a YAML the caller sends: POST /api/reference-data/valider-scenario-fichier.
-            "valider_scenario_yaml");
+            "valider_scenario_yaml",
+            "diagnostiquer_scenario");
 
     @Test
     void everyWriteOrComputeToolCrossesTheLecteurRefusalOrIsInstanceOnly() throws Exception {

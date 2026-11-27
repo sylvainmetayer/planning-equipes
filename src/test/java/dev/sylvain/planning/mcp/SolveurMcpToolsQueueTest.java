@@ -151,7 +151,7 @@ class SolveurMcpToolsQueueTest {
     private void loadScenario() {
         awaitSolverIdle();
         scenarioTools.resetData("E1");
-        scenarioTools.importScenario("scenario.yml", "E1");
+        scenarioTools.importScenario("scenario.yml", null, "E1");
     }
 
     private JobMcpView awaitFinished(String jobId) {

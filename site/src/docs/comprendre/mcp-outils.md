@@ -6,11 +6,11 @@ Partout, un outil qui lit un plan lit le **plan enregistré**, et une personne s
 
 ## Savoir où en est l'édition
 
-`etat_edition` est le premier appel utile. Il rend la checklist du cycle que la page d'accueil affiche (référentiels, collecte, ouvertures, besoin, dernière résolution, publication, accusés de réception, foire), chaque ligne avec son statut (`A_FAIRE`, `ATTENTION`, `INFO`, `FAIT`) et les chiffres qui le décident, calculés côté serveur donc identiques pour l'écran et l'assistant. Une résolution en cours s'y lit comme un statut, sans faire échouer l'appel. Il ne contient que des comptes et des dates.
+`consulter_edition` est le premier appel utile. Il rend la checklist du cycle que la page d'accueil affiche (référentiels, collecte, ouvertures, besoin, dernière résolution, publication, accusés de réception, foire), chaque ligne avec son statut (`A_FAIRE`, `ATTENTION`, `INFO`, `FAIT`) et les chiffres qui le décident, calculés côté serveur donc identiques pour l'écran et l'assistant. Une résolution en cours s'y lit comme un statut, sans faire échouer l'appel. Il ne contient que des comptes et des dates.
 
 - Le bloc `coherence` compte les anomalies de saisie ; `lister_anomalies_referentiel` en donne le détail (famille, gravité, code, fiche concernée par `objet` et `objetId`) sans la phrase ni la date que l'écran affiche. C'est la règle de `WarningCodes` appliquée à la liste entière : l'avertissement sur un mineur date sa majorité.
 - Le bloc `aTraiter` répond à « que dois-je faire ce matin ? » : déclarations et échanges en attente, journées non relues des sept jours à venir, silencieux à relancer. « Aujourd'hui » est celui de `JourJClock`, la date simulée comprise.
-- `consulter_planning` dit quand le solveur a tourné pour la dernière fois, `etat_publication` quand les animateurs ont été prévenus. Seule la seconde décrit ce que les gens ont sous les yeux : un plan calculé ce matin et publié la semaine dernière est, pour eux, celui de la semaine dernière. `etat_publication` dit aussi qui serait concerné par la prochaine publication, sans rien envoyer.
+- `consulter_planning` dit quand le solveur a tourné pour la dernière fois, `consulter_publication` quand les animateurs ont été prévenus. Seule la seconde décrit ce que les gens ont sous les yeux : un plan calculé ce matin et publié la semaine dernière est, pour eux, celui de la semaine dernière. `consulter_publication` dit aussi qui serait concerné par la prochaine publication, sans rien envoyer.
 - `comparer_journee` dit ce qui a bougé sur une date, depuis la dernière publication (`reference=publication`) ou depuis le plan d'avant la dernière résolution (`reference=resolution`), par siège et par animateur. Un siège gardé par la même personne à d'autres heures est une ligne `HORAIRES`. `referenceDisponible` faux veut dire « rien à comparer », jamais « aucun changement ».
 - `comparer_realise_planifie` rend l'écran du même nom pour chaque stand et chaque journée **écoulée** : sièges publiés, tenus, absences, remplacements, vides, retirés (consigne, créneau supprimé : jamais une absence) ou ajoutés, minutes publiées, réalisées et perdues. Chaque journée est comparée à la publication en vigueur à son premier créneau ; une journée commencée avant toute publication (`lateReference`) n'entre dans aucun total. `nature` vaut `DECLARED` : ce qui a été enregistré, pas un pointage.
 - `consulter_planning`, vue `synthese`, répond en quelques dizaines de lignes (postes pourvus au total, par stand et par jour), là où la vue `affectations` dépenserait le contexte de l'assistant avant qu'il voie qu'un stand est en sous-effectif le samedi.
@@ -64,7 +64,7 @@ Les **fenêtres** s'écrivent `HH:MM-HH:MM` séparées par des virgules, la fin 
 1. `consulter_preselection_consigne` sur chaque date : ce que la bande prend à chaque stand, les stands proposés, ceux écartés pour horaires posés à la main. N'écrit rien.
 2. `simuler_consigne` : par jour, sièges et minutes avant et après, créneaux à ajouter, verrous et règles ad hoc touchés. C'est la validation complète sans écriture : une requête que la simulation accepte sera acceptée telle quelle.
 3. `appliquer_consigne`, mêmes arguments : pose ou remplace la consigne d'une date et n'ajoute à la grille que les créneaux que les ouvertures exigent. Les dates doivent être à venir et s'écrivent toutes ensemble ou pas du tout.
-4. `lancer_correction`, puis `etat_publication` et `publier_planning`.
+4. `lancer_correction`, puis `consulter_publication` et `publier_planning`.
 
 Lever suit le même pli : `simuler_levee_consigne` nomme les créneaux ajoutés qui partiraient avec leurs sièges et avertit quand les journées figées épuisent les gens disponibles, `lever_consigne` les retire et refuse une date passée ou en cours, un jour travaillé gardant la consigne qui l'a gouverné. Un préréglage (« Plan canicule ») mémorise bande, motif et fenêtres et suit la duplication de l'édition. `consulter_alertes_meteo` rend les alertes levées le matin avec le préréglage suggéré pour le phénomène ; il ne pose rien, appliquer la suggestion reste un `appliquer_consigne` explicite.
 
@@ -74,9 +74,15 @@ Les déclarations de disponibilité et les demandes d'échange arrivent de l'esp
 
 `consulter_foire_echanges` rend la fenêtre de la foire et ses statistiques (volumes, taux, délais, répartitions par jour et par stand) sur une période de création (`du`, `au`, ou `touteEdition`, refusé avec les deux autres). Aucun animateur n'y figure, pas même par id.
 
-`synthese_confirmations` compte, parmi les animateurs qui ont un poste sur le plan publié, les confirmés, relancés, silencieux et les **échecs d'envoi** (comptés à part, sans adresse) et date la publication à laquelle ils répondent ; `jamaisPublie` vrai veut dire que la question n'a encore été posée à personne.
+`consulter_publication`, vue `confirmations`, compte, parmi les animateurs qui ont un poste sur le plan publié, les confirmés, relancés, silencieux et les **échecs d'envoi** (comptés à part, sans adresse) et date la publication à laquelle ils répondent ; `jamaisPublie` vrai veut dire que la question n'a encore été posée à personne.
 
 `lister_demandes_covoiturage` rend les « Je viens avec… » de la collecte, à part de la déclaration : membres, statut, `confirmedByAll`, jours où les indisponibilités divergent, ajustement créé, le tout par id et avec le statut `EN_ATTENTE` (non validée) ou `VALIDEE`. La validation, l'écart et l'annulation restent des gestes d'écran, parce que la validation prévient les animateurs par courriel ; un assistant crée directement un `ARRIVEE_GROUPEE` par `creer_contrainte_ad_hoc`. En revanche, `supprimer_contrainte_ad_hoc` sur une arrivée groupée qu'une demande validée soutient rend un résultat en erreur portant la phrase de l'écran Ajustements manuels (annulez-la depuis Disponibilités > Covoiturage).
+
+## Éditions, scénarios et publication
+
+Un outil par objet et par verbe, le geste passé en argument ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)). `creer_edition` crée une édition vide, ou la copie d'une autre avec `source`, avec ou sans ses animateurs. `modifier_edition` change un réglage par appel : `nom`, ou `active` (vrai : elle devient l'édition active et l'ancienne cesse de l'être ; faux : plus rien ne part). La phase reste `modifier_phase_edition`, ouvert à l'organisateur connecté par OAuth, là où `creer_edition` et `modifier_edition` sont réservés à l'administrateur de l'instance.
+
+`importer_scenario` prend un scénario livré (`nom`) ou un contenu YAML (`yaml`), l'un des deux ; `diagnostiquer_scenario` vérifie un YAML sans rien importer, et `supprimer_donnees_edition` vide l'édition. `consulter_publication` lit la publication sous une `vue` : `etat` (défaut), `destinataires` (la trace d'une publication) ou `confirmations`. Trois outils écrivent aux gens, chacun avec son verbe : `publier_planning` (tout le monde, mêmes clés qu'en 3.x : `snapshotId`, `envoyes`…), `envoyer_planning_animateur` (le planning publié d'une seule personne) et `envoyer_relance_animateurs` (les silencieux désignés). Un envoi n'est jamais un mode d'un autre outil : un argument oublié ne doit pas écrire à toute l'équipe. `consulter_sauvegardes` dit l'état de la sauvegarde nocturne, `modifier_sauvegardes` la suspend.
 
 ## Les prompts et les ressources
 
@@ -95,13 +101,14 @@ Deux **ressources**, à attacher une fois pour informer tous les appels suivants
 
 ## Anciens noms d'outils
 
-La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Un outil regroupé fait sous un seul nom, avec un argument (`vue`, `section`, `mode`, `decision`), ce que faisaient plusieurs ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)) ; ses anciens noms restent publiés jusqu'en 5.0 à côté du nouveau, leur description commençant par « Ancien nom » : ceux de la relecture des journées, ceux des journées types, des créneaux récurrents et de la dérivation, que le générateur de créneaux a regroupés ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), ceux du plan, du calcul, des règles et des échanges, et ceux du diagnostic et de ses rapports. Le mode `tension` d'`analyser_marge` est devenu la section `tension` de `consulter_risques`. Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
+La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Un outil regroupé fait sous un seul nom, avec un argument (`vue`, `section`, `mode`, `decision`), ce que faisaient plusieurs ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)) ; ses anciens noms restent publiés jusqu'en 5.0 à côté du nouveau, leur description commençant par « Ancien nom » : ceux de la relecture des journées, ceux des journées types, des créneaux récurrents et de la dérivation, que le générateur de créneaux a regroupés ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), ceux du plan, du calcul, des règles et des échanges, ceux du diagnostic et de ses rapports, et ceux des paramètres, des éditions, des scénarios, de la publication et des sauvegardes. Le mode `tension` d'`analyser_marge` est devenu la section `tension` de `consulter_risques`. L'ancien outil de réglage du solveur n'est plus publié : le budget de calcul qu'il réglait est passé à l'instance, et seul le mail de fin de résolution reste dans `modifier_parametres` (section `calcul`). Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
 
 <!-- mcp-renommages:debut -->
 | Nom en 3.x | Nom en 4.0 |
 | --- | --- |
 | `accepter_demande_echange` | `modifier_demande_echange` |
 | `activer_contrainte` | `modifier_contrainte` |
+| `activer_edition` | `modifier_edition` |
 | `affecter_journee_type` | `modifier_gabarit` |
 | `affecter_poste` | `modifier_affectation` |
 | `ajouter_fermeture_stand` | `creer_plage_stand` |
@@ -131,18 +138,26 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `definir_journee_type` | `modifier_gabarit` |
 | `deplacer_affectation` | `modifier_affectation` |
 | `desactiver_contrainte` | `modifier_contrainte` |
+| `desactiver_edition` | `modifier_edition` |
+| `dupliquer_edition` | `creer_edition` |
+| `edition_courante` | `lister_editions` |
 | `effacer_horaires_stand` | `supprimer_horaires_stand` |
 | `effacer_plages_stand` | `supprimer_plage_stand` |
 | `equite_planning` | `consulter_charge` |
+| `etat_edition` | `consulter_edition` |
 | `etat_planning` | `consulter_planning` |
+| `etat_publication` | `consulter_publication` |
+| `etat_sauvegardes` | `consulter_sauvegardes` |
 | `expliquer_affectation` | `analyser_affectation` |
 | `expliquer_echec_contraintes_dures` | `diagnostiquer_plan` |
 | `figer_referentiel` | `modifier_phase_edition` |
 | `generer_creneaux_depuis_stands` | `appliquer_generateur_creneaux` |
 | `heures_travaillees` | `consulter_charge` |
+| `importer_scenario_yaml` | `importer_scenario` |
 | `lancer_solveur` | `lancer_calcul` |
 | `lever_gel` | `modifier_phase_edition` |
 | `lister_affectations` | `consulter_planning` |
+| `lister_destinataires_publication` | `consulter_publication` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_jobs` | `consulter_calcul` |
 | `lister_journees_types` | `lister_gabarits` |
@@ -162,6 +177,9 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `realise_vs_planifie` | `comparer_realise_planifie` |
 | `reconnaitre_journees_types` | `appliquer_generateur_creneaux` |
 | `refuser_demande_echange` | `modifier_demande_echange` |
+| `reinitialiser_donnees` | `supprimer_donnees_edition` |
+| `relancer_animateurs` | `envoyer_relance_animateurs` |
+| `renommer_edition` | `modifier_edition` |
 | `resoudre_incremental` | `lancer_correction` |
 | `restaurer_instantane` | `restaurer_version` |
 | `resultats_animateur` | `consulter_planning` |
@@ -176,6 +194,8 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `supprimer_journee_type` | `supprimer_gabarit` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |
 | `synthese_affectations` | `consulter_planning` |
+| `synthese_confirmations` | `consulter_publication` |
+| `valider_scenario_yaml` | `diagnostiquer_scenario` |
 | `volumes` | `consulter_besoin` |
 <!-- mcp-renommages:fin -->
 
@@ -184,7 +204,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | Ce qui reste dehors | Pourquoi |
 | --- | --- |
 | Export de scénario YAML | il contient prénom, nom et date de naissance, puisqu'il doit être réimportable |
-| Sauvegardes avant vidage | chacune est un export de scénario. `reinitialiser_donnees` et les imports en écrivent une, mais seul un administrateur la lit, la restaure ou la supprime, par l'API ([ADR 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) |
+| Sauvegardes avant vidage | chacune est un export de scénario. `supprimer_donnees_edition` et les imports en écrivent une, mais seul un administrateur la lit, la restaure ou la supprime, par l'API ([ADR 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) |
 | Dump SQL, exports PDF, ICS et CSV | toutes les données personnelles, ou des binaires destinés au téléchargement depuis l'interface |
 | Import CSV des bénévoles | le tableur porte nom, prénom, date de naissance et adresse : un outil qui l'accepterait ferait entrer par MCP ce qui n'en sort pas |
 | `/api/planning/sample`, `/persisted` | un `PlanningEvenement` entier, plusieurs dizaines de Mo avec les données personnelles ; `consulter_planning` (vue `affectations`) couvre le besoin en restant filtré |
