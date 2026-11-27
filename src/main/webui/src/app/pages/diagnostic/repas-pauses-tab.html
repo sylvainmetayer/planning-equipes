@@ -5,9 +5,9 @@
       persisté, au jour choisi ; rien n'est recalculé.
     </p>
     <p class="hint">
-      <ng-container i18n="@@repasPauses.renvoi">Le placement préféré de la coupure repas se règle dans</ng-container>
+      <ng-container i18n="@@repasPauses.renvoi">Le placement préféré de la coupure repas se règle dans</ng-container>&ngsp;
       <a routerLink="/parametres" [queryParams]="{ onglet: 'organisation' }" i18n="@@repasPauses.lienParametres">Paramètres</a>
-      <ng-container i18n="@@repasPauses.renvoiRegle">; la règle « Coupure repas » et son poids sont dans</ng-container>
+      <ng-container i18n="@@repasPauses.renvoiRegle">; la règle « Coupure repas » et son poids sont dans</ng-container>&ngsp;
       <a routerLink="/regles" [queryParams]="{ regle: 'coupureRepasObligatoire' }" i18n="@@repasPauses.lienRegle">Règles du planning</a>.
     </p>
     <app-status-message [text]="erreur() || erreurWalks()" tone="error" />

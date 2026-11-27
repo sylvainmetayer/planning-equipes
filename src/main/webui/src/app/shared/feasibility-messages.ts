@@ -19,7 +19,8 @@ export function hardScoreNegativeMessage(hardScore: number): string {
  * problems are not listed. Returns an empty string when nothing is hidden.
  */
 export function causesRestantesMessage(restantes: number): string {
-  if (restantes <= 0) {
+  // `!(> 0)`, not `<= 0`: an absent `totalCauses` makes it NaN, which both miss.
+  if (!(restantes > 0)) {
     return '';
   }
   return $localize`:@@feasibility.causesRestantes:+ ${restantes}:count: autre(s) problème(s) non détaillé(s) ici.`;

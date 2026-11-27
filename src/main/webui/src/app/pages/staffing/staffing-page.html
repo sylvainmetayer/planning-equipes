@@ -66,7 +66,7 @@
         <p [class.staffing-binding]="estBorneRetenue('COUPURE_REPAS')">
           <mat-icon inline aria-hidden="true">restaurant</mat-icon>
           <strong i18n="@@staffing.mealBound.label">Coupure repas : {{ resume.picRepas }}</strong>
-          <ng-container i18n="@@staffing.mealBound.description"> — ce qu'impose la coupure repas : qui travaille de part et d'autre d'une fenêtre doit s'en absenter, quelqu'un d'autre tenant le siège. Vaut 0 quand la règle est désactivée.</ng-container>
+          <ng-container i18n="@@staffing.mealBound.description"> — ce qu'impose la coupure repas : qui travaille de part et d'autre d'une fenêtre doit s'en absenter, quelqu'un d'autre tenant le siège. Vaut 0 quand la règle est désactivée.</ng-container>&ngsp;
           <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'regles', regle: 'coupureRepasObligatoire' }"
              i18n="@@staffing.lien.fenetreRepas">Fenêtre repas</a>
         </p>
@@ -76,14 +76,14 @@
           <ng-container i18n="@@staffing.rotationBound.description"> — personne ne peut travailler plus de
           {{ joursTravaillesMax() }} jours dans la même semaine ISO (art. L3132-1). La semaine la plus chargée demande
           {{ resume.semaineCritique?.joursPersonne }} jours-personne : sept journées d'affilée exigeant cent personnes
-          ne se tiennent pas à cent, même si le pic d'une seule journée s'arrête là.</ng-container>
+          ne se tiennent pas à cent, même si le pic d'une seule journée s'arrête là.</ng-container>&ngsp;
           <a class="staffing-lien" routerLink="/stands" i18n="@@staffing.lien.horaires">Horaires des stands</a>
         </p>
         <p [class.staffing-binding]="estBorneRetenue('ENCHAINEMENT_JOURS')">
           <mat-icon inline aria-hidden="true">event_repeat</mat-icon>
           <strong i18n="@@staffing.sequenceBound.label">Enchaînement des jours : {{ resume.enchainementTotal }}</strong>
           <ng-container i18n="@@staffing.sequenceBound.description"> — les calendriers de repos réels, jour après jour :
-          {{ joursTravaillesMax() }} jours par semaine, {{ consecutiveCapLabel() }}.</ng-container>
+          {{ joursTravaillesMax() }} jours par semaine, {{ consecutiveCapLabel() }}.</ng-container>&ngsp;
           <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'regles', regle: 'maxJoursConsecutifsTravailles' }"
              i18n="@@staffing.lien.joursAffilee">Jours d'affilée</a>
         </p>
@@ -92,7 +92,7 @@
             <mat-icon inline aria-hidden="true">bedtime</mat-icon>
             <strong i18n="@@staffing.restBound.label">Repos quotidien : {{ resume.minimumTotal }}</strong>
             <ng-container i18n="@@staffing.restBound.description"> — qui ferme tard ne peut pas ouvrir le lendemain : les
-            sièges du soir et ceux du matin suivant, que personne ne tient ensemble, exigent autant de personnes distinctes.</ng-container>
+            sièges du soir et ceux du matin suivant, que personne ne tient ensemble, exigent autant de personnes distinctes.</ng-container>&ngsp;
             <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'regles', regle: 'reposQuotidienMinimal' }"
                i18n="@@staffing.lien.reposQuotidien">Repos quotidien</a>
           </p>
@@ -102,7 +102,7 @@
             <mat-icon inline aria-hidden="true">timer</mat-icon>
             <strong i18n="@@staffing.continuousBound.label">Travail continu : {{ resume.minimumTotal }}</strong>
             <ng-container i18n="@@staffing.continuousBound.description"> — plus de six heures d'affilée exigent une pause
-            relayée par un collègue du même stand : sans relais possible, deux sièges qui s'enchaînent ne vont pas à la même personne.</ng-container>
+            relayée par un collègue du même stand : sans relais possible, deux sièges qui s'enchaînent ne vont pas à la même personne.</ng-container>&ngsp;
             <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'regles', regle: 'travailContinuMax' }"
                i18n="@@staffing.lien.travailContinu">Travail continu</a>
           </p>
@@ -113,7 +113,7 @@
             <strong i18n="@@staffing.capBound.label">Plafond de créneaux d'une typologie : {{ resume.minimumTotal }}</strong>
             <ng-container i18n="@@staffing.capBound.description"> — une typologie limite le nombre de créneaux qu'une
             même personne peut tenir sur l'édition : ses sièges exigent au moins autant de personnes distinctes. La
-            fiche par typologie ci-dessous dit laquelle.</ng-container>
+            fiche par typologie ci-dessous dit laquelle.</ng-container>&ngsp;
             <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'regles', regle: 'plafondCreneauxParTypologie' }"
                i18n="@@staffing.lien.plafondTypologie">Plafond par typologie</a>
           </p>

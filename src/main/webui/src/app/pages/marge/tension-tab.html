@@ -41,7 +41,7 @@
     <app-status-message [text]="error()" tone="error" />
     @if (!persistedPlan()) {
       <p class="empty-hint">
-        <ng-container i18n="@@tension.sansPlan">Il faut un planning enregistré : lancez d'abord une résolution.</ng-container>
+        <ng-container i18n="@@tension.sansPlan">Il faut un planning enregistré : lancez d'abord une résolution.</ng-container>&ngsp;
         <a routerLink="/journee" [queryParams]="{ onglet: 'calculer' }" i18n="@@tension.versSolveur">Ouvrir Planning › Calculer</a>
       </p>
     } @else if (!error() && !loading() && rapport()?.message) {
@@ -122,19 +122,19 @@
               </li>
               @for (animateurId of cellule.animateursIrremplacables; track animateurId) {
                 <li>
-                  <ng-container i18n="@@tension.detail.irremplacable">Irremplaçable :</ng-container>
+                  <ng-container i18n="@@tension.detail.irremplacable">Irremplaçable :</ng-container>&ngsp;
                   <a [routerLink]="['/animateurs', animateurId]">{{ nomAnimateur(animateurId) }}</a>
                 </li>
               }
               @for (standId of cellule.standsSansSpecialiste; track standId) {
                 <li>
-                  <ng-container i18n="@@tension.detail.sansSpecialiste">Sans spécialiste :</ng-container>
+                  <ng-container i18n="@@tension.detail.sansSpecialiste">Sans spécialiste :</ng-container>&ngsp;
                   <a routerLink="/diagnostic" [queryParams]="{ onglet: 'risques', section: 'fragilite', vue: 'COMPETENCES', q: standId }">{{ nomStand(standId) }}</a>
                 </li>
               }
               @for (standId of cellule.standsSpecialisteUnique; track standId) {
                 <li>
-                  <ng-container i18n="@@tension.detail.specialisteUnique">Spécialiste unique :</ng-container>
+                  <ng-container i18n="@@tension.detail.specialisteUnique">Spécialiste unique :</ng-container>&ngsp;
                   <a routerLink="/diagnostic" [queryParams]="{ onglet: 'risques', section: 'fragilite', vue: 'COMPETENCES', q: standId }">{{ nomStand(standId) }}</a>
                 </li>
               }

@@ -216,14 +216,14 @@
         }
         @if (done.steps.notify) {
           <p>
-            <ng-container i18n="@@siege.nonPublie">Non publié :</ng-container>
+            <ng-container i18n="@@siege.nonPublie">Non publié :</ng-container>&ngsp;
             <a routerLink="/publication" i18n="@@siege.prevenir">Prévenir</a>
           </p>
         }
         @if (done.steps.repair) {
           @if (repairSent()) {
             <p>
-              <ng-container i18n="@@siege.corriger.envoye">Résolution incrémentale lancée :</ng-container>
+              <ng-container i18n="@@siege.corriger.envoye">Résolution incrémentale lancée :</ng-container>&ngsp;
               <a routerLink="/journee" [queryParams]="{ onglet: 'calculer' }" i18n="@@siege.corriger.suivre">la suivre dans Planning › Calculer</a>
             </p>
           } @else {
