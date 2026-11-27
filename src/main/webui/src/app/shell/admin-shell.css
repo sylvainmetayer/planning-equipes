@@ -124,8 +124,10 @@ mat-sidenav-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  /* As a list item's leading icon and title: the nine entries line up. */
+  gap: 1rem;
   width: 100%;
+  min-height: 3rem;
   padding: 0.5rem 1rem;
   border: 0;
   background: none;
@@ -133,6 +135,11 @@ mat-sidenav-content {
   text-align: start;
   color: var(--mat-sys-on-surface-variant);
   font: var(--mat-sys-title-small);
+}
+
+/* The heading's name grows; its icon lines up with the icons of the one-page entries. */
+.nav-group-title {
+  flex: 1 1 auto;
 }
 
 .nav-group-header:hover {
@@ -159,6 +166,11 @@ mat-sidenav-content {
 /* One row of the menu. */
 .nav-entry {
   position: relative;
+}
+
+/* The sub-pages of a folding entry, set in under their heading. */
+.nav-sub .mat-mdc-list-item {
+  padding-left: 2.5rem;
 }
 
 /* The same news on the foot's link, which stays in sight when the group folds. */

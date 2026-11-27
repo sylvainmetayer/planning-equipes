@@ -9,7 +9,7 @@ The interface is an Angular application served by the same Quarkus as the API. Y
 
 The Quinoa extension runs `npm ci && npm run build` during `mvn package` and copies the bundle into the static resources ([`application.properties`](repo:src/main/resources/application.properties), `quarkus.quinoa.*`). In production there is no Node server. In `quarkus:dev`, Quinoa starts `ng serve` and proxies port 4200 for hot reload.
 
-Structural rule: one question, one screen, its variants as tabs (`?onglet=`) or views (`?vue=`) in the URL, loaded on demand. You do not add a section to an existing page. The menu ([`shell/nav-groups.ts`](repo:src/main/webui/src/app/shell/nav-groups.ts)) is the same for everyone and follows an edition's cycle; a route can be served without a menu entry (Debug), the Ctrl+K palette finds it. The services in `core/` carry the shared state and the HTTP calls; components do not call `fetch`.
+Structural rule: one question, one screen, its variants as tabs (`?onglet=`) or views (`?vue=`) in the URL, loaded on demand. You do not add a section to an existing page. The menu ([`shell/nav-groups.ts`](repo:src/main/webui/src/app/shell/nav-groups.ts)) is the same for everyone and holds nine entries in the order of an edition's cycle, a new screen becoming a page or a tab of one of them; a route can be served without a menu entry (Compare two versions, Help), the Ctrl+K palette finds it. The services in `core/` carry the shared state and the HTTP calls; components do not call `fetch`.
 
 State flows in one direction only: the Calculate tab of the Planning page pushes the solved schedule, the calendars reread it read-only and never start a solve.
 

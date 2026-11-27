@@ -10,7 +10,7 @@ Le calcul affecte les animateurs aux places à pourvoir sous trois niveaux d'exi
 2. la couverture des postes ;
 3. l'équité, les souhaits et le confort.
 
-Il se lance depuis l'onglet *Calculer* de la page *Planning* (groupe *Planifier*), à côté des vues du plan. L'ancienne adresse de la page *Solveur* y mène.
+Il se lance depuis l'onglet *Calculer* de la page *Planning* (entrée du menu), à côté des vues du plan. L'ancienne adresse de la page *Solveur* y mène.
 
 Pour savoir ce que ce calcul garantit avant de le lancer, lisez [comment fonctionne le calcul du planning](/comment-marche-le-calcul/), écrit pour un organisateur.
 

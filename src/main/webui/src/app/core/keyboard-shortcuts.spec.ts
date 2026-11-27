@@ -184,15 +184,22 @@ describe('chercherCommandes', () => {
     ],
   };
 
-  // #709: an empty query is the menu, in the menu's order — no tab, no
-  // legal page, no screen listed in no group.
+  // #709: an empty query is the menu, in the menu's order — every page of the
+  // nine entries, no tab, no legal page, no screen listed in no entry.
   it('lists the menu, in its order, when nothing is typed', () => {
     const resultats = chercherCommandes('', sources);
     expect(resultats.map((commande) => commande.route)).toEqual(
       buildNavGroups().flatMap((group) => group.links.map((link) => link.path)),
     );
     expect(resultats.some((commande) => commande.route === '/mentions-legales')).toBe(false);
-    expect(resultats.some((commande) => commande.route === '/debug')).toBe(false);
+    expect(resultats.some((commande) => commande.route === '/aide')).toBe(false);
+  });
+
+  // Débogage, a page of Administrer, is refused to an organiser by the server.
+  it('leaves Débogage out of an organiser’s palette', () => {
+    const organiser = { ...sources, destinations: buildDestinationsNavigation(false, false) };
+    expect(chercherCommandes('', organiser).some((c) => c.route === '/debug')).toBe(false);
+    expect(chercherCommandes('swagger', organiser).some((c) => c.route === '/debug')).toBe(false);
   });
 
   it.each([
@@ -222,7 +229,7 @@ describe('chercherCommandes', () => {
     expect(resultats.some((commande) => commande.queryParams?.['onglet'] === 'banc')).toBe(false);
   });
 
-  // Débogage sits in no group: served everywhere, found on a query.
+  // Débogage, a page of Administrer, is found on its technical words too.
   it.each(['débogage', 'swagger', 'mailpit', 'json'])('finds Débogage on « %s »', (query) => {
     const resultats = chercherCommandes(query, sources);
     expect(resultats.some((commande) => commande.route === '/debug')).toBe(true);

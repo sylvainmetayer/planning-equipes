@@ -57,7 +57,7 @@ export interface CommandePalette {
   externe?: boolean;
   /**
    * Proposed on an empty query: the menu's entries, in the menu's order. A
-   * tab, a screen listed in no group and a legal page only answer a query.
+   * tab, a screen listed in no entry and a legal page only answer a query.
    */
   menu?: boolean;
   /** Words matched beyond the label and the hint. */
@@ -66,7 +66,7 @@ export interface CommandePalette {
 
 /**
  * Every destination the palette knows, in the menu's order: each menu entry
- * followed by its tabs, then the screens listed in no group (Débogage, the
+ * followed by its tabs, then the screens listed in no entry (the help, the
  * news…), then the legal pages. Read from `shell/nav-groups.ts`, the one table
  * the drawer renders too, so the palette names a page exactly as the menu
  * does and a tab added there is found here.
@@ -219,7 +219,7 @@ function commandeCreneau(creneau: Creneau): CommandePalette {
  * <p>An empty query lists the menu's entries only, in the menu's order:
  * proposing 24 animateurs, or the four legal pages, to someone who has just
  * pressed Ctrl+K and typed nothing says nothing about what they can do here.
- * The tabs, the screens listed in no group and the legal pages answer a
+ * The tabs, the screens listed in no entry and the legal pages answer a
  * query.</p>
  */
 export function chercherCommandes(query: string, sources: SourcesPalette): CommandePalette[] {

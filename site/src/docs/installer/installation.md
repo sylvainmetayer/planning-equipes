@@ -69,7 +69,7 @@ Les fichiers de déploiement se prennent dans le [dépôt du projet](repo:docker
    | Marque et mentions | `/api/branding` et `/api/mentions-legales` répondent |
    | Mentions obligatoires | aucune des cinq clés exigées de `LEGAL_MENTIONS` n'est vide ; sauté si l'instance se déclare de démonstration (`demoInstance` de `/api/mentions-legales`, soit `LEGAL_DEMO_INSTANCE=true` tel que l'application l'a lu), ou avec `--instance-demo` |
 
-   Le pied de page de l'application (administration comme espace animateur) et la page *Débogage* (hors menu : Ctrl+K, ou l'adresse `/debug`, onglet *Résolution*) affichent la version déployée : le tag `vX.Y.Z` pour une image de release, l'identifiant du commit pour une image de recette. C'est ce qu'un rapport de faille doit citer ([signaler une faille](repo:.github/SECURITY.md)).
+   Le pied de page de l'application (administration comme espace animateur) et la page *Débogage* (menu *Administrer*, Ctrl+K ou l'adresse `/debug`, onglet *Résolution*) affichent la version déployée : le tag `vX.Y.Z` pour une image de release, l'identifiant du commit pour une image de recette. C'est ce qu'un rapport de faille doit citer ([signaler une faille](repo:.github/SECURITY.md)).
 
 6. Ouvrez l'administration. Connectez-vous avec le compte `admin` et le mot de passe `ADMIN_PASSWORD`. Si vous branchez un fournisseur d'identité, créez d'abord votre compte nominatif ([OIDC](oidc.md), [comptes locaux](comptes-locaux.md)). Réglez ensuite les paramètres de l'instance, puis chargez ou saisissez la première édition : le guide [Préparer votre première édition](../regles/preparer-edition.md) prend la suite.
 

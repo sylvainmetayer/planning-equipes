@@ -11,7 +11,7 @@ What these screens change during the event is told in [the event day of a festiv
 
 ## Handle the day on the Today screen
 
-*Today* (*Today* group) is the screen for the day itself, designed for a phone. At the top, the day in one line: day, open stands, remaining shifts. Counters lead to where you deal with things. No solve is started again.
+*Today* (menu entry) is the screen for the day itself, designed for a phone. At the top, the day in one line: day, open stands, remaining shifts. Counters lead to where you deal with things. No solve is started again.
 
 ![The Today screen](/images/fr/docs/aujourdhui.webp "The Today screen, on the day of the event")
 

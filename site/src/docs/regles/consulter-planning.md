@@ -2,7 +2,7 @@
 
 Vous lisez le planning calculé par jour, par stand, par personne ou sur la carte, et vous trouvez l'information dont vous avez besoin : qui est où, ce qui manque, ce que chacun a reçu.
 
-Tout passe par une seule page, *Planning* (groupe *Planifier*). Tout est porté par l'adresse : une vue, un filtre se partagent par le lien (`?vue=jour|stand|personne|carte`).
+Tout passe par une seule page, *Planning* (entrée du menu). Tout est porté par l'adresse : une vue, un filtre se partagent par le lien (`?vue=jour|stand|personne|carte`).
 
 ## Se repérer dans la page
 

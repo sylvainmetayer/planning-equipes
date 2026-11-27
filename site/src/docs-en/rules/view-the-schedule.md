@@ -5,7 +5,7 @@ twin: regles/consulter-planning
 
 You read the solved schedule by day, by stand, by person or on the map, and find the information you need: who is where, what is missing, what each person received.
 
-Everything goes through a single page, *Planning* (*Plan* group). Everything is carried by the address: a view, a filter are shared through the link (`?vue=jour|stand|personne|carte`).
+Everything goes through a single page, *Planning* (menu entry). Everything is carried by the address: a view, a filter are shared through the link (`?vue=jour|stand|personne|carte`).
 
 ## Find your way around the page
 

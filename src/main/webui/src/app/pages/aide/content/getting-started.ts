@@ -49,7 +49,7 @@ export function buildGettingStartedSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.start.menu:Le menu suit ce cycle : Préparer pour les référentiels, Construire pour le calcul et ce qu'il doit respecter, Diffuser pour l'envoi, Aujourd'hui pour l'événement lui-même, et Planning pour lire le plan sous tous ses angles. « Voir le planning », sur l'accueil et sur l'onglet Calculer, ouvre la journée du jour.`,
+          text: $localize`:@@aide.start.menu.neuf:Le menu tient en neuf entrées, dans l'ordre du cycle : Accueil, Préparer (stands, calendrier, animateurs), Fichiers, Planning (avec son onglet Calculer), Diagnostic, Règles, Diffuser (avec les Échanges), Aujourd'hui et Administrer (avec les Éditions). « Voir le planning », sur l'accueil et sur l'onglet Calculer, ouvre la journée du jour.`,
         },
         {
           kind: 'paragraph',

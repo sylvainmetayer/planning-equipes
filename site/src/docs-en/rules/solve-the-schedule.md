@@ -13,7 +13,7 @@ The solve assigns staff to the seats to fill under three levels of requirement, 
 2. seat coverage;
 3. fairness, wishes and comfort.
 
-It is started from the *Calculate* tab of the *Planning* page (*Plan* group), next to the views of the plan. The former address of the *Solver* page leads there.
+It is started from the *Calculate* tab of the *Planning* page (menu entry), next to the views of the plan. The former address of the *Solver* page leads there.
 
 To know what this solve guarantees before starting it, read [how the schedule solve works](/comment-marche-le-calcul/), written for an organiser.
 

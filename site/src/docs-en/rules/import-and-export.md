@@ -5,7 +5,7 @@ twin: regles/importer-exporter
 
 You fill an edition from your spreadsheets, export what you want to correct or share, and archive the edition at the end of the event.
 
-It all happens in *Files* (*Prepare* group), a screen with three tabs: *Import*, *Export*, *Archive*. The staff screen also has its own "Import" button, which opens the same CSV card without leaving the list. The full cycle comes down to three gestures: export, correct, re-import.
+It all happens in *Files* (menu entry), a screen with three tabs: *Import*, *Export*, *Archive*. The staff screen also has its own "Import" button, which opens the same CSV card without leaving the list. The full cycle comes down to three gestures: export, correct, re-import.
 
 Is a spreadsheet your starting point? [Moving from a spreadsheet to scheduling software](/tableur-ou-logiciel-de-planning/) says what this change brings, and when it is not necessary.
 

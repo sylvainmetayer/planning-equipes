@@ -22,22 +22,16 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
-test("l'écran Aujourd'hui est rangé dans son groupe, et nulle part ailleurs", async ({
-  browser,
-}) => {
+test("l'écran Aujourd'hui est une entrée du menu, et nulle part ailleurs", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/');
 
-  const groupe = page.locator('#nav-group-aujourdhui');
-  await expect(groupe.getByRole('link', { name: "Aujourd'hui" })).toBeVisible();
+  const navigation = page.getByRole('navigation', { name: 'Navigation principale' });
+  // An entry of its own (Q48), and Échanges a page of Diffuser.
+  await expect(navigation.getByRole('link', { name: "Aujourd'hui" })).toHaveCount(1);
   await expect(
-    page.locator('#nav-group-diffuser').getByRole('link', { name: 'Échanges' }),
+    navigation.getByRole('group', { name: 'Diffuser' }).getByRole('link', { name: 'Échanges' }),
   ).toBeVisible();
-  await expect(
-    page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('link', {
-      name: "Aujourd'hui",
-    }),
-  ).toHaveCount(1);
   await page.context().close();
 });
 

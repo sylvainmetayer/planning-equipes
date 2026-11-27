@@ -49,7 +49,7 @@ Premiers pas, sur une édition remplie :
 2. **Planning › Calculer › Calculer le planning** : le calcul tourne en fond, la courbe se
    trace en direct et une notification annonce la fin.
 3. Lire le résultat dans **Planning**, ce qui bloque dans **Diagnostic**, le
-   respect des règles dans **Règles du planning**, puis exporter depuis
+   respect des règles dans **Règles**, puis exporter depuis
    **Diffuser** ou depuis la fiche d'un animateur.
 
 <kbd>Ctrl</kbd>+<kbd>K</kbd> trouve n'importe quel écran, et la page **Aide**

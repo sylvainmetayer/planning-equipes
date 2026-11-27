@@ -7,7 +7,7 @@ You adjust what decides the plan: the thresholds, the level of each organisation
 
 ![The Planning rules page](/images/fr/regles.webp "Planning rules")
 
-Everything is set in *Planning rules* (*Plan* group), in the *Rules* tab, in three blocks. Nothing is written before "Save", and "Run the solve again" is one click away.
+Everything is set in *Planning rules* (*Rules* menu entry), in the *Rules* tab, in three blocks. Nothing is written before "Save", and "Run the solve again" is one click away.
 
 These rules come from labour law: [what the French Labour Code requires of a schedule](/code-du-travail/) says what the software applies by itself and what it leaves to your judgement.
 

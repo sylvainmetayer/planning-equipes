@@ -114,7 +114,7 @@ describe('AdminShell', () => {
   const dialog = { open: vi.fn(), openDialogs: [] as unknown[] };
   const snackBar = { dismiss: vi.fn() };
   const api = { get: vi.fn() };
-  const adminApi = { logout: vi.fn() };
+  const adminApi = { logout: vi.fn(), session: vi.fn() };
   /** The drafts' storages, the spec's own: the shell purges them. */
   let draftLocal: ReturnType<typeof memoryStorage>;
   let draftSession: ReturnType<typeof memoryStorage>;
@@ -168,6 +168,7 @@ describe('AdminShell', () => {
       dialog.open,
       snackBar.dismiss,
       adminApi.logout,
+      adminApi.session,
       api.get,
       unregisterResult,
     ]) {
@@ -179,6 +180,8 @@ describe('AdminShell', () => {
       return unregisterResult;
     });
     adminApi.logout.mockResolvedValue({ urlDeconnexion: null });
+    // No session read by default: nobody is an admin until a test says so.
+    adminApi.session.mockRejectedValue(new Error('no session'));
     api.get.mockResolvedValue({});
     draftLocal = memoryStorage({ 'planning-equipes.editionId': 'ed-1' });
     draftSession = memoryStorage();
@@ -480,17 +483,28 @@ describe('AdminShell', () => {
   });
 
   describe('the folded navigation groups', () => {
+    // Préparer, Diffuser, Administrer: an entry that is one page has nothing to fold.
+    it('folds only the entries gathering several pages', () => {
+      const shell = createShell();
+
+      expect(shell['foldableGroups'].map((group: NavGroup) => group.id)).toEqual([
+        'preparer',
+        'diffuser',
+        'administrer',
+      ]);
+    });
+
     it('starts with every group open', () => {
       const shell = createShell();
 
       expect(shell['collapsedGroups']().size).toBe(0);
       expect(shell['allCollapsed']()).toBe(false);
-      expect(shell['isCollapsed'](shell['navGroups'][0])).toBe(false);
+      expect(shell['isCollapsed'](shell['foldableGroups'][0])).toBe(false);
     });
 
     it('folds and unfolds one group, and remembers it across visits', () => {
       const shell = createShell();
-      const group = shell['navGroups'][0];
+      const group = shell['foldableGroups'][0];
 
       shell['toggleGroup'](group);
       expect(shell['isCollapsed'](group)).toBe(true);
@@ -516,7 +530,7 @@ describe('AdminShell', () => {
 
       shell['toggleAllGroups']();
       expect(shell['allCollapsed']()).toBe(true);
-      expect(shell['collapsedGroups']().size).toBe(shell['navGroups'].length);
+      expect(shell['collapsedGroups']().size).toBe(shell['foldableGroups'].length);
 
       shell['toggleAllGroups']();
       expect(shell['allCollapsed']()).toBe(false);
@@ -527,7 +541,7 @@ describe('AdminShell', () => {
     // however many of the others are already folded.
     it('is not "all folded" while a single group is still open', () => {
       const shell = createShell();
-      for (const group of shell['navGroups'].slice(0, -1)) {
+      for (const group of shell['foldableGroups'].slice(0, -1)) {
         shell['toggleGroup'](group);
       }
 
@@ -536,7 +550,7 @@ describe('AdminShell', () => {
       shell['toggleAllGroups']();
 
       expect(shell['allCollapsed']()).toBe(true);
-      expect(shell['collapsedGroups']().size).toBe(shell['navGroups'].length);
+      expect(shell['collapsedGroups']().size).toBe(shell['foldableGroups'].length);
     });
 
     it('persists the fold-all as well', () => {
@@ -545,7 +559,7 @@ describe('AdminShell', () => {
       shell['toggleAllGroups']();
 
       expect(JSON.parse(localStorage.getItem(NAV_STORAGE_KEY) ?? '[]')).toHaveLength(
-        shell['navGroups'].length,
+        shell['foldableGroups'].length,
       );
     });
   });
@@ -554,18 +568,64 @@ describe('AdminShell', () => {
     const paths = (groups: NavGroup[]): string[] =>
       groups.flatMap((group) => group.links.map((link) => link.path));
 
-    // #709: no mode hides a step of the cycle any more; the drawer is the
-    // same for everybody, and a screen that is rare goes down its group.
-    it('renders every entry of every group, with no mode toggle', () => {
-      const fixture = createFixture();
-      const shell = fixture.componentInstance;
-      const rendered = Array.from(
+    const rendered = (fixture: ComponentFixture<AdminShell>): (string | null)[] =>
+      Array.from(
         (fixture.nativeElement as HTMLElement).querySelectorAll('nav a[mat-list-item]'),
       ).map((anchor) => anchor.getAttribute('href'));
 
-      expect(rendered).toEqual(paths(shell['navGroups']));
+    // #709: no mode hides a step of the cycle any more; the drawer is the
+    // same for everybody, and a screen that is rare goes down its entry.
+    it('renders every page of every entry, with no mode toggle', () => {
+      const fixture = createFixture();
+      const shell = fixture.componentInstance;
+
+      expect(rendered(fixture)).toEqual(paths(shell['visibleGroups']()));
       expect(fixture.nativeElement.textContent).not.toContain('Menu simple');
       expect(fixture.nativeElement.textContent).not.toContain('Menu avancé');
+    });
+
+    // Q48: nine entries, each a link of its own or a heading over its pages.
+    it('draws nine entries: a link for a page of its own, a fold button over several', () => {
+      const fixture = createFixture();
+      const nav = (fixture.nativeElement as HTMLElement).querySelector('nav');
+      const headers = Array.from(nav?.querySelectorAll('button.nav-group-header') ?? []);
+      const topLinks = Array.from(
+        nav?.querySelectorAll('.nav-entries > .nav-entry a[mat-list-item]') ?? [],
+      );
+
+      expect(headers.length + topLinks.length).toBe(9);
+      // One landmark: the list inside the <nav> must not announce a second one.
+      expect(nav?.querySelectorAll('[role="navigation"]').length).toBe(0);
+      expect(headers.map((header) => header.textContent?.trim())).toEqual([
+        expect.stringContaining('Préparer'),
+        expect.stringContaining('Diffuser'),
+        expect.stringContaining('Administrer'),
+      ]);
+      for (const header of headers) {
+        const controlled = nav?.querySelector(`#${header.getAttribute('aria-controls')}`);
+        expect(controlled?.getAttribute('role')).toBe('group');
+        expect(header.getAttribute('aria-expanded')).toBe('true');
+      }
+    });
+
+    // The server refuses Débogage to anyone but an admin: neither the drawer
+    // nor the palette offers it to them.
+    it('hides Débogage from anyone but an admin', () => {
+      expect(rendered(createFixture())).not.toContain('/debug');
+    });
+
+    it('lists Débogage under Administrer for an admin', async () => {
+      adminApi.session.mockResolvedValue({ authentifie: true, roles: ['admin'] });
+      const fixture = createFixture();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const administrer = (fixture.nativeElement as HTMLElement).querySelector(
+        '#nav-group-administrer',
+      );
+      expect(
+        Array.from(administrer?.querySelectorAll('a') ?? []).map((a) => a.getAttribute('href')),
+      ).toEqual(['/parametres', '/editions', '/mesures', '/debug']);
     });
 
     it('lists the legal pages and the news at the foot of the menu, not in a group', () => {

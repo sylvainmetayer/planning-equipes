@@ -2,7 +2,7 @@
 
 Vous partez d'une édition vide et vous la décrivez : ses stands, leurs typologies, leurs lieux. Les animateurs et le calendrier ont chacun leur guide.
 
-Une édition se prépare dans l'ordre où elle se construit : les stands et ce qu'ils proposent, le calendrier sur lequel ils s'ouvrent, les personnes, puis les fichiers qui remplissent le tout. Le groupe *Préparer* du menu suit cet ordre (Stands, Calendrier, Animateurs, Fichiers).
+Une édition se prépare dans l'ordre où elle se construit : les stands et ce qu'ils proposent, le calendrier sur lequel ils s'ouvrent, les personnes, puis les fichiers qui remplissent le tout. L'entrée *Préparer* du menu suit cet ordre (Stands, Calendrier, Animateurs), et l'entrée *Fichiers* vient juste après.
 
 Le type d'événement change les priorités : voir [un planning de festival](/planning-festival/), [un planning de salon ou de foire](/planning-salon-foire/) ou [un planning d'événement sportif](/planning-evenement-sportif/).
 
