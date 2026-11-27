@@ -184,7 +184,7 @@ public class ScenarioMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     ResetResult deleteEditionData(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return resetData(edition);
+        return reset();
     }
 
     @Deprecated
@@ -202,6 +202,11 @@ public class ScenarioMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     ResetResult resetData(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return reset();
+    }
+
+    /** Shared by the tool and its former name: never another @Tool, whose interceptor would journal twice. */
+    private ResetResult reset() {
         persistenceService.clearDatabase();
         Edition videe = editionService.editionCourante();
         return new ResetResult(
