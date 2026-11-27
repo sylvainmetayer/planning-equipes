@@ -63,12 +63,12 @@ The deployment files are taken from the [project repository](repo:docker-compose
    scripts/verifier-deploiement.sh https://<domaine> 1.2.0    # or given explicitly
    ```
 
-   It runs the checks below in sequence and stops at the first failure with a non-zero exit code. It needs no host access, only the password of the `admin` account to read the version, taken from `ADMIN_PASSWORD` (the environment, or the `.env.prod`): a deployment CI can call it as is.
+   It runs the checks below in sequence and stops at the first failure with a non-zero exit code. It needs neither host access nor credentials: a deployment CI can call it as is.
 
    | Check | What is verified |
    | --- | --- |
    | Availability | `/q/health/ready` answers `UP`: database reachable, no migration pending or failed. The wait is bounded (120 s, `--attente`) to let the migrations of a first start go through |
-   | Version | the version `/api/config` gives a session is the expected one: the script opens the `admin` account's session and closes it. Behind an OIDC whose break-glass door is closed, or while `APP_VERSION=main`, pass `--version-libre` |
+   | Version | the version exposed by `/api/config` is the expected one (`--version-libre` while `APP_VERSION=main`) |
    | Branding and legal notice | `/api/branding` and `/api/mentions-legales` answer |
    | Mandatory notices | none of the five required keys of `LEGAL_MENTIONS` is empty; skipped if the instance declares itself a demo (`demoInstance` of `/api/mentions-legales`, that is `LEGAL_DEMO_INSTANCE=true` as the application read it), or with `--instance-demo` |
 

@@ -1930,7 +1930,7 @@
         }
       },
       "ConfigView" : {
-        "required" : [ "authOidc", "authSecours" ],
+        "required" : [ "version", "authOidc", "authSecours" ],
         "type" : "object",
         "properties" : {
           "sentryDsn" : {

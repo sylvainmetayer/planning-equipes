@@ -13,16 +13,21 @@ import org.junit.jupiter.api.Test;
 /**
  * The version {@code scripts/verifier-deploiement.sh} compares with the one the
  * operator meant to deploy is the one the startup line prints — never a second
- * value that could drift from it. And only a session reads it: a visitor gets
- * what the login page and the espace need, nothing that says which version to
- * attack.
+ * value that could drift from it, and it reads it without a session. A
+ * visitor gets nothing else the admin interface alone reads.
  */
 @QuarkusTest
 class ConfigResourceTest {
 
     @Test
+    void aVisitorReadsTheBackendVersion() {
+        String expected = ConfigProvider.getConfig().getValue("quarkus.application.version", String.class);
+        given().when().get("/api/config").then().statusCode(200).body("version", equalTo(expected));
+    }
+
+    @Test
     @TestSecurity(user = "admin", roles = "admin")
-    void aSessionReadsTheBackendVersion() {
+    void aSessionReadsTheAdminSwitches() {
         String expected = ConfigProvider.getConfig().getValue("quarkus.application.version", String.class);
         given().header("X-Edition-Id", "E1")
                 .when()
@@ -40,7 +45,6 @@ class ConfigResourceTest {
                 .get("/api/config")
                 .then()
                 .statusCode(200)
-                .body("$", not(hasKey("version")))
                 .body("$", not(hasKey("devMode")))
                 .body("$", not(hasKey("mailMock")))
                 .body("authOidc", equalTo(false))

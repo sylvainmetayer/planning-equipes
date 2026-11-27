@@ -60,12 +60,12 @@ Les fichiers de déploiement se prennent dans le [dépôt du projet](repo:docker
    scripts/verifier-deploiement.sh https://<domaine> 1.2.0    # ou donnée explicitement
    ```
 
-   Il enchaîne les contrôles ci-dessous et s'arrête au premier échec avec un code de sortie non nul. Il ne demande pas d'accès à l'hôte, seulement le mot de passe du compte `admin` pour lire la version, pris dans `ADMIN_PASSWORD` (l'environnement, ou le `.env.prod`) : une CI de déploiement peut l'appeler telle quelle.
+   Il enchaîne les contrôles ci-dessous et s'arrête au premier échec avec un code de sortie non nul. Il ne demande ni accès à l'hôte ni identifiant : une CI de déploiement peut l'appeler telle quelle.
 
    | Contrôle | Ce qui est vérifié |
    | --- | --- |
    | Disponibilité | `/q/health/ready` répond `UP` : base joignable, aucune migration en attente ni en échec. L'attente est bornée (120 s, `--attente`) pour laisser passer les migrations d'un premier démarrage |
-   | Version | la version que `/api/config` donne à une session est celle attendue : le script ouvre celle du compte `admin` et la referme. Derrière un OIDC dont la porte de secours est fermée, ou tant que `APP_VERSION=main`, passez `--version-libre` |
+   | Version | la version exposée par `/api/config` est celle attendue (`--version-libre` tant que `APP_VERSION=main`) |
    | Marque et mentions | `/api/branding` et `/api/mentions-legales` répondent |
    | Mentions obligatoires | aucune des cinq clés exigées de `LEGAL_MENTIONS` n'est vide ; sauté si l'instance se déclare de démonstration (`demoInstance` de `/api/mentions-legales`, soit `LEGAL_DEMO_INSTANCE=true` tel que l'application l'a lu), ou avec `--instance-demo` |
 

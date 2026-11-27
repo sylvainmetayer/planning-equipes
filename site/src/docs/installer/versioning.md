@@ -58,4 +58,4 @@ Une préversion ne promet rien de plus qu'un essai : elle peut migrer le schéma
 
 ## Lire la version d'une instance
 
-La version affichée dans le pied de page, sur la page *Débogage*, dans `GET /api/config` (champ `version`, servi à une session seulement) et dans la ligne de démarrage est celle du tag git `vX.Y.Z` : `X.Y.Z` (ou `X.Y.Z-rc.N` pour une préversion) sur une image de release, le SHA court sur une image de recette, `999-SNAPSHOT` en build local, valeur qui ne ressemble volontairement à aucune version publiée. D'où vient ce tag : [Publier une version](publier-une-version.md#1-la-source-de-vérité--un-tag-git).
+La version affichée dans le pied de page, sur la page *Débogage*, dans `GET /api/config` (champ `version`, public : le code de l'interface que charge chaque visiteur la porte déjà) et dans la ligne de démarrage est celle du tag git `vX.Y.Z` : `X.Y.Z` (ou `X.Y.Z-rc.N` pour une préversion) sur une image de release, le SHA court sur une image de recette, `999-SNAPSHOT` en build local, valeur qui ne ressemble volontairement à aucune version publiée. D'où vient ce tag : [Publier une version](publier-une-version.md#1-la-source-de-vérité--un-tag-git).

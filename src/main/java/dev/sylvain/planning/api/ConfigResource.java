@@ -42,10 +42,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *
  * <p>The route is public: the login page and the espace animateur read it
  * before anybody signs in. A <b>visitor without a session</b> therefore gets
- * only what those two screens need — the observability keys and the two
- * sign-in doors — and none of the three answers above, which only the admin
- * interface reads: the version would tell an attacker which known flaw to aim
- * at. The login page reads the answer again once a session is open.</p>
+ * only what those two screens need — the observability keys, the two sign-in
+ * doors and the version — and neither the dev mode nor the mocked mailer,
+ * which only the admin interface reads. The version stays public: the bundle
+ * every visitor downloads already carries it, and the deployment check reads
+ * it without credentials. The login page reads the answer again once a
+ * session is open.</p>
  */
 @Path("/config")
 @Produces(MediaType.APPLICATION_JSON)
@@ -91,7 +93,7 @@ public class ConfigResource {
                 observabilite.sentry().environment(),
                 observabilite.cloudflare().webAnalyticsToken().orElse(""),
                 session ? devMode.isActive() : null,
-                session ? version : null,
+                version,
                 session ? mailMock : null,
                 oidc.enabled(),
                 secours.open(oidc.enabled()));
@@ -104,7 +106,7 @@ public class ConfigResource {
      * @param devMode            absent without a session; server launched with {@code quarkus:dev}: the
      *                           Dev UI exists at {@code /q/dev-ui}, so the
      *                           interface may link to it
-     * @param version            absent without a session; backend version: {@code X.Y.Z} on a release
+     * @param version            backend version: {@code X.Y.Z} on a release
      *                           image, the short SHA on a recette image,
      *                           {@code 999-SNAPSHOT} in a local build
      * @param mailMock           absent without a session; the mailer is mocked: a mail recorded as sent
@@ -113,7 +115,7 @@ public class ConfigResource {
      * @param authSecours        the form login of the {@code admin} account is open: the
      *                           login page offers its password form
      */
-    @Schema(requiredProperties = {"authOidc", "authSecours"})
+    @Schema(requiredProperties = {"version", "authOidc", "authSecours"})
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ConfigView(
             String sentryDsn,

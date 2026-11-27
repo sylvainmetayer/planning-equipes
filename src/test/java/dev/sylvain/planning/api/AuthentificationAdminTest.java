@@ -81,15 +81,10 @@ class AuthentificationAdminTest {
                 .statusCode(200);
     }
 
-    /** Public, but not its version: {@code verifier-deploiement.sh} signs in to read it. */
+    /** The version is public too: {@code verifier-deploiement.sh} reads it without credentials. */
     @Test
-    void configStaysPublicWithoutSessionButNotItsVersion() {
-        given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/config")
-                .then()
-                .statusCode(200)
-                .body("version", nullValue());
+    void configWithVersionStaysPublicWithoutSession() {
+        given().header("X-Edition-Id", "E1").when().get("/api/config").then().statusCode(200);
     }
 
     @Test

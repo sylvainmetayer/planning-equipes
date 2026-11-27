@@ -2460,7 +2460,7 @@ export interface ImportScenarioResult {
  * `/api/config`, fetched once before bootstrap: the observability keys — blank
  * when the matching feature is disabled server-side —, how the server was
  * launched, and the switches that decide what the admin interface offers.
- * The three admin-only fields are absent without a session: the login page
+ * The two admin-only fields are absent without a session: the login page
  * reads the answer again once one is open.
  */
 export interface AppConfig {
@@ -2470,7 +2470,7 @@ export interface AppConfig {
   /** Server running under `quarkus:dev`: the Dev UI exists at `/q/dev-ui`. */
   devMode?: boolean;
   /** Backend version, as the startup line prints it (site/src/docs/installer/versioning.md). */
-  version?: string;
+  version: string;
   /** The mailer is mocked (`MAIL_MOCK=true`): a mail recorded as sent never left the server. */
   mailMock?: boolean;
   /** An OIDC provider signs people in: the login page offers its button. */
