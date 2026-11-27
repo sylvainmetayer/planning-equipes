@@ -7,7 +7,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
 import org.jboss.logging.Logger;
 
 /**
@@ -52,17 +51,17 @@ public class GlobalExceptionMapper implements ExceptionMapper<Throwable> {
     /**
      * Whether writing the response failed because the client went away — a
      * download cancelled, a tab closed. The Vert.x output stream says so in
-     * these two words, around the channel's own exception.
+     * these words, around the channel's own exception; a closed channel alone
+     * may be a server-side one, and stays an alert.
      *
      * <p>shortcut: matched on Quarkus's wording; should it change, these go
      * back to ERROR and Sentry — loud, never silent.</p>
      */
     static boolean clientClosedConnection(Throwable exception) {
         for (Throwable t = exception; t != null; t = t.getCause() == t ? null : t.getCause()) {
-            if (t instanceof ClosedChannelException
-                    || (t instanceof IOException
-                            && ("Failed to write".equals(t.getMessage())
-                                    || "Connection has been closed".equals(t.getMessage())))) {
+            if (t instanceof IOException
+                    && ("Failed to write".equals(t.getMessage())
+                            || "Connection has been closed".equals(t.getMessage()))) {
                 return true;
             }
         }

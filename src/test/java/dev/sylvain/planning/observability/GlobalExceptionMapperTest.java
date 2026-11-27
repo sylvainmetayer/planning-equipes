@@ -35,6 +35,8 @@ class GlobalExceptionMapperTest {
                 .isFalse();
         assertThat(GlobalExceptionMapper.clientClosedConnection(new NullPointerException()))
                 .isFalse();
+        assertThat(GlobalExceptionMapper.clientClosedConnection(new ClosedChannelException()))
+                .isFalse();
         assertThat(mapper.toResponse(new NullPointerException()).getStatus()).isEqualTo(500);
     }
 
