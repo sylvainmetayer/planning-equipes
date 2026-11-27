@@ -94,6 +94,45 @@ class McpKeyFormSignInTest {
     }
 
     @Test
+    void signingInAgainWithAnOldSessionNotesAFreshOpening() {
+        String session = login().cookie("planning-session");
+        openings.record(session, Instant.now().minusSeconds(11 * 60));
+
+        String fresh = given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", session)
+                .contentType("application/x-www-form-urlencoded")
+                .formParam("j_username", "admin")
+                .formParam("j_password", "admin")
+                .redirects()
+                .follow(false)
+                .post("/j_security_check")
+                .cookie("planning-session");
+
+        assertThat(fresh).isNotBlank().isNotEqualTo(session);
+        assertThat(openings.openedAt(fresh))
+                .hasValueSatisfying(at -> assertThat(at).isAfter(Instant.now().minusSeconds(30)));
+    }
+
+    /** Only a form post logs in: a GET on the login path with an old session does not make it recent again. */
+    @Test
+    void aGetOnTheLoginPathKeepsTheOpeningOfAnOldSession() throws Exception {
+        String session = login().cookie("planning-session");
+        Instant old = Instant.now().minusSeconds(11 * 60);
+        openings.record(session, old);
+        Thread.sleep(1_500);
+
+        String renewed = given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", session)
+                .redirects()
+                .follow(false)
+                .get("/j_security_check")
+                .cookie("planning-session");
+
+        assertThat(renewed).isNotBlank().isNotEqualTo(session);
+        assertThat(openings.openedAt(renewed)).contains(old);
+    }
+
+    @Test
     void aWrongPasswordNotesNothing() {
         Response refused = given().header("X-Edition-Id", "E1")
                 .contentType("application/x-www-form-urlencoded")

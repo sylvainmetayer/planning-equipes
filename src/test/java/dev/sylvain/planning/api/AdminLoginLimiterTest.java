@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
+import dev.sylvain.planning.service.compte.SessionOpenings;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -58,6 +59,9 @@ class AdminLoginLimiterTest {
 
     @Inject
     DataSource dataSource;
+
+    @Inject
+    SessionOpenings openings;
 
     /** The development default of {@code ADMIN_PASSWORD} — this is not a secret. */
     private static final String MOT_DE_PASSE_DEV = "admin";
@@ -172,6 +176,43 @@ class AdminLoginLimiterTest {
                 }
             }
         }
+    }
+
+    /**
+     * A refused login notes no opening (ADR 0097), and leaves the instant of
+     * the session its request still carries alone: a wrong password, then the
+     * right one refused by the lock, must not make an old session recent again.
+     */
+    @Test
+    void aRefusedLoginNotesNoOpeningAndKeepsTheOneOfTheSessionItCarries() {
+        String address = "203.0.113.50";
+        String session = login("203.0.113.51", MOT_DE_PASSE_DEV).cookie("planning-session");
+        Instant opened = Instant.now().minusSeconds(3_600);
+        openings.record(session, opened);
+
+        Response wrong = loginWith(session, address, "mauvais");
+        wrong.then().statusCode(anyOf(is(401), is(302)));
+        assertThat(wrong.cookie("planning-session")).isNull();
+        loginWith(session, address, "mauvais").then().statusCode(anyOf(is(401), is(302)));
+
+        Response locked = loginWith(session, address, MOT_DE_PASSE_DEV);
+        locked.then().statusCode(429);
+        assertThat(locked.cookie("planning-session")).isNull();
+
+        assertThat(openings.openedAt(session)).contains(opened);
+    }
+
+    private static Response loginWith(String session, String address, String password) {
+        return given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", session)
+                .contentType("application/x-www-form-urlencoded")
+                .header("X-Forwarded-For", address)
+                .formParam("j_username", "admin")
+                .formParam("j_password", password)
+                .redirects()
+                .follow(false)
+                .when()
+                .post("/j_security_check");
     }
 
     /** The events journalled for {@code address} since {@code start}, newest first, as the screen reads them. */

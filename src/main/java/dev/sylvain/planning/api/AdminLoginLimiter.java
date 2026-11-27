@@ -13,6 +13,7 @@ import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -225,7 +226,7 @@ public class AdminLoginLimiter {
                             + Math.max(1, (attente + 59) / 60) + " minute(s).\"}");
             return;
         }
-        if (!isPasswordStepPath(contexte.normalizedPath())) {
+        if (!isPasswordStepPath(contexte.normalizedPath()) && contexte.request().method() == HttpMethod.POST) {
             boolean locale = isLocalLoginPath(contexte.normalizedPath());
             // Just before the headers leave, so the instant is noted before the client can use the cookie.
             String previous = requestSessionCookie(contexte);
@@ -241,6 +242,10 @@ public class AdminLoginLimiter {
                     recordSuccess(address, locale);
                 }
             });
+        } else {
+            // Only a form post logs in: any other request on these paths is an ordinary one, whose
+            // reissued cookie keeps its opening, and which neither journals a login nor clears failures.
+            carryOpeningOver(contexte);
         }
         contexte.next();
     }
@@ -379,7 +384,7 @@ public class AdminLoginLimiter {
         }
         contexte.addHeadersEndHandler(v -> {
             String renewed = newSessionCookie(contexte, cookie.getValue());
-            if (renewed != null && !renewed.equals(cookie.getValue())) {
+            if (renewed != null) {
                 openings.renew(cookie.getValue(), renewed);
             }
         });
