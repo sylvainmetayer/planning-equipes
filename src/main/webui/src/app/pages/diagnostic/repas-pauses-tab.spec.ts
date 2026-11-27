@@ -8,7 +8,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
-import { WalkSequenceReport } from '../../core/models';
+import { RapportIntendance, WalkSequenceReport } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { RepasPausesTab } from './repas-pauses-tab';
 
@@ -54,6 +54,7 @@ const WALKS: WalkSequenceReport = {
 async function monter(
   path: string,
   walks: WalkSequenceReport = WALKS,
+  intendance: RapportIntendance | null = null,
 ): Promise<ComponentFixture<RepasPausesTab>> {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -66,7 +67,7 @@ async function monter(
         useValue: {
           breaks: () => Promise.resolve(null),
           walks: () => Promise.resolve(walks),
-          intendance: () => Promise.resolve(null),
+          intendance: () => Promise.resolve(intendance),
         },
       },
       {
@@ -114,6 +115,23 @@ describe('RepasPausesTab', () => {
   it('falls back on the first day when the one asked for is unknown', async () => {
     const fixture = await monter('/diagnostic?onglet=repas-pauses&jour=2030-01-01');
     expect(fixture.componentInstance['jour']()).toBe('2026-07-10');
+  });
+
+  it('offers a day that holds only meals, and keeps the stale day out of the address', async () => {
+    const fixture = await monter('/diagnostic?onglet=repas-pauses&jour=2030-01-01', WALKS, {
+      pasMinutes: 60,
+      message: '',
+      journees: [{ date: '2026-07-09', fenetres: [] }],
+    });
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(fixture.componentInstance['jours']()).toEqual([
+      '2026-07-09',
+      '2026-07-10',
+      '2026-07-11',
+    ]);
+    expect(fixture.componentInstance['jour']()).toBe('2026-07-09');
+    expect(TestBed.inject(Location).path()).not.toContain('2030-01-01');
   });
 
   it('says so when no stand is geolocated', async () => {

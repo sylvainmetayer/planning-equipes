@@ -29,7 +29,7 @@ describe('coherenceLink', () => {
   it('opens the fiche a line names, for editing', () => {
     expect(coherenceLink(issue())).toMatchObject({ route: '/stands', queryParams: { edit: 'S1' } });
     expect(coherenceLink(issue({ objet: 'CRENEAU', objetId: '7' }))).toMatchObject({
-      route: '/creneaux',
+      route: '/calendrier',
       queryParams: { edit: '7' },
     });
     expect(coherenceLink(issue({ objet: 'ANIMATEUR', objetId: 'A1' }))).toMatchObject({
@@ -48,7 +48,7 @@ describe('coherenceLink', () => {
     ).toMatchObject({ route: '/diagnostic', queryParams: { onglet: 'besoin' } });
     expect(
       coherenceLink(issue({ famille: 'CRENEAUX', objet: 'EDITION', objetId: null })).route,
-    ).toBe('/creneaux');
+    ).toBe('/calendrier');
   });
 
   it('leads the two counting lines to their screen already filtered', () => {

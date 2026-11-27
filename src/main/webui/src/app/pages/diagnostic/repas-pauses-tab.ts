@@ -59,6 +59,8 @@ export class RepasPausesTab {
 
   private readonly pauses = resource({ loader: () => this.analyses.breaks() });
   private readonly walks = resource({ loader: () => this.analyses.walks() });
+  // Read here for its days only: the meals' own table reads it again, narrowed to the day.
+  private readonly intendance = resource({ loader: () => this.analyses.intendance() });
   protected readonly erreur = errorText(this.pauses);
   protected readonly erreurWalks = errorText(this.walks);
 
@@ -67,7 +69,13 @@ export class RepasPausesTab {
     this.walks.hasValue() ? this.walks.value() : null,
   );
 
-  protected readonly jours = computed(() => joursRepasPauses(this.rapport(), this.rapportWalks()));
+  protected readonly jours = computed(() =>
+    joursRepasPauses(
+      this.rapport(),
+      this.rapportWalks(),
+      this.intendance.hasValue() ? this.intendance.value() : null,
+    ),
+  );
   private readonly jourDemande = signal('');
   /** The day on screen: the one asked for when the plan has it, else the first. */
   protected readonly jour = computed(() => {
@@ -84,7 +92,19 @@ export class RepasPausesTab {
   constructor() {
     // The address bar, not the router's snapshot: this tab is built each time it is opened.
     this.jourDemande.set(currentViewParams().get('jour') ?? '');
-    keepViewInQueryParams(() => ({ jour: optionalParam(this.jourDemande()) }));
+    // A day the plan does not have is not written back while the screen shows
+    // the first one; while the days are unknown (loading, failed) it is kept.
+    keepViewInQueryParams(() => {
+      const jours = this.jours();
+      const demande = this.jourDemande();
+      const loading =
+        this.pauses.isLoading() || this.walks.isLoading() || this.intendance.isLoading();
+      return {
+        jour: optionalParam(
+          loading || jours.length === 0 || jours.includes(demande) ? demande : '',
+        ),
+      };
+    });
   }
 
   protected choisir(jour: string): void {

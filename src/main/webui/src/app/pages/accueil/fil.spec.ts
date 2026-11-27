@@ -1,7 +1,7 @@
 // The single feed: what it gathers, how it is ordered, how it is narrowed.
 
 import { describe, expect, it } from 'vitest';
-import { AlerteView, CoherenceReport } from '../../core/models';
+import { AlerteView, CoherenceReport, ConstraintView } from '../../core/models';
 import { AppNotification } from '../../core/notification.service';
 import { buildFil, filterFeed, filType } from './fil';
 
@@ -97,6 +97,34 @@ describe('buildFil', () => {
     );
     expect(meteo.href).toBe(lien);
     expect(anomalie.lien).toMatchObject({ route: '/animateurs', queryParams: { edit: 'a-12' } });
+  });
+});
+
+describe('the hard breaches of the last solve', () => {
+  const regle = (partial: Partial<ConstraintView>) =>
+    ({ name: 'r', niveau: 'HARD', matchCount: 1, ...partial }) as ConstraintView;
+
+  it('keeps only the hard rules in default, as blocking items linking to Problèmes', () => {
+    const items = buildFil(
+      [],
+      null,
+      [],
+      [
+        regle({ name: 'dure', libelleCourt: 'Dure' }),
+        regle({ name: 'zero', matchCount: 0 }),
+        regle({ name: 'molle', niveau: 'MEDIUM' }),
+      ],
+    );
+    expect(items.map((item) => item.id)).toEqual(['blocages|dure']);
+    expect(items[0]).toMatchObject({ type: 'blocages', gravite: 'blocage', titre: 'Dure' });
+    expect(items[0].lien).toMatchObject({
+      route: '/diagnostic',
+      queryParams: { onglet: 'problemes' },
+    });
+  });
+
+  it('is a type of the address', () => {
+    expect(filType('blocages')).toBe('blocages');
   });
 });
 

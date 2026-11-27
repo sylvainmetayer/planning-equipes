@@ -164,7 +164,7 @@ test('an edition entered end to end, solved, and read back', async ({ browser })
   await expect(dialog).toBeHidden();
 
   // 3. Les gabarits et leur calendrier : c'est là que l'édition prend ses dates.
-  await page.goto('/creneaux');
+  await page.goto('/calendrier');
   await creerGabarit(page, 'Jour normal', '09:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-18:00');
   // La nocturne : ses vacations se coupent à 19 h, l'ouverture de la fenêtre
   // repas du soir — une vacation 18-22 d'un bloc ne laisserait à personne
@@ -228,7 +228,7 @@ test('an edition entered end to end, solved, and read back', async ({ browser })
   // horaires mènent à la fiche du stand.
   await page.goto('/');
   await expect(page.locator('li[data-ligne="ouvertures"]')).toContainText('hors de toute vacation');
-  await page.goto('/creneaux?onglet=horaires&vue=saisie');
+  await page.goto('/calendrier?onglet=horaires&vue=saisie');
   await expect(page).toHaveURL(/\/stands$/);
 
   // 6. Les animateurs.

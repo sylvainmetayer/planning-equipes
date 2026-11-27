@@ -11,6 +11,9 @@
   @if (alertesErreur()) {
     <p class="accueil-erreur" role="alert">{{ alertesErreur() }}</p>
   }
+  @if (blocagesErreur()) {
+    <p class="accueil-erreur" role="alert">{{ blocagesErreur() }}</p>
+  }
   @if (coherenceErreur()) {
     <p class="accueil-erreur" role="alert">{{ coherenceErreur() }}</p>
   }

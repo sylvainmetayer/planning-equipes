@@ -240,7 +240,7 @@ describe('construireProblemes', () => {
   it('opens the créneau a cause names, then each stand up to three', () => {
     const liens = causeLinks(cause({ creneauId: '12', standIds: ['a', 'b', 'c', 'd'] }));
     expect(liens.map((lien) => [lien.route, lien.queryParams?.['edit']])).toEqual([
-      ['/creneaux', '12'],
+      ['/calendrier', '12'],
       ['/stands', 'a'],
       ['/stands', 'b'],
       ['/stands', 'c'],
@@ -308,7 +308,7 @@ describe('construireProblemes', () => {
       probleme.references[0].liens.map((lien) => [lien.route, lien.queryParams?.['edit']]),
     ).toEqual([
       ['/animateurs/alice', undefined],
-      ['/creneaux', '7'],
+      ['/calendrier', '7'],
     ]);
   });
 

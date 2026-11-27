@@ -66,7 +66,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/animateurs', marker: 'Animateurs (', sheet: 'competence-row' },
   { path: '/animateurs/E2E-A', marker: 'Identité et contact', sheet: 'fiche-section' },
   { path: '/animateurs?onglet=competences', marker: 'Compétences', sheet: 'competences-legende' },
-  { path: '/creneaux', marker: 'Créneaux (', sheet: 'creneau-probleme' },
+  { path: '/calendrier', marker: 'Créneaux (', sheet: 'creneau-probleme' },
   { path: '/stands?onglet=typologies', marker: 'Typologies (' },
   // Fichiers: three tabs, and under Importer one card per file (the scenario,
   // the animateurs, the examples and the validator).
@@ -229,7 +229,7 @@ test('les pages légales publiques se chargent avec leur feuille', async ({ page
  * The reference screens whose rows carry a delete button, and which the seeded
  * dataset actually fills.
  */
-const ROUTES_AVEC_ACTIONS = ['/stands', '/animateurs', '/creneaux'];
+const ROUTES_AVEC_ACTIONS = ['/stands', '/animateurs', '/calendrier'];
 
 test("la colonne d'actions reste visible sur un écran étroit", async ({ browser }) => {
   // These tables are wider than a laptop screen — /animateurs alone overflows

@@ -7,7 +7,7 @@ You adjust what decides the plan: the thresholds, the level of each organisation
 
 ![The Planning rules page](/images/fr/regles.webp "Planning rules")
 
-Everything is set in *Planning rules* (*Rules* menu entry), in the *Rules* tab, in three blocks. Nothing is written before "Save", and "Run the solve again" is one click away.
+Everything is set in *Planning rules* (*Rules* menu entry), in the *Rule list* tab, in three blocks. Nothing is written before "Save", and "Run the solve again" is one click away.
 
 These rules come from labour law: [what the French Labour Code requires of a schedule](/code-du-travail/) says what the software applies by itself and what it leaves to your judgement.
 
@@ -46,7 +46,7 @@ The rest, folded by default: assignment, adjustments, locks, comfort preferences
 - *Legal* and *Organisation* list, on a single form, every threshold the rules read: weekly ceilings, break, meal break, consecutive days, travel, late services. They are the only places where these are written; each row of *Planning rules* points to them. Nothing is written before "Save".
 - *Solve* shows the length of the solve and the stop when nothing progresses any more, without being editable: they are set for the whole instance (see [Solve the schedule](calculer-planning.md#régler-la-durée-du-calcul)). It also holds the end-of-solve e-mail, the start of the evening, the application's only evening, and the all-rounder game category.
 
-The former *Legal* and *Quality* tabs of *Planning rules* lead to the *Rules* tab, and the former *Solve* tab (`/regles?onglet=calcul`) to *Settings › Solve*.
+The former *Legal* and *Quality* tabs of *Planning rules* lead to the *Rule list* tab, and the former *Solve* tab (`/regles?onglet=calcul`) to *Settings › Solve*.
 
 ## When a rule cannot improve: the floor
 

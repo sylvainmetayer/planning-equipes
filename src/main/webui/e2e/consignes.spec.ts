@@ -149,7 +149,7 @@ test('poser une consigne sur un jour à venir, la voir sur la grille, la lever',
   expect(consigne?.ouvertures.every((ouverture) => ouverture.debut === '18:00:00')).toBe(true);
 
   // The grid says which date is under consigne.
-  await page.goto('/creneaux');
+  await page.goto('/calendrier');
   await expect(page.getByRole('row', { name: new RegExp(DATE) }).first()).toContainText(
     'sous consigne',
   );

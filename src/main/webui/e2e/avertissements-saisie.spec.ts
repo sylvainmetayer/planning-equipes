@@ -134,7 +134,7 @@ test.describe('avertissements de saisie', () => {
     browser,
   }) => {
     const page = await pageAdmin(browser, admin);
-    await page.goto('/creneaux');
+    await page.goto('/calendrier');
 
     // A single timeslot typed by hand sits next to the generator's menu.
     await page.getByRole('button', { name: 'Ajouter un créneau' }).click();
@@ -161,7 +161,7 @@ test.describe('avertissements de saisie', () => {
 
   test('un créneau dans l’amplitude ne déclenche rien', async ({ browser }) => {
     const page = await pageAdmin(browser, admin);
-    await page.goto('/creneaux');
+    await page.goto('/calendrier');
 
     // A single timeslot typed by hand sits next to the generator's menu.
     await page.getByRole('button', { name: 'Ajouter un créneau' }).click();

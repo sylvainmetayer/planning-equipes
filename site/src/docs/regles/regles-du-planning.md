@@ -4,7 +4,7 @@ Vous ajustez ce qui décide du plan : les seuils, le niveau de chaque règle d'o
 
 ![La page Règles du planning](/images/fr/regles.webp "Règles du planning")
 
-Tout se règle dans *Règles du planning* (entrée *Règles* du menu), dans l'onglet *Règles*, en trois blocs. Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul » est à un clic.
+Tout se règle dans *Règles du planning* (entrée *Règles* du menu), dans l'onglet *Liste des règles*, en trois blocs. Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul » est à un clic.
 
 Ces règles viennent du droit du travail : [ce que le Code du travail impose à un planning](/code-du-travail/) dit ce que le logiciel applique de lui-même et ce qu'il laisse à votre jugement.
 
@@ -43,7 +43,7 @@ Le reste, replié par défaut : l'affectation, les ajustements, les verrouillage
 - *Légal* et *Organisation* listent, sur un seul formulaire, tous les seuils que les règles lisent : plafonds hebdomadaires, pause, coupure repas, jours d'affilée, trajets, services tardifs. Ce sont les seuls endroits où ils s'écrivent ; chaque ligne de *Règles du planning* y renvoie. Rien ne s'écrit avant « Enregistrer ».
 - *Calcul* affiche la durée du calcul et l'arrêt quand plus rien ne progresse, sans pouvoir les modifier : ils sont réglés pour toute l'instance (voir [Calculer le planning](calculer-planning.md#régler-la-durée-du-calcul)). Il porte aussi l'e-mail de fin de résolution, le début de la soirée, la seule soirée de l'application, et la typologie polyvalente.
 
-Les anciens onglets *Légal* et *Qualité* de *Règles du planning* mènent à l'onglet *Règles*, l'ancien onglet *Calcul* (`/regles?onglet=calcul`) à *Paramètres › Calcul*.
+Les anciens onglets *Légal* et *Qualité* de *Règles du planning* mènent à l'onglet *Liste des règles*, l'ancien onglet *Calcul* (`/regles?onglet=calcul`) à *Paramètres › Calcul*.
 
 ## Quand une règle ne peut pas s'améliorer : le plancher
 
