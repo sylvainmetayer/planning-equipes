@@ -2932,6 +2932,7 @@
   "fil.filtre.tout": "All",
   "fil.gravite.avertissement": "To check",
   "fil.gravite.blocage": "Blocking",
+  "fil.gravite.information": "Information",
   "fil.gravite.message": "Message",
   "fil.marquerLu": "Mark as read",
   "fil.messages.bascule": "Messages ({$INTERPOLATION})",

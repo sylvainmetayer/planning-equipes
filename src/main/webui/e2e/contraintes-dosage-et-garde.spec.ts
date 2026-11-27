@@ -220,7 +220,13 @@ test('le poids exact se règle dans le panneau, et reste ramené dans la plage a
     '12',
   );
   await enregistrer(page);
+  // The toast comes after the write and before the catalogue is read again: the field is disabled
+  // from there until the save is over. Typing into it earlier is locked mid-edit, and the stored 12
+  // is written back with no `change` ever fired.
+  await expect(page.getByText(/Règles enregistrées/).first()).toBeVisible();
   await expect.poll(async () => (await etat(NON_DOSABLE.name)).poids).toBe(12);
+  await expect(champ).toBeEnabled();
+  await expect(champ).toHaveValue('12');
 
   // Zero is refused server-side: switching a rule off goes through the switch.
   // The field must never send it, and must never keep showing it either.

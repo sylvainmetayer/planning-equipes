@@ -90,6 +90,30 @@ describe('FilAccueil', () => {
     ).toEqual(['blocage', 'avertissement', 'message']);
   });
 
+  it('counts only what the list shows while the messages are folded', async () => {
+    TestBed.inject(NotificationService).push('info', 'Import terminé');
+    const element = create();
+    await fixture.whenStable();
+    await vi.waitFor(() => expect(text()).toContain('Camille Dupont'));
+
+    expect(element.querySelector('#fil-accueil-titre')!.textContent).toContain(
+      'Alertes et messages (2)',
+    );
+    expect(text()).toContain('Tout (2)');
+    expect(text()).toContain('Messages (1)');
+    expect(text()).not.toContain('Import terminé');
+  });
+
+  it('counts « Tout » the same under a type filter as on the unfiltered feed', async () => {
+    TestBed.inject(NotificationService).push('alert', 'Import raté');
+    await TestBed.inject(Router).navigateByUrl('/?type=coherence');
+    const element = create();
+    await fixture.whenStable();
+    // The unread alert-severity message shows in « Tout », so it is in its count.
+    await vi.waitFor(() => expect(text()).toContain('Tout (3)'));
+    expect(element.querySelector('#fil-accueil-titre')!.textContent).toContain('(3)');
+  });
+
   it('narrows to the type of the address, and counts every type in its filter', async () => {
     await TestBed.inject(Router).navigateByUrl('/?type=coherence');
     const element = create();

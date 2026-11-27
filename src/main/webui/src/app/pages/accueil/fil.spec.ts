@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { AlerteView, CoherenceReport, ConstraintView } from '../../core/models';
 import { AppNotification } from '../../core/notification.service';
-import { buildFil, filterFeed, filType } from './fil';
+import { buildFil, filterFeed, filType, graviteLabel } from './fil';
 
 const alerte = (partial: Partial<AlerteView>): AlerteView => ({
   type: 'RAPPEL_VEILLE_INJOIGNABLE',
@@ -68,6 +68,9 @@ describe('buildFil', () => {
   it('maps the three gravities of an anomaly, and keeps the local history a message', () => {
     expect(buildFil([], rapport('BLOQUANT'), [])[0].gravite).toBe('blocage');
     expect(buildFil([], rapport('INFORMATION'), [])[0].gravite).toBe('message');
+    // Only what the application recorded is a « Message »; the same gravity on an anomaly says what it is.
+    expect(graviteLabel('message', 'messages')).toBe('Message');
+    expect(graviteLabel('message', 'coherence')).toBe('Information');
     const [local] = buildFil([], null, [message({ severity: 'alert' })]);
     expect(local).toMatchObject({ gravite: 'message', variante: 'alert', type: 'messages' });
   });
