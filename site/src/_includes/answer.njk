@@ -83,7 +83,7 @@
     {% for s in c.sections %}
     <div class="chapter" data-player="{{ ((loop.index0 + player) % 4) + 1 }}">
       <h2>{{ s.h2 | typo(lang) }}</h2>
-      <div class="prose">{{ s.texte | md(lang) | safe }}</div>
+      <div class="prose">{{ s.texte | replace('{espace}', site.demo.espace) | md(lang) | safe }}</div>
     </div>
     {% endfor %}
   </section>

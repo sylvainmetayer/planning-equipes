@@ -16,18 +16,18 @@
     "roles": [
       {
         "role": "admin",
-        "nom": "Administrateur",
-        "droits": "Tout : saisir les données, calculer, publier, régler les règles."
+        "nom": "Administrateur (porte de secours)",
+        "droits": "Tout : saisir les données, calculer, publier, régler les règles. C'est le seul compte qui peut changer les réglages."
       },
       {
         "role": "rh",
         "nom": "RH",
-        "droits": "Lire le planning et ses règles légales, sans rien modifier."
+        "droits": "Lire le rapport de conformité RH, sans rien modifier."
       },
       {
         "role": "responsable",
         "nom": "Responsable de stand",
-        "droits": "Lire le planning publié de ses stands et leurs postes vides, sans modifier."
+        "droits": "Lire le planning publié des deux premiers stands et leurs places vides, sans rien modifier."
       },
       {
         "role": "lecteur",
@@ -43,7 +43,7 @@
     },
     {
       "h2": "2. Ouvrir l'espace animateur",
-      "texte": "Dans **Animateurs**, ouvrez une fiche : le lien de son espace s'y trouve. C'est ce que reçoit chaque animateur : son planning, la confirmation de présence, les échanges. Les e-mails ne partent pas dans la démo, le lien est donc à copier à la main."
+      "texte": "Ouvrez [l'espace d'un animateur]({espace}) : son planning, la confirmation de présence, les échanges. Aucun e-mail ne part : le code d'accès s'affiche et se remplit à l'écran."
     },
     {
       "h2": "3. Suivre la journée du jour J",
@@ -57,7 +57,8 @@
     "L'instance est partagée : d'autres visiteurs voient ce que vous saisissez. N'y mettez rien de réel, et aucune adresse e-mail.",
     "Les e-mails ne partent pas.",
     "Le calcul est limité : un seul à la fois, 40 secondes au plus.",
-    "La démo ne fait pas plus d'appels sortants qu'une installation ordinaire."
+    "La démo ne fait pas plus d'appels sortants qu'une installation ordinaire.",
+    "En démo, personne ne peut créer de compte, changer un mot de passe, générer une clé MCP ni configurer un webhook."
   ],
   "liens": [
     "faq",
@@ -82,18 +83,18 @@
       "roles": [
         {
           "role": "admin",
-          "nom": "Administrator",
-          "droits": "Everything: enter the data, compute, publish, tune the rules."
+          "nom": "Administrator (back door)",
+          "droits": "Everything: enter the data, compute, publish, tune the rules. The only account that can change settings."
         },
         {
           "role": "rh",
           "nom": "HR",
-          "droits": "Read the schedule and its legal rules, change nothing."
+          "droits": "Read the HR compliance report, change nothing."
         },
         {
           "role": "responsable",
           "nom": "Stand lead",
-          "droits": "Read the published schedule of their stands and the empty seats, change nothing."
+          "droits": "Read the published schedule of the first two stands and their empty seats, change nothing."
         },
         {
           "role": "lecteur",
@@ -109,7 +110,7 @@
       },
       {
         "h2": "2. Open the animateur space",
-        "texte": "In **Staff**, open a record: the link to their space is there. It is what each animateur receives: their schedule, the presence confirmation, the swaps. E-mails are not sent in the demo, so copy the link by hand."
+        "texte": "Open [an animateur's space]({espace}): their schedule, the presence confirmation, the swaps. No e-mail is sent: the access code is shown and filled in on screen."
       },
       {
         "h2": "3. Follow the day itself",
@@ -123,7 +124,8 @@
       "The instance is shared: other visitors see what you enter. Put nothing real in it, and no e-mail address.",
       "E-mails are not sent.",
       "Computing is limited: one at a time, 40 seconds at most.",
-      "The demo makes no more outgoing calls than an ordinary installation."
+      "The demo makes no more outgoing calls than an ordinary installation.",
+      "In the demo, nobody can create an account, change a password, generate an MCP key or configure a webhook."
     ],
     "liens": [
       "faq",

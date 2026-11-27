@@ -23,7 +23,7 @@
     },
     {
       "h2": "Démonstration en ligne",
-      "texte": "La démo en ligne est une instance à part, aux données fictives, que tout visiteur peut modifier. Elle journalise les connexions (date, adresse IP, compte, résultat) et les actions (laquelle, quand, jamais les valeurs saisies), comme toute instance. Ces journaux, avec tout ce que vous y saisissez, sont effacés à la remise à zéro, toutes les 30 minutes. Elle n'envoie aucun e-mail. N'y saisissez aucune donnée réelle."
+      "texte": "La démo en ligne est une instance à part, aux données fictives, que tout visiteur peut modifier. Elle journalise les actions (ids et noms de champs, jamais les valeurs saisies), les connexions administrateur (heure et adresse), les envois de mail (sans adresse) et les mails simulés, en mémoire. Tout est effacé à chaque remise à zéro, au plus toutes les 30 minutes. Les journaux techniques du conteneur suivent la rétention de l'hôte. Elle n'envoie aucun e-mail. N'y saisissez aucune donnée réelle."
     },
     {
       "h2": "Vos droits",
@@ -59,7 +59,7 @@
       },
       {
         "h2": "Online demo",
-        "texte": "The online demo is a separate instance with made-up data, which any visitor can change. It logs sign-ins (date, IP address, account, outcome) and actions (which one, when, never the values entered), like any instance. These logs, with everything you enter, are erased at the reset, every 30 minutes. It sends no e-mail. Enter no real data in it."
+        "texte": "The online demo is a separate instance with made-up data, which any visitor can change. It logs actions (ids and field names, never the values entered), administrator sign-ins (time and address), mail sends (without the address) and the simulated mails, in memory. Everything is erased at each reset, every 30 minutes at most. The container's technical logs follow the host's retention. It sends no e-mail. Enter no real data in it."
       },
       {
         "h2": "Your rights",

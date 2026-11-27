@@ -11,11 +11,12 @@
   },
   "demo": {
     "url": "https://demo-planning.sylvain.dev",
+    "espace": "https://demo-planning.sylvain.dev/animateur/00000000-0000-4000-8000-0000000de305",
     "comptes": [
       { "role": "admin", "identifiant": "admin", "motDePasse": "admin" },
-      { "role": "rh", "identifiant": "rh", "motDePasse": "rh" },
-      { "role": "responsable", "identifiant": "responsable", "motDePasse": "responsable" },
-      { "role": "lecteur", "identifiant": "lecteur", "motDePasse": "lecteur" }
+      { "role": "rh", "identifiant": "rh@example.org", "motDePasse": "demo-planning" },
+      { "role": "responsable", "identifiant": "responsable@example.org", "motDePasse": "demo-planning" },
+      { "role": "lecteur", "identifiant": "lecteur@example.org", "motDePasse": "demo-planning" }
     ]
   },
   "tally": { "fr": "OQ791k", "en": "VpzAEN" },
