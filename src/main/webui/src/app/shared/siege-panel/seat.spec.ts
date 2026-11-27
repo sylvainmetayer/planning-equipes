@@ -9,6 +9,7 @@ import {
 } from '../../core/models';
 import {
   lockLabel,
+  movePreview,
   nextSteps,
   qualityWarning,
   readableName,
@@ -16,6 +17,7 @@ import {
   ruleLabel,
   scoreEffect,
   seatLocks,
+  suggestionPreview,
 } from './seat';
 
 const stand = (id: string): Stand => ({ id, nom: id }) as Stand;
@@ -178,5 +180,82 @@ describe('score wording', () => {
     expect(scoreEffect({ hardScore: 0, mediumScore: 0, softScore: 0 })).toBe(
       'sans effet sur le score',
     );
+  });
+});
+
+describe('a simulated change', () => {
+  const ZERO = { hardScore: 0, mediumScore: 0, softScore: 0 };
+  const impact = (name: string) => ({
+    name,
+    niveau: 'MEDIUM' as const,
+    categorie: null,
+    description: null,
+    matchCount: 1,
+    details: [],
+  });
+  const found = (holder: string | null) => ({
+    posteId: 'P1',
+    animateurActuelId: holder,
+    scoreAvant: { hardScore: -1, mediumScore: 0, softScore: 0 },
+    contraintesVioleesAvant: [],
+    candidatsEligibles: 1,
+    depuis: 0,
+    candidatsEvalues: 1,
+    plafond: 20,
+    suggestions: [],
+  });
+  const suggestion = {
+    animateurId: 'b1',
+    scoreApres: ZERO,
+    delta: { hardScore: 1, mediumScore: 0, softScore: 0 },
+    violationsResolues: [impact('equilibrerCharge')],
+    violationsIntroduites: [],
+  };
+
+  it('reads a suggestion as the seat handed over, or placed on an empty seat, in the catalogue words', () => {
+    const catalogue = new Map([
+      [
+        'equilibrerCharge',
+        { name: 'equilibrerCharge', libelleCourt: 'Charge équilibrée' } as ConstraintView,
+      ],
+    ]);
+    const handed = suggestionPreview(found('a1'), suggestion, 'Bruno', catalogue);
+    expect(handed.title).toBe('Donner ce siège à Bruno');
+    expect(handed.avant.hardScore).toBe(-1);
+    expect(handed.apres).toEqual(ZERO);
+    expect(handed.settled).toEqual(['Charge équilibrée']);
+    expect(handed.breaks).toEqual([]);
+    expect(handed.posteCibleId).toBeNull();
+    expect(suggestionPreview(found(null), suggestion, 'Bruno', null).title).toBe(
+      'Placer Bruno sur ce siège',
+    );
+  });
+
+  it('reads a move as a swap or a seat left empty, and a hard break as nothing to apply', () => {
+    const move = {
+      posteSourceId: 'P1',
+      posteCibleId: 'P2',
+      animateurSourceId: 'a1',
+      animateurCibleId: 'b1',
+      scoreAvant: ZERO,
+      scoreApres: ZERO,
+      delta: ZERO,
+      casseContrainteDure: false,
+      nouvellesViolationsDures: [],
+    };
+    expect(movePreview(move, () => 'Bruno').title).toBe('Échanger ce siège avec celui de Bruno');
+    const broken = movePreview(
+      {
+        ...move,
+        animateurCibleId: null,
+        casseContrainteDure: true,
+        nouvellesViolationsDures: [
+          { name: 'reposQuotidien', description: '', matchesSupplementaires: 1 },
+        ],
+      },
+      () => '',
+    );
+    expect(broken.title).toContain('restera vide');
+    expect(broken.breaks).toEqual(['repos quotidien']);
   });
 });

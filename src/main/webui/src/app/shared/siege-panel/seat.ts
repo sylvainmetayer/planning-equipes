@@ -1,13 +1,16 @@
 // The pure half of the Siège panel: which seat a click or an address names,
 // which locks hold it, what a rule is called on screen, and what is left to do
-// after a gesture. The component holds the signals and the calls; this file
+// after a gesture, and what a simulated change would do. The component holds the signals and the calls; this file
 // holds what they mean, and is what the unit tests read.
 
 import {
   ConstraintView,
+  DeplacementSimulation,
   HardMediumSoftScore,
   NiveauContrainte,
   PosteAffectation,
+  SuggestionReparation,
+  SuggestionsReparation,
   TypeVerrouillage,
   VerrouillagePlanning,
 } from '../../core/models';
@@ -264,4 +267,75 @@ export function scoreEffect(delta: HardMediumSoftScore): string {
   return parts.length > 0
     ? parts.join(' · ')
     : $localize`:@@siege.effet.aucun:sans effet sur le score`;
+}
+
+/**
+ * « Simuler un changement » : one change scored before and after, not applied
+ * yet. Either the seat handed to somebody (a suggestion) or its holder moved
+ * to another seat; « Appliquer » then writes exactly that.
+ */
+export interface SeatPreview {
+  /** Who receives the seat; on a move, whoever the target seat held (null: it was free). */
+  animateurId: string | null;
+  /** The seat the holder goes to on a move; null when the seat is handed to somebody. */
+  posteCibleId: string | null;
+  title: string;
+  avant: HardMediumSoftScore;
+  apres: HardMediumSoftScore;
+  delta: HardMediumSoftScore;
+  /** The hard rules the change would newly break: the write refuses it, so nothing to apply. */
+  breaks: string[];
+  /** The rules this seat breaks today that the change settles, and those it raises. */
+  settled: string[];
+  raised: string[];
+}
+
+/** A suggestion of the repair search, as a preview: the seat handed to that person. */
+export function suggestionPreview(
+  found: SuggestionsReparation,
+  suggestion: SuggestionReparation,
+  nom: string,
+  catalogue: ReadonlyMap<string, ConstraintView> | null,
+): SeatPreview {
+  const label = (impact: { name: string; description: string | null }): string =>
+    ruleLabel(impact.name, catalogue, impact.description);
+  return {
+    animateurId: suggestion.animateurId,
+    posteCibleId: null,
+    title: found.animateurActuelId
+      ? $localize`:@@siege.simuler.donner:Donner ce siège à ${nom}:nom:`
+      : $localize`:@@siege.simuler.placer:Placer ${nom}:nom: sur ce siège`,
+    avant: found.scoreAvant,
+    apres: suggestion.scoreApres,
+    delta: suggestion.delta,
+    // The search never offers a candidate that breaks a hard rule.
+    breaks: [],
+    settled: suggestion.violationsResolues.map(label),
+    raised: suggestion.violationsIntroduites.map(label),
+  };
+}
+
+/** A move of the holder to another seat, as the server scored it. */
+export function movePreview(
+  simulation: DeplacementSimulation,
+  nomDe: (animateurId: string) => string,
+): SeatPreview {
+  const target = simulation.animateurCibleId ? nomDe(simulation.animateurCibleId) : null;
+  return {
+    animateurId: simulation.animateurCibleId,
+    posteCibleId: simulation.posteCibleId,
+    title: target
+      ? $localize`:@@siege.simuler.echanger:Échanger ce siège avec celui de ${target}:nom:`
+      : $localize`:@@siege.simuler.deplacer:Passer sur le siège libre choisi ; celui-ci restera vide`,
+    avant: simulation.scoreAvant,
+    apres: simulation.scoreApres,
+    delta: simulation.delta,
+    breaks: simulation.casseContrainteDure
+      ? simulation.nouvellesViolationsDures.map(
+          (violation) => violation.description || readableName(violation.name),
+        )
+      : [],
+    settled: [],
+    raised: [],
+  };
 }

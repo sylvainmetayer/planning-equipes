@@ -224,7 +224,8 @@ test('les journées déjà travaillées sortent de chaque résolution telles qu�
 
     // 5. On the Monday's day view, handing a seat to someone else is refused
     //    with the rule's sentence, and the plan does not move. The move goes
-    //    through the Siège panel: a click on the holder's name, then « Déplacer vers… ».
+    //    through the Siège panel: a click on the holder's name, then « Simuler
+    //    un changement » and « Vers un autre siège… », which simulates first.
     const lundi = (await sieges()).filter((siege) => siege.creneau?.date === J1 && siege.animateur);
     expect(lundi.length, 'Monday seats somebody').toBeGreaterThan(0);
     const titulaireId = lundi[0].animateur!.id;
@@ -245,10 +246,9 @@ test('les journées déjà travaillées sortent de chaque résolution telles qu�
 
     await page.goto(`/journee?vue=jour&mode=tableau&date=${J1}`);
     await page.locator(`button.affectation-link[data-siege-cle="${lundi[0].id}"]`).click();
-    await page
-      .getByRole('complementary', { name: /Siège/ })
-      .getByRole('button', { name: 'Déplacer vers…' })
-      .click();
+    const panneau = page.getByRole('complementary', { name: /Siège/ });
+    await panneau.getByRole('button', { name: 'Simuler un changement' }).click();
+    await panneau.getByRole('button', { name: 'Vers un autre siège…' }).click();
     const dialogue = page.getByRole('dialog', { name: `Déplacer ${titulaire}` });
     await expect(dialogue.getByRole('combobox')).toBeFocused();
     await page.keyboard.type(remplacant);

@@ -1,9 +1,13 @@
 // The Siège panel: one seat of the plan on screen, and every gesture on it,
 // beside the rendering that showed it — not a full-screen dialog in front of
-// it. Opened by a click on any cell of the Journée (a name or a free seat of
-// the calendar, a shift of the rail, a stand of the map, a break without
-// relay, a line of the changes), it reads the plan the page already loaded:
-// nothing is fetched per cell, and the candidates are asked for on demand.
+// it. Opened by a click on any cell of the Planning page (a name or a free
+// seat of the calendar, a shift of the rail, a stand of the map), it reads the
+// plan the page already loaded: nothing is fetched per cell. Its two « et si »
+// gestures (ADR 0127's « simuler » and « expliquer » on the screen) are
+// « Simuler un changement » — the repair suggestions, a move, the before and
+// after of the one chosen, then « Appliquer » — and « Expliquer »; both read
+// only, a lecteur's too. The writes that need no simulation (free, absent,
+// lock) stay beside them.
 
 import {
   afterNextRender,
@@ -24,6 +28,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -41,6 +46,7 @@ import {
   SuggestionsReparation,
 } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { SessionStore } from '../../core/session.store';
 import { errorText } from '../../core/resource-state';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
@@ -51,7 +57,7 @@ import {
   suggestionsTronquees,
 } from '../affectation-explanation-rules';
 import { ConfirmService } from '../confirm-dialog';
-import { moveTargets, resumeDeplacement } from '../deplacement';
+import { moveTargets, resumeDeplacement, scoreLabel } from '../deplacement';
 import { openMoveDialog } from '../deplacement-dialog';
 import { StatusMessage } from '../status-message';
 import { lockWarning, SeatPlacement } from './seat-placement';
@@ -59,15 +65,18 @@ import {
   catalogueByName,
   levelLabel,
   lockLabel,
+  movePreview,
   NextSteps,
   nextSteps,
   qualityWarning,
   ruleLabel,
   SeatGesture,
   SeatLock,
+  SeatPreview,
   seatHours,
   seatLocks,
   scoreEffect,
+  suggestionPreview,
 } from './seat';
 
 /** What the panel says once a gesture went through, until another seat is opened. */
@@ -81,7 +90,14 @@ let nextPanelId = 0;
 
 @Component({
   selector: 'app-siege-panel',
-  imports: [MatButtonModule, MatIconModule, MatProgressBarModule, RouterLink, StatusMessage],
+  imports: [
+    MatButtonModule,
+    MatCheckboxModule,
+    MatIconModule,
+    MatProgressBarModule,
+    RouterLink,
+    StatusMessage,
+  ],
   templateUrl: './siege-panel.html',
   styleUrl: './siege-panel.css',
   // Global by design (AGENTS.md): loaded with the route that draws the panel.
@@ -113,6 +129,8 @@ export class SeatPanel {
   protected readonly headingId = `siege-panel-title-${nextPanelId++}`;
   /** A solve holding the edition refuses every write here: the gestures wait for it. */
   protected readonly editingLocked = this.jobs.editingLocked;
+  /** A lecteur (ADR 0099) simulates and explains, and applies nothing: the server refuses it anyway. */
+  protected readonly lectureSeule = inject(SessionStore).lectureSeule;
 
   protected readonly seat = computed<PosteAffectation | null>(
     () => this.planning()?.postes?.find((poste) => poste.id === this.posteId()) ?? null,
@@ -153,7 +171,7 @@ export class SeatPanel {
   /** A write in flight: one gesture at a time. */
   protected readonly busy = signal(false);
   protected readonly writesDisabled = computed(
-    () => this.busy() || this.editingLocked() || this.frozen(),
+    () => this.busy() || this.editingLocked() || this.frozen() || this.lectureSeule(),
   );
 
   /** The catalogue, for the rules' short labels; read once, a failure only costs the labels. */
@@ -166,17 +184,23 @@ export class SeatPanel {
       : null,
   );
 
+  /** « Expliquer » is open: closed again when another seat is opened. */
+  protected readonly explaining = linkedSignal<string | null, boolean>({
+    source: this.posteId,
+    computation: () => false,
+  });
+
   /**
-   * « Pourquoi lui ? » in sentences: the rules the holder breaks on this seat,
-   * read on the persisted plan under the edition's rules — never the copy on
-   * screen, which carries no disabled constraint and no weight. Asked when an
-   * occupied seat is opened — one call per opened seat, never one per cell —
-   * and again whenever the page re-reads the plan after a gesture.
+   * « Expliquer » in sentences: the rules the holder breaks on this seat, read
+   * on the persisted plan under the edition's rules — never the copy on
+   * screen, which carries no disabled constraint and no weight. Asked when the
+   * gesture is opened — one call per seat explained, never one per cell — and
+   * again whenever the page re-reads the plan after a gesture.
    */
   protected readonly explanation = resource({
     params: () => {
       const seat = this.seat();
-      return seat?.animateur && this.planning()
+      return seat?.animateur && this.planning() && this.explaining()
         ? { posteId: seat.id, holderId: seat.animateur.id }
         : undefined;
     },
@@ -184,12 +208,37 @@ export class SeatPanel {
   });
   protected readonly explanationError = errorText(this.explanation);
 
-  /* The replacements are searched on demand — one score analysis per candidate server-side. */
-  protected readonly suggestions = linkedSignal<string | null, SuggestionsReparation | null>({
-    source: this.posteId,
+  /**
+   * What a simulation was read against: the seat and who holds it. A gesture
+   * that changes the holder (free, absent, an échange from elsewhere) makes
+   * every suggestion and preview below stale, and « Appliquer » on a stale
+   * move would write something nobody simulated.
+   */
+  private readonly simulationBasis = computed(
+    () => `${this.posteId() ?? ''}|${this.seat()?.animateur?.id ?? ''}`,
+  );
+  /** « Simuler un changement » is open: closed again when another seat is opened or changes hands. */
+  protected readonly simulating = linkedSignal<string, boolean>({
+    source: this.simulationBasis,
+    computation: () => false,
+  });
+  /* The suggestions are searched on demand — one score analysis per candidate server-side. */
+  protected readonly suggestions = linkedSignal<string, SuggestionsReparation | null>({
+    source: this.simulationBasis,
     computation: () => null,
   });
-  protected readonly suggestionsLoading = signal(false);
+  /** A suggestion or a move asked of the server: one simulation at a time. */
+  protected readonly simulationLoading = signal(false);
+  /** The change simulated last, its before and after, until it is applied or dropped. */
+  protected readonly preview = linkedSignal<string, SeatPreview | null>({
+    source: this.simulationBasis,
+    computation: () => null,
+  });
+  /** On an empty seat, « La garder au prochain calcul » : the placement applied is then locked. */
+  protected readonly keepPlacement = linkedSignal<string | null, boolean>({
+    source: this.posteId,
+    computation: () => true,
+  });
   protected readonly best = computed<SuggestionReparation[]>(() =>
     meilleuresSuggestions(this.suggestions()),
   );
@@ -262,59 +311,70 @@ export class SeatPanel {
     return scoreEffect(suggestion.delta);
   }
 
-  protected applyLabel(suggestion: SuggestionReparation): string {
+  protected simulateLabel(suggestion: SuggestionReparation): string {
     const nom = this.name(suggestion.animateurId);
-    return $localize`:@@siege.remplacer.appliquer.label:Mettre ${nom}:nom: sur ce siège`;
+    return $localize`:@@siege.simuler.suggestion.label:Simuler : ${nom}:nom: sur ce siège`;
+  }
+
+  protected effectText(preview: SeatPreview): string {
+    return scoreEffect(preview.delta);
+  }
+
+  protected scores(preview: SeatPreview): string {
+    const before = scoreLabel(preview.avant);
+    const after = scoreLabel(preview.apres);
+    return $localize`:@@siege.simuler.scores:Score avant : ${before}:before: · après : ${after}:after:`;
   }
 
   /* ----------------------------- gestures ----------------------------- */
 
-  /**
-   * « Remplacer » : the viable replacements, best impact first — searched on
-   * the persisted plan prepared server-side, as the write that follows reads
-   * it: the constraints switched off, the weights and the quotas of the
-   * edition, not a bare copy of the plan on screen.
-   */
-  protected async searchReplacements(): Promise<void> {
-    const seat = this.seat();
-    if (!seat) {
-      return;
-    }
-    this.suggestionsLoading.set(true);
-    this.gestureError.set('');
-    try {
-      this.suggestions.set(await this.jourJ.suggestions(seat.id));
-    } catch (error) {
-      this.suggestions.set(null);
-      this.gestureError.set(errorPrefix(error));
-    } finally {
-      this.suggestionsLoading.set(false);
-    }
+  /** « Expliquer » : opened, the explanation is read; closed, it is dropped. */
+  protected toggleExplanation(): void {
+    this.explaining.update((open) => !open);
   }
 
-  protected async applyReplacement(suggestion: SuggestionReparation): Promise<void> {
-    const seat = this.seat();
-    if (!seat) {
+  /**
+   * « Simuler un changement » : opened, the repair suggestions are searched —
+   * on the persisted plan prepared server-side, as the write that follows
+   * reads it: the constraints switched off, the weights and the quotas of the
+   * edition, not a bare copy of the plan on screen.
+   */
+  protected async toggleSimulation(): Promise<void> {
+    const open = !this.simulating();
+    this.simulating.set(open);
+    if (!open) {
+      this.preview.set(null);
       return;
     }
-    const nom = this.name(suggestion.animateurId);
-    const holderId = seat.animateur?.id ?? null;
-    await this.write('replace', async () => {
-      // The person shown: somebody else holding the seat by now is a 409.
-      await this.postesApi.applyRepair(seat.id, suggestion.animateurId, holderId);
-      this.suggestions.set(null);
-      return {
-        message: $localize`:@@siege.remplacer.fait:${nom}:nom: prend ce siège.`,
-        warning: qualityWarning(suggestion.delta),
-      };
+    const seat = this.seat();
+    if (!seat || this.suggestions()) {
+      return;
+    }
+    await this.simulate(async () => {
+      const found = await this.postesApi.suggestions(seat.id);
+      // Another seat opened meanwhile: this answer is not about it.
+      if (this.posteId() === seat.id) {
+        this.suggestions.set(found);
+      }
     });
   }
 
+  /** A suggestion, before and after: already scored by the search, nothing more to ask. */
+  protected simulateSuggestion(suggestion: SuggestionReparation): void {
+    const found = this.suggestions();
+    if (!found) {
+      return;
+    }
+    this.preview.set(
+      suggestionPreview(found, suggestion, this.name(suggestion.animateurId), this.catalogue()),
+    );
+  }
+
   /**
-   * « Déplacer vers » : the move dialog, the only way in to a manual move from
-   * the day views.
+   * « Vers un autre siège… » : the move dialog of the day views chooses the
+   * seat, the server scores the move — nothing written until « Appliquer ».
    */
-  protected async move(): Promise<void> {
+  protected async simulateMove(): Promise<void> {
     const seat = this.seat();
     const planning = this.planning();
     if (!seat?.animateur || !planning) {
@@ -338,16 +398,90 @@ export class SeatPanel {
     if (!choice) {
       return;
     }
-    const holderId = seat.animateur.id;
-    await this.write('move', async () => {
-      const simulation = await this.postesApi.move(seat.id, { posteId: choice.target }, holderId);
-      const summary = resumeDeplacement(simulation, (id) => this.name(id));
-      return {
-        message: summary.title,
-        warning: qualityWarning(simulation.delta),
-        // Moved onto a free seat: the one it left is empty now.
-        holeOpened: simulation.posteCibleId !== null && simulation.animateurCibleId === null,
-      };
+    await this.simulate(async () => {
+      const simulation = await this.postesApi.simulate(seat.id, { posteId: choice.target });
+      if (this.posteId() === seat.id) {
+        this.preview.set(movePreview(simulation, (id) => this.name(id)));
+      }
+    });
+  }
+
+  /** One read of « Simuler un changement » : its refusal worded in the panel. */
+  private async simulate(run: () => Promise<void>): Promise<void> {
+    this.simulationLoading.set(true);
+    this.gestureError.set('');
+    try {
+      await run();
+    } catch (error) {
+      this.gestureError.set(errorPrefix(error));
+    } finally {
+      this.simulationLoading.set(false);
+    }
+  }
+
+  protected dropPreview(): void {
+    this.preview.set(null);
+  }
+
+  /**
+   * « Appliquer » : the change simulated, written — through the very routes a
+   * move, a hand-over and a placement always took, so the server holds it to
+   * the same guards (a solve under way, a lock, the frozen past, the holder
+   * shown as its precondition) whatever the simulation said.
+   */
+  protected async applyPreview(): Promise<void> {
+    const seat = this.seat();
+    const preview = this.preview();
+    if (!seat?.creneau || !preview) {
+      return;
+    }
+    const holderId = seat.animateur?.id ?? null;
+    const done = (): void => {
+      this.preview.set(null);
+      this.suggestions.set(null);
+      this.simulating.set(false);
+    };
+    const target = preview.posteCibleId;
+    if (target && holderId) {
+      await this.write('move', async () => {
+        const simulation = await this.postesApi.move(seat.id, { posteId: target }, holderId);
+        done();
+        return {
+          message: resumeDeplacement(simulation, (id) => this.name(id)).title,
+          warning: qualityWarning(simulation.delta),
+          // Moved onto a free seat: the one it left is empty now.
+          holeOpened: simulation.posteCibleId !== null && simulation.animateurCibleId === null,
+        };
+      });
+      return;
+    }
+    const animateurId = preview.animateurId;
+    if (!animateurId) {
+      return;
+    }
+    const nom = this.name(animateurId);
+    if (holderId) {
+      await this.write('replace', async () => {
+        // The person shown: somebody else holding the seat by now is a 409.
+        await this.postesApi.applyRepair(seat.id, animateurId, holderId);
+        done();
+        return {
+          message: $localize`:@@siege.remplacer.fait:${nom}:nom: prend ce siège.`,
+          warning: qualityWarning(preview.delta),
+        };
+      });
+      return;
+    }
+    const creneauId = seat.creneau.id;
+    const keep = this.keepPlacement();
+    await this.write('place', async () => {
+      const placed = await this.placement.place(seat.id, creneauId, { animateurId, keep }, nom);
+      done();
+      // The placement is written: say the lock is not, rather than undo it.
+      if (placed.lockError) {
+        this.gestureError.set(placed.lockError);
+      }
+      return placed;
     });
   }
 
@@ -495,10 +629,11 @@ export class SeatPanel {
   }
 
   /**
-   * « Qui peut tenir ce siège ? » : the bench of this seat, in a dialog. On an
-   * empty seat its « Placer » seats the person chosen and, the box left
-   * ticked, locks them there so the next solve keeps the placement; on a held
-   * one it only reads who could replace the holder.
+   * « Voir tout le banc » of « Simuler un changement » : the bench of this
+   * seat, in a dialog — everybody, the reasons of who cannot. On an empty seat
+   * its « Placer » seats the person chosen and, the box left ticked, locks
+   * them there so the next solve keeps the placement; on a held one, or to
+   * whoever may not write, it only reads who could take the seat.
    */
   protected async whoCanHold(): Promise<void> {
     const seat = this.seat();
@@ -513,7 +648,7 @@ export class SeatPanel {
       title: `${this.standName()} · ${this.when()}`,
       animateurs: planning.animateurs ?? [],
       catalogue: this.catalogue(),
-      offerPlacement: !seat.animateur,
+      offerPlacement: !seat.animateur && !this.writesDisabled(),
     });
     if (!choice || seat.animateur) {
       return;

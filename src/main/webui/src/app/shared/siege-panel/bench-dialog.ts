@@ -55,7 +55,7 @@ export interface BenchDialogData {
   catalogue: ReadonlyMap<string, ConstraintView> | null;
   /**
    * False on a held seat: the bench is read, nobody is placed — the seat is
-   * somebody's, and « Remplacer » is the gesture that hands it over.
+   * somebody's, and « Simuler un changement » is the gesture that hands it over.
    */
   offerPlacement: boolean;
 }

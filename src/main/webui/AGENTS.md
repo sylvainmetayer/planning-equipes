@@ -450,15 +450,21 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   by its title, focus moved to it and given back on close — to the cell drawn
   in the opener's place, found by its `data-siege-cle`, when a gesture re-read
   the plan meanwhile —, Escape handled on the panel itself; on the rail, whose
-  shift labels are out of the tab order, Space on a line opens it): the seat
-  explained, then Remplacer, Déplacer vers (the move dialog),
+  shift labels are out of the tab order, Space on a line opens it): two
+  « et si » gestures, reads a lecteur makes too — « Simuler un changement »
+  (the repair suggestions of `GET /api/postes/{id}/suggestions`, « Vers un
+  autre siège… » through the move dialog scored by `GET …/simulation`, the
+  before and after of the one chosen over the pure `suggestionPreview` and `movePreview` of
+  `seat.ts`, then « Appliquer » through the usual move, hand-over or
+  placement write — hidden to a lecteur, disabled while a solve or a lock
+  holds the seat —, and « Voir tout le banc », `bench-dialog.ts`, whose
+  « Placer » on an empty seat — offered to nobody a lock or a started
+  timeslot would refuse — seats and, ticked by default, locks) and
+  « Expliquer » (the rules the holder breaks, read on demand); beside them
   Libérer (ticked by default, it also locks the person off that timeslot, as
-  an accepted échange does), Verrouiller, the bench read-only, the fiche;
-  Libérer and Remplacer send the holder shown as `occupant`, a precondition
-  the write holds; on an empty seat « Qui peut tenir ce siège ? », the bench
-  of that seat in `bench-dialog.ts`, whose « Placer » — offered to nobody a
-  lock or a started timeslot would refuse — seats and, ticked by default,
-  locks, and « Poser un ajustement ».
+  an accepted échange does), Marquer absent, Verrouiller, the fiche; every
+  write of the panel sends the holder shown as `occupant`, a precondition the
+  write holds.
   It reads the plan the page loaded, never one per cell, and asks for the
   candidates on demand; the seat is `?siege=<poste id>`, and `?creneau=` (with
   `stand=`), the bench's old keys, is resolved to a seat once the plan is read),

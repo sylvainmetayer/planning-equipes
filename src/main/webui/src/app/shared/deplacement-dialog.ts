@@ -1,4 +1,4 @@
-// The move dialog of the Siège panel (« Déplacer vers… »): a searchable list of
+// The move dialog of the Siège panel (« Vers un autre siège… »): a searchable list of
 // the seats a person could go to or swap with, keyboard-reachable
 // (RGAA 7.3, WCAG 2.1.1 and 2.5.7). It only asks the question — « where
 // to? » — and hands the answer back to the panel, which calls the service.

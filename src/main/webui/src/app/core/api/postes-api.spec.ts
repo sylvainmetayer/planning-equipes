@@ -6,6 +6,7 @@ import { PostesApi } from './postes-api';
 
 class FakeApi {
   post = vi.fn((_url: string, _body: unknown) => Promise.resolve({}));
+  get = vi.fn((_url: string) => Promise.resolve({}));
 }
 
 describe('PostesApi', () => {
@@ -51,5 +52,18 @@ describe('PostesApi', () => {
       '/api/postes/poste-1/affectation?animateurId=b1&occupant=a1',
       '/api/postes/poste-1/affectation?',
     ]);
+  });
+
+  it('simulates a change and reads the suggestions with GETs, which a lecteur may call', async () => {
+    await service.simulate('poste-1', { posteId: 'poste-2' });
+    await service.simulate('poste-1', { animateurId: 'b1' });
+    await service.suggestions('poste-1');
+
+    expect(api.get.mock.calls.map((call) => call[0])).toEqual([
+      '/api/postes/poste-1/simulation?cible=poste-2',
+      '/api/postes/poste-1/simulation?animateur=b1',
+      '/api/postes/poste-1/suggestions',
+    ]);
+    expect(api.post).not.toHaveBeenCalled();
   });
 });

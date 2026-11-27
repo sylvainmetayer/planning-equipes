@@ -25,7 +25,7 @@ La journée en tableau sur toute la largeur de l'écran : un stand par ligne ave
 
 ### Mode rail
 
-La même journée vue par personne : une ligne par animateur, ses vacations placées dans le temps, les pauses légales posées dessus (en rouge sans relais), et des lignes vides pour qui reste mobilisable. Chaque vacation ouvre le panneau du siège, d'où « Déplacer vers… » la confie à une autre personne ou l'échange avec la sienne.
+La même journée vue par personne : une ligne par animateur, ses vacations placées dans le temps, les pauses légales posées dessus (en rouge sans relais), et des lignes vides pour qui reste mobilisable. Chaque vacation ouvre le panneau du siège, d'où « Simuler un changement », puis « Vers un autre siège… », la confie à une autre personne ou l'échange avec la sienne.
 
 ## Stand
 

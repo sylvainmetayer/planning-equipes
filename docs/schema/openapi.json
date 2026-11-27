@@ -18690,6 +18690,7 @@
     },
     "/api/postes/{posteId}/deplacement/simulation" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "posteId",
           "in" : "path",
@@ -18782,8 +18783,47 @@
         "tags" : [ "Affectation Explanation Resource" ]
       }
     },
+    "/api/postes/{posteId}/simulation" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "posteId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "animateur",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "cible",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeplacementSimulation"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Simulate",
+        "tags" : [ "Affectation Explanation Resource" ]
+      }
+    },
     "/api/postes/{posteId}/simulation-swap" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "posteId",
           "in" : "path",
@@ -18822,6 +18862,46 @@
           }
         },
         "summary" : "Simulate Swap",
+        "tags" : [ "Affectation Explanation Resource" ]
+      }
+    },
+    "/api/postes/{posteId}/suggestions" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "posteId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "depuis",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "plafond",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuggestionsReparation"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Suggestions",
         "tags" : [ "Affectation Explanation Resource" ]
       }
     },

@@ -83,11 +83,11 @@ Saving a constraint again **under its own id** is never refused: the submitted v
 
 "Respected" only means that no breach was found for this precise seat, not that the constraint applies to it: the UI does not present it as a mark of satisfaction.
 
-`POST /api/postes/{posteId}/simulation-swap` scores a candidate it is pointed to, without persisting anything. No screen calls it (the UI exposes only the assistant's viable replacements, so as not to let anyone choose a replacement that breaks a hard rule); it remains open to the API and to the MCP tool `simuler_affectation`.
+`POST /api/postes/{posteId}/simulation-swap` scores a candidate it is pointed to, on a plan the caller sends, without persisting anything. No screen calls it and the route is deprecated until 5.0: `GET /api/postes/{posteId}/simulation?animateur=A` scores the same change on the saved plan, with the edition's settings.
 
 ## Moving an assignment by hand
 
-Two routes: `POST /api/postes/{posteId}/deplacement/simulation` computes, `POST /api/postes/{posteId}/deplacement` writes. The gesture is designated by `?cible=P` (a seat) or `?animateur=A` (a person). The MCP tools are `simuler_affectation` and `modifier_affectation`.
+Two routes: `GET /api/postes/{posteId}/simulation` computes ("Simulate a change" in the seat panel; a `GET`, hence open to a read-only user), `POST /api/postes/{posteId}/deplacement` writes. The former `POST .../deplacement/simulation` stays a deprecated alias until 5.0. The gesture is designated by `?cible=P` (a seat) or `?animateur=A` (a person). The MCP tools are `simuler_affectation` and `modifier_affectation`.
 
 The simulation persists nothing. With no body, it reads the verdict on the edition's rules, those the organiser has disabled included: the caller does not have to supply them. The write applies to the saved plan; `&occupant=X` says who the caller believes to be on the origin seat, and if someone else holds it, the answer is `409` with no write.
 
@@ -125,7 +125,7 @@ Keeping the person at the next solve goes through an `ANIMATEUR_CRENEAU` lock th
 
 `POST /api/jour-j/postes/{posteId}/suggestions?plafond=N&depuis=M` looks for viable replacements on the saved plan and persists nothing. One of them is applied through `POST /api/postes/{posteId}/affectation?animateurId=X&occupant=Y`; without `animateurId`, the seat is emptied.
 
-Where `simulation-swap` scores the candidate it is given, the assistant **enumerates**: it keeps only the candidates the solver's eligibility filter accepts, simulates each, discards those that would degrade the hard score of the whole plan (and not of the seat alone), then ranks the rest by decreasing impact.
+Where the simulation scores the candidate it is given, the assistant **enumerates**: it keeps only the candidates the solver's eligibility filter accepts, simulates each, discards those that would degrade the hard score of the whole plan (and not of the seat alone), then ranks the rest by decreasing impact.
 
 **The cost is bounded.** Each candidate costs a full analysis, so only the first `plafond` eligible candidates are simulated (20 by default, 100 at most; a null or negative value falls back to the default). The response carries `candidatsEligibles` and `candidatsEvalues`: when they differ, the list is the best of what was seen, **not an exhaustive answer**, and the UI must say so. The order of passage keeps the most promising first: free at the time of the seat, then with no seat at all that day, then the fewest minutes worked, then the natural order of identifiers.
 

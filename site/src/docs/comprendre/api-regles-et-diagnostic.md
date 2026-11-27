@@ -80,11 +80,11 @@ Réenregistrer une contrainte **sous son propre id** n'est jamais refusé : la v
 
 « Respectée » signifie seulement qu'aucun écart n'a été trouvé pour ce poste précis, pas que la contrainte s'applique à lui : l'IHM ne la présente pas comme un satisfecit.
 
-`POST /api/postes/{posteId}/simulation-swap` note un candidat qu'on lui désigne, sans rien persister. Aucun écran ne l'appelle (l'IHM n'expose que les remplaçants viables de l'assistant, pour ne pas laisser choisir un remplacement qui casse une règle dure) ; il reste ouvert à l'API et à l'outil MCP `simuler_affectation`.
+`POST /api/postes/{posteId}/simulation-swap` note un candidat qu'on lui désigne, sur un plan que l'appelant envoie, sans rien persister. Aucun écran ne l'appelle et la route est dépréciée jusqu'en 5.0 : `GET /api/postes/{posteId}/simulation?animateur=A` note le même changement sur le plan enregistré, avec les réglages de l'édition.
 
 ## Déplacer une affectation à la main
 
-Deux routes : `POST /api/postes/{posteId}/deplacement/simulation` chiffre, `POST /api/postes/{posteId}/deplacement` écrit. Le geste se désigne par `?cible=P` (un siège) ou `?animateur=A` (une personne). Les outils MCP sont `simuler_affectation` et `modifier_affectation`.
+Deux routes : `GET /api/postes/{posteId}/simulation` chiffre (« Simuler un changement » du panneau du siège ; un `GET`, donc ouvert au lecteur), `POST /api/postes/{posteId}/deplacement` écrit. L'ancien `POST …/deplacement/simulation` en reste un alias déprécié jusqu'en 5.0. Le geste se désigne par `?cible=P` (un siège) ou `?animateur=A` (une personne). Les outils MCP sont `simuler_affectation` et `modifier_affectation`.
 
 La simulation ne persiste rien. Sans corps, elle lit le verdict sur les règles de l'édition, celles que l'organisateur a désactivées comprises : l'appelant n'a pas à les fournir. L'écriture porte sur le plan enregistré ; `&occupant=X` dit qui l'appelant croit sur le siège de départ, et si quelqu'un d'autre l'occupe, c'est `409` sans écriture.
 
@@ -122,7 +122,7 @@ Garder la personne au prochain calcul passe par un verrou `ANIMATEUR_CRENEAU` qu
 
 `POST /api/jour-j/postes/{posteId}/suggestions?plafond=N&depuis=M` cherche les remplaçants viables sur le plan enregistré et ne persiste rien. L'un d'eux s'applique par `POST /api/postes/{posteId}/affectation?animateurId=X&occupant=Y` ; sans `animateurId`, le siège est vidé.
 
-Là où `simulation-swap` note le candidat qu'on lui donne, l'assistant **énumère** : il ne garde que les candidats que le filtre d'éligibilité du solveur accepte, simule chacun, écarte ceux qui dégraderaient le score dur du plan entier (et pas du seul poste) puis classe le reste par impact décroissant.
+Là où la simulation note le candidat qu'on lui donne, l'assistant **énumère** : il ne garde que les candidats que le filtre d'éligibilité du solveur accepte, simule chacun, écarte ceux qui dégraderaient le score dur du plan entier (et pas du seul poste) puis classe le reste par impact décroissant.
 
 **Le coût est borné.** Chaque candidat coûte une analyse complète, donc seuls les `plafond` premiers candidats éligibles sont simulés (20 par défaut, 100 au maximum ; une valeur nulle ou négative retombe sur le défaut). La réponse porte `candidatsEligibles` et `candidatsEvalues` : quand ils diffèrent, la liste est la meilleure de ce qui a été vu, **pas une réponse exhaustive**, et l'IHM doit le dire. L'ordre de passage garde les plus prometteurs : libres au moment du poste, puis sans aucun poste ce jour-là, puis le moins de minutes travaillées, puis l'ordre naturel des identifiants.
 

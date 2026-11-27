@@ -4,6 +4,8 @@
 # (ADR 0099). Every other route of those resources is refused to a lecteur, by LecteurFilter.
 # A new line is a decision: open to a lecteur on purpose.
 AffectationExplanationResource#explainPersisted GET /postes/{posteId}/explication
+AffectationExplanationResource#simulate GET /postes/{posteId}/simulation
+AffectationExplanationResource#suggestions GET /postes/{posteId}/suggestions
 AffichageMuralResource#list GET /affichage-mural
 AffichageMuralResource#preview GET /affichage-mural/apercu
 AlerteResource#alertes GET /alertes

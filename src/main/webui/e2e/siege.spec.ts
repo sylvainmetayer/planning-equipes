@@ -1,6 +1,7 @@
-// The Siège panel of the Journée (#711), driven through the browser: the bench
-// became its « Qui peut tenir ce siège ? », and a hole is now filled from the
-// screen that shows it.
+// The Siège panel of the Planning page (#711), driven through the browser: its
+// two gestures, « Simuler un changement » — the suggestions, the before and
+// after, « Appliquer » — and « Expliquer », a lecteur's too; the bench became
+// its « Voir tout le banc », and a hole is filled from the screen that shows it.
 //
 // The bench shipped with a bug no unit test could have seen, because it lived
 // in the gap between two sources: the referential holds more timeslots than
@@ -10,12 +11,15 @@
 
 import { APIRequestContext, expect, Page, test } from '@playwright/test';
 import {
+  connecterCompteLocal,
   contexteAdmin,
+  creerCompteLocal,
   shiftDate,
   pageAdmin,
   SEED,
   seedPlanning,
   EDITION_REFERENCE,
+  type CompteLocal,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -25,6 +29,7 @@ const CRENEAU_SANS_SIEGE = 987003;
 const DATE_SANS_SIEGE = shiftDate('2026-07-12');
 
 let admin: APIRequestContext;
+const comptes: CompteLocal[] = [];
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
@@ -33,6 +38,9 @@ test.beforeAll(async ({ playwright }, testInfo) => {
 });
 
 test.afterAll(async () => {
+  for (const compte of comptes) {
+    await admin.post(`/api/comptes/${compte.id}/desactivation`);
+  }
   await admin.dispose();
 });
 
@@ -109,7 +117,8 @@ test('un siège vide se remplit depuis la Journée : « Placer » affecte et ver
       waitUntil: 'domcontentloaded',
     });
     await expect(panneau(page)).toContainText('Place vide');
-    await panneau(page).getByRole('button', { name: 'Qui peut tenir ce siège ?' }).click();
+    await panneau(page).getByRole('button', { name: 'Simuler un changement' }).click();
+    await panneau(page).getByRole('button', { name: 'Voir tout le banc' }).click();
 
     const dialogue = page.getByRole('dialog', { name: 'Qui peut tenir ce siège ?' });
     // Chloé is unavailable that day: folded behind the others, and the rule
@@ -149,6 +158,62 @@ test('un siège vide se remplit depuis la Journée : « Placer » affecte et ver
     await page.context().close();
     await semer();
   }
+});
+
+test('« Simuler un changement » montre l’avant et l’après, puis « Appliquer » écrit ce changement', async ({
+  browser,
+}) => {
+  const page = await pageAdmin(browser, admin);
+  try {
+    await page.goto(`/journee?date=${SEED.jour}&siege=E2E-P1`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(panneau(page)).toContainText('Alice');
+    await panneau(page).getByRole('button', { name: 'Simuler un changement' }).click();
+    // Denis is free that day: a viable replacement, simulated before anything is written.
+    await panneau(page)
+      .getByRole('button', { name: /^Simuler : Denis/ })
+      .click();
+    await expect(panneau(page)).toContainText('Donner ce siège à Denis');
+    await expect(panneau(page)).toContainText('Score avant');
+    let plan = await (await admin.get('/api/planning/persisted')).json();
+    expect(plan.postes.find((poste: { id: string }) => poste.id === 'E2E-P1').animateur.id).toBe(
+      SEED.demandeur,
+    );
+
+    await panneau(page).getByRole('button', { name: 'Appliquer' }).click();
+    await expect(panneau(page)).toContainText('prend ce siège');
+    plan = await (await admin.get('/api/planning/persisted')).json();
+    expect(plan.postes.find((poste: { id: string }) => poste.id === 'E2E-P1').animateur.id).toBe(
+      SEED.collegueLibre,
+    );
+  } finally {
+    await page.context().close();
+    await semer();
+  }
+});
+
+test('un lecteur simule et fait expliquer, sans pouvoir appliquer', async ({ page }) => {
+  const lecteur = await creerCompteLocal(admin, page.request, 'Lecteur E2E', {
+    role: 'LECTEUR',
+    editionId: EDITION_REFERENCE,
+  });
+  comptes.push(lecteur);
+  await connecterCompteLocal(page, lecteur);
+  await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toBeVisible();
+
+  await page.goto(`/journee?date=${SEED.jour}&siege=E2E-P1`, { waitUntil: 'domcontentloaded' });
+  await panneau(page).getByRole('button', { name: 'Expliquer' }).click();
+  await expect(panneau(page).getByRole('heading', { name: 'Pourquoi lui ?' })).toBeVisible();
+  await expect(panneau(page)).not.toContainText('Erreur');
+
+  await panneau(page).getByRole('button', { name: 'Simuler un changement' }).click();
+  await panneau(page)
+    .getByRole('button', { name: /^Simuler : Denis/ })
+    .click();
+  await expect(panneau(page)).toContainText('Score avant');
+  await expect(panneau(page).getByRole('button', { name: 'Appliquer' })).toHaveCount(0);
+  await expect(panneau(page).getByRole('button', { name: 'Libérer' })).toBeDisabled();
 });
 
 test('« Libérer » vide le siège et tient la personne à l’écart de ce créneau', async ({

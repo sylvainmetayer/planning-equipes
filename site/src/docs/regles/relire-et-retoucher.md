@@ -6,26 +6,35 @@ Le calcul est une proposition : vous relisez, retouchez et décidez. Toutes les 
 
 ## Corriger un siège avec le panneau Siège
 
-Un clic sur n'importe quelle case de la page Planning ouvre à côté le **panneau de ce siège** : un nom ou un siège libre du tableau, une vacation du rail, un stand de la carte, une pause sans relais, une ligne des changements. Le panneau montre le stand, le créneau, la personne, les verrous et, en phrases, les règles en défaut.
+Un clic sur n'importe quelle case de la page Planning ouvre à côté le **panneau de ce siège** : un nom ou un siège libre du tableau, une vacation du rail, un stand de la carte. Le panneau montre le stand, le créneau, la personne et les verrous, puis ses deux gestes.
 
-### Sur un siège tenu
+### Simuler un changement
 
-- *Remplacer* par un remplaçant viable ;
-- *Déplacer vers…* un autre siège ;
+« Simuler un changement » essaie un changement sans rien écrire.
+
+1. Le panneau propose les meilleurs remplaçants (ou, sur un siège vide, les meilleures personnes à placer), avec leur effet sur le score. Sur un siège tenu, « Vers un autre siège… » choisit plutôt un siège où déplacer la personne : un siège libre, ou celui d'une personne avec qui échanger.
+2. « Simuler » sur l'un d'eux montre **l'avant et l'après** : le score avant et après, ce que le changement règle sur ce siège et ce qu'il y abîme. Un changement qui casserait une règle impérative est annoncé « Refusé », en la nommant, et ne s'applique pas.
+3. « Appliquer » écrit exactement ce changement. Sur un siège vide, la case « La garder au prochain calcul » (cochée par défaut) le protège aussi du prochain calcul.
+
+« Voir tout le banc » montre tout le monde : qui n'est de service nulle part, et quelle règle empêcherait chacun de tenir la place. Sur un siège vide, « Placer » y affecte directement une personne.
+
+### Expliquer
+
+Sur un siège tenu, « Expliquer » dit pourquoi cette personne est là : les règles en défaut sur ce siège, en phrases, lues avec les réglages de l'édition.
+
+### Les autres gestes d'un siège tenu
+
 - *Libérer*, en tenant la personne à l'écart de ce créneau au prochain calcul (case cochée par défaut) ;
-- verrouiller ou déverrouiller, voir qui pourrait le tenir, ouvrir la fiche de la personne.
+- *Marquer absent* sur ce créneau ;
+- verrouiller ou déverrouiller, ouvrir la fiche de la personne.
 
-Remplacer et libérer ne touchent le siège que s'il est encore tenu par la personne affichée.
-
-### Sur un siège vide
-
-1. « Qui peut tenir ce siège ? » dit qui n'est de service nulle part, et quelle règle empêcherait chacun de tenir la place.
-2. « Placer » affecte la personne et la garde au prochain calcul. L'action est refusée pour une personne qu'un verrou tient hors de ce créneau, et sur un créneau déjà commencé.
-3. « Poser un ajustement » ouvre le formulaire prérempli.
+Appliquer et libérer ne touchent le siège que s'il est encore tenu par la personne affichée.
 
 ### Ce que l'application vérifie pour vous
 
-Un placement posé directement (depuis le panneau, l'écran de réparation ou un assistant) est **simulé avant d'écrire**. Il est refusé si le geste casse une règle impérative, en la nommant ; s'il coûte en qualité, l'application le dit. *Libérer* passe toujours : marquer une absence le jour J ne doit jamais être bloqué par le plan qu'on répare.
+Un changement appliqué (depuis le panneau, l'écran Aujourd'hui ou un assistant) est **simulé à nouveau avant d'écrire**. Il est refusé si le geste casse une règle impérative, en la nommant, sur un créneau déjà commencé, sur un siège verrouillé et pendant un calcul ; s'il coûte en qualité, l'application le dit. *Libérer* passe toujours : marquer une absence le jour J ne doit jamais être bloqué par le plan qu'on répare.
+
+Un lecteur simule et fait expliquer comme tout le monde, mais n'a pas de bouton pour appliquer.
 
 ### Après le geste
 
@@ -33,7 +42,7 @@ Le panneau propose de prévenir les personnes concernées (le changement n'est p
 
 ## Déplacer ou échanger depuis le tableau
 
-Dans la vue *Tableau*, chaque nom et chaque siège vide ouvrent le panneau du siège. « Déplacer vers… » déplace sur un siège libre, ou échange avec une personne ; l'action est refusée si une règle impérative serait cassée. Le *Rail* offre le même geste depuis une vacation, pour la confier à une autre personne ou l'échanger avec la sienne.
+Dans la vue *Tableau*, chaque nom et chaque siège vide ouvrent le panneau du siège. « Simuler un changement », puis « Vers un autre siège… », déplace sur un siège libre ou échange avec une personne, après avoir montré l'avant et l'après ; l'action est refusée si une règle impérative serait cassée. Le *Rail* offre le même geste depuis une vacation, pour la confier à une autre personne ou l'échanger avec la sienne.
 
 ## Changer l'état d'une journée
 
