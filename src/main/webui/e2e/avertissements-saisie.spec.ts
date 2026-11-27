@@ -273,7 +273,7 @@ test.describe('avertissements de saisie', () => {
     // Le journal du navigateur survit à la déconnexion et se relit dans les
     // fil d'alertes et de messages de l'accueil : la phrase qui dit qu'une personne est
     // mineure n'y est pas écrite (site/src/docs/installer/rgpd.md §7).
-    await page.goto('/');
+    await page.goto('/?type=messages');
     await expect(page.getByText(/point\(s\) à vérifier/).first()).toBeVisible();
     await expect(
       page
