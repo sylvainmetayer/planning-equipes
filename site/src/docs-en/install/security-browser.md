@@ -13,7 +13,7 @@ static files included:
 
 | Header | Value | Why here |
 | --- | --- | --- |
-| `Content-Security-Policy` | `planning.securite.csp` (see below) | The SPA loads no third-party script apart from the Cloudflare Web Analytics beacon: anything that would be injected into a page is refused at run time |
+| `Content-Security-Policy` | `planning.securite.csp` (see below) | The SPA loads no third-party script apart from the Cloudflare Web Analytics beacon, and only when its token is set: anything that would be injected into a page is refused at run time |
 | `Referrer-Policy` | `no-referrer` | The staff espace token, the ICS subscription one **and** the wall display one travel **in the URL**; without this header they leave in the `Referer` of every outgoing navigation (OpenStreetMap attribution link, link to the repository). One exception for the tiles, below |
 | `X-Frame-Options` | `DENY` | Nothing is meant to be framed, and hijacking a click in a session that can rewrite the whole schedule has no counterpart |
 | `Cross-Origin-Opener-Policy` | `same-origin` | Isolates the window from any `window.opener` opened from another site |
@@ -84,14 +84,36 @@ No application variable opens a third-party origin, on purpose: do not set `QUAR
 | `CSP` | policy above | Full content security policy. **Empty = header turned off** |
 | `HSTS` | `max-age=31536000; includeSubDomains` | **Empty = header turned off**. Add `preload` only after deciding that the domain will never be served in clear again: it is irreversible at browser scale |
 
-The default CSP deliberately leaves `connect-src https:` and `img-src https:`
-open: the Bugsink endpoint and the tile server are specific to each
-deployment. A deployment that knows its own does better to name them in `CSP`
-than to keep `https:`. Add `https://api.github.com` to it if you want
-the toolbar's "new version available" indication, the only
-other destination a browser contacts by itself, and only once
-the administration session is confirmed
-(see the new-version check in [`versioning.md`](versioning.md)).
+The default CSP names only what the application contacts by itself:
+
+| Directive | Third-party origins | When |
+| --- | --- | --- |
+| `script-src` | `https://static.cloudflareinsights.com` | only if `CLOUDFLARE_WEB_ANALYTICS_TOKEN` is set |
+| `connect-src` | `https://cloudflareinsights.com` | only if `CLOUDFLARE_WEB_ANALYTICS_TOKEN` is set |
+| `connect-src` | the origin of `SENTRY_DSN` (`https://bugsink.example.org`) | only if `SENTRY_DSN` is set |
+| `connect-src` | `https://api.github.com` | always: the toolbar's "new version available" indication, asked once the administration session is confirmed (see the new-version check in [`versioning.md`](versioning.md)) |
+| `img-src` | `https:` | always: the OpenStreetMap tiles of the map and the logo of `BRANDING_LOGO_URL`, specific to each deployment |
+
+The application adds the Cloudflare and Sentry origins at startup, from those
+two variables. It also adds them to a `CSP` you write yourself, in the
+`script-src` and `connect-src` directives it carries: a policy without those
+directives stays as it is. To turn the new-version check off, remove
+`https://api.github.com` from `connect-src`.
 
 `style-src` keeps `'unsafe-inline'` in all cases: Angular Material writes
 its styles into the page.
+
+## Page caching
+
+The browser must ask for the entry page again on every visit: it is the page
+that names the files of the version in place. `index.html`, at the root as on
+every address of the interface, leaves with `Cache-Control: no-cache`, like the
+files served under a fixed name (translation catalogues, fonts, favicon,
+`robots.txt`). `no-cache` does not mean "do not keep": the browser keeps its
+copy and revalidates it, which costs one request answered `304` as long as
+nothing has changed. The files whose name carries a fingerprint (`main-*.js`,
+`chunk-*.js`) keep their long cache: a new version gives them a new name.
+
+Without this, an update, security fix included, can leave the old interface in
+place for up to a day for a visitor who came before. If your reverse proxy adds
+cache headers of its own, leave the application's on these addresses.

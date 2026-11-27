@@ -434,7 +434,7 @@ export class AnimateursPage implements OnInit {
   private readonly pastePreview = inject(PastePreviewService);
   private readonly planningApi = inject(PlanningApi);
   /** The mailer is mocked on this server: a « sent » mail never left it. */
-  private readonly mailMock = injectAppConfig().mailMock;
+  private readonly mailMock = injectAppConfig().mailMock ?? false;
 
   /** Copies the animateur's personal espace link (issue #165) — what the PDF prints. */
   protected async copierLienEspace(animateur: Animateur): Promise<void> {

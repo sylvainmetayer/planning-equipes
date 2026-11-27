@@ -135,10 +135,12 @@ class OutboundGuardTest {
     void aNameResolvingToAnInternalAddressIsRefused() {
         assertThatThrownBy(() -> guard().check("https://rebind.example.org/hook"))
                 .isInstanceOf(BusinessError.Invalid.class)
-                .hasMessageContaining("10.1.2.3");
+                .hasMessageContaining("adresse interne refusée")
+                .hasMessageNotContaining("10.1.2.3");
         assertThatThrownBy(() -> guard().check("https://metadata.example.org/"))
                 .isInstanceOf(BusinessError.Invalid.class)
-                .hasMessageContaining("169.254.169.254");
+                .hasMessageContaining("adresse interne refusée")
+                .hasMessageNotContaining("169.254.169.254");
     }
 
     @Test

@@ -167,9 +167,9 @@ public class OutboundGuard {
             boolean permitted = allowed.containsAddress(address);
             allInAllowedNetworks &= permitted;
             if (!permitted && isInternal(address)) {
-                throw new BusinessError.Invalid("« " + host + " » désigne une adresse interne ("
-                        + address.getHostAddress()
-                        + ") : refusée, sauf réseau déclaré dans WEBHOOKS_RESEAUX_AUTORISES.");
+                // Never the resolved address: the answer would map the stack's internal DNS.
+                throw new BusinessError.Invalid("« " + host
+                        + " » : adresse interne refusée, sauf réseau déclaré dans WEBHOOKS_RESEAUX_AUTORISES.");
             }
         }
         if (!https && !allInAllowedNetworks) {

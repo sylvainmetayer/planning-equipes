@@ -1930,7 +1930,7 @@
         }
       },
       "ConfigView" : {
-        "required" : [ "devMode", "version", "mailMock", "authOidc", "authSecours" ],
+        "required" : [ "version", "authOidc", "authSecours" ],
         "type" : "object",
         "properties" : {
           "sentryDsn" : {

@@ -67,6 +67,36 @@ describe('LoginPage', () => {
     expect(navigate).toHaveBeenCalledWith('/');
   });
 
+  it('reads the configuration again once signed in: a visitor was not given its admin half', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ...DEFAULT_APP_CONFIG, mailMock: true, version: '4.1.0' })),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      api.localSignIn.mockResolvedValue({
+        codeRequired: true,
+        challenge: 'D',
+        maskedEmail: 'a•••@x.fr',
+      });
+      const page = await rendre();
+      page['utilisateur'].set('a@x.fr');
+      page['password'].set(crypto.randomUUID());
+      await page['connecter'](new Event('submit'));
+      api.session.mockResolvedValue({ authentifie: true, nom: 'a@x.fr', roles: ['admin'] });
+      page['code'].set('123456');
+      const http = TestBed.inject(HttpTestingController);
+      const fin = page['submitCode'](new Event('submit'));
+      (await vi.waitFor(() => http.expectOne('/api/auth/connexion/j_security_check'))).flush('');
+      await fin;
+      expect(fetchMock).toHaveBeenCalledWith('/api/config');
+      expect(TestBed.inject(APP_CONFIG)).toMatchObject({ mailMock: true, version: '4.1.0' });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('sends the configuration account straight to the form login', async () => {
     const page = await rendre();
     page['utilisateur'].set('admin');

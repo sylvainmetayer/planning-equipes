@@ -9,7 +9,7 @@ compris, les en-têtes suivants :
 
 | En-tête | Valeur | Pourquoi ici |
 | --- | --- | --- |
-| `Content-Security-Policy` | `planning.securite.csp` (voir ci-dessous) | Le SPA ne charge aucun script tiers hormis la balise Cloudflare Web Analytics : tout ce qui serait injecté dans une page est refusé à l'exécution |
+| `Content-Security-Policy` | `planning.securite.csp` (voir ci-dessous) | Le SPA ne charge aucun script tiers hormis la balise Cloudflare Web Analytics, et seulement quand son jeton est posé : tout ce qui serait injecté dans une page est refusé à l'exécution |
 | `Referrer-Policy` | `no-referrer` | Le jeton de l'espace animateur, celui de l'abonnement ICS **et** celui de l'affichage mural voyagent **dans l'URL** ; sans cet en-tête ils partent dans le `Referer` de chaque navigation sortante (lien d'attribution OpenStreetMap, lien vers le dépôt). Une exception pour les tuiles, ci-dessous |
 | `X-Frame-Options` | `DENY` | Rien n'est prévu pour être encadré, et détourner un clic dans une session qui peut réécrire tout le planning n'a pas de contrepartie |
 | `Cross-Origin-Opener-Policy` | `same-origin` | Isole la fenêtre de tout `window.opener` ouvert depuis un autre site |
@@ -81,14 +81,38 @@ Aucune variable de l'application n'ouvre une origine tierce, exprès : ne rensei
 | `CSP` | politique ci-dessus | Politique de sécurité du contenu complète. **Vide = en-tête désactivé** |
 | `HSTS` | `max-age=31536000; includeSubDomains` | **Vide = en-tête désactivé**. N'ajoutez `preload` qu'après avoir décidé que le domaine ne resservira jamais en clair : c'est irréversible à l'échelle du navigateur |
 
-La CSP par défaut laisse volontairement `connect-src https:` et `img-src https:`
-ouverts : l'endpoint Bugsink et le serveur de tuiles sont propres à chaque
-déploiement. Un déploiement qui connaît les siens gagne à les nommer dans `CSP`
-plutôt qu'à garder `https:`. Ajoutez-y `https://api.github.com` s'il tient
-à l'indication « nouvelle version disponible » de la barre d'outils, la seule
-autre destination qu'un navigateur contacte de lui-même, et seulement une fois
-la session d'administration confirmée
-(voir la vérification de nouvelle version dans [`versioning.md`](versioning.md)).
+La CSP par défaut ne nomme que ce que l'application contacte d'elle-même :
+
+| Directive | Origines tierces | Quand |
+| --- | --- | --- |
+| `script-src` | `https://static.cloudflareinsights.com` | seulement si `CLOUDFLARE_WEB_ANALYTICS_TOKEN` est posé |
+| `connect-src` | `https://cloudflareinsights.com` | seulement si `CLOUDFLARE_WEB_ANALYTICS_TOKEN` est posé |
+| `connect-src` | l'origine de `SENTRY_DSN` (`https://bugsink.exemple.org`) | seulement si `SENTRY_DSN` est posé |
+| `connect-src` | `https://api.github.com` | toujours : l'indication « nouvelle version disponible » de la barre d'outils, demandée une fois la session d'administration confirmée (voir la vérification de nouvelle version dans [`versioning.md`](versioning.md)) |
+| `img-src` | `https:` | toujours : les tuiles OpenStreetMap de la carte et le logo de `BRANDING_LOGO_URL`, propres à chaque déploiement |
+
+L'application ajoute les origines Cloudflare et Sentry au démarrage, d'après ces
+deux variables. Elle les ajoute aussi à une `CSP` que vous écrivez vous-même,
+dans les directives `script-src` et `connect-src` qu'elle porte : une politique
+qui n'a pas ces directives reste telle quelle. Pour éteindre la vérification de
+nouvelle version, retirez `https://api.github.com` de `connect-src`.
 
 `style-src` garde `'unsafe-inline'` dans tous les cas : Angular Material écrit
 ses styles dans la page.
+
+## Mise en cache des pages
+
+Le navigateur doit redemander la page d'entrée à chaque visite : c'est elle qui
+désigne les fichiers de la version en place. `index.html`, à la racine comme sur
+chaque adresse de l'interface, part en `Cache-Control: no-cache`, comme les
+fichiers servis sous un nom fixe (catalogues de traduction, polices, favicon,
+`robots.txt`). `no-cache` ne veut pas dire « ne pas garder » : le navigateur
+garde sa copie et la revalide, ce qui coûte une requête répondue `304` tant que
+rien n'a changé. Les fichiers dont le nom porte une empreinte (`main-*.js`,
+`chunk-*.js`) gardent leur cache long : une nouvelle version leur donne un
+nouveau nom.
+
+Sans cela, une mise à jour, correctif de sécurité compris, peut laisser
+l'ancienne interface en place jusqu'à un jour chez un visiteur déjà venu. Si
+votre reverse proxy ajoute ses propres en-têtes de cache, laissez-lui ceux de
+l'application sur ces adresses.

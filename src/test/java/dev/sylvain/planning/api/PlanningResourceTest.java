@@ -427,4 +427,27 @@ class PlanningResourceTest {
                 .statusCode(200)
                 .contentType("text/calendar;charset=UTF-8");
     }
+
+    /** A truncated body is the caller's mistake: 400 with a sentence, never a 500 and its alert. */
+    @Test
+    void anIncompleteExportBodyIsRefusedWithA400() {
+        for (String route : List.of(
+                "/api/planning/export/pdf/all",
+                "/api/planning/export/ics/all",
+                "/api/planning/export/bundle/all",
+                "/api/planning/export/pdf/animateur/A1",
+                "/api/planning/export/ics/animateur/A1")) {
+            for (String body :
+                    List.of("{}", "{\"animateurs\":[],\"postes\":[{}]}", "{\"animateurs\":[null],\"postes\":[]}")) {
+                given().header("X-Edition-Id", "E1")
+                        .contentType("application/json")
+                        .body(body)
+                        .when()
+                        .post(route)
+                        .then()
+                        .statusCode(400)
+                        .body("message", notNullValue());
+            }
+        }
+    }
 }

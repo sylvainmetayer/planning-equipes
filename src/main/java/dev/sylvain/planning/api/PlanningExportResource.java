@@ -68,6 +68,7 @@ public class PlanningExportResource {
             @QueryParam("feuille") boolean feuille,
             PlanningEvenement planningEvenement) {
         FormatPlanning layout = FormatPlanning.fromParameters(format, feuille);
+        PlanningExportService.requireExportable(planningEvenement);
         byte[] content = planningExportService.exportAllPdfZip(planningEvenement, layout);
         String filename = layout == FormatPlanning.FEUILLE ? "planning-feuilles.zip" : "planning-pdf.zip";
         return Response.ok(content)
@@ -85,6 +86,7 @@ public class PlanningExportResource {
             @QueryParam("feuille") boolean feuille,
             PlanningEvenement planningEvenement) {
         FormatPlanning layout = FormatPlanning.fromParameters(format, feuille);
+        PlanningExportService.requireExportable(planningEvenement);
         byte[] content = planningExportService.exportAnimateurPdf(planningEvenement, animateurId, layout);
         String safeAnimateurId = (animateurId == null ? "unknown" : animateurId).replaceAll("[\\\\/\\r\\n\\\"]", "_");
         // The layout is part of the name: downloading both would otherwise
@@ -106,6 +108,7 @@ public class PlanningExportResource {
             @QueryParam("feuille") boolean feuille,
             PlanningEvenement planningEvenement) {
         FormatPlanning layout = FormatPlanning.fromParameters(format, feuille);
+        PlanningExportService.requireExportable(planningEvenement);
         byte[] content = planningExportService.exportAllBundleZip(planningEvenement, layout);
         String filename = layout == FormatPlanning.FEUILLE ? "planning-feuilles.zip" : "planning.zip";
         return Response.ok(content)
@@ -118,6 +121,7 @@ public class PlanningExportResource {
     @ExportForLecteur
     @Produces("application/zip")
     public Response exportAllIcsZip(PlanningEvenement planningEvenement) {
+        PlanningExportService.requireExportable(planningEvenement);
         byte[] content = planningExportService.exportAllIcsZip(planningEvenement);
         return Response.ok(content)
                 .header(HttpHeaders.CONTENT_DISPOSITION, attachment("planning-ics.zip"))
@@ -130,6 +134,7 @@ public class PlanningExportResource {
     @Produces("text/calendar")
     public Response exportAnimateurIcs(
             @PathParam("animateurId") String animateurId, PlanningEvenement planningEvenement) {
+        PlanningExportService.requireExportable(planningEvenement);
         String content = planningExportService.exportAnimateurIcs(planningEvenement, animateurId);
         String displayName = PlanningExportService.resolveAnimateurName(planningEvenement, animateurId);
         String safeFilename = (displayName == null ? "planning" : displayName).replaceAll("[\\\\/\\r\\n\\\"]", "_");

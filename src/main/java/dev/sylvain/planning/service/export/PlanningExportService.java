@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
@@ -79,6 +80,33 @@ public class PlanningExportService {
         this.ics = ics;
         this.provenance = provenance;
         this.consignes = consignes;
+    }
+
+    /**
+     * Refuses a plan sent in a request body that the documents cannot be drawn
+     * from: no body, no animateur or seat list, a seat without its stand or its
+     * timeslot. Without it a truncated body reached the renderers and came back
+     * as a 500 — an alert for what is the caller's mistake.
+     */
+    public static void requireExportable(PlanningEvenement planning) {
+        if (planning == null || planning.getAnimateurs() == null || planning.getPostes() == null) {
+            throw new BusinessError.Invalid("Le planning à exporter doit porter ses animateurs et ses postes.");
+        }
+        if (planning.getAnimateurs().stream().anyMatch(animateur -> animateur == null || animateur.getId() == null)) {
+            throw new BusinessError.Invalid("Chaque animateur du planning à exporter doit porter son identifiant.");
+        }
+        boolean posteIncomplet = planning.getPostes().stream()
+                .anyMatch(poste -> poste == null
+                        || poste.getStand() == null
+                        || poste.getStand().getNom() == null
+                        || poste.getCreneau() == null
+                        || poste.getCreneau().getDate() == null
+                        || poste.getCreneau().getHeureDebut() == null
+                        || poste.getCreneau().getHeureFin() == null);
+        if (posteIncomplet) {
+            throw new BusinessError.Invalid(
+                    "Chaque poste du planning à exporter doit porter son stand et un créneau daté.");
+        }
     }
 
     /**

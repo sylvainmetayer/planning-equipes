@@ -62,4 +62,4 @@ A pre-release promises nothing more than a trial: it may migrate the schema, and
 
 ## Reading an instance's version
 
-The version displayed in the footer, on the *Debug* page, in `GET /api/config` (`version` field) and in the startup line is that of the git tag `vX.Y.Z`: `X.Y.Z` (or `X.Y.Z-rc.N` for a pre-release) on a release image, the short SHA on an acceptance image, `999-SNAPSHOT` in a local build, a value that deliberately looks like no published version. Where this tag comes from: [Releasing a version](publier-une-version.md#1-la-source-de-vérité--un-tag-git).
+The version displayed in the footer, on the *Debug* page, in `GET /api/config` (`version` field, public: the interface code every visitor loads already carries it) and in the startup line is that of the git tag `vX.Y.Z`: `X.Y.Z` (or `X.Y.Z-rc.N` for a pre-release) on a release image, the short SHA on an acceptance image, `999-SNAPSHOT` in a local build, a value that deliberately looks like no published version. Where this tag comes from: [Releasing a version](publier-une-version.md#1-la-source-de-vérité--un-tag-git).
