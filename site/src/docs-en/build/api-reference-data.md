@@ -55,7 +55,7 @@ Deleting a timeslot or a stand takes away the seats that were on it, and only th
 
 ## Writing during a solve
 
-As long as a solve holds the edition's solver, writing is refused (`409`, the body carrying the job and a `message` readable as is) for: deleting and modifying a stand, a staff member or a timeslot, resetting the edition (`POST /api/planning/reset`), importing a scenario, reassigning a seat (repair assistant, event-day mode, `affecter_poste`) and accepting a swap.
+As long as a solve holds the edition's solver, writing is refused (`409`, the body carrying the job and a `message` readable as is) for: deleting and modifying a stand, a staff member or a timeslot, resetting the edition (`POST /api/planning/reset`), importing a scenario, reassigning a seat (repair assistant, event-day mode, `modifier_affectation`) and accepting a swap.
 
 The landing of the solve deletes and reinserts all the seats from the starting plan, rewrites the date and hours of the timeslots, and saves the stands and staff again from the objects captured at the start. A seat reassigned during the solve would revert to its previous holder, an accepted swap would disappear leaving the request `ACCEPTEE`, a deleted staff member would be resurrected, personal data included. The reset and the import would in addition leave locations, hours and ad hoc constraints erased, and the old timeslots would reappear next to the new ones. Creations go through: an entity absent at the start is named by no seat of the result.
 

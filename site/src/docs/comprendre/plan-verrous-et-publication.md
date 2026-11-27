@@ -51,7 +51,7 @@ La duplication d'une édition repart en Préparation. Une phase ne touche pas un
 
 ## Replanification incrémentale
 
-Elle répond à « il est 9 h, untel se désiste, que fait-on ? ». Elle **repart du planning persisté**, épingle tout ce qui reste valable et ne rouvre que le reste, d'où un budget par défaut de 60 s (`SolveBudgetPolicy`). Elle se lance par `POST /api/solve/incremental/async` ou par l'outil MCP `resoudre_incremental`.
+Elle répond à « il est 9 h, untel se désiste, que fait-on ? ». Elle **repart du planning persisté**, épingle tout ce qui reste valable et ne rouvre que le reste, d'où un budget par défaut de 60 s (`SolveBudgetPolicy`). Elle se lance par `POST /api/solve/incremental/async` ou par l'outil MCP `lancer_correction`.
 
 Le rapprochement est **positionnel**, sur stand × créneau, comme celui des verrous : les places d'un même stand sur un même créneau sont interchangeables, donc aucun identifiant de poste n'a besoin de survivre à un changement de référentiel.
 

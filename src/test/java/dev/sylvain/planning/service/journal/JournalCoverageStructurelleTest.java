@@ -142,9 +142,9 @@ class JournalCoverageStructurelleTest {
         assertThat(CatalogueActions.forTool("modifier_poids_contrainte"))
                 .map(ActionJournalisee::code)
                 .contains("CONTRAINTE_PONDEREE");
-        assertThat(CatalogueActions.forTool("modifier_niveau_contrainte"))
+        assertThat(CatalogueActions.forTool("modifier_contrainte"))
                 .map(ActionJournalisee::code)
-                .contains("CONTRAINTE_NIVEAU");
+                .contains("CONTRAINTE_PONDEREE");
         // The history tool went with the history: nothing may stay filed under it.
         assertThat(CatalogueActions.forTool("consulter_historique_ponderation")).isEmpty();
     }

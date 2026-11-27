@@ -54,7 +54,7 @@ Duplicating an edition starts again in Preparation. A phase does not affect a so
 
 ## Incremental replanning
 
-It answers "it is 9:00, someone has dropped out, what do we do?". It **starts from the persisted schedule**, pins everything that is still valid and reopens only the rest, hence a default budget of 60 s (`SolveBudgetPolicy`). It is started by `POST /api/solve/incremental/async` or by the MCP tool `resoudre_incremental`.
+It answers "it is 9:00, someone has dropped out, what do we do?". It **starts from the persisted schedule**, pins everything that is still valid and reopens only the rest, hence a default budget of 60 s (`SolveBudgetPolicy`). It is started by `POST /api/solve/incremental/async` or by the MCP tool `lancer_correction`.
 
 Matching is **positional**, on stand × timeslot, like that of locks: seats of the same stand on the same timeslot are interchangeable, so no seat identifier needs to survive a change in the reference data.
 

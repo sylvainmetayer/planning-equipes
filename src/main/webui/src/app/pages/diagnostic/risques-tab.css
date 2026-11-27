@@ -1,0 +1,15 @@
+/* The Risques tab: three screens stacked, each scrolled to from `?section=`. */
+.risques-section {
+  display: block;
+  scroll-margin-top: 5rem;
+}
+
+/* Focused by a landing only (`tabindex="-1"`), never by Tab: no ring around a whole screen. */
+.risques-section:focus {
+  outline: none;
+}
+
+.risques-titre {
+  margin: 1.5rem 0 0.25rem;
+  font: var(--mat-sys-title-medium);
+}

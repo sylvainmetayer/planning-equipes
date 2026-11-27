@@ -26,7 +26,7 @@ import java.lang.reflect.Parameter;
  * assistant never named — which used to be the silent defect.</p>
  *
  * <p>Binding the edition around the whole call also covers the work that
- * outlives it: {@code lancer_solveur} captures
+ * outlives it: {@code lancer_calcul} captures
  * {@code EditionContext.editionIdCourant()} when the job is submitted, so the
  * job stays attached to the edition the call named whatever happens
  * afterwards.</p>

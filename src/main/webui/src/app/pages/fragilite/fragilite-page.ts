@@ -17,7 +17,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, ParamMap, RouterLink } from '@angular/router';
+import { skip } from 'rxjs';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
 import { libelleJour } from '../../core/horaire-stand';
@@ -115,7 +117,7 @@ export class FragilitePage {
   private readonly fragilite = resource({ loader: () => this.analysesApi.fragility() });
   /** Kept across a failed refresh; the template shows the failure in its place, not a blank card. */
   protected readonly rapport = retainedValue(this.fragilite);
-  protected readonly chargement = this.fragilite.isLoading;
+  readonly chargement = this.fragilite.isLoading;
   protected readonly erreur = errorText(this.fragilite);
   protected readonly view = signal<VueFragilite>('ANIMATEURS');
   protected readonly filtre = signal<FiltreFragilite>('TOUS');
@@ -185,15 +187,25 @@ export class FragilitePage {
       .loadForDisplay()
       .then((planning) => this.planning.set(planning))
       .catch(() => undefined);
-    const params = currentViewParams();
-    this.view.set(readView(params.get('vue')));
-    this.filtre.set(lireFiltre(params.get('filtre')));
-    this.recherche.set(params.get('q') ?? '');
+    this.restoreView(currentViewParams());
+    // A link to this view while it is already on screen — Tension's « Sans
+    // spécialiste », both being sections of Risques — reuses the component: the
+    // navigation is followed. The first emission is skipped, it is the stale
+    // router snapshot the line above avoids.
+    this.route.queryParamMap
+      ?.pipe(skip(1), takeUntilDestroyed())
+      .subscribe((params) => this.restoreView(params));
     keepViewInQueryParams(() => ({
       vue: this.view() === 'ANIMATEURS' ? null : this.view(),
       filtre: this.filtre() === 'TOUS' ? null : this.filtre(),
       q: optionalParam(this.recherche()),
     }));
+  }
+
+  private restoreView(params: ParamMap): void {
+    this.view.set(readView(params.get('vue')));
+    this.filtre.set(lireFiltre(params.get('filtre')));
+    this.recherche.set(params.get('q') ?? '');
   }
 
   protected typologiesAffichees(ligne: CompetenceRare): string {

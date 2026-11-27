@@ -36,7 +36,7 @@ export const lienStaffing = (): HelpLink => ({
 
 export const lienFragilite = (): HelpLink => ({
   route: '/diagnostic',
-  queryParams: { onglet: 'fragilite' },
+  queryParams: { onglet: 'risques', section: 'fragilite' },
   label: $localize`:@@aide.link.fragilite:Fragilité du planning`,
 });
 
