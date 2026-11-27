@@ -65,7 +65,7 @@ All-rounders are counted differently depending on the indicator, on purpose (`An
 
 The reasoning and the two options discarded are in [decision 0017](repo:docs/decisions/0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md). `polyvalentConfigure: false` signals that no game category is marked all-rounder: the two counts then coincide and a `renforts` at zero says nothing.
 
-Three clarifications of the contract. A pair is really a triplet stand x timeslot x window: a stand closed in the middle of a timeslot produces several rows that differ only by `heureDebut`, and `groupesSansSpecialiste` as well as `groupesAnalyses` are counted in that unit. `effectifMin` is the headcount configured for the window, not the floor: on a break-cover shift (`couverturePause: true`) the seats are generated at the half rounded up, and `siegesRequis` carries the applicable floor. The lists are bounded (20 detailed seats per staff member, 100 pairs); `postesNonDetailles` and `totalCompetencesRares` say what is not shown, and staff members with no assignment are not listed.
+Three clarifications of the contract. A pair is really a triplet stand x timeslot x window: a stand closed in the middle of a timeslot produces several rows that differ only by `heureDebut`, and `groupesSansSpecialiste` as well as `groupesAnalyses` are counted in that unit. `effectifMin` is the headcount configured for the window, not the floor: `siegesRequis` carries the applicable floor, which follows the window's headcount. The lists are bounded (20 detailed seats per staff member, 100 pairs); `postesNonDetailles` and `totalCompetencesRares` say what is not shown, and staff members with no assignment are not listed.
 
 ## Legal breaks
 

@@ -1,4 +1,4 @@
-# 0127 — Un créneau ne porte plus de couverture de pause
+# 0128 — Un créneau ne porte plus de couverture de pause
 
 - **Statut** : accepté, implémenté
 - **Date** : novembre 2026
