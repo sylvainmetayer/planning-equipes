@@ -16,6 +16,7 @@ Les PR vers une branche de maintenance `release/X.Y` rejouent la CI comme celles
 | `securite.yml`, `scorecard.yml` | Analyses de sécurité, détaillées dans [les analyses automatiques](../installer/securite-analyses-automatiques.md) |
 | `docker-ghcr.yml`, `image-pr.yml` | Publication de l'image ; construction à blanc de l'image d'une PR |
 | `restauration.yml` | Rejoue `scripts/restaurer.sh` sur une vraie pile |
+| `charge.yml` | À la demande : les scénarios k6 contre une démo montée dans le runner ([la charge d'une démo publique](tests-de-charge.md)) |
 | `release.yml` | Corps d'une release publiée |
 | `licences-renovate.yml`, `artefacts-renovate.yml`, `angular-renovate.yml` | Commits de rattrapage sur les PR Renovate, voir [Renovate](renovate-et-dependances.md#renovate) |
 | `numeros-reserves.yml` | Collision de numéros de migration ou d'ADR entre PR ouvertes |

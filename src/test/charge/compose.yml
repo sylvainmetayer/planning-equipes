@@ -1,0 +1,51 @@
+# Une instance de démo locale pour les scénarios de charge : PostgreSQL et
+# l'application en DEMO_INSTANCE=true, avec les réglages de
+# site/src/docs/installer/instance-de-demo.md et les limites de mémoire de
+# docker-compose.prod.yml : c'est sous elles que la mesure vaut. Port sur la
+# boucle locale.
+# demo-locale.sh la démarre sur un dump de scripts/demo/generer-dump.sh.
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:19}
+    mem_limit: 512m
+    environment:
+      POSTGRES_DB: festival
+      POSTGRES_USER: festival
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?demo-locale.sh le fournit}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U festival -d festival"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  app:
+    image: ${APP_IMAGE:-ghcr.io/sylvainmetayer/planning-equipes:main}
+    mem_limit: ${APP_MEM_LIMIT:-2g}
+    ports:
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-18080}:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/festival
+      DB_USER: festival
+      DB_PASSWORD: ${DB_PASSWORD}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?demo-locale.sh le fournit}
+      PUBLIC_URL: https://demo.example.org
+      DEMO_INSTANCE: "true"
+      SOLVER_SECONDS_LIMIT: "40"
+      SOLVER_SECONDS_LIMIT_MAX: "40"
+      SOLVER_MAX_QUEUED_JOBS: "3"
+      SOLVER_MAX_SOLVES_PER_HOUR: "30"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /q/health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Jamais démarré : il porte la version de k6 que lancer.sh lit, là où
+  # Renovate la voit.
+  k6:
+    image: grafana/k6:2.4.0
+    profiles: [outil]

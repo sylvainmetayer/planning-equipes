@@ -1,0 +1,92 @@
+# Les scénarios k6 de src/test/charge, joués contre une démo publique montée
+# dans le runner : PostgreSQL et l'application en DEMO_INSTANCE=true, sur un
+# dump fabriqué par scripts/demo/generer-dump.sh avec la même image.
+#
+# À la demande seulement, jamais sur une PR : il ne dit rien d'un diff, il dit
+# si une version tient avant d'ouvrir une démo. Les N sont petits, à la mesure
+# d'un runner ; la limite d'une vraie machine se cherche avec lancer.sh (voir
+# site/src/docs/comprendre/tests-de-charge.md).
+name: Charge de la démo
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Image de l'application à éprouver
+        default: ghcr.io/sylvainmetayer/planning-equipes:main
+        type: string
+      visiteurs:
+        description: Visiteurs simultanés (N)
+        default: '5'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: charge-demo
+  cancel-in-progress: false
+
+jobs:
+  charge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      APP_IMAGE: ${{ inputs.image }}
+      N: ${{ inputs.visiteurs }}
+      BASE_URL: http://127.0.0.1:18080
+      DUREE: 1m
+      RESULTATS: ${{ github.workspace }}/resultats-charge
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Drawn per run: GitGuardian scans the workflows, and a throwaway demo
+      # needs no credential anybody could reuse.
+      - name: Draw the passwords
+        run: |
+          admin=$(openssl rand -hex 16)
+          demo=$(openssl rand -hex 16)
+          echo "::add-mask::$admin"
+          echo "::add-mask::$demo"
+          {
+            echo "ADMIN_PASSWORD=$admin"
+            echo "DEMO_PASSWORD=$demo"
+          } >> "$GITHUB_ENV"
+
+      - name: Make the demo dump
+        run: scripts/demo/generer-dump.sh reference.dump
+
+      - name: Start the demo
+        run: src/test/charge/demo-locale.sh reference.dump
+
+      - name: Visitors
+        run: src/test/charge/lancer.sh visiteur
+
+      - name: Espace animateur
+        if: ${{ !cancelled() }}
+        run: src/test/charge/lancer.sh espace
+
+      - name: Arrival peak
+        if: ${{ !cancelled() }}
+        run: src/test/charge/lancer.sh pic
+
+      # Last: the solves it queues hold the processor for minutes afterwards.
+      - name: Solve burst
+        if: ${{ !cancelled() }}
+        env:
+          # Twice what may be accepted (one running, FILE_MAX=3 queued): the refusals must show.
+          N: 8
+        run: src/test/charge/lancer.sh calculs
+
+      - name: Application logs
+        if: ${{ failure() }}
+        run: docker compose -p planning-charge -f src/test/charge/compose.yml logs --tail 300 app
+        env:
+          DB_PASSWORD: x
+
+      - name: Tear down
+        if: ${{ always() }}
+        run: src/test/charge/demo-locale.sh --arreter

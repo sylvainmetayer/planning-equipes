@@ -41,6 +41,7 @@ docs:
   - getting-started
   - tests
   - scenario-tests
+  - load-tests
   - tune-the-solver
   - ci-and-delivery
   - renovate-and-dependencies
@@ -100,6 +101,7 @@ If you are new to the code, read [the overview](vue-d-ensemble.md), [how the sch
 
 - [Setting up the environment and running](demarrer.md)
 - [Tests](tests.md) and [load scenarios](tests-de-scenarios.md)
+- [Load testing a public demo](tests-de-charge.md)
 - [Tune the solver](regler-le-solveur.md)
 - [Continuous integration and delivery](ci-et-livraison.md), [Renovate and licences](renovate-et-dependances.md)
 - [Repository conventions](conventions-du-depot.md)
