@@ -26,7 +26,7 @@ class SessionOpeningsTest {
     void aBurstOfLoginsEvictsTheOldestRatherThanTheNextLogin() {
         SessionOpenings openings = new SessionOpenings();
         Instant start = Instant.now();
-        for (int i = 0; i < 2_000; i++) {
+        for (int i = 0; i < SessionOpenings.MAX_ENTRIES; i++) {
             openings.record("s" + i, start.plusMillis(i));
         }
 
@@ -35,5 +35,47 @@ class SessionOpeningsTest {
         assertThat(openings.openedAt("admin")).isPresent();
         assertThat(openings.openedAt("s0")).isEmpty();
         assertThat(openings.openedAt("s1")).isPresent();
+    }
+
+    @Test
+    void aLogoutReachesEveryValueTheSessionTookAndNoOtherSession() {
+        SessionOpenings openings = new SessionOpenings();
+        openings.record("copie", Instant.now());
+        openings.renew("copie", "courant");
+        openings.renew("courant", "suivant");
+        openings.record("autre-appareil", Instant.now());
+
+        openings.logOut("courant");
+
+        assertThat(openings.loggedOut("copie")).isTrue();
+        assertThat(openings.loggedOut("courant")).isTrue();
+        assertThat(openings.loggedOut("suivant")).isTrue();
+        assertThat(openings.loggedOut("autre-appareil")).isFalse();
+        assertThat(openings.openedAt("copie")).isPresent();
+    }
+
+    @Test
+    void aValueNeverNotedIsNotRecorded() {
+        SessionOpenings openings = new SessionOpenings();
+
+        openings.logOut("inconnu");
+        openings.logOut(null);
+
+        assertThat(openings.loggedOut("inconnu")).isFalse();
+        assertThat(openings.openedAt("inconnu")).isEmpty();
+        assertThat(openings.loggedOut(null)).isFalse();
+    }
+
+    @Test
+    void aBurstOfLoginsDoesNotBringALoggedOutSessionBack() {
+        SessionOpenings openings = new SessionOpenings();
+        Instant start = Instant.now();
+        openings.record("deconnecte", start.minusSeconds(60));
+        openings.logOut("deconnecte");
+        for (int i = 0; i < SessionOpenings.MAX_ENTRIES; i++) {
+            openings.record("s" + i, start.plusMillis(i));
+        }
+
+        assertThat(openings.loggedOut("deconnecte")).isTrue();
     }
 }

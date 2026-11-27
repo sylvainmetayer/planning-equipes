@@ -64,6 +64,20 @@ le schéma, `QUARKUS_OIDC_AUTHENTICATION_COOKIE_FORCE_SECURE=true`
 jamais en clair. Les tentatives de mot de passe sur le secours fermé sont
 journalisées comme des échecs (adresse seulement), sans compter dans le verrou.
 
+**La session du formulaire.** Le compte `admin` et les comptes locaux ouvrent
+le même cookie, `planning-session` : chiffré, valable 8 h après le dernier
+usage, `SameSite=Strict` et `HttpOnly`, donc illisible par un script de la
+page. « Se déconnecter » ne se contente pas de l'effacer du navigateur :
+l'instance retient que cette session est fermée, et une copie du cookie (un
+poste partagé, un cookie volé) reçoit `403`, et `/api/auth/me` la dit non
+connectée, jusqu'à son expiration. Seule la session déconnectée est fermée :
+les autres appareils du même compte restent connectés. Chaque instance garde ce
+souvenir en mémoire, sans le partager avec une autre : un redémarrage l'oublie, et une copie déconnectée avant
+lui redevient valable si `SESSION_ENCRYPTION_KEY` est conservée, et une
+session ouverte avant lui ne se ferme plus côté serveur. Pour fermer
+toutes les sessions d'un compte local, changez son mot de passe ou
+désactivez-le.
+
 ### Le compte de secours : ne jamais s'enfermer dehors
 
 La menace : le compte `admin` est un mot de passe partagé, sans second
