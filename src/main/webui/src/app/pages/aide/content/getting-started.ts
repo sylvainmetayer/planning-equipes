@@ -6,7 +6,7 @@
 // only resolves once `main.ts` has loaded the translation catalog.
 
 import { HelpSection } from '../help-section';
-import { lienDisponibilites } from './liens';
+import { lienCalculer, lienDisponibilites } from './liens';
 
 export function buildGettingStartedSections(): HelpSection[] {
   return [
@@ -49,7 +49,7 @@ export function buildGettingStartedSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.start.menu:Le menu suit ce cycle : Préparer pour les référentiels, Construire pour le calcul et ce qu'il doit respecter, Diffuser pour l'envoi, Aujourd'hui pour l'événement lui-même, et Planning pour lire le plan sous tous ses angles. « Voir le planning », sur l'accueil et sur le Solveur, ouvre la journée du jour.`,
+          text: $localize`:@@aide.start.menu:Le menu suit ce cycle : Préparer pour les référentiels, Construire pour le calcul et ce qu'il doit respecter, Diffuser pour l'envoi, Aujourd'hui pour l'événement lui-même, et Planning pour lire le plan sous tous ses angles. « Voir le planning », sur l'accueil et sur l'onglet Calculer, ouvre la journée du jour.`,
         },
         {
           kind: 'paragraph',
@@ -86,7 +86,7 @@ export function buildGettingStartedSections(): HelpSection[] {
         },
         lienDisponibilites(),
         { route: '/', label: $localize`:@@nav.link.accueil:État de l'édition` },
-        { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
+        lienCalculer(),
         { route: '/echanges', label: $localize`:@@nav.link.echanges:Échanges` },
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
       ],

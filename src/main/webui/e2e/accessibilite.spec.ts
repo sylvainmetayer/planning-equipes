@@ -98,7 +98,7 @@ test.describe('accessibilité — administration', () => {
 
   const ECRANS_ADMIN = [
     '/',
-    '/solveur',
+    '/journee?onglet=calculer',
     '/animateurs',
     '/creneaux?onglet=horaires',
     '/regles',

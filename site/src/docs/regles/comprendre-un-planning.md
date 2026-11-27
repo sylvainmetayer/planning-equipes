@@ -4,7 +4,7 @@ Un planning laisse des places vides ou une règle cède : vous savez pourquoi, o
 
 ![Le diagnostic d'un planning](/images/fr/diagnostic.webp "Le Diagnostic : ce qui bloque, ce qui manque, ce qui est fragile")
 
-Tout se lit dans *Diagnostic* (groupe *Planifier*) et, pour le résumé, en tête de la page Solveur.
+Tout se lit dans *Diagnostic* (groupe *Planifier*) et, pour le résumé, en tête de l'onglet *Calculer* de la page Planning.
 
 Pourquoi un calcul peut ne rien trouver, en termes simples : [quand le calcul ne trouve aucune solution](/comment-marche-le-calcul/).
 
@@ -19,7 +19,7 @@ Le score se dit sans vocabulaire technique :
 - les ajustements manuels en cause ;
 - juste après une résolution, ce qui a changé par rapport au plan d'avant.
 
-Chaque règle et chaque jour cités mènent à leur ligne ; aucune personne n'est nommée. Le même texte figure en tête du Solveur et du Diagnostic, et pour chaque plan comparé dans les Versions du plan.
+Chaque règle et chaque jour cités mènent à leur ligne ; aucune personne n'est nommée. Le même texte figure en tête de l'onglet *Calculer* et du Diagnostic, et pour chaque plan comparé dans les Versions du plan.
 
 ## Trouver ce qui bloque : l'onglet Problèmes
 

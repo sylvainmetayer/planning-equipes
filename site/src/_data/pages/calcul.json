@@ -11,7 +11,7 @@
     },
     {
       "h2": "Ce qu'il affiche en route",
-      "texte": "Dès qu'un plan faisable existe, l'écran Solveur le dit. La suite ne fait qu'améliorer la qualité, et un bouton arrête le calcul en gardant ce plan. Les trois niveaux du score se tracent en direct, pour voir quand il plafonne. Pour le voir tourner sur votre équipe, [envoyez-nous vos données](/contact/)."
+      "texte": "Dès qu'un plan faisable existe, l'onglet Calculer du Planning le dit. La suite ne fait qu'améliorer la qualité, et un bouton arrête le calcul en gardant ce plan. Les trois niveaux du score se tracent en direct, pour voir quand il plafonne. Pour le voir tourner sur votre équipe, [envoyez-nous vos données](/contact/)."
     },
     {
       "h2": "Combien de temps ça prend",
@@ -55,7 +55,7 @@
       },
       {
         "h2": "What it shows on the way",
-        "texte": "As soon as a feasible plan exists, the Solver screen says so. The rest only improves quality, and a button stops the run and keeps that plan. The three levels of the score are drawn live, so you see when it levels off. To watch it run on your team, [send us your data](/en/contact/)."
+        "texte": "As soon as a feasible plan exists, the Calculate tab of the Planning page says so. The rest only improves quality, and a button stops the run and keeps that plan. The three levels of the score are drawn live, so you see when it levels off. To watch it run on your team, [send us your data](/en/contact/)."
       },
       {
         "h2": "How long it takes",

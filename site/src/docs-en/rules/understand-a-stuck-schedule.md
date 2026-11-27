@@ -7,7 +7,7 @@ A schedule leaves seats empty or a rule gives way: you know why, where, who is c
 
 ![The diagnostic of a schedule](/images/fr/diagnostic.webp "The Diagnostic: what blocks, what is missing, what is fragile")
 
-Everything is read in *Diagnostic* (*Plan* group) and, for the summary, at the top of the Solver page.
+Everything is read in *Diagnostic* (*Plan* group) and, for the summary, at the top of the *Calculate* tab of the Planning page.
 
 Why a solve can find nothing, in plain terms: [when the solve finds no solution](/comment-marche-le-calcul/).
 
@@ -22,7 +22,7 @@ The score is told without technical vocabulary:
 - the manual adjustments involved;
 - right after a solve, what changed compared with the previous plan.
 
-Each rule and each day cited leads to its row; no person is named. The same text appears at the top of the Solver and of the Diagnostic, and for each plan compared in the Plan versions.
+Each rule and each day cited leads to its row; no person is named. The same text appears at the top of the *Calculate* tab and of the Diagnostic, and for each plan compared in the Plan versions.
 
 ## Find what blocks: the Problems tab
 

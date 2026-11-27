@@ -8,6 +8,7 @@
 import { buildRaccourcisNavigation } from '../../../core/keyboard-shortcuts';
 import { HelpSection } from '../help-section';
 import {
+  lienCalculer,
   lienAjustements,
   lienConsignes,
   lienFragilite,
@@ -26,7 +27,7 @@ export function buildOperationsSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.relecture.intro:Entre le premier planning qui tient et l'envoi aux animateurs, il y a une relecture : on ouvre les journées une par une, on regarde, on corrige. Sur douze journées, on finit par se demander « où en étais-je ? ». Sur la page Planning, le bouton d'état de la barre de relecture (« À relire », « Relue le… » ou « Figée ») ouvre le contrôle de la journée : choisissez « Relue » puis « Enregistrer l'état » pour enregistrer votre passage, avec la date et un commentaire si vous en laissez un. Le sélecteur de jour marque ensuite les journées relues ou figées, et la page Solveur dit « 3 journées sur 12 ».`,
+          text: $localize`:@@aide.relecture.intro:Entre le premier planning qui tient et l'envoi aux animateurs, il y a une relecture : on ouvre les journées une par une, on regarde, on corrige. Sur douze journées, on finit par se demander « où en étais-je ? ». Sur la page Planning, le bouton d'état de la barre de relecture (« À relire », « Relue le… » ou « Figée ») ouvre le contrôle de la journée : choisissez « Relue » puis « Enregistrer l'état » pour enregistrer votre passage, avec la date et un commentaire si vous en laissez un. Le sélecteur de jour marque ensuite les journées relues ou figées, et l'onglet Calculer dit « 3 journées sur 12 », dès qu'un plan existe.`,
         },
         {
           kind: 'paragraph',
@@ -46,7 +47,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.relecture.changements:Ce qui a bougé ne se lit plus sur la page Planning. Depuis la dernière publication, c'est le tableau de Diffuser › Envoyer : une ligne par personne, avec les changements dans les phrases mêmes du courriel de publication, et « Ce qui change le » pour ne garder qu'un jour. Depuis la dernière résolution, c'est le résultat de la page Solveur, qui dit ce que le calcul vient de réécrire : celui qui a réellement remplacé le planning enregistré, un calcul interrompu ou refusé ne déplaçant pas ce repère. Une personne gardée sur son stand avec des horaires rognés se lit « horaires modifiés », pas retirée puis nouvelle.`,
+          text: $localize`:@@aide.relecture.changements:Ce qui a bougé ne se lit plus sur la page Planning. Depuis la dernière publication, c'est le tableau de Diffuser › Envoyer : une ligne par personne, avec les changements dans les phrases mêmes du courriel de publication, et « Ce qui change le » pour ne garder qu'un jour. Depuis la dernière résolution, c'est le résultat de l'onglet Calculer, qui dit ce que le calcul vient de réécrire : celui qui a réellement remplacé le planning enregistré, un calcul interrompu ou refusé ne déplaçant pas ce repère. Une personne gardée sur son stand avec des horaires rognés se lit « horaires modifiés », pas retirée puis nouvelle.`,
         },
       ],
       links: [
@@ -67,7 +68,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.consignes.demain:« Fermer des stands demain », sur le Solveur et sur Aujourd'hui, ouvre le formulaire sur le lendemain. Pas sur aujourd'hui : une journée commencée garde la consigne qui l'a gouvernée.`,
+          text: $localize`:@@aide.consignes.demain:« Fermer des stands demain », sur l'onglet Calculer et sur Aujourd'hui, ouvre le formulaire sur le lendemain. Pas sur aujourd'hui : une journée commencée garde la consigne qui l'a gouvernée.`,
         },
         {
           kind: 'steps',
@@ -101,7 +102,7 @@ export function buildOperationsSections(): HelpSection[] {
       links: [
         lienConsignes(),
         { route: '/journee', label: $localize`:@@nav.link.journee:Planning` },
-        { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
+        lienCalculer(),
       ],
     },
     {
@@ -330,7 +331,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.hours:Besoin en animateurs`,
-              text: $localize`:@@aide.views.def.hoursBesoin:L'onglet Besoin du Diagnostic : l'estimation du nombre minimum d'animateurs à recruter. Les heures de chacun, elles, sont sur « Par personne ». L'estimation se calcule avant toute résolution, à partir des seuls stands et créneaux, comme la plus grande de plusieurs bornes : le pic de sièges simultanés, ce pic prolongé de la pause légale, la charge de la semaine la plus lourde, la coupure repas et la rotation sur les jours. Chacune est un plancher prouvé, jamais une cible, et chacune mène à l'écran qui la change : les horaires des stands du jour le plus chargé, la ligne de la règle dans Règles du planning. Chaque journée du tableau porte sa marge avant résolution (les disponibles moins les sièges, sur sa tranche la plus serrée) et le lien vers les horaires des stands de ce jour ; la grille complète, tranche par tranche, se déplie dessous. Elle se lit aussi typologie par typologie : une typologie dont le minimum dépasse le nombre d'animateurs qui la déclarent est le goulot, avec « Saisir la compétence ». Une fois les animateurs saisis, la faisabilité se vérifie sur le Solveur.`,
+              text: $localize`:@@aide.views.def.hoursBesoin:L'onglet Besoin du Diagnostic : l'estimation du nombre minimum d'animateurs à recruter. Les heures de chacun, elles, sont sur « Par personne ». L'estimation se calcule avant toute résolution, à partir des seuls stands et créneaux, comme la plus grande de plusieurs bornes : le pic de sièges simultanés, ce pic prolongé de la pause légale, la charge de la semaine la plus lourde, la coupure repas et la rotation sur les jours. Chacune est un plancher prouvé, jamais une cible, et chacune mène à l'écran qui la change : les horaires des stands du jour le plus chargé, la ligne de la règle dans Règles du planning. Chaque journée du tableau porte sa marge avant résolution (les disponibles moins les sièges, sur sa tranche la plus serrée) et le lien vers les horaires des stands de ce jour ; la grille complète, tranche par tranche, se déplie dessous. Elle se lit aussi typologie par typologie : une typologie dont le minimum dépasse le nombre d'animateurs qui la déclarent est le goulot, avec « Saisir la compétence ». Une fois les animateurs saisis, la faisabilité se vérifie sur l'onglet Calculer.`,
             },
             {
               term: $localize`:@@aide.views.term.fragilite:Fragilité du planning`,
@@ -436,7 +437,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.shortcuts.go:Pour aller directement sur un écran, tapez « g » puis une lettre de son nom, l'initiale le plus souvent : « g » puis « a » pour Aujourd'hui, « g » puis « s » pour le solveur, « g » puis « n » pour les animateurs, dont l'initiale est prise. « g » « g » ramène à l'accueil. Les pages sans lettre restent atteignables par la palette.`,
+          text: $localize`:@@aide.shortcuts.go:Pour aller directement sur un écran, tapez « g » puis une lettre de son nom, l'initiale le plus souvent : « g » puis « a » pour Aujourd'hui, « g » puis « p » pour le planning, « g » puis « n » pour les animateurs, dont l'initiale est prise. « g » « g » ramène à l'accueil. Les pages sans lettre restent atteignables par la palette.`,
         },
         {
           kind: 'definitions',

@@ -46,7 +46,7 @@ Premiers pas, sur une édition remplie :
 
 1. **Fichiers**, onglet *Importer*, carte *Exemples* : choisir un exemple puis
    **Charger cet exemple**.
-2. **Solveur › Calculer le planning** : le calcul tourne en fond, la courbe se
+2. **Planning › Calculer › Calculer le planning** : le calcul tourne en fond, la courbe se
    trace en direct et une notification annonce la fin.
 3. Lire le résultat dans **Planning**, ce qui bloque dans **Diagnostic**, le
    respect des règles dans **Règles du planning**, puis exporter depuis

@@ -63,7 +63,7 @@ In the application's `.env.prod`:
 | `SOLVER_WORKER_TLS_FINGERPRINT` | — | SHA-256 fingerprint of its certificate: only that one is then accepted, whatever name it carries. Empty: ordinary trust (a certificate signed by a recognised authority) |
 | `SOLVER_WORKER_DEFAULT` | `local` | `remote`: a solve goes to the worker when its launch says nothing |
 
-Once configured, the Solver screen offers "On this server" or "On the compute machine" at each launch.
+Once configured, the *Calculate* tab of the Planning page offers "On this server" or "On the compute machine" at each launch.
 
 ## 4. Know what happens in case of failure
 

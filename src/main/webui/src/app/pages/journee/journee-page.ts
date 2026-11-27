@@ -3,11 +3,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   Injector,
   OnInit,
   signal,
+  untracked,
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -16,6 +18,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute, ParamMap, RouterLink } from '@angular/router';
+import { ongletHote } from '../../core/onglet-hote';
 import { reglagesAvances } from '../../core/reglages-avances';
 import { ReglagesAvancesToggle } from '../../shared/reglages-avances';
 import { AnalysesApi } from '../../core/api/analyses-api';
@@ -71,10 +74,12 @@ import { TRI_NOM } from '../planning-grille/planning-grille';
 import { RepartitionHeuresView } from '../repartition-heures/repartition-heures-vue';
 import {
   JourEvenement,
+  OngletPlanning,
   dayKey,
   JourneeView,
   PlanningView,
   readAxe,
+  readOngletPlanning,
   requestedKey,
   jourDemande,
   jourInconnu,
@@ -89,6 +94,8 @@ import { StatusMessage } from '../../shared/status-message';
 import { NewWindowLink } from '../../shared/new-window-link';
 import { SeatPanel } from '../../shared/siege-panel/siege-panel';
 import { resolveSeat, SeatRequest } from '../../shared/siege-panel/seat';
+import { SolverPage } from '../solver/solver-page';
+import { VersionsPage } from '../versions/versions-page';
 
 /** « Sans emplacement »: the stands that sit on none, as the location filter and the treemap name them. */
 const NO_LOCATION = 'aucun';
@@ -192,6 +199,11 @@ interface Option {
  * <p>Each view keeps the view state that is its own (which lines the rail
  * shows, the map's cursor…) and writes it to the URL next to the page's keys:
  * `keepViewInQueryParams` lets every writer own the keys it names.</p>
+ *
+ * <p>Two tabs beside the views, `?onglet=calculer` (the former Solveur page)
+ * and `?onglet=versions` (its « Versions du plan »): on them the plan is
+ * neither read nor written to the address, and coming back re-reads it — a
+ * solve may have rewritten it meanwhile.</p>
  */
 @Component({
   selector: 'app-journee-page',
@@ -215,6 +227,8 @@ interface Option {
     PlanningPersonneView,
     RepartitionHeuresView,
     SeatPanel,
+    SolverPage,
+    VersionsPage,
     // Rendered inside a `@defer` block only: `leaflet` travels with this
     // component and must not enter the chunk of the three other renderings.
     CarteJourView,
@@ -231,6 +245,9 @@ export class JourneePage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly validations = inject(ValidationsStore);
   private readonly consignes = inject(ConsignesStore);
+
+  /** The plan (its four views), « Calculer » or « Versions du plan ». */
+  protected readonly ongletsPage = ongletHote<OngletPlanning>(readOngletPlanning, 'plan');
 
   protected readonly loading = signal(false);
   protected readonly error = signal('');
@@ -580,37 +597,56 @@ export class JourneePage implements OnInit {
     // the signal, the rail was gone, and a reload brought the filter back.
     // `jour`, the key of the four former screens, is retired once the day is
     // known by its date.
-    keepViewInQueryParams(() => ({
-      ...RETIRED_KEYS_CLEARED,
-      date: this.dateParam(),
-      jour: this.jours().length > 0 ? null : this.route.snapshot.queryParamMap.get('jour'),
-      vue: this.viewParam(),
-      rendu: this.renduParam(),
-      mode: this.modeParam(),
-      densite: this.densiteParam(),
-      portee: this.gridSpanParam(),
-      ...sortQueryParams(this.shownPersonSort()),
-      ...this.personAxisParams(),
-      q: optionalParam(this.filtre()),
-      stand: optionalParam(this.stand()),
-      animateur: optionalParam(this.animateur()),
-      emplacement: optionalParam(this.emplacement()),
-      typologie: optionalParam(this.typologie()),
-      lignes: this.lignesRail() === 'tous' ? null : this.lignesRail(),
-      t: this.instantCarte() === null ? null : String(this.instantCarte()),
-      charge: this.chargeCarte() === 'jour' ? null : this.chargeCarte(),
-      problemes: this.seulementProblemes() ? '1' : null,
-      sieges: this.sieges() === 'tous' ? null : this.sieges(),
-      siege: this.openSeatId(),
-      creneau: this.creneauParam(),
-      // The treemap writes its own keys while it is on screen; once it is
-      // gone, nothing would, and a reload would bring its period back unasked.
-      ...(this.axe() === 'stand' && this.standView() === 'treemap' ? {} : TREEMAP_KEYS_CLEARED),
-    }));
+    // On « Calculer » or « Versions » the plan's keys are not the screen's:
+    // nothing is written, and the address keeps the tab alone.
+    keepViewInQueryParams(() =>
+      this.ongletsPage.onglet() !== 'plan'
+        ? {}
+        : {
+            ...RETIRED_KEYS_CLEARED,
+            date: this.dateParam(),
+            jour: this.jours().length > 0 ? null : this.route.snapshot.queryParamMap.get('jour'),
+            vue: this.viewParam(),
+            rendu: this.renduParam(),
+            mode: this.modeParam(),
+            densite: this.densiteParam(),
+            portee: this.gridSpanParam(),
+            ...sortQueryParams(this.shownPersonSort()),
+            ...this.personAxisParams(),
+            q: optionalParam(this.filtre()),
+            stand: optionalParam(this.stand()),
+            animateur: optionalParam(this.animateur()),
+            emplacement: optionalParam(this.emplacement()),
+            typologie: optionalParam(this.typologie()),
+            lignes: this.lignesRail() === 'tous' ? null : this.lignesRail(),
+            t: this.instantCarte() === null ? null : String(this.instantCarte()),
+            charge: this.chargeCarte() === 'jour' ? null : this.chargeCarte(),
+            problemes: this.seulementProblemes() ? '1' : null,
+            sieges: this.sieges() === 'tous' ? null : this.sieges(),
+            siege: this.openSeatId(),
+            creneau: this.creneauParam(),
+            // The treemap writes its own keys while it is on screen; once it is
+            // gone, nothing would, and a reload would bring its period back unasked.
+            ...(this.axe() === 'stand' && this.standView() === 'treemap'
+              ? {}
+              : TREEMAP_KEYS_CLEARED),
+          },
+    );
+    // Back on the plan from « Calculer » or « Versions »: re-read it.
+    let ongletPrecedent = this.ongletsPage.onglet();
+    effect(() => {
+      const onglet = this.ongletsPage.onglet();
+      if (onglet === 'plan' && ongletPrecedent !== 'plan') {
+        untracked(() => void this.refresh());
+      }
+      ongletPrecedent = onglet;
+    });
   }
 
   ngOnInit(): void {
-    void this.refresh();
+    if (this.ongletsPage.onglet() === 'plan') {
+      void this.refresh();
+    }
   }
 
   /**
@@ -769,6 +805,24 @@ export class JourneePage implements OnInit {
   protected readonly currentView = computed<PlanningView>(() =>
     this.axe() === 'jour' ? tabOf(this.view()) : this.axe(),
   );
+
+  /** The toggle's value: the view on screen, or the tab that replaced the plan. */
+  protected readonly toggleValue = computed<PlanningView | OngletPlanning>(() => {
+    const onglet = this.ongletsPage.onglet();
+    return onglet === 'plan' ? this.currentView() : onglet;
+  });
+
+  /** The toggle: a view of the plan, « Calculer » or « Versions du plan ». */
+  protected async selectToggle(value: PlanningView | OngletPlanning): Promise<void> {
+    if (value === 'calculer' || value === 'versions' || value === 'plan') {
+      await this.ongletsPage.changer(value);
+      return;
+    }
+    if (this.ongletsPage.onglet() !== 'plan') {
+      await this.ongletsPage.changer('plan');
+    }
+    this.selectView(value);
+  }
 
   /** The view toggle: « Jour » comes back in the mode it was left in, the rail at first. */
   protected selectView(view: PlanningView): void {

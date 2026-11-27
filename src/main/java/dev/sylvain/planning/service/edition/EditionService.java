@@ -180,9 +180,9 @@ public class EditionService {
             throw new BusinessError.Conflict(
                     job.getStatus() == JobStatus.QUEUED
                             ? "Impossible de supprimer cette édition : une résolution y attend son tour dans la file"
-                                    + " du solveur — retirez-la de la file depuis l'écran Solveur d'abord."
+                                    + " du solveur — retirez-la de la file depuis Planning › Calculer d'abord."
                             : "Impossible de supprimer cette édition : une résolution y est en cours — attendez"
-                                    + " qu'elle se termine, ou arrêtez-la depuis l'écran Solveur.");
+                                    + " qu'elle se termine, ou arrêtez-la depuis Planning › Calculer.");
         });
         if (staffingChecks
                 .running()

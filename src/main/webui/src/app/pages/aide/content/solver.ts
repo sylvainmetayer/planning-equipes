@@ -8,6 +8,7 @@
 
 import { HelpSection } from '../help-section';
 import {
+  lienCalculer,
   lienAjustements,
   lienFragilite,
   lienHoraires,
@@ -22,19 +23,19 @@ export function buildSolverSections(): HelpSection[] {
     {
       id: 'calculer',
       icon: 'play_arrow',
-      title: $localize`:@@aide.calculer.title:Calculer, corriger, recommencer`,
-      summary: $localize`:@@aide.calculer.summary:Les trois façons de lancer le solveur, et laquelle choisir.`,
+      title: $localize`:@@aide.calculer.title:Calculer et corriger`,
+      summary: $localize`:@@aide.calculer.summary:Les deux façons de lancer le solveur, laquelle choisir, et quand recommencer de zéro.`,
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.intro:Sur la page Solveur, vous dites ce que vous voulez : le meilleur planning possible, une correction qui bouge le moins possible, ou une page blanche. Les trois lisent les mêmes données et respectent les mêmes règles ; seul change le point de départ du calcul.`,
+          text: $localize`:@@aide.calculer.intro:Le calcul se lance depuis l'onglet Calculer de la page Planning. Deux boutons : le meilleur planning possible, ou une correction qui bouge le moins possible. Les deux lisent les mêmes données et respectent les mêmes règles ; seul change ce que le calcul a le droit de bouger.`,
         },
         {
           kind: 'definitions',
           items: [
             {
               term: $localize`:@@aide.calculer.term.calculer:Calculer le planning`,
-              text: $localize`:@@aide.calculer.def.calculer:Le bouton de tous les jours. S'il existe un plan enregistré, le calcul en repart et cherche à l'améliorer ; sinon il part de zéro. Tout peut bouger, hormis les verrouillages, mais à données égales le résultat ne peut pas finir en dessous du plan de départ. La ligne sous les boutons dit d'où partira le prochain calcul.`,
+              text: $localize`:@@aide.calculer.def.calculer:Le bouton de tous les jours : le calcul complet. S'il existe un plan enregistré, le calcul en repart et cherche à l'améliorer ; sinon il part de zéro. Tout peut bouger, hormis les verrouillages et le passé figé, mais à données égales le résultat ne peut pas finir en dessous du plan de départ. Avec un plan enregistré, il demande confirmation en rappelant d'où il partira ; la ligne sous les boutons le dit aussi.`,
             },
             {
               term: $localize`:@@aide.calculer.term.corriger:Corriger après un changement`,
@@ -42,17 +43,17 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.calculer.term.recommencer:Recommencer de zéro`,
-              text: $localize`:@@aide.calculer.def.recommencer:Ignore le plan enregistré et repart de rien. C'est le seul geste qui peut perdre la qualité déjà atteinte, d'où la confirmation : réservez-le à un essai que vous abandonnez ou à des données refaites en profondeur. Sans plan enregistré, le bouton est inactif.`,
+              text: $localize`:@@aide.calculer.def.recommencer:Une case de la confirmation de « Calculer le planning », décochée par défaut : le calcul ignore le plan enregistré et repart de rien. C'est le seul geste qui peut perdre la qualité déjà atteinte, d'où une seconde confirmation, qui dit quelles relectures de journées survivront : réservez-le à un essai que vous abandonnez ou à des données refaites en profondeur. Sans plan enregistré, la case n'est pas proposée.`,
             },
           ],
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.entrees:La page s'ouvre sur ce qui empêche un planning sans écart (faisabilité et alertes), puis sur « Ce calcul tiendra compte de » : les verrouillages, les ajustements manuels, les consignes et leurs dates, les déclarations de disponibilité encore en attente (le calcul ne les verra pas), les règles désactivées et les modifications faites depuis la dernière résolution. Chaque compteur mène à l'écran qui les liste ; un compteur à zéro reste affiché, en retrait. Viennent ensuite les trois boutons, chacun avec sa phrase. Après un calcul, son résultat se lit en phrases. Juste dessous se trouvent « Voir le planning », « Relire » (la première journée pas encore relue) et « Publier », puis, en bas de page, « Réglages avancés » : le lieu du calcul et la machine distante, la courbe de score (la machine reste affichée tant qu'elle est allumée). Les versions du plan sont dans l'onglet « Versions du plan » ; le budget de calcul se consulte dans Paramètres, onglet Calcul.`,
+          text: $localize`:@@aide.calculer.entrees:L'onglet s'ouvre sur ce qui empêche un planning sans écart (faisabilité et alertes), puis, dès qu'un plan existe, sur l'avancement de la relecture (journées relues ou figées). Vient « Ce calcul tiendra compte de » : les verrouillages, les ajustements manuels, les consignes et leurs dates, les déclarations de disponibilité encore en attente (le calcul ne les verra pas), les règles désactivées et les modifications faites depuis la dernière résolution. Chaque compteur mène à l'écran qui les liste ; un compteur à zéro reste affiché, en retrait. Viennent ensuite les deux boutons, chacun avec sa phrase. Après un calcul, son résultat se lit en phrases. Juste dessous se trouvent « Voir le planning », « Relire » (la première journée pas encore relue) et « Publier », puis, en bas, « Réglages avancés » : le lieu du calcul et la machine distante, la courbe de score (la machine reste affichée tant qu'elle est allumée). Les versions du plan sont dans l'onglet voisin, « Versions du plan » ; le budget de calcul se consulte dans Paramètres, onglet Calcul.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.verrous:Les verrouillages s'appliquent aux trois modes. Un animateur sur un créneau, un stand sur une journée ou une journée verrouillé n'est touché ni par un calcul complet ni par une correction.`,
+          text: $localize`:@@aide.calculer.verrous:Les verrouillages s'appliquent aux deux gestes. Un animateur sur un créneau, un stand sur une journée ou une journée verrouillé n'est touché ni par un calcul complet ni par une correction.`,
         },
         {
           kind: 'definitions',
@@ -77,17 +78,14 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.bloquants:Quand le bandeau de faisabilité porte un problème qu'aucun calcul ne peut résoudre (deux ajustements manuels qui se contredisent, un plafond de jours d'affilée intenable), les trois boutons demandent confirmation avant de partir et nomment la cause : le calcul finirait en score dur négatif quel que soit le temps qu'il tourne. Vous pouvez lancer quand même, et le reste du planning s'améliore. Un manque d'animateurs ne demande aucune confirmation : le solveur remplit encore ce qu'il peut.`,
+          text: $localize`:@@aide.calculer.bloquants:Quand le bandeau de faisabilité porte un problème qu'aucun calcul ne peut résoudre (deux ajustements manuels qui se contredisent, un plafond de jours d'affilée intenable), les deux boutons demandent confirmation avant de partir et nomment la cause : le calcul finirait en score dur négatif quel que soit le temps qu'il tourne. Vous pouvez lancer quand même, et le reste du planning s'améliore. Un manque d'animateurs ne demande aucune confirmation : le solveur remplit encore ce qu'il peut.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.attente:Quand le solveur est occupé, chacun des trois boutons planifie le calcul au lieu de le refuser : il démarrera de lui-même dès que la tâche en cours sera terminée.`,
+          text: $localize`:@@aide.calculer.attente:Quand le solveur est occupé, chacun des deux boutons planifie le calcul au lieu de le refuser : il démarrera de lui-même dès que la tâche en cours sera terminée.`,
         },
       ],
-      links: [
-        { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
-        lienVerrouillages(),
-      ],
+      links: [lienCalculer(), lienVerrouillages()],
     },
     {
       id: 'configuration-solveur',
@@ -150,7 +148,7 @@ export function buildSolverSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
+        lienCalculer(),
         { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
         {
           route: '/parametres',
@@ -262,11 +260,11 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.lecture:La « Lecture du score », en tête de la page Solveur et du Diagnostic et pour chaque plan comparé dans Versions du plan, dit la même chose en quelques phrases : si les règles impératives sont respectées, combien de places restent vides et quel jour, quelles règles pèsent le plus sur l'organisation et pour quelle part, ce qui vient d'une donnée absente et quels ajustements manuels sont en cause. Juste après une résolution, une dernière phrase dit ce qui a changé par rapport au plan d'avant. Chaque règle citée mène à son panneau dans Règles du planning, chaque jour à sa Journée ; aucune personne n'y est nommée.`,
+          text: $localize`:@@aide.results.lecture:La « Lecture du score », en tête de l'onglet Calculer et du Diagnostic et pour chaque plan comparé dans Versions du plan, dit la même chose en quelques phrases : si les règles impératives sont respectées, combien de places restent vides et quel jour, quelles règles pèsent le plus sur l'organisation et pour quelle part, ce qui vient d'une donnée absente et quels ajustements manuels sont en cause. Juste après une résolution, une dernière phrase dit ce qui a changé par rapport au plan d'avant. Chaque règle citée mène à son panneau dans Règles du planning, chaque jour à sa Journée ; aucune personne n'y est nommée.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.courbe:Pendant la résolution, la page Solveur trace les trois composantes en direct, chacune dans son cadre. Le haut d'un cadre est le zéro : une courbe qui vient s'y coller veut dire « plus rien à corriger à ce niveau-là ». Quand le dur est à zéro depuis plusieurs minutes et que le souple ne bouge plus, la résolution plafonne : « Arrêter le solveur » ne vous coûtera rien, un solveur arrêté enregistre et analyse ce qu'il a trouvé. Seule la résolution en cours est tracée.`,
+          text: $localize`:@@aide.results.courbe:Pendant la résolution, l'onglet Calculer trace les trois composantes en direct, chacune dans son cadre. Le haut d'un cadre est le zéro : une courbe qui vient s'y coller veut dire « plus rien à corriger à ce niveau-là ». Quand le dur est à zéro depuis plusieurs minutes et que le souple ne bouge plus, la résolution plafonne : « Arrêter le solveur » ne vous coûtera rien, un solveur arrêté enregistre et analyse ce qu'il a trouvé. Seule la résolution en cours est tracée.`,
         },
         {
           kind: 'callout',
@@ -275,7 +273,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.previousPlan:Un calcul relancé repart du plan enregistré et ne peut pas finir en dessous de lui à données égales. Il peut quand même le dégrader si le référentiel a changé entre-temps, ou si vous avez recommencé de zéro. La page Solveur affiche donc le score d'avant à côté de celui d'après et signale une résolution moins bonne. Un dur toujours à zéro ne veut pas dire que rien n'a été perdu : l'écart se lit sur le medium. « Revenir au plan d'avant » remet le planning précédent ; ne tardez pas, seules les cinq dernières versions prises avant un calcul sont conservés par édition.`,
+          text: $localize`:@@aide.results.previousPlan:Un calcul relancé repart du plan enregistré et ne peut pas finir en dessous de lui à données égales. Il peut quand même le dégrader si le référentiel a changé entre-temps, ou si vous avez recommencé de zéro. L'onglet Calculer affiche donc le score d'avant à côté de celui d'après et signale une résolution moins bonne. Un dur toujours à zéro ne veut pas dire que rien n'a été perdu : l'écart se lit sur le medium. « Revenir au plan d'avant » remet le planning précédent ; ne tardez pas, seules les cinq dernières versions prises avant un calcul sont conservés par édition.`,
         },
         {
           kind: 'paragraph',
@@ -290,7 +288,7 @@ export function buildSolverSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.results.term.faisabilite:Bandeau de faisabilité`,
-              text: $localize`:@@aide.results.def.faisabilite:Estimation de capacité calculée sans résoudre, en haut des pages Solveur et Règles du planning, qui nomme les créneaux et stands en cause. Elle est optimiste : elle ignore le découpage en vacations et le cadre légal des mineurs, donc elle peut annoncer « réalisable » un planning que le solveur n'amènera pas à zéro. L'inverse n'arrive pas : si elle signale un manque de capacité, il est réel.`,
+              text: $localize`:@@aide.results.def.faisabilite:Estimation de capacité calculée sans résoudre, en haut de l'onglet Calculer et de la page Règles du planning, qui nomme les créneaux et stands en cause. Elle est optimiste : elle ignore le découpage en vacations et le cadre légal des mineurs, donc elle peut annoncer « réalisable » un planning que le solveur n'amènera pas à zéro. L'inverse n'arrive pas : si elle signale un manque de capacité, il est réel.`,
             },
             {
               term: $localize`:@@aide.results.term.problemes:Page Problèmes`,
@@ -378,7 +376,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.tuning.method:Ne changez qu'une chose à la fois entre deux résolutions, et relancez toujours sur la même durée pour que les scores restent comparables. Le nombre de postes affiché en haut de la page Solveur permet de vérifier qu'une modification de données a bien eu l'effet attendu, avant même de relancer.`,
+          text: $localize`:@@aide.tuning.method:Ne changez qu'une chose à la fois entre deux résolutions, et relancez toujours sur la même durée pour que les scores restent comparables. Le nombre de postes affiché en haut de l'onglet Calculer permet de vérifier qu'une modification de données a bien eu l'effet attendu, avant même de relancer.`,
         },
       ],
       links: [
@@ -458,7 +456,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.consignesSolveur.relancer:Après toute saisie sur l'un des trois onglets (un ajustement, un verrou, une consigne), la page propose « Relancer le calcul » sur place. Après une consigne, c'est une correction quand un plan existe : elle ne rouvre que les places que la bande a ôtées ou ajoutées. Après un ajustement ou un verrou, c'est un calcul complet qui repart du plan : une correction figerait toutes les places encore valides, et le verrou levé n'y changerait rien. Le Solveur compte ces saisies dans « Ce calcul tiendra compte de ».`,
+          text: $localize`:@@aide.consignesSolveur.relancer:Après toute saisie sur l'un des trois onglets (un ajustement, un verrou, une consigne), la page propose « Relancer le calcul » sur place. Après une consigne, c'est une correction quand un plan existe : elle ne rouvre que les places que la bande a ôtées ou ajoutées. Après un ajustement ou un verrou, c'est un calcul complet qui repart du plan : une correction figerait toutes les places encore valides, et le verrou levé n'y changerait rien. L'onglet Calculer compte ces saisies dans « Ce calcul tiendra compte de ».`,
         },
       ],
       links: [

@@ -250,7 +250,7 @@ describe('AccueilPage', () => {
       '/animateurs?onglet=disponibilites',
       '/creneaux?onglet=horaires',
       '/diagnostic?onglet=besoin',
-      '/solveur',
+      '/journee?onglet=calculer',
       '/diagnostic?onglet=problemes',
       '/journee',
       '/publication',
