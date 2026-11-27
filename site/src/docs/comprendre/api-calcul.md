@@ -94,7 +94,7 @@ Les événements `score` sont des **deltas** : `depuis` est l'indice du premier 
 
 ### L'instant de faisabilité
 
-Le premier plan faisable (zéro dur) arrive souvent bien avant la fin, et c'est ce que l'organisateur attend : le planning est alors utilisable, le reste est de la qualité. Le job le porte dans `feasibleAtSeconds` (`JobView`, `statut_solveur` en MCP), `null` tant que le plan ne l'est pas, et pousse un événement d'état à cet instant. « Arrêter et garder ce plan » n'est que l'arrêt ordinaire, le solveur gardant toujours le meilleur plan atteint. Timefold n'annonçant une solution que lorsqu'elle change, un calcul qui part déjà d'un plan à zéro dur ne dirait rien : le plan de départ complet est donc noté une fois avant le démarrage (`SolveListener`).
+Le premier plan faisable (zéro dur) arrive souvent bien avant la fin, et c'est ce que l'organisateur attend : le planning est alors utilisable, le reste est de la qualité. Le job le porte dans `feasibleAtSeconds` (`JobView`, `consulter_calcul` en MCP), `null` tant que le plan ne l'est pas, et pousse un événement d'état à cet instant. « Arrêter et garder ce plan » n'est que l'arrêt ordinaire, le solveur gardant toujours le meilleur plan atteint. Timefold n'annonçant une solution que lorsqu'elle change, un calcul qui part déjà d'un plan à zéro dur ne dirait rien : le plan de départ complet est donc noté une fois avant le démarrage (`SolveListener`).
 
 ## La replanification incrémentale
 

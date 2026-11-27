@@ -52,7 +52,7 @@ Supprimer un créneau ou un stand emporte les postes qui s'y trouvaient et eux s
 
 ## Écrire pendant un calcul
 
-Tant qu'une résolution tient le solveur de l'édition, écrire est refusé (`409`, le corps portant le job et un `message` lisible tel quel) pour : supprimer et modifier un stand, un animateur ou un créneau, réinitialiser l'édition (`POST /api/planning/reset`), importer un scénario, réaffecter un poste (assistant de réparation, mode jour J, `affecter_poste`) et accepter un échange.
+Tant qu'une résolution tient le solveur de l'édition, écrire est refusé (`409`, le corps portant le job et un `message` lisible tel quel) pour : supprimer et modifier un stand, un animateur ou un créneau, réinitialiser l'édition (`POST /api/planning/reset`), importer un scénario, réaffecter un poste (assistant de réparation, mode jour J, `modifier_affectation`) et accepter un échange.
 
 L'atterrissage du calcul supprime et réinsère tous les sièges depuis le plan de départ, réécrit date et heures des créneaux, et réenregistre stands et animateurs depuis les objets capturés au démarrage. Un siège réaffecté pendant le calcul reviendrait à son ancien occupant, un échange accepté disparaîtrait en laissant la demande `ACCEPTEE`, un animateur supprimé ressusciterait, donnée personnelle comprise. La réinitialisation et l'import laisseraient en plus emplacements, horaires et contraintes ad hoc effacés, et les anciens créneaux réapparaîtraient à côté des nouveaux. Les créations passent : une entité absente au démarrage n'est nommée par aucun poste du résultat.
 

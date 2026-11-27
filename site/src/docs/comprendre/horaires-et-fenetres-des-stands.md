@@ -87,7 +87,7 @@ Un créneau est *commencé* si sa date est passée, ou si c'est aujourd'hui et q
 
 Ces places **comptent** dans les règles qui lient les jours (repos quotidien entre hier et aujourd'hui, durées hebdomadaires, jours consécutifs, pauses, « fermer tard puis ouvrir tôt ») mais ne sont **jamais reprochées** : un trou d'hier ou un mineur placé la nuit hier ne bloquent pas le zéro dur d'aujourd'hui. Le périmètre d'une replanification ne rouvre jamais une place passée.
 
-**Le passé ne se modifie plus à la main non plus.** Les gestes qui réécrivent une place sans solveur (« Déplacer vers… » du panneau du siège, `deplacer_affectation`, l'acceptation d'un échange, une réparation appliquée ou suggérée) refusent une place dont le créneau est commencé, avec la même phrase : « Ce créneau est déjà commencé : le passé ne se modifie plus. » Elle sort en `400` côté REST et en refus métier côté MCP (`FrozenPast.PAST_SEAT_REFUSAL`).
+**Le passé ne se modifie plus à la main non plus.** Les gestes qui réécrivent une place sans solveur (« Déplacer vers… » du panneau du siège, `modifier_affectation`, l'acceptation d'un échange, une réparation appliquée ou suggérée) refusent une place dont le créneau est commencé, avec la même phrase : « Ce créneau est déjà commencé : le passé ne se modifie plus. » Elle sort en `400` côté REST et en refus métier côté MCP (`FrozenPast.PAST_SEAT_REFUSAL`).
 
 ### Le passé est figé à la minute
 

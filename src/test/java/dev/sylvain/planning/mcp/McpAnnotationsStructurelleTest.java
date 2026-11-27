@@ -85,7 +85,8 @@ class McpAnnotationsStructurelleTest {
             "reconnaitre_journees_types",
             // The generator's write (ADR 0126) does all of the above, by source.
             "appliquer_generateur_creneaux",
-            "lancer_solveur",
+            // A solve replaces the persisted plan (ADR 0100: « lancer » overwrites).
+            "lancer_",
             "resoudre_incremental",
             // Lifting a consigne removes the créneaux it added, with their seats.
             "lever_consigne");

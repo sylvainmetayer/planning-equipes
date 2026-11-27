@@ -46,10 +46,10 @@ public class McpResources {
                 niveau qui doit atteindre zéro. MEDIUM et SOFT s'échangent entre eux — le solveur y
                 cherche le meilleur compromis, pas la perfection.
 
-                Chaque contrainte peut être désactivée (`desactiver_contrainte`) ou pondérée
-                (`modifier_poids_contrainte`) pour une édition, sans toucher aux autres. Le niveau d'une
-                règle d'organisation se choisit par édition (`modifier_niveau_contrainte` :
-                obligatoire, ou préférence forte, normale ou légère) ; la colonne Niveau ci-dessous
+                Chaque contrainte peut être désactivée ou pondérée pour une édition, sans toucher aux
+                autres (`modifier_contrainte`, `actif` ou `poids`). Le niveau d'une règle
+                d'organisation se choisit par édition (`modifier_contrainte`, `niveau` : obligatoire,
+                ou préférence forte, normale ou légère) ; la colonne Niveau ci-dessous
                 est celui que le catalogue livre. Une règle légale reste toujours obligatoire.
 
                 | Contrainte | Niveau | Catégorie | Ce qu'elle cherche |
@@ -81,12 +81,12 @@ public class McpResources {
                 | **Créneau** | une tranche horaire datée de la grille : **une vacation**, sur laquelle on affecte. Il n'y en a pas d'autre sorte — un évènement connaît ses horaires d'ouverture et les projette en vacations. |
                 | **Vacation** | une tranche de travail d'un animateur. Faux ami : rien à voir avec des vacances. Marquée `couverturePause`, c'est un **relais repas** : le stand reste ouvert à la moitié de son effectif, arrondie au supérieur, pendant que l'autre moitié mange. |
                 | **Journée type** | un modèle de journée nommé (« Jour normal », « Nocturne ») et ses vacations, projeté sur les dates d'un calendrier. C'est par là qu'une grille se construit sans saisir chaque jour. |
-                | **Poste** | un siège à pourvoir : un stand, un créneau, une place. C'est l'unité que le solveur affecte, et ce que comptent `volumes` et `synthese_affectations`. |
+                | **Poste** | un siège à pourvoir : un stand, un créneau, une place. C'est l'unité que le solveur affecte, et ce que comptent `volumes` et `consulter_planning` (vue `synthese`). |
                 | **Édition** | un événement complet et son référentiel. Chaque outil qui travaille dans une édition exige l'argument `edition` (id ou nom, voir `lister_editions`). Une seule édition est **active** : elle seule publie, envoie des courriels et ouvre l'espace animateur. Un plan de repli est une **consigne datée** dans l'édition vivante, pas une autre édition. |
                 | **Contrainte ad hoc** | une règle sur mesure posée **avant** le calcul pour placer ou écarter quelqu'un (indisponibilité forcée, incompatibilité, affectation forcée, affinité) ; « Ajustement manuel » à l'écran. Toute résolution l'honore, y compris en repartant de zéro. |
                 | **Verrouillage** | une partie du planning que le solveur n'a plus le droit de déplacer : un geste **après** le calcul, qui conserve ce que la dernière résolution a produit sans rien dire de ce qui devrait s'y trouver. Pour imposer une affectation, c'est une contrainte ad hoc, pas un verrou. |
                 | **Instantané** | une copie datée d'un planning résolu, qu'on peut comparer et restaurer. |
-                | **Publication** | l'envoi du planning aux animateurs concernés. Elle capture au passage un **instantané publié** : c'est lui que les animateurs lisent, pas le planning de travail. Résoudre ne prévient personne — `etat_planning` date la dernière résolution, `etat_publication` la dernière publication. |
+                | **Publication** | l'envoi du planning aux animateurs concernés. Elle capture au passage un **instantané publié** : c'est lui que les animateurs lisent, pas le planning de travail. Résoudre ne prévient personne — `consulter_planning` date la dernière résolution, `etat_publication` la dernière publication. |
                 | **Déclaration de disponibilité** | ce qu'un animateur propose depuis son espace pendant la fenêtre de collecte. Elle n'entre dans le référentiel que si quelqu'un l'applique. |
                 | **Demande d'échange** | une permutation de postes demandée par un animateur pendant la « foire ». Acceptée, elle est appliquée au planning résolu **et figée** par un verrouillage. |
 
@@ -97,10 +97,10 @@ public class McpResources {
                    ou la dérivation depuis les horaires des stands ;
                 3. la vérification : `valider_creneaux`, `analyser_ouvertures_stands`,
                    `analyser_effectifs`, `analyser_faisabilite` ;
-                4. la résolution : `lancer_solveur`, puis le diagnostic
-                   `expliquer_echec_contraintes_dures`, et `analyser_pauses` pour les relais à organiser ;
-                5. la retouche : `verrouiller` ce qui est bon, `resoudre_incremental` pour le reste,
-                   `suggerer_reparations` et `affecter_poste` pour un siège isolé.
+                4. le calcul : `lancer_calcul`, puis le diagnostic `diagnostiquer_plan` (avec
+                   `ecartsDurs`), et `analyser_pauses` pour les relais à organiser ;
+                5. la retouche : `verrouiller` ce qui est bon, `lancer_correction` pour le reste,
+                   `simuler_affectation` puis `modifier_affectation` pour un siège isolé.
                 6. la diffusion : `etat_publication` puis `publier_planning` — et ensuite les demandes
                    d'échange, `analyser_impact_echange` avant de trancher.
 

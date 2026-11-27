@@ -33,6 +33,9 @@ class McpEditionStructurelleTest {
     private static final Set<String> HORS_EDITION = Set.of(
             "lister_scenarios",
             "valider_scenario_yaml",
+            "arreter_calcul",
+            "consulter_calcul",
+            "supprimer_calcul",
             "arreter_solveur",
             "statut_solveur",
             "lister_jobs",
@@ -48,17 +51,20 @@ class McpEditionStructurelleTest {
      * organiser's editions. Every other tool without an edition argument is
      * {@link InstanceOnlyTool}: a new one cannot reach every edition by omission.
      */
-    private static final Map<String, String> SANS_EDITION_OUVERTS_A_L_ORGANISATEUR = Map.of(
-            "lister_scenarios", "les fichiers livrés avec l'application, aucune donnée d'édition",
-            "valider_scenario_yaml", "valide le texte reçu, ne lit rien",
-            "arreter_solveur", "SolveurMcpTools ne voit que les jobs des éditions visibles",
-            "statut_solveur", "SolveurMcpTools ne voit que les jobs des éditions visibles",
-            "lister_jobs", "SolveurMcpTools ne voit que les jobs des éditions visibles",
-            "supprimer_job", "SolveurMcpTools ne voit que les jobs des éditions visibles",
-            "lister_mesures_edition", "KpiHistoriqueService filtre par visibleToCaller",
-            "supprimer_mesure_edition", "KpiHistoriqueService filtre par visibleToCaller",
-            "lister_editions", "filtrée par visibleToCaller",
-            "edition_courante", "refusée quand l'édition active n'est pas visible");
+    private static final Map<String, String> SANS_EDITION_OUVERTS_A_L_ORGANISATEUR = Map.ofEntries(
+            Map.entry("lister_scenarios", "les fichiers livrés avec l'application, aucune donnée d'édition"),
+            Map.entry("valider_scenario_yaml", "valide le texte reçu, ne lit rien"),
+            Map.entry("arreter_calcul", "SolveurMcpTools ne voit que les jobs des éditions visibles"),
+            Map.entry("consulter_calcul", "SolveurMcpTools ne voit que les jobs des éditions visibles"),
+            Map.entry("supprimer_calcul", "SolveurMcpTools ne voit que les jobs des éditions visibles"),
+            Map.entry("arreter_solveur", "SolveurMcpTools ne voit que les jobs des éditions visibles"),
+            Map.entry("statut_solveur", "SolveurMcpTools ne voit que les jobs des éditions visibles"),
+            Map.entry("lister_jobs", "SolveurMcpTools ne voit que les jobs des éditions visibles"),
+            Map.entry("supprimer_job", "SolveurMcpTools ne voit que les jobs des éditions visibles"),
+            Map.entry("lister_mesures_edition", "KpiHistoriqueService filtre par visibleToCaller"),
+            Map.entry("supprimer_mesure_edition", "KpiHistoriqueService filtre par visibleToCaller"),
+            Map.entry("lister_editions", "filtrée par visibleToCaller"),
+            Map.entry("edition_courante", "refusée quand l'édition active n'est pas visible"));
 
     @Test
     void aToolNamingNoEditionIsInstanceOnlyOrArgued() throws Exception {

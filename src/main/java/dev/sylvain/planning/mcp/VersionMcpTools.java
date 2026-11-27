@@ -164,7 +164,7 @@ public class VersionMcpTools {
             // assistant's terms: the run to wait for, or to stop, is named.
             throw new BusinessError.Conflict("Une résolution est en cours sur cette édition (job "
                     + occupe.getActiveJob().getId() + ") : elle écraserait le plan restauré en se terminant. "
-                    + "Attendez sa fin ou arrêtez-la (arreter_solveur), puis restaurez.");
+                    + "Attendez sa fin ou arrêtez-la (arreter_calcul), puis restaurez.");
         }
         if (result == null) {
             throw new BusinessError.NotFound("Version introuvable dans cette édition : " + id);

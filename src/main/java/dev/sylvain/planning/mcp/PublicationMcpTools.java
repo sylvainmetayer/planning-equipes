@@ -27,7 +27,7 @@ import java.util.List;
  *
  * <p>Without them an assistant could solve, repair and snapshot a planning
  * while being structurally unable to answer « depuis quand les animateurs
- * voient-ils autre chose que ça ? » — {@code etat_planning} dates the last
+ * voient-ils autre chose que ça ? » — {@code consulter_planning} dates the last
  * solve, nothing dated the last publication.</p>
  *
  * <h2>Three tools here send mail</h2>
@@ -86,7 +86,7 @@ public class PublicationMcpTools {
             description = "État de la publication du planning : quand la dernière publication est partie, si "
                     + "quelque chose a déjà été publié, et qui serait concerné par la prochaine — avec, pour chaque "
                     + "animateur, ce que son courriel lui annoncerait. N'envoie rien. C'est ici que se lit la date de "
-                    + "dernière publication, là où etat_planning donne celle de la dernière résolution.",
+                    + "dernière publication, là où consulter_planning donne celle de la dernière résolution.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,

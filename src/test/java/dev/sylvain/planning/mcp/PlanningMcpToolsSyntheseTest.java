@@ -8,6 +8,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationView;
 import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationsView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.SplitSeatFixture;
@@ -39,7 +40,7 @@ class PlanningMcpToolsSyntheseTest {
                 return planning;
             }
         };
-        return new PlanningMcpTools(null, null, persistenceService, null, null, null, null, null, null);
+        return new PlanningMcpTools(null, null, persistenceService, null, null, null, null, null, null, null);
     }
 
     private static PosteAffectation poste(String id, Stand stand, LocalDate date, String animateurId) {
@@ -148,5 +149,46 @@ class PlanningMcpToolsSyntheseTest {
         assertThatThrownBy(() -> tools.listAffectations(null, null, null, null, -1, "E1"))
                 .isInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("limite");
+    }
+
+    /** consulter_planning (ADR 0127): the view asked, the other two left out, and a filter read by its view. */
+    @Test
+    void consultingThePlanningAnswersTheViewAsked() {
+        PlanningMcpTools tools = tools(List.of(
+                poste("P1", stand("S1", "Échecs"), SAMEDI, "A1"),
+                poste("P2", stand("S2", "Tir à l'arc"), SAMEDI, null)));
+
+        var synthese = tools.consultPlanning(" Synthese ", null, null, null, null, null, "E1");
+        assertThat(synthese.vue()).isEqualTo("synthese");
+        assertThat(synthese.synthese().postesPourvus()).isEqualTo(1);
+        assertThat(synthese.etat()).isNull();
+        assertThat(synthese.affectations()).isNull();
+
+        var affectations = tools.consultPlanning("affectations", "S2", null, null, null, null, "E1");
+        assertThat(affectations.affectations().affectations())
+                .extracting(AffectationView::posteId)
+                .containsExactly("P2");
+        assertThat(affectations.synthese()).isNull();
+    }
+
+    @Test
+    void anUnknownViewOrModeIsRefusedWithTheChoices() {
+        PlanningMcpTools tools = tools(List.of());
+
+        assertThatThrownBy(() -> tools.consultPlanning("tout", null, null, null, null, null, "E1"))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("etat, synthese, affectations");
+        assertThatThrownBy(() -> tools.consultPlanning("synthese", "S1", null, null, null, null, "E1"))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("vue affectations");
+        assertThatThrownBy(() -> tools.simulateAffectation("P1", null, null, null, null, null, "E1"))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("mode est requis");
+        assertThatThrownBy(() -> tools.modifyAffectation("P1", "candidats", null, null, null, "E1"))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("affecter, deplacer");
+        assertThatThrownBy(() -> tools.modifyAffectation("P1", "affecter", "A1", null, "A2", "E1"))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("occupantAttendu");
     }
 }
