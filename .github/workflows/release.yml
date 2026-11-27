@@ -58,6 +58,16 @@ jobs:
           ref: ${{ github.event.release.tag_name || inputs.tag }}
           fetch-depth: 0
 
+      # Les scripts du contrôle de fin, pris à la révision du workflow et non
+      # au tag : un `workflow_dispatch` rejoué sur un tag plus ancien que le
+      # script le trouve quand même.
+      - name: Checkout the release scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          path: outils
+          sparse-checkout: .github/scripts
+
       # Même forme que la garde de `docker-ghcr.yml` : elles doivent dire la
       # même chose d'un tag de release, sans quoi l'image et les notes
       # divergeraient. Un tag est `vX.Y.Z` ou une préversion `vX.Y.Z-rc.N`
@@ -166,62 +176,10 @@ jobs:
           set -uo pipefail
           faute=0
 
-          # Le tag STABLE qui précède CELUI-CI par l'historique, pas le plus
-          # récent du dépôt : sur `release/1.2`, un v1.2.1 suit v1.2.0 et non
-          # v1.3.0. Les préversions sont écartées (`--exclude`) : une
-          # v4.0.0-rc.2 se compare à la v3.5.0, comme la v4.0.0, et non à sa
-          # propre rc.1, dont le numéro de base est le même. Même lecture que
-          # `--current` ci-dessus, les deux resteront d'accord.
-          precedent="$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' --exclude 'v*-*' "$TAG^" 2>/dev/null || true)"
-
-          if [ -z "$precedent" ]; then
-            echo "::notice::$TAG est la première release de sa ligne : pas de montée à vérifier"
-          else
-            sujets="$(git log --format='%s' "$precedent..$TAG")"
-            demande=1  # 1 PATCH, 2 MINOR, 3 MAJOR — cf. site/src/docs/installer/versioning.md § 2
-            if printf '%s\n' "$sujets" | grep -qE '^[a-z]+(\([^)]*\))?!:'; then
-              demande=3
-            elif printf '%s\n' "$sujets" | grep -qE '^feat'; then
-              demande=2
-            fi
-
-            IFS=. read -r pa pb pc <<< "${precedent#v}"
-            # Le numéro d'une rc se lit sans son suffixe : `0-rc.2` n'est pas
-            # un entier, et `[ -gt ]` répondrait faux, donc « pas supérieur ».
-            base="${TAG%%-*}"
-            IFS=. read -r na nb nc <<< "${base#v}"
-            if   [ "$na" -gt "$pa" ]; then pose=3
-            elif [ "$na" -eq "$pa" ] && [ "$nb" -gt "$pb" ]; then pose=2
-            elif [ "$na" -eq "$pa" ] && [ "$nb" -eq "$pb" ] && [ "$nc" -gt "$pc" ]; then pose=1
-            else pose=0
-            fi
-
-            noms=(aucune PATCH MINOR MAJOR)
-            if [ "$pose" -eq 0 ]; then
-              echo "::error::$TAG n'est pas supérieur à $precedent"
-              faute=1
-            elif [ "$pose" -lt "$demande" ]; then
-              echo "::error::${noms[$pose]} posée entre $precedent et $TAG, mais les sujets demandaient ${noms[$demande]} (site/src/docs/installer/versioning.md § 2)"
-              faute=1
-            fi
-          fi
-
-          # Une rc précède sa version finale et suit les rc de même numéro :
-          # une v4.0.0-rc.1 posée après la v4.0.0, ou après une v4.0.0-rc.2,
-          # serait une image « plus récente » qui ne l'est pas.
-          if [[ "$TAG" == *-rc.* ]]; then
-            finale="${TAG%-rc.*}"
-            if git rev-parse -q --verify "refs/tags/$finale" >/dev/null; then
-              echo "::error::$finale est déjà publiée : $TAG ne peut plus la précéder"
-              faute=1
-            fi
-            plus_haute="$(git tag --list "$finale-rc.*" | grep -vxF "$TAG" | sed 's/.*-rc\.//' \
-                          | grep -xE '[0-9]+' | sort -n | tail -n 1)"
-            if [ -n "$plus_haute" ] && [ "${TAG##*-rc.}" -le "$plus_haute" ]; then
-              echo "::error::$TAG ne suit pas $finale-rc.$plus_haute : le numéro de rc doit croître"
-              faute=1
-            fi
-          fi
+          # La montée de version et l'ordre des rc, dans un script testé
+          # (`test_check_release_version.py`) : chacun de ses refus dit
+          # pourquoi par un `::error::`.
+          bash outils/.github/scripts/check-release-version.sh "$TAG" || faute=1
 
           # Un tag de release vit sur `main` ou sur une branche de maintenance
           # (§ 5). Ailleurs, c'est une release faite depuis une branche de
@@ -232,7 +190,10 @@ jobs:
           # références présentes, et une réponse tronquée serait un rouge
           # inventé sur une release parfaitement saine. Même raison que la
           # récupération des tags dans `docker-ghcr.yml`.
-          git fetch --quiet --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          if ! git fetch --quiet --prune origin '+refs/heads/*:refs/remotes/origin/*'; then
+            echo "::error::impossible de récupérer les branches distantes pour situer $TAG"
+            exit 1
+          fi
 
           if ! git branch -r --contains "$TAG" \
                | sed 's/^[* ]*//' \
