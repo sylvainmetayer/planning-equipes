@@ -87,6 +87,7 @@ class HealthProbesTest {
                         .dataSource("jdbc:postgresql://" + UNREACHABLE_HOST + ":1/nowhere", "nobody", "nothing")
                         .connectRetries(0)
                         .load(),
+                null,
                 false);
         QuarkusMock.installMockForType(unreachable, FlywayMigrationsReadinessCheck.class, Readiness.Literal.INSTANCE);
 
@@ -116,5 +117,35 @@ class HealthProbesTest {
                 .then()
                 .statusCode(200)
                 .body("status", equalTo("UP"));
+    }
+
+    /** UP once, then the database goes away: DOWN, and the driver's message (host included) stays out of the body. */
+    @Test
+    void aDatabaseLostAfterBeingUpIsDownWithoutTheDriverMessage() {
+        var check = new FlywayMigrationsReadinessCheck(null, null, false) {
+            @Override
+            org.eclipse.microprofile.health.HealthCheckResponse readHistory() {
+                return org.eclipse.microprofile.health.HealthCheckResponse.named(NAME)
+                        .up()
+                        .build();
+            }
+
+            @Override
+            void ping() throws java.sql.SQLException {
+                throw new java.sql.SQLException("Connection to " + UNREACHABLE_HOST + ":5432 refused");
+            }
+        };
+        QuarkusMock.installMockForType(check, FlywayMigrationsReadinessCheck.class, Readiness.Literal.INSTANCE);
+        check.call(); // first verdict: UP, the history is read
+
+        String body = given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/q/health/ready")
+                .then()
+                .statusCode(503)
+                .body("status", equalTo("DOWN"))
+                .extract()
+                .asString();
+        assertThat(body).doesNotContain(UNREACHABLE_HOST).doesNotContain("5432").doesNotContainIgnoringCase("refused");
     }
 }

@@ -77,26 +77,85 @@ class FlywayMigrationsReadinessCheckTest {
      * served again, and the history is read afresh once it has elapsed.
      */
     @Test
-    void theVerdictIsCachedForAShortWindowThenReadAgain() {
+    void aDownVerdictIsCachedForAShortWindowThenReadAgain() {
         var reads = new AtomicInteger();
         var clock = new AtomicLong(1_000L);
-        var check = new FlywayMigrationsReadinessCheck(null, false) {
+        var check = new FlywayMigrationsReadinessCheck(null, null, false) {
             @Override
             HealthCheckResponse readHistory() {
-                reads.incrementAndGet();
-                return HealthCheckResponse.named(NAME).status(reads.get() == 1).build();
+                // DOWN twice, then up to date.
+                return HealthCheckResponse.named(NAME)
+                        .status(reads.incrementAndGet() >= 3)
+                        .build();
             }
         };
         check.nanoTime = clock::get;
 
-        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
+        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.DOWN);
         clock.addAndGet(FlywayMigrationsReadinessCheck.CACHE_TTL.toNanos() - 1);
-        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
+        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.DOWN);
         assertThat(reads).hasValue(1);
 
         clock.addAndGet(1);
         assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.DOWN);
         assertThat(reads).hasValue(2);
+
+        clock.addAndGet(FlywayMigrationsReadinessCheck.CACHE_TTL.toNanos());
+        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
+        assertThat(reads).hasValue(3);
+    }
+
+    /** An up-to-date history is read once: Flyway is not opened again, however long the instance lives. */
+    @Test
+    void anUpVerdictIsKeptAndFlywayIsNotOpenedAgain() {
+        var reads = new AtomicInteger();
+        var clock = new AtomicLong(1_000L);
+        var check = new FlywayMigrationsReadinessCheck(null, null, false) {
+            @Override
+            HealthCheckResponse readHistory() {
+                reads.incrementAndGet();
+                return HealthCheckResponse.named(NAME).up().build();
+            }
+
+            @Override
+            void ping() {}
+        };
+        check.nanoTime = clock::get;
+
+        for (int i = 0; i < 5; i++) {
+            assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
+            clock.addAndGet(FlywayMigrationsReadinessCheck.CACHE_TTL.toNanos() * 100);
+        }
+        assertThat(reads).hasValue(1);
+    }
+
+    /** Once UP, a dead database turns the probe DOWN with no detail, then back UP: Flyway is still read once. */
+    @Test
+    void anUpVerdictFollowsTheDatabaseThroughAPing() {
+        var reads = new AtomicInteger();
+        var failing = new java.util.concurrent.atomic.AtomicBoolean();
+        var check = new FlywayMigrationsReadinessCheck(null, null, false) {
+            @Override
+            HealthCheckResponse readHistory() {
+                reads.incrementAndGet();
+                return HealthCheckResponse.named(NAME).up().build();
+            }
+
+            @Override
+            void ping() throws java.sql.SQLException {
+                if (failing.get()) {
+                    throw new java.sql.SQLException("Connection to db.internal:5432 refused");
+                }
+            }
+        };
+        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
+        failing.set(true);
+        var down = check.call();
+        assertThat(down.getStatus()).isEqualTo(HealthCheckResponse.Status.DOWN);
+        assertThat(down.getData()).isEmpty();
+        failing.set(false);
+        assertThat(check.call().getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
+        assertThat(reads).hasValue(1);
     }
 
     private static MigrationInfo migration(MigrationState state) {
