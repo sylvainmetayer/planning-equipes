@@ -129,7 +129,8 @@ export function repasPausesUrl(queryParams: Params): string {
   const jour = [queryParams['jour'], queryParams['date']].find(
     (valeur) => typeof valeur === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(valeur),
   );
-  return `/diagnostic?onglet=repas-pauses${jour ? `&jour=${jour}` : ''}`;
+  const suffixe = jour ? `&jour=${jour}` : '';
+  return `/diagnostic?onglet=repas-pauses${suffixe}`;
 }
 
 const equiteToCharge: RedirectFunction = (route) =>

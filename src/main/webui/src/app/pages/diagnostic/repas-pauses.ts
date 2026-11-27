@@ -15,7 +15,7 @@ export function joursRepasPauses(
       dates.add(walk.date);
     }
   }
-  return [...dates].sort();
+  return [...dates].sort((a, b) => a.localeCompare(b));
 }
 
 /** The tight walks of one day, the ones the gap does not cover first, then by time. */
