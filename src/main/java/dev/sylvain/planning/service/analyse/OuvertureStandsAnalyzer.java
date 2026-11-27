@@ -436,9 +436,7 @@ public final class OuvertureStandsAnalyzer {
     /**
      * The grid cell of one column, read off the same open segments seat
      * generation reads ({@link Creneau#segmentsOuverts}), clipped to the
-     * column: the configured headcount, not the seats — a break-covering
-     * créneau halves the seats, and the organiser types what the stand needs,
-     * not what the solver gets.
+     * column: the configured headcount, not the seats.
      */
     private static CelluleCreneau celluleCreneau(Stand stand, Creneau creneau, ColonneCreneau colonne) {
         int[] bornes = boundsWithin(creneau, colonne.heureDebut(), colonne.heureFin());

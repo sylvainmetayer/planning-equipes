@@ -186,7 +186,7 @@ public class CreneauResource {
         return referenceDataService.controlerGrille();
     }
 
-    /** What the grid holds: how many vacations, over which dates, with how many meal relays. */
+    /** What the grid holds: how many vacations, over which dates. */
     @GET
     @Path("/diagnostic")
     public DiagnosticGrille diagnoseGrid() {
@@ -260,7 +260,7 @@ public class CreneauResource {
     /**
      * Applies the same file the preview was computed from; the server reads it
      * again before writing. Timeslots the file leaves out are untouched, and a
-     * row matching one already there writes only its meal-relay flag over it —
+     * row matching one already there changes nothing —
      * the date and the two hours are the key. {@code 409} while a solve runs,
      * like every other write of the grid.
      */

@@ -1716,7 +1716,7 @@
         }
       },
       "ColonneCreneau" : {
-        "required" : [ "couverturePause", "tranche" ],
+        "required" : [ "tranche" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -1732,9 +1732,6 @@
           },
           "heureFin" : {
             "$ref" : "#/components/schemas/LocalTime"
-          },
-          "couverturePause" : {
-            "type" : "boolean"
           }
         }
       },
@@ -2729,9 +2726,6 @@
           },
           "heureFin" : {
             "$ref" : "#/components/schemas/LocalTime"
-          },
-          "couverturePause" : {
-            "type" : "boolean"
           },
           "modifieLe" : {
             "$ref" : "#/components/schemas/Instant"
@@ -3748,7 +3742,7 @@
         }
       },
       "DiagnosticGrille" : {
-        "required" : [ "contientCouverturePause", "joursFeries", "nombreCreneaux" ],
+        "required" : [ "joursFeries", "nombreCreneaux" ],
         "type" : "object",
         "properties" : {
           "nombreCreneaux" : {
@@ -3760,9 +3754,6 @@
           },
           "derniereDate" : {
             "$ref" : "#/components/schemas/LocalDate"
-          },
-          "contientCouverturePause" : {
-            "type" : "boolean"
           },
           "explication" : {
             "type" : "string"
@@ -5389,7 +5380,7 @@
       },
       "GridAnomalyType" : {
         "type" : "string",
-        "enum" : [ "CRENEAU_INCOMPLET", "DUREE_NULLE", "DOUBLON", "REPOS_QUOTIDIEN_IMPOSSIBLE", "TROU_DANS_LA_JOURNEE", "VACATION_TROP_LONGUE", "DATE_ISOLEE", "RELAIS_REPAS_HORS_FENETRE", "VERROUILLAGE_SANS_VACATION", "VACATION_JOUR_FERIE" ]
+        "enum" : [ "CRENEAU_INCOMPLET", "DUREE_NULLE", "DOUBLON", "REPOS_QUOTIDIEN_IMPOSSIBLE", "TROU_DANS_LA_JOURNEE", "VACATION_TROP_LONGUE", "DATE_ISOLEE", "VERROUILLAGE_SANS_VACATION", "VACATION_JOUR_FERIE" ]
       },
       "GroupDayView" : {
         "required" : [ "aligned", "arrivalSpreadMinutes", "departureSpreadMinutes" ],
@@ -6370,7 +6361,7 @@
       },
       "LayerTimeslot" : {
         "type" : "object",
-        "required" : [ "debutMinutes", "finMinutes", "couverturePause", "addedByConsigne" ],
+        "required" : [ "debutMinutes", "finMinutes", "addedByConsigne" ],
         "properties" : {
           "id" : {
             "type" : "integer",
@@ -6389,9 +6380,6 @@
           "finMinutes" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "couverturePause" : {
-            "type" : "boolean"
           },
           "addedByConsigne" : {
             "type" : "boolean"
@@ -8067,7 +8055,7 @@
       },
       "PosteFragile" : {
         "type" : "object",
-        "required" : [ "couverturePause", "creneauId", "effectifMin", "irremplacable", "jour", "remplacants", "siegesLiberes", "siegesPourvus", "siegesRequis" ],
+        "required" : [ "creneauId", "effectifMin", "irremplacable", "jour", "remplacants", "siegesLiberes", "siegesPourvus", "siegesRequis" ],
         "properties" : {
           "standId" : {
             "type" : "string"
@@ -8095,9 +8083,6 @@
           "effectifMin" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "couverturePause" : {
-            "type" : "boolean"
           },
           "siegesRequis" : {
             "type" : "integer",
@@ -8514,13 +8499,9 @@
       },
       "RapportApplication" : {
         "type" : "object",
-        "required" : [ "conserves", "misAJour", "crees", "supprimes", "postesSupprimes", "aucunChangement" ],
+        "required" : [ "conserves", "crees", "supprimes", "postesSupprimes", "aucunChangement" ],
         "properties" : {
           "conserves" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "misAJour" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -11107,9 +11088,6 @@
           },
           "heureFin" : {
             "$ref" : "#/components/schemas/LocalTime"
-          },
-          "couverturePause" : {
-            "type" : "boolean"
           }
         }
       },

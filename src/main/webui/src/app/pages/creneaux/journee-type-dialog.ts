@@ -104,7 +104,7 @@ export class JourneeTypeDialog {
 
   /**
    * The day's timeslots laid on dates by the series dialog, the template kept
-   * nowhere. A meal relay does not travel: a series writes plain timeslots.
+   * nowhere.
    */
   protected applyWithoutKeeping(): void {
     const vacations = this.saisie().vacations;

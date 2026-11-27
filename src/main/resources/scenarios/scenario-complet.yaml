@@ -2530,3 +2530,69 @@ animateurs:
       - 2026-07-14
       - 2026-07-16
       - 2026-07-18
+  - id: A153
+    email: A153@example.org
+    prenom: Renfort1
+    nom: Garcia
+    dateNaissance: 1960-02-01
+    manager: false
+    competences:
+      STRATEGIE: DEBUTANT
+      ENIGME: DEBUTANT
+      ADRESSE: REFERENT
+    joursIndisponibles: []
+  - id: A154
+    email: A154@example.org
+    prenom: Renfort2
+    nom: Morin
+    dateNaissance: 1992-01-23
+    manager: false
+    competences:
+      ENIGME: DEBUTANT
+      ADRESSE: DEBUTANT
+      AMBIANCE: AUTONOME
+    joursIndisponibles: []
+  - id: A155
+    email: A155@example.org
+    prenom: Renfort3
+    nom: Fontaine
+    dateNaissance: 1960-08-20
+    manager: false
+    competences:
+      COOPERATIF: REFERENT
+      ADRESSE: AUTONOME
+      ENIGME: AUTONOME
+    joursIndisponibles: []
+  - id: A156
+    email: A156@example.org
+    prenom: Renfort4
+    nom: Moreau
+    dateNaissance: 1982-09-24
+    manager: false
+    competences:
+      AMBIANCE: DEBUTANT
+      COOPERATIF: AUTONOME
+      ENIGME: DEBUTANT
+    joursIndisponibles: []
+  - id: A157
+    email: A157@example.org
+    prenom: Renfort5
+    nom: Fontaine
+    dateNaissance: 1963-03-10
+    manager: false
+    competences:
+      COOPERATIF: REFERENT
+      STRATEGIE: REFERENT
+      AMBIANCE: AUTONOME
+    joursIndisponibles: []
+  - id: A158
+    email: A158@example.org
+    prenom: Renfort6
+    nom: Leroy
+    dateNaissance: 1990-12-10
+    manager: false
+    competences:
+      ROLE: AUTONOME
+      COOPERATIF: AUTONOME
+      AMBIANCE: DEBUTANT
+    joursIndisponibles: []

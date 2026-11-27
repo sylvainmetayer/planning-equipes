@@ -151,6 +151,12 @@
 .planning.animateurs[149]  8428d4e6c0e03722
 .planning.animateurs[150]  c92bbcff0534bb61
 .planning.animateurs[151]  8925fee165562eb1
+.planning.animateurs[152]  575e49aa9cc5b4eb
+.planning.animateurs[153]  a507322011d60861
+.planning.animateurs[154]  19ced60397a7928d
+.planning.animateurs[155]  445b6569d34ea02d
+.planning.animateurs[156]  cda4a395bbc3b07e
+.planning.animateurs[157]  d2e8dc7396e38feb
 .planning.constraintsDesactivees = (vide)
 .planning.contraintesAdHoc = (vide)
 .planning.dateDebutFestival = 2026-07-08
