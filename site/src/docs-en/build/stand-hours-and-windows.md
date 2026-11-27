@@ -90,7 +90,7 @@ A timeslot has *started* if its date is past, or if it is today and the seat's e
 
 These seats **count** in the rules that link days (daily rest between yesterday and today, weekly durations, consecutive days, breaks, "close late then open early") but are **never blamed**: a hole from yesterday or a minor placed at night yesterday do not block today's hard zero. The scope of a re-plan never reopens a past seat.
 
-**The past can no longer be modified by hand either.** The actions that rewrite a seat without the solver ("Move to…" in the seat panel, `modifier_affectation`, the acceptance of a swap, a repair applied or suggested) refuse a seat whose timeslot has started, with the same sentence: "Ce créneau est déjà commencé : le passé ne se modifie plus." (this timeslot has already started: the past can no longer be modified) It comes out as a `400` on the REST side and as a business refusal on the MCP side (`FrozenPast.PAST_SEAT_REFUSAL`).
+**The past can no longer be modified by hand either.** The actions that rewrite a seat without the solver ("Apply" of "Simulate a change" in the seat panel, `modifier_affectation`, the acceptance of a swap, a repair applied or suggested) refuse a seat whose timeslot has started, with the same sentence: "Ce créneau est déjà commencé : le passé ne se modifie plus." (this timeslot has already started: the past can no longer be modified) It comes out as a `400` on the REST side and as a business refusal on the MCP side (`FrozenPast.PAST_SEAT_REFUSAL`).
 
 ### The past is frozen to the minute
 

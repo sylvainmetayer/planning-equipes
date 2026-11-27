@@ -6,8 +6,10 @@ AffectationExplanationResource#applyDeplacement POST /postes/{posteId}/deplaceme
 AffectationExplanationResource#applyPlacement POST /postes/{posteId}/placement
 AffectationExplanationResource#applyReparation POST /postes/{posteId}/affectation
 AffectationExplanationResource#explainPersisted GET /postes/{posteId}/explication
+AffectationExplanationResource#simulate GET /postes/{posteId}/simulation
 AffectationExplanationResource#simulateDeplacement POST /postes/{posteId}/deplacement/simulation
 AffectationExplanationResource#simulateSwap POST /postes/{posteId}/simulation-swap
+AffectationExplanationResource#suggestions GET /postes/{posteId}/suggestions
 AffichageMuralResource#create POST /affichage-mural
 AffichageMuralResource#list GET /affichage-mural
 AffichageMuralResource#preview GET /affichage-mural/apercu

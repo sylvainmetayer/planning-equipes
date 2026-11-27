@@ -5,6 +5,7 @@ import dev.sylvain.planning.service.solve.DeplacementService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.AffectationExplanation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.DeplacementSimulation;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SwapSimulation;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -18,17 +19,16 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * Per-assignment explainability ("Pourquoi lui ?"): explains why a specific
- * {@code PosteAffectation} of the persisted plan is scored the way it is, and
- * lets the caller simulate handing a poste of an already-solved
- * {@link PlanningEvenement} (as posted by the client — never re-solved here)
- * to a different animateur to see the score impact before changing anything.
+ * The two gestures of the Siège panel on one seat of the persisted plan
+ * (ADR 0099 for who may call which): « Expliquer » — why the holder is scored
+ * the way they are — and « Simuler un changement » — the repair suggestions
+ * and what a change would do, before and after, both {@code GET}s that write
+ * nothing — plus the writes that apply a change: placement, move, hand-over.
  *
- * <p>Also hosts the write of the repair assistant of issue #71, which applies
- * the chosen candidate to the persisted plan — the search itself is
- * {@code POST /api/jour-j/postes/{posteId}/suggestions}. Same {@code /postes}
- * path, so the two live in the same resource rather than in two classes
- * JAX-RS would refuse to map.</p>
+ * <p>The repair search also answers at
+ * {@code POST /api/jour-j/postes/{posteId}/suggestions}, the Aujourd'hui
+ * screen's. Same {@code /postes} path for the rest, so they live in the same
+ * resource rather than in two classes JAX-RS would refuse to map.</p>
  */
 @Path("/postes")
 @Produces(MediaType.APPLICATION_JSON)
@@ -59,11 +59,48 @@ public class AffectationExplanationResource {
     }
 
     /**
+     * « Simuler un changement » of the Siège panel: what a change of this seat
+     * would do — its holder moved to another seat ({@code cible}) or the seat
+     * handed to a person ({@code animateur}) — scored on the persisted plan
+     * prepared server-side, before and after. Writes nothing, hence a
+     * {@code GET}: a lecteur simulates too (ADR 0099), and only the write
+     * that applies it is refused to them.
+     */
+    @GET
+    @Path("/{posteId}/simulation")
+    public DeplacementSimulation simulate(
+            @PathParam("posteId") String posteId,
+            @QueryParam("cible") String posteCibleId,
+            @QueryParam("animateur") String animateurCibleId) {
+        return deplacementService.simulate(posteId, posteCibleId, animateurCibleId);
+    }
+
+    /**
+     * The repair suggestions of « Simuler un changement »: the viable
+     * candidates for this seat, best impact first, on the persisted plan — the
+     * search of {@code POST /api/jour-j/postes/{posteId}/suggestions}, read
+     * with a {@code GET} so a lecteur reads them too. {@code depuis} asks for
+     * the next batch of the ranked candidates.
+     */
+    @GET
+    @Path("/{posteId}/suggestions")
+    public SuggestionsReparation suggestions(
+            @PathParam("posteId") String posteId,
+            @QueryParam("plafond") Integer plafond,
+            @QueryParam("depuis") Integer depuis) {
+        return planningService.persistedSuggererReparations(posteId, plafond, depuis);
+    }
+
+    /**
      * Simulates giving {@code posteId} to {@code animateurId} instead of its
      * current occupant, without persisting anything, and reports the
-     * resulting score delta.
+     * resulting score delta — on the plan the caller posts. Deprecated until
+     * 5.0: no screen calls it any more, and a posted plan carries none of the
+     * edition's rules; {@code GET /{posteId}/simulation?animateur=} scores the
+     * same change on the persisted plan.
      */
     @POST
+    @Deprecated
     @Path("/{posteId}/simulation-swap")
     public Response simulateSwap(
             @PathParam("posteId") String posteId,
@@ -74,10 +111,6 @@ public class AffectationExplanationResource {
     }
 
     /**
-     * Applies one suggestion to the persisted plan: that seat changes hands and
-     * nothing else does. The only endpoint here that writes — hence a separate,
-     * explicit call rather than a flag on the simulation.
-     *
      * Scores a seat movement (issue #308) without writing: the seat's animateur
      * dropped on another seat ({@code cible}) or on a person
      * ({@code animateur}).
@@ -86,16 +119,19 @@ public class AffectationExplanationResource {
      * body: the verdict must be read on the rules the edition actually runs
      * under — the constraints the operator switched off included — and those
      * are not the client's to send.</p>
+     *
+     * <p>Deprecated until 5.0, an alias of {@code GET /{posteId}/simulation}:
+     * a {@code POST} a lecteur cannot call although it writes nothing.</p>
      */
     @POST
+    @Deprecated
     @Path("/{posteId}/deplacement/simulation")
     @Consumes(MediaType.WILDCARD)
     public Response simulateDeplacement(
             @PathParam("posteId") String posteId,
             @QueryParam("cible") String posteCibleId,
             @QueryParam("animateur") String animateurCibleId) {
-        return Response.ok(deplacementService.simulate(posteId, posteCibleId, animateurCibleId))
-                .build();
+        return Response.ok(simulate(posteId, posteCibleId, animateurCibleId)).build();
     }
 
     /**

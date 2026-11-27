@@ -1,11 +1,12 @@
-// The calls on one seat of the persisted plan — `/api/postes/*`: « Pourquoi
-// lui ? » read server-side, « Placer », the move of the day views, and the
-// replacement and release of the Siège panel and the Jour J page. See
+// The calls on one seat of the persisted plan — `/api/postes/*`: the two
+// gestures of the Siège panel, « Expliquer » and « Simuler un changement »
+// (reads, a lecteur's too), then the writes that apply a change: « Placer »,
+// the move, the hand-over and the release of the panel and the Jour J page. See
 // planning-api.ts for why the paths live here and not in the pages.
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { AffectationExplanation, DeplacementSimulation } from '../models';
+import { AffectationExplanation, DeplacementSimulation, SuggestionsReparation } from '../models';
 import { dropEmpty } from './drop-empty';
 
 @Injectable({ providedIn: 'root' })
@@ -20,6 +21,35 @@ export class PostesApi {
   explanation(posteId: string): Promise<AffectationExplanation> {
     return this.api.get<AffectationExplanation>(
       `/api/postes/${encodeURIComponent(posteId)}/explication`,
+    );
+  }
+
+  /**
+   * « Simuler un changement » : what the holder moved to another seat, or the
+   * seat handed to a person, would do — before and after, on the persisted
+   * plan under the edition's rules. Writes nothing: a `GET`.
+   */
+  simulate(
+    posteId: string,
+    target: { posteId?: string; animateurId?: string },
+  ): Promise<DeplacementSimulation> {
+    const params = new URLSearchParams({
+      cible: target.posteId ?? '',
+      animateur: target.animateurId ?? '',
+    });
+    dropEmpty(params);
+    return this.api.get<DeplacementSimulation>(
+      `/api/postes/${encodeURIComponent(posteId)}/simulation?${params}`,
+    );
+  }
+
+  /**
+   * The repair suggestions of « Simuler un changement » : the viable
+   * candidates for this seat, best impact first, on the persisted plan.
+   */
+  suggestions(posteId: string): Promise<SuggestionsReparation> {
+    return this.api.get<SuggestionsReparation>(
+      `/api/postes/${encodeURIComponent(posteId)}/suggestions`,
     );
   }
 

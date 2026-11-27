@@ -89,11 +89,10 @@ class DeplacementResourceTest {
         Map<String, String> avant = occupants(plan);
         String[] sieges = twoSeatsOnOneCreneau(plan);
 
-        // Simulated with an empty body: the persisted plan is what the drop is about.
+        // « Simuler un changement » is a read: the persisted plan is what the drop is about.
         given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
                 .when()
-                .post("/api/postes/" + sieges[0] + "/deplacement/simulation?cible=" + sieges[1])
+                .get("/api/postes/" + sieges[0] + "/simulation?cible=" + sieges[1])
                 .then()
                 .statusCode(200)
                 .body("posteSourceId", equalTo(sieges[0]))
@@ -101,6 +100,15 @@ class DeplacementResourceTest {
                 .body("animateurSourceId", equalTo(avant.get(sieges[0])))
                 .body("animateurCibleId", equalTo(avant.get(sieges[1])))
                 .body("scoreAvant", notNullValue());
+        // The 3.x POST stays an alias until 5.0.
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .when()
+                .post("/api/postes/" + sieges[0] + "/deplacement/simulation?cible=" + sieges[1])
+                .then()
+                .statusCode(200)
+                .body("posteCibleId", equalTo(sieges[1]))
+                .body("animateurCibleId", equalTo(avant.get(sieges[1])));
         assertThat(occupants(given().header("X-Edition-Id", "E1")
                         .when()
                         .get("/api/planning/persisted")
@@ -178,9 +186,8 @@ class DeplacementResourceTest {
         List<String> joursAvant = putDaysOff(libre, List.of(jour));
         try {
             given().header("X-Edition-Id", "E1")
-                    .contentType("application/json")
                     .when()
-                    .post("/api/postes/" + siege + "/deplacement/simulation?animateur=" + libre)
+                    .get("/api/postes/" + siege + "/simulation?animateur=" + libre)
                     .then()
                     .statusCode(200)
                     .body("casseContrainteDure", equalTo(true))
@@ -203,6 +210,32 @@ class DeplacementResourceTest {
         } finally {
             putDaysOff(libre, joursAvant);
         }
+    }
+
+    /** The suggestions of « Simuler un changement », read with a GET on the persisted plan: nothing written. */
+    @Test
+    void theSuggestionsOfASeatAreReadWithoutWriting() {
+        JsonPath plan = persistedPlan();
+        Map<String, String> avant = occupants(plan);
+        String siege = avant.keySet().iterator().next();
+
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/postes/" + siege + "/suggestions?plafond=5")
+                .then()
+                .statusCode(200)
+                .body("posteId", equalTo(siege))
+                .body("animateurActuelId", equalTo(avant.get(siege)))
+                .body("plafond", equalTo(5))
+                .body("scoreAvant", notNullValue());
+
+        assertThat(occupants(given().header("X-Edition-Id", "E1")
+                        .when()
+                        .get("/api/planning/persisted")
+                        .then()
+                        .extract()
+                        .jsonPath()))
+                .isEqualTo(avant);
     }
 
     /**

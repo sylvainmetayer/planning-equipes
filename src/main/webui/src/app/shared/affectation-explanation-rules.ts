@@ -1,4 +1,4 @@
-// The rules behind "Pourquoi lui ?" and « Remplacer », kept out of the seat
+// The rules behind « Expliquer » and « Simuler un changement », kept out of the seat
 // panel so they are unit tested without rendering — the same convention `stand-draft.ts`
 // already follows for the stand form next door (AGENTS.md).
 //

@@ -173,7 +173,7 @@ export class ProblemesPage {
    * and filled by its « Placer ». A held seat is not a question the dialog can
    * answer: when the breach names its holder (« Qui peut remplacer ? ») or the
    * timeslot has no free seat left, the Journée opens on that seat instead,
-   * its Siège panel offering « Remplacer ».
+   * its Siège panel offering « Simuler un changement ».
    */
   protected async whoCanHold(action: ActionProbleme): Promise<void> {
     const target = action.seat;

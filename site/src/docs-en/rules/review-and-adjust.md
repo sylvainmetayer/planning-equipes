@@ -9,26 +9,35 @@ The solve is a proposal: you review, adjust and decide. All adjustments go throu
 
 ## Correct a seat with the Seat panel
 
-A click on any cell of the Planning page opens the **panel of that seat** beside it: a name or a free seat of the table, a shift of the rail, a stand of the map, a break with no relay, a line of the changes. The panel shows the stand, the timeslot, the person, the locks and, in sentences, the rules in default.
+A click on any cell of the Planning page opens the **panel of that seat** beside it: a name or a free seat of the table, a shift of the rail, a stand of the map. The panel shows the stand, the timeslot, the person and the locks, then its two gestures.
 
-### On a held seat
+### Simulate a change
 
-- *Replace* with a viable replacement;
-- *Move to...* another seat;
+"Simulate a change" tries a change without writing anything.
+
+1. The panel offers the best replacements (or, on an empty seat, the best people to place), with their effect on the score. On a held seat, "To another seat..." picks instead a seat to move the person to: a free seat, or the seat of a person to swap with.
+2. "Simulate" on one of them shows **the before and the after**: the score before and after, what the change settles on this seat and what it damages there. A change that would break a hard rule is announced "Refused", naming it, and cannot be applied.
+3. "Apply" writes exactly that change. On an empty seat, the box "Keep them there at the next solve" (ticked by default) also protects it from the next solve.
+
+"See the whole bench" shows everybody: who is on duty nowhere, and which rule would prevent each from holding the seat. On an empty seat, "Place" assigns a person directly.
+
+### Explain
+
+On a held seat, "Explain" says why this person is there: the rules in default on this seat, in sentences, read with the edition's settings.
+
+### The other gestures of a held seat
+
 - *Free*, keeping the person away from this timeslot at the next solve (box ticked by default);
-- lock or unlock, see who could hold it, open the person's fiche.
+- *Mark absent* on this timeslot;
+- lock or unlock, open the person's fiche.
 
-Replace and free only touch the seat if it is still held by the person displayed.
-
-### On an empty seat
-
-1. "Who can hold this seat?" says who is on duty nowhere, and which rule would prevent each from holding the seat.
-2. "Place" assigns the person and keeps them at the next solve. The action is refused for a person a lock holds out of this timeslot, and on a timeslot that has already started.
-3. "Add an adjustment" opens the prefilled form.
+Apply and free only touch the seat if it is still held by the person displayed.
 
 ### What the application checks for you
 
-A placement made directly (from the panel, the repair screen or an assistant) is **simulated before writing**. It is refused if the gesture breaks a hard rule, naming it; if it costs quality, the application says so. *Free* always goes through: marking an absence on the event day must never be blocked by the plan being repaired.
+A change applied (from the panel, the Today screen or an assistant) is **simulated again before writing**. It is refused if the gesture breaks a hard rule, naming it, on a timeslot that has already started, on a locked seat and during a solve; if it costs quality, the application says so. *Free* always goes through: marking an absence on the event day must never be blocked by the plan being repaired.
+
+A read-only user simulates and asks for explanations like everybody else, but has no button to apply.
 
 ### After the gesture
 
@@ -36,7 +45,7 @@ The panel offers to notify the people concerned (the change is not published) an
 
 ## Move or swap from the table
 
-In the *Table* view, each name and each empty seat opens the seat panel. "Move to..." moves to a free seat, or swaps with a person; the action is refused if a hard rule would be broken. The *Rail* offers the same gesture from a shift, to give it to another person or swap it with theirs.
+In the *Table* view, each name and each empty seat opens the seat panel. "Simulate a change", then "To another seat...", moves to a free seat or swaps with a person, after showing the before and the after; the action is refused if a hard rule would be broken. The *Rail* offers the same gesture from a shift, to give it to another person or swap it with theirs.
 
 ## Change the state of a day
 

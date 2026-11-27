@@ -93,8 +93,9 @@ export class JourJService {
   }
 
   /**
-   * Viable replacements for one seat, best impact first — also what the
-   * Siège panel's « Remplacer » asks: the persisted plan, prepared under the
+   * Viable replacements for one seat, best impact first — the search the
+   * Siège panel's « Simuler un changement » reads by a `GET` of `/api/postes`:
+   * the persisted plan, prepared under the
    * edition's rules as the write that follows reads it. `lot` asks for the
    * next batch of the ranked candidates (« Chercher plus loin »).
    */

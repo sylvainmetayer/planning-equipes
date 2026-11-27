@@ -34,7 +34,7 @@ export function resumeDeplacement(
 }
 
 /**
- * Where « Déplacer vers » may send the holder of `source`: every other stand
+ * Where « Vers un autre siège… » may send the holder of `source`: every other stand
  * line of the same day — its free seats to move into, its people to swap with
  * — as the drop of the day calendar accepts them. A line a lock closes
  * (`lineClosed`, for its stand or its timeslot) is left out, as the drop

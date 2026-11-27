@@ -1,6 +1,7 @@
-// The Siège panel over mocked services: what it shows of a seat, which
-// gestures it offers on a held seat and on an empty one, what each one calls,
-// and what it says is left to do afterwards. The words themselves are
+// The Siège panel over mocked services: what it shows of a seat, its two
+// « et si » gestures — « Simuler un changement » and « Expliquer » — and the
+// writes beside them, on a held seat and on an empty one, what each one calls,
+// what a lecteur may do, and what it says is left to do afterwards. The words themselves are
 // `seat.spec.ts`'s; the bench dialog is `bench-dialog.spec.ts`'s.
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
@@ -21,6 +22,7 @@ import {
   VerrouillagePlanning,
 } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { SessionStore } from '../../core/session.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import { fakeOf } from '../../core/testing/fake';
@@ -61,6 +63,29 @@ function planning(): PlanningEvenement {
 
 const ZERO = { hardScore: 0, mediumScore: 0, softScore: 0 };
 
+/** The search of « Simuler un changement » on `posteId`, Bruno its one candidate. */
+function suggestionsFor(posteId: string, holder: string | null) {
+  return {
+    posteId,
+    animateurActuelId: holder,
+    scoreAvant: { hardScore: -1, mediumScore: 0, softScore: 0 },
+    contraintesVioleesAvant: [],
+    candidatsEligibles: 1,
+    depuis: 0,
+    candidatsEvalues: 1,
+    plafond: 20,
+    suggestions: [
+      {
+        animateurId: 'b1',
+        scoreApres: { hardScore: 0, mediumScore: -2, softScore: 0 },
+        delta: { hardScore: 1, mediumScore: -2, softScore: 0 },
+        violationsResolues: [],
+        violationsIntroduites: [],
+      },
+    ],
+  };
+}
+
 function button(root: HTMLElement, text: string): HTMLButtonElement {
   const found = Array.from(root.querySelectorAll<HTMLButtonElement>('button')).find((candidate) =>
     candidate.textContent?.includes(text),
@@ -75,8 +100,16 @@ describe('SeatPanel', () => {
   let fixture: ComponentFixture<SeatPanel>;
   const locks = signal<VerrouillagePlanning[]>([]);
   const editingLocked = signal(false);
-  const postesApi = { place: vi.fn(), explanation: vi.fn(), applyRepair: vi.fn(), move: vi.fn() };
-  const jourJ = { suggestions: vi.fn(), marquerAbsent: vi.fn() };
+  const postesApi = {
+    place: vi.fn(),
+    explanation: vi.fn(),
+    applyRepair: vi.fn(),
+    move: vi.fn(),
+    simulate: vi.fn(),
+    suggestions: vi.fn(),
+  };
+  const jourJ = { marquerAbsent: vi.fn() };
+  const lectureSeule = signal(false);
   const verrous = fakeOf<VerrouillageStore>({
     verrouillages: locks,
     reload: () => Promise.resolve(undefined),
@@ -105,6 +138,7 @@ describe('SeatPanel', () => {
   beforeEach(() => {
     locks.set([]);
     editingLocked.set(false);
+    lectureSeule.set(false);
     for (const mock of [
       ...Object.values(postesApi),
       verrous.create,
@@ -113,7 +147,6 @@ describe('SeatPanel', () => {
       dialog.open,
       confirm.ask,
       confirm.askWithOption,
-      jourJ.suggestions,
       jourJ.marquerAbsent,
     ]) {
       mock.mockReset();
@@ -121,6 +154,9 @@ describe('SeatPanel', () => {
     confirm.ask.mockResolvedValue(true);
     confirm.askWithOption.mockResolvedValue({ checked: true });
     verrous.create.mockResolvedValue([]);
+    postesApi.suggestions.mockImplementation((posteId: string) =>
+      Promise.resolve(suggestionsFor(posteId, posteId === 'P1' ? 'a1' : null)),
+    );
     postesApi.explanation.mockResolvedValue({
       posteId: 'P1',
       score: ZERO,
@@ -164,6 +200,7 @@ describe('SeatPanel', () => {
         { provide: MatDialog, useValue: dialog },
         { provide: ConfirmService, useValue: confirm },
         { provide: JourJService, useValue: jourJ },
+        { provide: SessionStore, useValue: { lectureSeule } },
       ],
     });
     fixture = TestBed.createComponent(SeatPanel);
@@ -171,6 +208,17 @@ describe('SeatPanel', () => {
     fixture.componentRef.setInput('posteId', posteId);
     await fixture.whenStable();
     return fixture.nativeElement as HTMLElement;
+  }
+
+  /** « Simuler un changement » opened, its suggestions read. */
+  async function openSimulation(root: HTMLElement): Promise<void> {
+    button(root, 'Simuler un changement').click();
+    await vi.waitFor(() => expect(postesApi.suggestions).toHaveBeenCalled());
+    await fixture.whenStable();
+  }
+
+  function byLabel(root: HTMLElement, label: string): HTMLButtonElement {
+    return root.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
   }
 
   it('is a labelled side panel naming the stand, the time and the holder', async () => {
@@ -184,8 +232,12 @@ describe('SeatPanel', () => {
     expect(root.textContent).toContain('Alice Martin');
   });
 
-  it('explains the held seat in the words of the catalogue, never a Java name', async () => {
+  it('explains the held seat on « Expliquer », in the words of the catalogue, never a Java name', async () => {
     const root = await mount('P1');
+    // Nothing read before the gesture is asked for.
+    expect(postesApi.explanation).not.toHaveBeenCalled();
+
+    button(root, 'Expliquer').click();
     await vi.waitFor(() => expect(root.textContent).toContain('Charge équilibrée'));
 
     expect(root.textContent).not.toContain('equilibrerCharge');
@@ -194,15 +246,15 @@ describe('SeatPanel', () => {
     expect(postesApi.explanation).toHaveBeenCalledWith('P1');
   });
 
-  it('offers the gestures of a held seat, the fiche among them', async () => {
+  it('offers the two gestures of a held seat and the writes beside them, the fiche among them', async () => {
     const root = await mount('P1');
 
     for (const label of [
-      'Remplacer',
-      'Déplacer vers',
+      'Simuler un changement',
+      'Expliquer',
       'Libérer',
+      'Marquer absent',
       'Verrouiller',
-      'Qui peut tenir',
     ]) {
       expect(button(root, label).disabled).toBe(false);
     }
@@ -211,9 +263,9 @@ describe('SeatPanel', () => {
 
   // The move dialog no longer depends on the drag-and-drop flag: nothing here
   // reads the application's configuration.
-  it('moves through the dialog of the day views, then asks to repair the hole it left', async () => {
+  it('simulates a move chosen in the dialog of the day views, applies it, then asks to repair the hole it left', async () => {
     dialog.open.mockReturnValue({ afterClosed: () => of({ source: null, target: 'P2' }) });
-    postesApi.move.mockResolvedValue({
+    const moved = {
       posteSourceId: 'P1',
       posteCibleId: 'P2',
       animateurSourceId: 'a1',
@@ -223,12 +275,24 @@ describe('SeatPanel', () => {
       delta: ZERO,
       casseContrainteDure: false,
       nouvellesViolationsDures: [],
-    });
+    };
+    postesApi.simulate.mockResolvedValue(moved);
+    postesApi.move.mockResolvedValue(moved);
     const root = await mount('P1');
     let changed = 0;
     fixture.componentInstance.planChanged.subscribe(() => changed++);
 
-    button(root, 'Déplacer vers').click();
+    await openSimulation(root);
+    button(root, 'Vers un autre siège').click();
+    await vi.waitFor(() =>
+      expect(postesApi.simulate).toHaveBeenCalledWith('P1', { posteId: 'P2' }),
+    );
+    await fixture.whenStable();
+    // Before and after, nothing written yet.
+    expect(root.textContent).toContain('Score avant : 0/0/0 · après : 0/0/0');
+    expect(postesApi.move).not.toHaveBeenCalled();
+
+    button(root, 'Appliquer').click();
     await vi.waitFor(() =>
       expect(postesApi.move).toHaveBeenCalledWith('P1', { posteId: 'P2' }, 'a1'),
     );
@@ -286,37 +350,62 @@ describe('SeatPanel', () => {
 
   // #711 review: the search reads the persisted plan prepared server-side,
   // and the write carries the holder shown as its precondition.
-  it('searches the replacements on the persisted plan, and hands the seat over from the holder shown', async () => {
-    jourJ.suggestions.mockResolvedValue({
-      posteId: 'P1',
-      animateurActuelId: 'a1',
-      scoreAvant: ZERO,
-      contraintesVioleesAvant: [],
-      candidatsEligibles: 1,
-      depuis: 0,
-      candidatsEvalues: 1,
-      plafond: 20,
-      suggestions: [
-        {
-          animateurId: 'b1',
-          scoreApres: ZERO,
-          delta: ZERO,
-          violationsResolues: [],
-          violationsIntroduites: [],
-        },
-      ],
-    });
+  it('simulates a suggestion before and after, and hands the seat over from the holder shown', async () => {
     postesApi.applyRepair.mockResolvedValue(undefined);
     const root = await mount('P1');
 
-    button(root, 'Remplacer').click();
-    await vi.waitFor(() => expect(jourJ.suggestions).toHaveBeenCalledWith('P1'));
+    await openSimulation(root);
+    expect(postesApi.suggestions).toHaveBeenCalledWith('P1');
+    byLabel(root, 'Simuler : Bruno Petit sur ce siège').click();
     await fixture.whenStable();
-    root
-      .querySelector<HTMLButtonElement>('button[aria-label="Mettre Bruno Petit sur ce siège"]')!
-      .click();
+    expect(root.textContent).toContain('Donner ce siège à Bruno Petit');
+    expect(root.textContent).toContain('Score avant : -1/0/0 · après : 0/-2/0');
+    expect(postesApi.applyRepair).not.toHaveBeenCalled();
 
+    button(root, 'Appliquer').click();
     await vi.waitFor(() => expect(postesApi.applyRepair).toHaveBeenCalledWith('P1', 'b1', 'a1'));
+    await fixture.whenStable();
+    expect(root.textContent).toContain('perd 2');
+  });
+
+  it('shows a move that would break a hard rule as refused, with nothing to apply', async () => {
+    dialog.open.mockReturnValue({ afterClosed: () => of({ source: null, target: 'P2' }) });
+    postesApi.simulate.mockResolvedValue({
+      posteSourceId: 'P1',
+      posteCibleId: 'P2',
+      animateurSourceId: 'a1',
+      animateurCibleId: null,
+      scoreAvant: ZERO,
+      scoreApres: { hardScore: -1, mediumScore: 0, softScore: 0 },
+      delta: { hardScore: -1, mediumScore: 0, softScore: 0 },
+      casseContrainteDure: true,
+      nouvellesViolationsDures: [
+        { name: 'reposQuotidien', description: 'Repos quotidien', matchesSupplementaires: 1 },
+      ],
+    });
+    const root = await mount('P1');
+
+    await openSimulation(root);
+    button(root, 'Vers un autre siège').click();
+    await vi.waitFor(() => expect(root.textContent).toContain('Refusé'));
+
+    expect(root.textContent).toContain('Repos quotidien');
+    expect(() => button(root, 'Appliquer')).toThrow();
+  });
+
+  // ADR 0099: simulating and explaining are reads; applying is a write.
+  it('lets a lecteur simulate and explain, and apply nothing', async () => {
+    lectureSeule.set(true);
+    const root = await mount('P1');
+
+    expect(button(root, 'Expliquer').disabled).toBe(false);
+    expect(button(root, 'Libérer').disabled).toBe(true);
+    await openSimulation(root);
+    byLabel(root, 'Simuler : Bruno Petit sur ce siège').click();
+    await fixture.whenStable();
+
+    expect(root.textContent).toContain('Donner ce siège à Bruno Petit');
+    expect(() => button(root, 'Appliquer')).toThrow();
   });
 
   it('says what the server wants read about a lock it laid', async () => {
@@ -337,7 +426,8 @@ describe('SeatPanel', () => {
     dialog.open.mockReturnValue({ afterClosed: () => of({ animateurId: 'b1', keep: true }) });
     const root = await mount('P1');
 
-    button(root, 'Qui peut tenir ce siège').click();
+    await openSimulation(root);
+    button(root, 'Voir tout le banc').click();
     await fixture.whenStable();
 
     expect(dialog.open.mock.calls[0][1].data.offerPlacement).toBe(false);
@@ -390,7 +480,7 @@ describe('SeatPanel', () => {
     ]);
     await fixture.whenStable();
     // A lock holds the seat: the server would refuse any write, so the panel says so first.
-    expect(button(root, 'Remplacer').disabled).toBe(true);
+    expect(button(root, 'Libérer').disabled).toBe(true);
     button(root, 'Déverrouiller').click();
     await vi.waitFor(() => expect(verrous.remove).toHaveBeenCalledWith('L1'));
     // A lock rewrites nothing the animateurs read: nothing to announce.
@@ -412,9 +502,10 @@ describe('SeatPanel', () => {
     });
     const root = await mount('P2');
     expect(root.textContent).toContain('Place vide');
-    expect(postesApi.explanation).not.toHaveBeenCalled();
+    expect(() => button(root, 'Expliquer')).toThrow();
 
-    button(root, 'Qui peut tenir ce siège').click();
+    await openSimulation(root);
+    button(root, 'Voir tout le banc').click();
     expect(dialog.open.mock.calls[0][1].data.offerPlacement).toBe(true);
     await vi.waitFor(() => expect(postesApi.place).toHaveBeenCalledWith('P2', 'b1'));
     await vi.waitFor(() =>
@@ -438,7 +529,8 @@ describe('SeatPanel', () => {
     postesApi.place.mockResolvedValue({ delta: ZERO, animateurSourceId: null });
     const root = await mount('P2');
 
-    button(root, 'Qui peut tenir ce siège').click();
+    await openSimulation(root);
+    button(root, 'Voir tout le banc').click();
     await vi.waitFor(() => expect(postesApi.place).toHaveBeenCalled());
     await fixture.whenStable();
 
@@ -450,17 +542,41 @@ describe('SeatPanel', () => {
     postesApi.place.mockRejectedValue(new Error('Affectation refusée : repos quotidien.'));
     const root = await mount('P2');
 
-    button(root, 'Qui peut tenir ce siège').click();
+    await openSimulation(root);
+    button(root, 'Voir tout le banc').click();
 
     await vi.waitFor(() => expect(root.textContent).toContain('Affectation refusée'));
     expect(verrous.create).not.toHaveBeenCalled();
   });
 
-  it('waits for a running solve before any write', async () => {
-    editingLocked.set(true);
+  it('places a simulated suggestion on an empty seat, and keeps it by a lock unless unticked', async () => {
+    postesApi.place.mockResolvedValue({ delta: ZERO, animateurSourceId: null });
     const root = await mount('P2');
 
-    expect(button(root, 'Qui peut tenir ce siège').disabled).toBe(true);
+    await openSimulation(root);
+    byLabel(root, 'Simuler : Bruno Petit sur ce siège').click();
+    await fixture.whenStable();
+    expect(root.textContent).toContain('Placer Bruno Petit sur ce siège');
+    root.querySelector<HTMLInputElement>('mat-checkbox input')!.click();
+    await fixture.whenStable();
+    button(root, 'Appliquer').click();
+
+    await vi.waitFor(() => expect(postesApi.place).toHaveBeenCalledWith('P2', 'b1'));
+    await fixture.whenStable();
+    expect(verrous.create).not.toHaveBeenCalled();
+  });
+
+  it('simulates during a running solve, and waits for it before any write', async () => {
+    editingLocked.set(true);
+    dialog.open.mockReturnValue({ afterClosed: () => of(undefined) });
+    const root = await mount('P2');
+
+    await openSimulation(root);
+    button(root, 'Voir tout le banc').click();
+    expect(dialog.open.mock.calls[0][1].data.offerPlacement).toBe(false);
+    byLabel(root, 'Simuler : Bruno Petit sur ce siège').click();
+    await fixture.whenStable();
+    expect(button(root, 'Appliquer').disabled).toBe(true);
     expect(root.textContent).toContain('Une résolution est en cours');
   });
 
