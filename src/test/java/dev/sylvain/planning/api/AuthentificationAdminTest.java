@@ -6,10 +6,12 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
+import io.restassured.RestAssured;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -353,6 +355,108 @@ class AuthentificationAdminTest {
                 .extract()
                 .header("Location");
         assertThat(location).startsWith("https://").endsWith("/api/auth/me");
+    }
+
+    /**
+     * The CORS filter is on with no origin named. A browser on the
+     * application's own origin sends {@code Origin} on every write, the login
+     * included: it must keep its session exactly as before, in clear text as
+     * behind a TLS-terminating proxy, where the scheme comes from
+     * {@code X-Forwarded-Proto} (which also drops the port of {@code Host}).
+     */
+    @Test
+    void aSameOriginBrowserKeepsItsSession() {
+        sameOriginRoundTrip("http://localhost:" + RestAssured.port, Map.of());
+        sameOriginRoundTrip("https://localhost", Map.of("X-Forwarded-Proto", "https"));
+    }
+
+    private void sameOriginRoundTrip(String origin, Map<String, String> proxyHeaders) {
+        String cookie = given().header("X-Edition-Id", "E1")
+                .headers(proxyHeaders)
+                .header("Origin", origin)
+                .contentType("application/x-www-form-urlencoded")
+                .formParam("j_username", "admin")
+                .formParam("j_password", MOT_DE_PASSE_DEV)
+                .redirects()
+                .follow(false)
+                .when()
+                .post("/j_security_check")
+                .then()
+                .statusCode(302)
+                .extract()
+                .cookie("planning-session");
+        assertThat(cookie).isNotBlank();
+
+        given().header("X-Edition-Id", "E1")
+                .headers(proxyHeaders)
+                .header("Origin", origin)
+                .cookie("planning-session", cookie)
+                .when()
+                .get("/api/auth/me")
+                .then()
+                .statusCode(200)
+                .body("authentifie", equalTo(true));
+        given().header("X-Edition-Id", "E1")
+                .headers(proxyHeaders)
+                .header("Origin", origin)
+                .cookie("planning-session", cookie)
+                .when()
+                .post("/api/auth/logout")
+                .then()
+                .statusCode(200);
+    }
+
+    /**
+     * Any other origin is refused before anything runs: no session opened, and
+     * no MCP call even with the right key. That is the {@code Origin} check
+     * the MCP specification asks of an HTTP transport; a client that sends no
+     * {@code Origin} (every MCP client outside a browser) is untouched, see
+     * {@link #adminSessionDoesNotOpenTheMcpEndpoint()}.
+     */
+    @Test
+    void anotherOriginIsRefusedOnTheLoginTheApiAndMcp() {
+        String foreign = "https://autre-site.example";
+        String cookie = given().header("X-Edition-Id", "E1")
+                .header("Origin", foreign)
+                .contentType("application/x-www-form-urlencoded")
+                .formParam("j_username", "admin")
+                .formParam("j_password", MOT_DE_PASSE_DEV)
+                .redirects()
+                .follow(false)
+                .when()
+                .post("/j_security_check")
+                .then()
+                .statusCode(403)
+                .header("Access-Control-Allow-Origin", nullValue())
+                .extract()
+                .cookie("planning-session");
+        assertThat(cookie).isNullOrEmpty();
+
+        // A write on the API, and the opaque origin a sandboxed page sends.
+        for (String origin : new String[] {foreign, "null"}) {
+            given().header("X-Edition-Id", "E1")
+                    .header("Origin", origin)
+                    .when()
+                    .post("/api/auth/logout")
+                    .then()
+                    .statusCode(403);
+        }
+
+        given().header("Origin", foreign)
+                .header("X-MCP-Api-Key", "test-mcp-key")
+                .contentType("application/json")
+                .body("{}")
+                .when()
+                .post("/mcp")
+                .then()
+                .statusCode(403);
+        given().header("Origin", foreign)
+                .header("Access-Control-Request-Method", "POST")
+                .when()
+                .options("/mcp")
+                .then()
+                .statusCode(403)
+                .header("Access-Control-Allow-Origin", nullValue());
     }
 
     @Test

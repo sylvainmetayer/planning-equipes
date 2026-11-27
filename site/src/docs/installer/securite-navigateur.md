@@ -64,6 +64,16 @@ Trois exceptions volontaires :
   tuiles. Le jeton ne fuit pas : cette politique n'envoie que l'origine, jamais
   le chemin ni la requête.
 
+### Une seule origine
+
+Le filtre CORS est allumé, et il ne nomme **aucune** origine tierce. Une requête qui porte un en-tête `Origin` autre que l'adresse de l'application est refusée en 403 avant d'atteindre quoi que ce soit, sur `/mcp` comme sur `/api` et sur la connexion. Les pages de l'application elles-mêmes passent comme avant, et un client qui n'envoie pas d'`Origin` n'est pas concerné : un client MCP hors navigateur, un agenda abonné, `curl`.
+
+C'est la validation de l'en-tête `Origin` que la spécification MCP demande à un serveur HTTP. Elle ne protège pas contre le *DNS rebinding*, où l'origine du piège et l'hôte demandé sont les mêmes ; ce n'est pas nécessaire ici, puisque `/mcp` exige une clé ou un jeton dans un en-tête, qu'une page piégée n'a pas.
+
+« La même origine » se lit sur le schéma et l'hôte de la requête, donc derrière le reverse proxy sur `X-Forwarded-Proto` et `Host`, les deux en-têtes dont la connexion admin dépend déjà. Un proxy qui réécrit `Host` demande `QUARKUS_HTTP_PROXY_ENABLE_FORWARDED_HOST=true`. Une instance servie en https sur un port autre que 443 demande en plus `X-Forwarded-Port`.
+
+Aucune variable de l'application n'ouvre une origine tierce, exprès : ne renseignez pas non plus `QUARKUS_HTTP_CORS_ORIGINS`, que Quarkus lit tout seul, car l'ouvrir pour un client MCP dans un navigateur l'ouvrirait aussi à toute l'API d'administration. `QUARKUS_HTTP_CORS_ENABLED=false` éteint le filtre et rend le comportement de la 4.0.0, le temps de corriger un proxy qui ne transmet pas ces en-têtes.
+
 ### Réglage
 
 | Variable | Défaut | Usage |
