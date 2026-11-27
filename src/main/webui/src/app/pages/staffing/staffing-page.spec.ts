@@ -180,7 +180,6 @@ describe('StaffingPage', () => {
     staffing: vi.fn(),
     // The « avant » margin column and the « À former » section, read beside the need.
     margin: vi.fn(),
-    trainingPlan: vi.fn(() => Promise.resolve(null)),
     exportTrainingPlan: vi.fn(),
     // The check by a solve: none run yet unless a test says otherwise.
     staffingVerification: vi.fn(),
@@ -673,17 +672,17 @@ describe('StaffingPage', () => {
       expect(root.textContent).toContain('Horaires des stands du 01/09');
     });
 
-    // « À former » starts where the tables above it end: scrolled to while
+    // The sections start where the tables above them end: scrolled to while
     // they still load, the reader would land on what they push down. And the
     // landing is obeyed once — coming back to the tab does not scroll again.
-    it('scrolls to « À former » once the figures above it are on screen, then drops `section`', async () => {
+    it('scrolls to the plan by typologie once the figures above it are on screen, then drops `section`', async () => {
       const pending = deferred<StaffingSummary>();
       analysesApi.staffing.mockReturnValue(pending.promise);
       const scroll = vi.fn();
       const original = Element.prototype.scrollIntoView;
       Element.prototype.scrollIntoView = scroll;
       try {
-        await TestBed.inject(Router).navigateByUrl('/?onglet=besoin&section=former');
+        await TestBed.inject(Router).navigateByUrl('/?onglet=besoin&section=typologie');
         const fixture = TestBed.createComponent(StaffingPage);
         fixture.detectChanges();
         await new Promise((resolve) => setTimeout(resolve));
@@ -695,7 +694,7 @@ describe('StaffingPage', () => {
           fixture.detectChanges();
           expect(scroll).toHaveBeenCalledTimes(1);
         });
-        expect(scroll.mock.contexts[0]).toBe(document.getElementById('a-former'));
+        expect(scroll.mock.contexts[0]).toBe(document.getElementById('besoin-par-typologie'));
         const location = TestBed.inject(Location);
         await vi.waitFor(() => expect(location.path()).not.toContain('section'));
         expect(location.path()).toContain('onglet=besoin');
@@ -704,14 +703,14 @@ describe('StaffingPage', () => {
       }
     });
 
-    it('ends on « À former », the section `?onglet=former` lands on', async () => {
+    it('no longer carries « À former », a section of the Risques tab', async () => {
       const fixture = TestBed.createComponent(StaffingPage);
       await fixture.whenStable();
       fixture.detectChanges();
 
-      const section = (fixture.nativeElement as HTMLElement).querySelector('#a-former')!;
-      expect(section.querySelector('h2')?.textContent).toContain('À former');
-      expect(section.querySelector('app-formation-page')).not.toBeNull();
+      const root = fixture.nativeElement as HTMLElement;
+      expect(root.querySelector('#a-former')).toBeNull();
+      expect(root.querySelector('app-formation-page')).toBeNull();
     });
   });
 

@@ -10,22 +10,22 @@ Partout, un outil qui lit un plan lit le **plan enregistré**, et une personne s
 
 - Le bloc `coherence` compte les anomalies de saisie ; `lister_anomalies_referentiel` en donne le détail (famille, gravité, code, fiche concernée par `objet` et `objetId`) sans la phrase ni la date que l'écran affiche. C'est la règle de `WarningCodes` appliquée à la liste entière : l'avertissement sur un mineur date sa majorité.
 - Le bloc `aTraiter` répond à « que dois-je faire ce matin ? » : déclarations et échanges en attente, journées non relues des sept jours à venir, silencieux à relancer. « Aujourd'hui » est celui de `JourJClock`, la date simulée comprise.
-- `etat_planning` dit quand le solveur a tourné pour la dernière fois, `etat_publication` quand les animateurs ont été prévenus. Seule la seconde décrit ce que les gens ont sous les yeux : un plan calculé ce matin et publié la semaine dernière est, pour eux, celui de la semaine dernière. `etat_publication` dit aussi qui serait concerné par la prochaine publication, sans rien envoyer.
+- `consulter_planning` dit quand le solveur a tourné pour la dernière fois, `etat_publication` quand les animateurs ont été prévenus. Seule la seconde décrit ce que les gens ont sous les yeux : un plan calculé ce matin et publié la semaine dernière est, pour eux, celui de la semaine dernière. `etat_publication` dit aussi qui serait concerné par la prochaine publication, sans rien envoyer.
 - `changements_journee` dit ce qui a bougé sur une date, depuis la dernière publication (`reference=publication`) ou depuis le plan d'avant la dernière résolution (`reference=resolution`), par siège et par animateur. Un siège gardé par la même personne à d'autres heures est une ligne `HORAIRES`. `referenceDisponible` faux veut dire « rien à comparer », jamais « aucun changement ».
 - `comparer_realise_planifie` rend l'écran du même nom pour chaque stand et chaque journée **écoulée** : sièges publiés, tenus, absences, remplacements, vides, retirés (consigne, créneau supprimé : jamais une absence) ou ajoutés, minutes publiées, réalisées et perdues. Chaque journée est comparée à la publication en vigueur à son premier créneau ; une journée commencée avant toute publication (`lateReference`) n'entre dans aucun total. `nature` vaut `DECLARED` : ce qui a été enregistré, pas un pointage.
-- `synthese_affectations` répond en quelques dizaines de lignes (postes pourvus au total, par stand et par jour), là où `lister_affectations` dépenserait le contexte de l'assistant avant qu'il voie qu'un stand est en sous-effectif le samedi.
+- `consulter_planning`, vue `synthese`, répond en quelques dizaines de lignes (postes pourvus au total, par stand et par jour), là où la vue `affectations` dépenserait le contexte de l'assistant avant qu'il voie qu'un stand est en sous-effectif le samedi.
 
-## Résoudre et corriger le plan
+## Calculer et corriger le plan
 
-`lancer_solveur` et `resoudre_incremental` démarrent un calcul, `statut_solveur`, `lister_jobs`, `arreter_solveur` et `supprimer_job` le suivent, `resultats_animateur` et `expliquer_echec_contraintes_dures` en lisent le résultat. Le périmètre de `resoudre_incremental` (animateurs, jours, stands) ne vaut que pour ce job et **ne touche pas aux verrouillages** : ce qui est figé durablement se pose avec `verrouiller`.
+`lancer_calcul` (« Calculer ») lance le calcul complet depuis le plan en place : les verrous et le passé figé sont respectés, tout le reste peut bouger ; `deZero` recommence de zéro et perd la qualité déjà atteinte. `lancer_correction` (« Corriger ») ne rouvre que les sièges en écart, ceux qu'un changement a invalidés, et fige le reste pour ce calcul ; ses `animateurIds`, `jours` et `standIds` rouvrent en plus tout ce qu'ils désignent, ne valent que pour ce calcul et **ne touchent pas aux verrous** : ce qui est figé durablement se pose avec `verrouiller`. `consulter_calcul` suit un calcul (ou le calcul actif, `IDLE` quand rien ne tourne) et rend l'historique avec `historique`, `arreter_calcul` et `supprimer_calcul` l'arrêtent et l'oublient.
 
-`diagnostiquer_plan` ne résout rien : il recalcule le score du plan enregistré, celui dont parlent `etat_planning` et `lister_affectations`. Il rend la **lecture du score** (`lecture`), les mêmes phrases que la page Solveur, écrites par gabarits : elles ne nomment que des règles, des jours et des nombres, jamais une personne. Chaque règle en défaut porte ses `actions` types (code, geste, explication), comme dans `expliquer_echec_contraintes_dures`.
+`diagnostiquer_plan` ne résout rien : il recalcule le score du plan enregistré, celui dont parle `consulter_planning`. Il rend la **lecture du score** (`lecture`), les mêmes phrases que la page Solveur, écrites par gabarits : elles ne nomment que des règles, des jours et des nombres, jamais une personne. Chaque règle en défaut porte ses `actions` types (code, geste, explication) ; avec `ecartsDurs`, il rend aussi le message anonymisé de chaque écart dur.
 
-Pour retoucher un poste sans relancer le calcul, `suggerer_reparations` cherche qui pourrait le tenir et chiffre chaque candidat, `affecter_poste` applique le choix. Deux outils et non un seul : un assistant qui évalue et applique dans le même appel ne laisse aucune étape où un humain puisse dire non. `affecter_poste` refuse un poste **verrouillé**, le verrou étant ce qu'on lui demande de respecter, et un poste dont le créneau est commencé. `accepter_demande_echange` est, avec lui, l'un des deux seuls outils qui écrivent dans le plan sans solveur : il applique l'échange puis le fige par des verrouillages `ANIMATEUR_CRENEAU`. D'où `analyser_impact_echange` à côté, car la prévalidation stockée avec la demande décrit le plan du jour où elle a été envoyée.
+`consulter_planning` lit le plan enregistré sous une `vue` : `etat` (quand il a été calculé, et s'il est périmé), `synthese` (quelques dizaines de lignes, par stand et par jour) ou `affectations` (les sièges, filtrés et plafonnés). `analyser_affectation` explique le score d'un siège. Pour retoucher un siège sans relancer le calcul, `simuler_affectation` chiffre un changement sans rien écrire (`mode` `affecter` : un autre titulaire ; `deplacer` : vers un autre siège ou une autre personne ; `candidats` : qui pourrait le tenir), et `modifier_affectation` l'applique (`affecter`, ou `deplacer`, refusé s'il casse une règle dure). Deux outils et non un seul : un assistant qui évalue et applique dans le même appel ne laisse aucune étape où un humain puisse dire non. `modifier_affectation` refuse un siège **verrouillé**, le verrou étant ce qu'on lui demande de respecter, et un siège dont le créneau est commencé. `modifier_demande_echange` (`decision` `accepter`) est, avec lui, l'un des deux seuls outils qui écrivent dans le plan sans solveur : il applique l'échange puis le fige par des verrouillages `ANIMATEUR_CRENEAU`. D'où `analyser_impact_echange` à côté, car la prévalidation stockée avec la demande décrit le plan du jour où elle a été envoyée.
 
-`modifier_niveau_contrainte` choisit le niveau d'une règle d'organisation pour l'édition : `OBLIGATOIRE`, `PREFERENCE_FORTE`, `PREFERENCE_NORMALE` ou `PREFERENCE_LEGERE` (une préférence écrit le poids de sa position). `lister_contraintes` donne `niveauReglable` et `niveauChoisi` ; une règle légale, d'affectation, ad hoc, de verrou ou une préférence souple refuse le niveau. Comme `modifier_poids_contrainte`, l'outil est accepté pendant un calcul et le dit (`RESOLUTION_EN_COURS`).
+`modifier_contrainte` règle une règle pour l'édition, un réglage par appel : `actif`, `poids` (ou `poidsParDefaut`), ou `niveau` d'une règle d'organisation : `OBLIGATOIRE`, `PREFERENCE_FORTE`, `PREFERENCE_NORMALE` ou `PREFERENCE_LEGERE` (une préférence écrit le poids de sa position). `lister_contraintes` donne `niveauReglable` et `niveauChoisi` ; une règle légale, d'affectation, ad hoc, de verrou ou une préférence souple refuse le niveau. L'outil est accepté pendant un calcul et le dit (`RESOLUTION_EN_COURS`), et rend la ligne de la règle telle que `lister_contraintes` la lit après le changement.
 
-Un réglage fait par `modifier_poids_contrainte`, `modifier_niveau_contrainte`, `activer_contrainte` ou `desactiver_contrainte` se lit dans le journal des actions de l'application (filtre « Règles »), sous l'acteur `ASSISTANT` et avec le nom de la règle, sans la valeur. L'ancien outil de lecture de l'historique des pondérations est retiré (voir le tableau des anciens noms) : le journal ne garde pas de valeur, et aucun outil ne le lit.
+Un réglage fait par `modifier_contrainte` se lit dans le journal des actions de l'application (filtre « Règles »), sous l'acteur `ASSISTANT`, avec le nom de la règle et ce qui a changé (activation, poids ou niveau), sans la valeur. L'ancien outil de lecture de l'historique des pondérations est retiré (voir le tableau des anciens noms) : le journal ne garde pas de valeur, et aucun outil ne le lit.
 
 ## Lire le plan sous différents angles
 
@@ -67,13 +67,13 @@ Les **fenêtres** s'écrivent `HH:MM-HH:MM` séparées par des virgules, la fin 
 1. `consulter_preselection_consigne` sur chaque date : ce que la bande prend à chaque stand, les stands proposés, ceux écartés pour horaires posés à la main. N'écrit rien.
 2. `simuler_consigne` : par jour, sièges et minutes avant et après, créneaux à ajouter, verrous et règles ad hoc touchés. C'est la validation complète sans écriture : une requête que la simulation accepte sera acceptée telle quelle.
 3. `appliquer_consigne`, mêmes arguments : pose ou remplace la consigne d'une date et n'ajoute à la grille que les créneaux que les ouvertures exigent. Les dates doivent être à venir et s'écrivent toutes ensemble ou pas du tout.
-4. `resoudre_incremental`, puis `etat_publication` et `publier_planning`.
+4. `lancer_correction`, puis `etat_publication` et `publier_planning`.
 
 Lever suit le même pli : `simuler_levee_consigne` nomme les créneaux ajoutés qui partiraient avec leurs sièges et avertit quand les journées figées épuisent les gens disponibles, `lever_consigne` les retire et refuse une date passée ou en cours, un jour travaillé gardant la consigne qui l'a gouverné. Un préréglage (« Plan canicule ») mémorise bande, motif et fenêtres et suit la duplication de l'édition. `consulter_alertes_meteo` rend les alertes levées le matin avec le préréglage suggéré pour le phénomène ; il ne pose rien, appliquer la suggestion reste un `appliquer_consigne` explicite.
 
 ## Décider ce que les animateurs ont demandé
 
-Les déclarations de disponibilité et les demandes d'échange arrivent de l'espace animateur. `appliquer_declaration_disponibilite` écrit la déclaration sur la fiche par le même `write*` que l'écran de saisie : les données sont marquées modifiées, `etat_planning` signale le plan périmé, le journal porte les champs remplacés (`joursIndisponibles`, `souhaits`) et l'outil rend les avertissements en codes.
+Les déclarations de disponibilité et les demandes d'échange arrivent de l'espace animateur. `appliquer_declaration_disponibilite` écrit la déclaration sur la fiche par le même `write*` que l'écran de saisie : les données sont marquées modifiées, `consulter_planning` signale le plan périmé, le journal porte les champs remplacés (`joursIndisponibles`, `souhaits`) et l'outil rend les avertissements en codes.
 
 `consulter_foire_echanges` rend la fenêtre de la foire et ses statistiques (volumes, taux, délais, répartitions par jour et par stand) sur une période de création (`du`, `au`, ou `touteEdition`, refusé avec les deux autres). Aucun animateur n'y figure, pas même par id.
 
@@ -98,19 +98,24 @@ Deux **ressources**, à attacher une fois pour informer tous les appels suivants
 
 ## Anciens noms d'outils
 
-La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Quelques anciens noms restent publiés jusqu'en 5.0 à côté du nouveau, leur description commençant par « Ancien nom » : ceux de la relecture des journées et ceux des journées types, des créneaux récurrents et de la dérivation, que le générateur de créneaux a regroupés ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)). Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
+La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Un outil regroupé fait sous un seul nom, avec un argument (`vue`, `mode`, `decision`), ce que faisaient plusieurs ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)) ; ses anciens noms restent publiés jusqu'en 5.0 à côté du nouveau, leur description commençant par « Ancien nom » : ceux de la relecture des journées, ceux des journées types, des créneaux récurrents et de la dérivation, que le générateur de créneaux a regroupés ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), et ceux du plan, du calcul, des règles et des échanges. Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
 
 <!-- mcp-renommages:debut -->
 | Nom en 3.x | Nom en 4.0 |
 | --- | --- |
+| `accepter_demande_echange` | `modifier_demande_echange` |
+| `activer_contrainte` | `modifier_contrainte` |
 | `affecter_journee_type` | `modifier_gabarit` |
+| `affecter_poste` | `modifier_affectation` |
 | `ajouter_fermeture_stand` | `creer_plage_stand` |
 | `ajouter_horaire_stand` | `creer_horaire_stand` |
 | `ajouter_ouverture_stand` | `creer_plage_stand` |
 | `ajouter_validation_journee` | `modifier_etat_journee` |
+| `arreter_solveur` | `arreter_calcul` |
 | `capturer_instantane` | `creer_version` |
 | `compacter_horaires_stands` | retiré |
 | `comparer_instantanes` | `comparer_versions` |
+| `configurer_foire_echanges` | `modifier_foire_echanges` |
 | `consulter_historique_ponderation` | retiré |
 | `consulter_instantane` | `consulter_version` |
 | `consulter_parametres_legaux` | `consulter_parametres` |
@@ -119,12 +124,20 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `consulter_parametres_solveur` | `consulter_parametres` |
 | `creer_creneaux_recurrents` | `appliquer_generateur_creneaux` |
 | `definir_journee_type` | `modifier_gabarit` |
+| `deplacer_affectation` | `modifier_affectation` |
+| `desactiver_contrainte` | `modifier_contrainte` |
 | `effacer_horaires_stand` | `supprimer_horaires_stand` |
 | `effacer_plages_stand` | `supprimer_plage_stand` |
+| `etat_planning` | `consulter_planning` |
+| `expliquer_affectation` | `analyser_affectation` |
+| `expliquer_echec_contraintes_dures` | `diagnostiquer_plan` |
 | `figer_referentiel` | `modifier_phase_edition` |
 | `generer_creneaux_depuis_stands` | `appliquer_generateur_creneaux` |
+| `lancer_solveur` | `lancer_calcul` |
 | `lever_gel` | `modifier_phase_edition` |
+| `lister_affectations` | `consulter_planning` |
 | `lister_instantanes` | `lister_versions` |
+| `lister_jobs` | `consulter_calcul` |
 | `lister_journees_types` | `lister_gabarits` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
 | `lister_validations_journee` | `consulter_etats_journee` |
@@ -133,18 +146,28 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `modifier_parametres_notifications` | `modifier_parametres` |
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
+| `modifier_poids_contrainte` | `modifier_contrainte` |
 | `previsualiser_application_journees_types` | `previsualiser_generateur_creneaux` |
 | `previsualiser_creneaux_recurrents` | `previsualiser_generateur_creneaux` |
 | `previsualiser_derivation_creneaux` | `previsualiser_generateur_creneaux` |
 | `previsualiser_reconnaissance_journees_types` | `previsualiser_generateur_creneaux` |
 | `realise_vs_planifie` | `comparer_realise_planifie` |
 | `reconnaitre_journees_types` | `appliquer_generateur_creneaux` |
+| `refuser_demande_echange` | `modifier_demande_echange` |
+| `resoudre_incremental` | `lancer_correction` |
 | `restaurer_instantane` | `restaurer_version` |
+| `resultats_animateur` | `consulter_planning` |
 | `retirer_dates_journee_type` | `supprimer_gabarit` |
 | `retirer_validation_journee` | `modifier_etat_journee` |
+| `simuler_deplacement` | `simuler_affectation` |
+| `simuler_swap` | `simuler_affectation` |
+| `statut_solveur` | `consulter_calcul` |
+| `suggerer_reparations` | `simuler_affectation` |
 | `supprimer_instantane` | `supprimer_version` |
+| `supprimer_job` | `supprimer_calcul` |
 | `supprimer_journee_type` | `supprimer_gabarit` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |
+| `synthese_affectations` | `consulter_planning` |
 <!-- mcp-renommages:fin -->
 
 ## Ce qui n'a pas d'outil
@@ -155,7 +178,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | Sauvegardes avant vidage | chacune est un export de scénario. `reinitialiser_donnees` et les imports en écrivent une, mais seul un administrateur la lit, la restaure ou la supprime, par l'API ([ADR 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) |
 | Dump SQL, exports PDF, ICS et CSV | toutes les données personnelles, ou des binaires destinés au téléchargement depuis l'interface |
 | Import CSV des bénévoles | le tableur porte nom, prénom, date de naissance et adresse : un outil qui l'accepterait ferait entrer par MCP ce qui n'en sort pas |
-| `/api/planning/sample`, `/persisted` | un `PlanningEvenement` entier, plusieurs dizaines de Mo avec les données personnelles ; `lister_affectations` couvre le besoin en restant filtré |
+| `/api/planning/sample`, `/persisted` | un `PlanningEvenement` entier, plusieurs dizaines de Mo avec les données personnelles ; `consulter_planning` (vue `affectations`) couvre le besoin en restant filtré |
 | Espace animateur et abonnement ICS | le côté animateur, derrière un jeton personnel : MCP voit les demandes et déclarations côté admin, jamais l'espace de quelqu'un |
 | Rotation du jeton d'espace d'un animateur | elle invalide le lien déjà imprimé sur un PDF distribué, conséquence qu'on ne peut pas annuler depuis une conversation |
 | Webhooks sortants | une adresse Slack, Discord ou Matrix est un secret, et un webhook ouvre une sortie réseau depuis le serveur : le configurer depuis une conversation serait une voie d'exfiltration toute tracée. Ils se règlent dans Paramètres › Instance |

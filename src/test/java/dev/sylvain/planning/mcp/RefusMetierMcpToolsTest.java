@@ -37,7 +37,7 @@ class RefusMetierMcpToolsTest {
     void aLegalOrBaseRuleHasNoLevelToChoose() {
         for (String rule : java.util.List.of("dureeQuotidienneMax", "posteDoitEtrePourvu")) {
             for (String level : java.util.List.of("OBLIGATOIRE", "PREFERENCE_LEGERE")) {
-                assertThatThrownBy(() -> contrainteTools.updateContrainteNiveau(rule, level, "E1"))
+                assertThatThrownBy(() -> contrainteTools.modifyContrainte(rule, null, null, null, level, "E1"))
                         .isInstanceOf(ToolCallException.class)
                         .hasCauseInstanceOf(BusinessError.Invalid.class)
                         .hasMessageContaining(rule)

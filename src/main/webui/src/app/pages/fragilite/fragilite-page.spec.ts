@@ -7,6 +7,7 @@ import { Location } from '@angular/common';
 import { Provider, provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 import {
   AnimateurFragilite,
   CompetenceRare,
@@ -184,6 +185,39 @@ describe('FragilitePage loading', () => {
     expect(page['view']()).toBe('COMPETENCES');
     expect(page['filtre']()).toBe('CRITIQUES');
     expect(page['recherche']()).toBe('Alice');
+  });
+
+  /**
+   * Tension and Fragilité are both sections of Risques: Tension's « Sans
+   * spécialiste » link navigates to this view while it is on screen, and the
+   * router reuses the component rather than building it again.
+   */
+  it('follows a navigation that changes its view while it is on screen', () => {
+    const queryParamMap = new BehaviorSubject(convertToParamMap({ q: 'stale' }));
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: AnalysesApi, useValue: analysesApi },
+        referentiel(),
+        {
+          provide: Location,
+          useValue: { path: () => '/diagnostic?onglet=risques', replaceState: vi.fn() },
+        },
+        { provide: ActivatedRoute, useValue: { queryParamMap } },
+      ],
+    });
+    analysesApi.fragility.mockResolvedValue(rapport());
+
+    const page = TestBed.createComponent(FragilitePage).componentInstance;
+    // The snapshot the subject starts with is the stale one: the address bar wins.
+    expect(page['recherche']()).toBe('');
+
+    queryParamMap.next(convertToParamMap({ onglet: 'risques', vue: 'COMPETENCES', q: 'S1' }));
+
+    expect(page['view']()).toBe('COMPETENCES');
+    expect(page['recherche']()).toBe('S1');
+    expect(page['filtre']()).toBe('TOUS');
   });
 
   it('says it is analysing while the first report is in flight, and shows it once it lands', async () => {

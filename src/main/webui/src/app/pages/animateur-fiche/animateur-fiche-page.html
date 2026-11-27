@@ -488,7 +488,7 @@
                         <mat-icon>lock</mat-icon>
                         <ng-container i18n="@@fiche.fragilite.verrouiller">Verrouiller</ng-container>
                       </button>
-                      <a matButton routerLink="/diagnostic" [queryParams]="{ onglet: 'former' }">
+                      <a matButton routerLink="/diagnostic" [queryParams]="{ onglet: 'risques', section: 'former' }">
                         <mat-icon>school</mat-icon>
                         <ng-container i18n="@@fiche.fragilite.former">Former</ng-container>
                       </a>
@@ -511,7 +511,7 @@
           }
         }
         <p>
-          <a routerLink="/diagnostic" [queryParams]="{ onglet: 'fragilite', q: fullName() }" i18n="@@fiche.fragilite.lien">Ouvrir l'écran Fragilité</a>
+          <a routerLink="/diagnostic" [queryParams]="{ onglet: 'risques', section: 'fragilite', q: fullName() }" i18n="@@fiche.fragilite.lien">Ouvrir l'écran Fragilité</a>
         </p>
       </details>
 

@@ -10,6 +10,7 @@ import dev.sylvain.planning.service.espace.EchangeStatistics.EchangeConstraintCo
 import dev.sylvain.planning.service.espace.EchangeStatisticsService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
+import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.EchangeSimulation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.HardViolation;
@@ -51,16 +52,20 @@ public class EchangeMcpTools {
 
     private final EchangeStatisticsService statisticsService;
 
+    private final CurrentAction currentAction;
+
     @Inject
     EchangeMcpTools(
             DemandeEchangeService demandeEchangeService,
             EspaceAnimateurService espaceAnimateurService,
             ReferenceDataService referenceDataService,
-            EchangeStatisticsService statisticsService) {
+            EchangeStatisticsService statisticsService,
+            CurrentAction currentAction) {
         this.demandeEchangeService = demandeEchangeService;
         this.espaceAnimateurService = espaceAnimateurService;
         this.referenceDataService = referenceDataService;
         this.statisticsService = statisticsService;
+        this.currentAction = currentAction;
     }
 
     @Tool(
@@ -126,8 +131,56 @@ public class EchangeMcpTools {
     }
 
     @Tool(
-            name = "configurer_foire_echanges",
+            name = "modifier_foire_echanges",
             description = "Ouvre ou ferme la foire aux échanges, et la borne éventuellement par des dates. "
+                    + "L'interrupteur est le maître : une fenêtre datée dont l'interrupteur est éteint n'accepte rien. "
+                    + "N'envoie aucun courriel.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    FoireView modifyFoireEchanges(
+            @ToolArg(description = "Foire ouverte ou fermée") boolean ouverte,
+            @ToolArg(description = "Début de la foire (AAAA-MM-JJ)", required = false) String debut,
+            @ToolArg(description = "Fin de la foire (AAAA-MM-JJ)", required = false) String fin,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return configureFoireEchanges(ouverte, debut, fin, edition);
+    }
+
+    @Tool(
+            name = "modifier_demande_echange",
+            description = "Décide une demande d'échange. decision accepter : l'échange est appliqué au planning "
+                    + "persisté tel qu'il a été simulé, puis figé par des verrous ANIMATEUR_CRENEAU pour qu'une "
+                    + "résolution ne le défasse pas ; refusé pendant une résolution de l'édition. Vérifier "
+                    + "analyser_impact_echange d'abord : une demande acceptable à l'envoi peut casser une contrainte "
+                    + "dure sur le planning d'aujourd'hui. decision refuser : le planning n'est pas touché. Le "
+                    + "commentaire est ce que le demandeur lira à la prochaine publication ; rien n'est envoyé.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = false,
+                            openWorldHint = false))
+    DemandeView decideDemandeEchange(
+            @ToolArg(description = "Id de la demande") String id,
+            @ToolArg(description = "accepter ou refuser") String decision,
+            @ToolArg(description = "Commentaire pour le demandeur", required = false) String commentaire,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        if ("accepter".equals(McpArgs.choix(decision, "decision", null, "accepter", "refuser"))) {
+            return acceptDemandeEchange(id, commentaire, edition);
+        }
+        // The catalogue files the tool under the acceptance; a refusal is its own line.
+        currentAction.action("ECHANGE_REFUSE");
+        return refuseDemandeEchange(id, commentaire, edition);
+    }
+
+    @Deprecated
+    @Tool(
+            name = "configurer_foire_echanges",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_foire_echanges. "
+                    + "Ouvre ou ferme la foire aux échanges, et la borne éventuellement par des dates. "
                     + "L'interrupteur est le maître : une fenêtre datée dont l'interrupteur est éteint n'accepte rien. "
                     + "N'envoie aucun courriel.",
             annotations =
@@ -177,9 +230,11 @@ public class EchangeMcpTools {
                         .toList());
     }
 
+    @Deprecated
     @Tool(
             name = "accepter_demande_echange",
-            description = "Accepte une demande d'échange : l'échange est appliqué au planning persisté tel qu'il "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_demande_echange (decision accepter). "
+                    + "Accepte une demande d'échange : l'échange est appliqué au planning persisté tel qu'il "
                     + "a été simulé, puis figé par des verrouillages ANIMATEUR_CRENEAU pour qu'une résolution ne le "
                     + "défasse pas. Vérifier analyser_impact_echange d'abord : une demande acceptable à l'envoi peut "
                     + "casser une contrainte dure sur le planning d'aujourd'hui.",
@@ -196,9 +251,11 @@ public class EchangeMcpTools {
         return view(demandeEchangeService.accept(id, commentaire));
     }
 
+    @Deprecated
     @Tool(
             name = "refuser_demande_echange",
-            description = "Refuse une demande d'échange : le planning n'est pas touché. Le commentaire est ce "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_demande_echange (decision refuser). "
+                    + "Refuse une demande d'échange : le planning n'est pas touché. Le commentaire est ce "
                     + "que le demandeur lira à la prochaine publication.",
             annotations =
                     @Tool.Annotations(

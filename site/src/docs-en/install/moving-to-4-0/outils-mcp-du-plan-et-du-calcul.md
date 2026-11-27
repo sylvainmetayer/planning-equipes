@@ -1,0 +1,9 @@
+---
+ordre: 91
+---
+
+### MCP tools of the plan, the solve, the rules and the swaps
+
+- **Before (3.x)**: 33 tools to read the plan, solve it, set the rules and decide the swaps, several of which said the same thing about neighbouring objects: `etat_planning`, `lister_affectations` and `synthese_affectations` to read the plan, `simuler_swap`, `simuler_deplacement` and `suggerer_reparations` to price a seat, `activer_contrainte`, `desactiver_contrainte` and `modifier_poids_contrainte` for a rule, `lancer_solveur`, `statut_solveur`, `lister_jobs` for the solve.
+- **After (4.0)**: one tool per object and per verb, what set them apart passed as an argument ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)): `consulter_planning` (`vue`), `analyser_affectation`, `simuler_affectation` and `modifier_affectation` (`mode`), `modifier_contrainte` (one setting per call: `actif`, `poids`, `poidsParDefaut` or `niveau`), `modifier_foire_echanges`, `modifier_demande_echange` (`decision`). The solve has two tools, as the screen has two buttons: `lancer_calcul` (the full solve, from the plan in place, `deZero` to start from scratch) and `lancer_correction` (only the seats in default); `consulter_calcul`, `arreter_calcul` and `supprimer_calcul` follow them, and `diagnostiquer_plan` returns the detail of the hard defaults with `ecartsDurs`. These families go down to 21 tools. The `modifier_niveau_contrainte` tool, added during 4.0, becomes the `niveau` argument of `modifier_contrainte`.
+- **What you do**: nothing right away. The 23 old names stay published until 5.0, with their arguments and their answers, and their description starts with « Ancien nom ». A prompt, an instruction or a script that names them must move to the new names before 5.0: the mapping is in [the old tool names](../comprendre/mcp-outils.md#anciens-noms-doutils).

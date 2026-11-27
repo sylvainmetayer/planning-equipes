@@ -171,7 +171,13 @@ class McpWarnsWhileSolvingTest {
                     contrainteTools.updateContrainteWeight(contrainte, 3, "E1").avertissements());
             assertWarned(
                     () -> contrainteTools.disableContrainte(contrainte, "E1").avertissements());
+            assertWarned(() -> contrainteTools
+                    .modifyContrainte(contrainte, null, 4, null, null, "E1")
+                    .avertissements());
         } finally {
+            assertWarned(() -> contrainteTools
+                    .modifyContrainte(contrainte, null, null, true, null, "E1")
+                    .avertissements());
             assertWarned(
                     () -> contrainteTools.enableContrainte(contrainte, "E1").avertissements());
             assertWarned(() -> contrainteTools

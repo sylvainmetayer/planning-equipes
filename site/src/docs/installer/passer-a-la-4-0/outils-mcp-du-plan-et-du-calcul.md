@@ -1,0 +1,9 @@
+---
+ordre: 91
+---
+
+### Outils MCP du plan, du calcul, des règles et des échanges
+
+- **Avant (3.x)** : 33 outils pour lire le plan, le calculer, régler les règles et décider les échanges, dont plusieurs disaient la même chose sur des objets voisins : `etat_planning`, `lister_affectations` et `synthese_affectations` pour lire le plan, `simuler_swap`, `simuler_deplacement` et `suggerer_reparations` pour chiffrer un siège, `activer_contrainte`, `desactiver_contrainte` et `modifier_poids_contrainte` pour une règle, `lancer_solveur`, `statut_solveur`, `lister_jobs` pour le calcul.
+- **Après (4.0)** : un outil par objet et par verbe, ce qui les distinguait passé en argument ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)) : `consulter_planning` (`vue`), `analyser_affectation`, `simuler_affectation` et `modifier_affectation` (`mode`), `modifier_contrainte` (un réglage par appel : `actif`, `poids`, `poidsParDefaut` ou `niveau`), `modifier_foire_echanges`, `modifier_demande_echange` (`decision`). Le calcul a deux outils, comme l'écran a deux boutons : `lancer_calcul` (« Calculer », depuis le plan en place, `deZero` pour recommencer de zéro) et `lancer_correction` (« Corriger », les seuls sièges en écart) ; `consulter_calcul`, `arreter_calcul` et `supprimer_calcul` les suivent, et `diagnostiquer_plan` rend le détail des écarts durs avec `ecartsDurs`. Ces familles passent à 21 outils. L'outil `modifier_niveau_contrainte`, ajouté pendant la 4.0, devient l'argument `niveau` de `modifier_contrainte`.
+- **Ce que vous faites** : rien tout de suite. Les 23 anciens noms restent publiés jusqu'en 5.0, avec leurs arguments et leurs réponses, et leur description commence par « Ancien nom ». Une invite, une instruction ou un script qui les nomme doit passer aux nouveaux noms avant la 5.0 : la correspondance est dans [les anciens noms d'outils](../comprendre/mcp-outils.md#anciens-noms-doutils).

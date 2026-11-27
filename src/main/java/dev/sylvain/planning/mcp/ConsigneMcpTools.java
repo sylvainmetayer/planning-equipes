@@ -166,7 +166,7 @@ public class ConsigneMcpTools {
                     + "déjà : ferme la bande pour tous les stands, rouvre les stands nommés sur leurs fenêtres, ajoute "
                     + "à la grille les créneaux que ces fenêtres exigent. Rien n'est supprimé de la grille nominale. "
                     + "Prolonger une alerte, c'est le même appel avec les dates ajoutées. Retire la validation de "
-                    + "relecture des journées touchées. Relancer ensuite resoudre_incremental, puis etat_publication.",
+                    + "relecture des journées touchées. Relancer ensuite lancer_correction, puis etat_publication.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -255,7 +255,7 @@ public class ConsigneMcpTools {
             description = "Lève la consigne des dates indiquées, qui doivent être à venir : les stands retrouvent "
                     + "leurs horaires, les créneaux que la consigne avait ajoutés sont retirés avec leurs sièges, la "
                     + "validation de relecture des journées est retirée. Un jour déjà travaillé garde la consigne qui "
-                    + "l'a gouverné. Relancer ensuite resoudre_incremental : la règle de stabilité rend les "
+                    + "l'a gouverné. Relancer ensuite lancer_correction : la règle de stabilité rend les "
                     + "après-midis à leurs titulaires.",
             annotations =
                     @Tool.Annotations(

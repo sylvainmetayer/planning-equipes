@@ -134,11 +134,11 @@ public class McpPrompts {
 
                 %s
 
-                1. Appelle etat_planning pour savoir si le planning affiché est encore à jour.
-                2. Appelle diagnostiquer_plan pour recalculer le score du plan persisté, puis \
-                expliquer_echec_contraintes_dures pour le détail des écarts.
+                1. Appelle consulter_planning (vue etat) pour savoir si le planning affiché est encore à jour.
+                2. Appelle diagnostiquer_plan avec ecartsDurs pour recalculer le score du plan persisté \
+                et le détail des écarts durs.
                 3. Pour chaque contrainte HARD en défaut, identifie les postes touchés avec \
-                lister_affectations puis expliquer_affectation, et donne la cause racine probable \
+                consulter_planning (vue affectations) puis analyser_affectation, et donne la cause racine probable \
                 (compétences manquantes sur la typologie, indisponibilité, effectif insuffisant sur la \
                 tranche, plafond légal atteint, aucun animateur polyvalent…).
                 4. Recoupe avec analyser_faisabilite et analyser_effectifs : si le problème est \
@@ -201,7 +201,7 @@ public class McpPrompts {
                 1. creer_version avec un libellé qui dit d'où on part.
                 2. Si une partie du planning est déjà bonne, fige-la avec verrouiller avant de \
                 relancer — sinon la résolution la défera.
-                3. lancer_solveur, puis statut_solveur jusqu'à la fin du job.
+                3. lancer_calcul, puis consulter_calcul jusqu'à la fin du job.
                 4. comparer_versions entre l'instantané capturé et « courant ».
                 5. Dis-moi ce qui a changé : score, postes pourvus, écarts par contrainte. Si le \
                 résultat est moins bon, propose restaurer_version — mais ne le fais pas sans mon \
@@ -276,7 +276,7 @@ public class McpPrompts {
                 4. consulter_foire_echanges : la foire accepte-t-elle des demandes aujourd'hui ? Elle \
                 n'a de sens qu'une fois un planning publié, que les animateurs puissent échanger ce \
                 qu'ils ont lu.
-                5. configurer_foire_echanges pour l'ouvrir ou la fermer, après mon accord — il n'envoie \
+                5. modifier_foire_echanges pour l'ouvrir ou la fermer, après mon accord — il n'envoie \
                 aucun courriel, mais l'interrupteur est le maître : une fenêtre datée dont \
                 l'interrupteur est éteint n'accepte rien.
 
@@ -308,7 +308,7 @@ public class McpPrompts {
                 EN_ATTENTE : elles se valident depuis l'onglet Covoiturage de l'écran Disponibilités, \
                 pas ici.
                 6. Quand il n'en reste plus, rappelle-moi que le planning résolu est maintenant \
-                périmé : etat_planning le dit, et il faut relancer une résolution.
+                périmé : consulter_planning le dit, et il faut relancer une résolution.
 
                 Les animateurs se désignent par leur id : ne me demande pas de noms, tu n'en verras \
                 pas.""".formatted(suffixe(edition), editionFrame(edition)));
@@ -421,7 +421,7 @@ public class McpPrompts {
                 3. Pour chacune, analyser_impact_echange : la prévalidation stockée décrit le planning \
                 du jour où la demande a été envoyée, pas celui d'aujourd'hui. Classe-les par delta de \
                 score, et mets à part celles qui cassent une contrainte dure.
-                4. accepter_demande_echange ou refuser_demande_echange, une par une et après mon \
+                4. modifier_demande_echange, decision accepter ou refuser, une par une et après mon \
                 accord. Accepter écrit dans le planning résolu et le fige par des verrouillages : une \
                 résolution ultérieure ne le défera pas, mais lister_verrouillages s'allonge d'autant.
                 5. Rappelle-moi de publier ensuite : un échange accepté n'est annoncé à personne tant \
@@ -486,7 +486,7 @@ public class McpPrompts {
                 4. plan_formation : typologie par typologie, le déficit, les jours en tension et les \
                 candidats à former — des animateurs déjà présents dont la compétence peut monter. Une \
                 typologie sans candidat relève du recrutement.
-                5. Sur un planning déjà résolu, suggerer_reparations sur un poste sensible montre \
+                5. Sur un planning déjà résolu, simuler_affectation (mode candidats) sur un poste sensible montre \
                 combien de personnes pourraient réellement le reprendre : une liste vide est un point \
                 de défaillance unique, quel que soit le score.
                 6. Conclus par deux listes courtes et séparées : recruter (personne compétente \
@@ -514,7 +514,7 @@ public class McpPrompts {
                 2. lister_mesures_edition : le score de chaque résolution et le dosage sous lequel \
                 elle a tourné. C'est une juxtaposition, pas une causalité — le référentiel a pu \
                 bouger entre deux.
-                3. modifier_poids_contrainte, activer_contrainte ou desactiver_contrainte, une règle \
+                3. modifier_contrainte (poids, actif ou niveau), une règle et un réglage \
                 à la fois et après mon accord. Le niveau HARD, MEDIUM ou SOFT ne se règle pas ; seul \
                 le poids, à niveau égal. Une règle légale désactivée doit être une décision que je \
                 prends en connaissance de cause : dis-le-moi en toutes lettres avant.
@@ -593,13 +593,13 @@ public class McpPrompts {
 
                 %s
 
-                1. etat_planning puis diagnostiquer_plan : sur quoi porte le verrou, et ce plan \
+                1. consulter_planning puis diagnostiquer_plan : sur quoi porte le verrou, et ce plan \
                 est-il bon au point de mériter d'être figé ? Un verrou posé sur une mauvaise \
                 affectation la rend définitive — c'est l'ordre « résoudre, vérifier, puis \
                 verrouiller », jamais l'inverse.
                 2. lister_verrouillages : qu'est-ce qui est déjà gelé ? Un verrou oublié d'une \
                 campagne précédente explique bien des résultats incompréhensibles.
-                3. synthese_affectations et lister_affectations pour repérer ce qui est manifestement \
+                3. consulter_planning, vues synthese et affectations, pour repérer ce qui est manifestement \
                 bon : une journée entière pourvue, un stand tenu par les bonnes personnes, un \
                 animateur dont la semaine est équilibrée.
                 4. Pour une journée entière relue, modifier_etat_journee avec FIGEE la \
@@ -640,7 +640,7 @@ public class McpPrompts {
                 5. appliquer_consigne seulement après mon accord explicite. Une consigne ne se pose \
                 que pour une date à venir, jamais pour aujourd'hui ; prolonger une alerte, c'est le \
                 même appel avec les dates ajoutées.
-                6. resoudre_incremental sur les jours touchés : le reste du planning ne bouge pas.
+                6. lancer_correction sur les jours touchés : le reste du planning ne bouge pas.
                 7. diagnostiquer_plan : le plan de repli tient-il les règles dures ?
                 8. consulter_prerequis_validation pour chaque journée touchée : la consigne a retiré \
                 leur validation, elles sont à relire.
@@ -648,7 +648,7 @@ public class McpPrompts {
                 animateurs continuent de lire le plan nominal.
 
                 Retour arrière, si l'alerte est levée : simuler_levee_consigne montre ce qui serait \
-                retiré et qui y est assis, lever_consigne après mon accord, puis resoudre_incremental \
+                retiré et qui y est assis, lever_consigne après mon accord, puis lancer_correction \
                 — la règle de stabilité rend les créneaux à leurs titulaires. Un jour déjà travaillé \
                 garde la consigne qui l'a gouverné.""".formatted(suffixe(edition), emittingEditionFrame(edition)));
     }
@@ -716,7 +716,7 @@ public class McpPrompts {
                 reste possible quand le référentiel est figé.
                    Ni l'un ni l'autre ne se pose pour aujourd'hui : le jour même, c'est le prompt \
                 tenir_le_jour_j.
-                3. resoudre_incremental plutôt que lancer_solveur : il repart du planning enregistré, \
+                3. lancer_correction plutôt que lancer_calcul : il repart du planning enregistré, \
                 fige ce qui reste valable et ne recalcule que ce que le changement a invalidé. \
                 Quelques dizaines de secondes au lieu de plusieurs minutes, et surtout un planning \
                 que les animateurs reconnaissent encore.
@@ -740,17 +740,17 @@ public class McpPrompts {
 
                 %s
 
-                1. resultats_animateur pour la personne : ses postes, par id de stand et de créneau ; \
+                1. consulter_planning (vue affectations, animateurId) pour la personne : ses postes, par id de stand et de créneau ; \
                 garde ceux d'aujourd'hui. changements_journee sur la date du jour dit aussi ce qui a \
                 déjà bougé depuis la publication. Un créneau passé ne se rattrape pas : le passé ne \
                 se modifie plus.
-                2. Pour chaque poste restant, suggerer_reparations : qui pourrait le prendre sans \
+                2. Pour chaque poste restant, simuler_affectation (mode candidats) : qui pourrait le prendre sans \
                 casser une règle dure. La liste est bornée ; elle dit combien de candidats ont été \
                 évalués, et une liste courte n'est pas une preuve qu'il n'y a personne d'autre.
-                3. simuler_deplacement avant d'écrire quoi que ce soit : le poste de l'absent déposé \
+                3. simuler_affectation (mode deplacer) avant d'écrire quoi que ce soit : le poste de l'absent déposé \
                 sur le remplaçant, l'effet sur tout le planning chiffré plutôt qu'espéré. \
                 casseContrainteDure vrai veut dire que le déplacement sera refusé.
-                4. deplacer_affectation seulement après mon accord, poste par poste.
+                4. modifier_affectation (mode deplacer) seulement après mon accord, poste par poste.
                 5. Ne relance pas de résolution : le jour J, un planning que tout le monde a lu vaut \
                 mieux qu'un planning meilleur que personne n'attend. Et ne pose pas de consigne : elle \
                 ne vaut que pour une date à venir, jamais pour aujourd'hui.

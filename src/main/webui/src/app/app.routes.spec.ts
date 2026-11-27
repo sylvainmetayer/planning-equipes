@@ -30,7 +30,7 @@ import {
   redirectKpiToVersions,
   standEditToFicheUrl,
   routes,
-  trainingTabToNeed,
+  formerTabsToRisques,
 } from './app.routes';
 import { BRANDING } from './core/branding';
 import { MesuresPage } from './pages/mesures/mesures-page';
@@ -377,7 +377,9 @@ describe('app.routes', () => {
     it("mène aux onglets du diagnostic avec l'état de chacun", () => {
       expect(
         redirectTarget('fragilite', { vue: 'COMPETENCES', filtre: 'CRITIQUES', q: 'Alice' }),
-      ).toBe('/diagnostic?onglet=fragilite&vue=COMPETENCES&filtre=CRITIQUES&q=Alice');
+      ).toBe(
+        '/diagnostic?onglet=risques&section=fragilite&vue=COMPETENCES&filtre=CRITIQUES&q=Alice',
+      );
     });
 
     // The bench became the Siège panel of the Journée: both of its addresses
@@ -471,27 +473,44 @@ describe('app.routes', () => {
     });
 
     // Marge disponible became two tabs of the Diagnostic: its « avant » reading
-    // a column of Besoin, its « après » and « tension » readings the Tension tab.
-    it('sends the margin to Besoin, and its after-solve readings to Tension, params kept', () => {
+    // a column of Besoin, its « après » and « tension » readings the Tension section of Risques.
+    it('sends the margin to Besoin, and its after-solve readings to Risques, params kept', () => {
       expect(redirectTarget('marge', {})).toBe('/diagnostic?onglet=besoin');
-      expect(redirectTarget('marge', { mode: 'apres' })).toBe('/diagnostic?onglet=tension');
+      expect(redirectTarget('marge', { mode: 'apres' })).toBe(
+        '/diagnostic?onglet=risques&section=tension',
+      );
       expect(redirectTarget('marge', { mode: 'tension', date: '2026-08-02' })).toBe(
-        '/diagnostic?onglet=tension&date=2026-08-02',
+        '/diagnostic?onglet=risques&section=tension&date=2026-08-02',
       );
     });
 
-    it('sends the former « À former » tab to the foot of Besoin, and no other tab', () => {
+    it('sends the former Fragilité, « À former » and Tension tabs to Risques, and no other tab', () => {
       TestBed.configureTestingModule({
         providers: [provideZonelessChangeDetection(), provideRouter([])],
       });
       const guard = (queryParams: Record<string, string>): unknown =>
         TestBed.runInInjectionContext(() =>
-          trainingTabToNeed(snapshotOf(queryParams), TestBed.inject(Router).routerState.snapshot),
+          formerTabsToRisques(snapshotOf(queryParams), TestBed.inject(Router).routerState.snapshot),
         );
 
-      expect(String(guard({ onglet: 'former' }))).toBe('/diagnostic?onglet=besoin&section=former');
-      expect(guard({ onglet: 'tension' })).toBe(true);
+      expect(String(guard({ onglet: 'former' }))).toBe('/diagnostic?onglet=risques&section=former');
+      expect(String(guard({ onglet: 'tension', date: '2026-08-02' }))).toBe(
+        '/diagnostic?onglet=risques&section=tension&date=2026-08-02',
+      );
+      expect(String(guard({ onglet: 'fragilite', q: 'Alice' }))).toBe(
+        '/diagnostic?onglet=risques&section=fragilite&q=Alice',
+      );
+      expect(String(guard({ onglet: 'besoin', section: 'former' }))).toBe(
+        '/diagnostic?onglet=risques&section=former',
+      );
+      expect(guard({ onglet: 'besoin' })).toBe(true);
+      expect(guard({ onglet: 'besoin', section: 'typologie' })).toBe(true);
       expect(guard({})).toBe(true);
+    });
+
+    it('runs its redirections again when only the query changes', () => {
+      const diagnostic = allRoutes(routes).find((route) => route.path === 'diagnostic');
+      expect(diagnostic?.runGuardsAndResolvers).toBe('paramsOrQueryParamsChange');
     });
   });
 

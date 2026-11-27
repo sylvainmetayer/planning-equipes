@@ -59,7 +59,7 @@ class DiagnosticPlanMcpToolsTest {
     void diagnosticScoresThePersistedPlanWithoutStartingASolver() {
         solvedPlanning();
 
-        DiagnosticPlanView vue = solveurTools.diagnosePlan("E1");
+        DiagnosticPlanView vue = solveurTools.diagnosePlan(null, "E1");
 
         assertThat(vue.score()).isNotBlank();
         assertThat(vue.postesNonPourvus()).isGreaterThanOrEqualTo(0);
@@ -95,7 +95,7 @@ class DiagnosticPlanMcpToolsTest {
                         .noneMatch(phrase -> phrase.contains(animateur.getNom())));
 
         // Same plan, same score: the diagnostic reads, it does not search.
-        assertThat(solveurTools.diagnosePlan("E1").score()).isEqualTo(vue.score());
+        assertThat(solveurTools.diagnosePlan(null, "E1").score()).isEqualTo(vue.score());
     }
 
     @Test
@@ -103,7 +103,7 @@ class DiagnosticPlanMcpToolsTest {
         awaitSolverIdle();
         scenarioTools.resetData("E1");
 
-        assertThatThrownBy(() -> solveurTools.diagnosePlan("E1"))
+        assertThatThrownBy(() -> solveurTools.diagnosePlan(null, "E1"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("résolution");
     }

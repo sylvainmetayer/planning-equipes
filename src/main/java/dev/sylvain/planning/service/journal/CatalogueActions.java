@@ -821,6 +821,12 @@ public final class CatalogueActions {
         outil("supprimer_edition", EDITION_SUPPRIMEE);
         outil("modifier_phase_edition", PHASE_CHANGEE);
 
+        outil("lancer_calcul", SOLVE_LANCE);
+        outil("lancer_correction", SOLVE_INCREMENTAL_LANCE);
+        outil("arreter_calcul", SOLVE_ARRETE);
+        outil("supprimer_calcul", JOB_SUPPRIME);
+        // A move states its own action (CurrentAction); the seat handed over is the default.
+        outil("modifier_affectation", AFFECTATION_POSEE);
         outil("lancer_solveur", SOLVE_LANCE);
         outil("resoudre_incremental", SOLVE_INCREMENTAL_LANCE);
         outil("arreter_solveur", SOLVE_ARRETE);
@@ -844,16 +850,20 @@ public final class CatalogueActions {
         // section route has its own; this one only names a call refused on an
         // unknown section.
         outil("modifier_parametres", PARAMETRES_MODIFIES);
+        // The tool states the setting it changed (CurrentAction): one setting per call.
+        outil("modifier_contrainte", CONTRAINTE_PONDEREE);
         outil("activer_contrainte", CONTRAINTE_ACTIVEE);
         outil("desactiver_contrainte", CONTRAINTE_DESACTIVEE);
         outil("modifier_poids_contrainte", CONTRAINTE_PONDEREE);
-        outil("modifier_niveau_contrainte", CONTRAINTE_NIVEAU);
 
         outil("modifier_sauvegardes", SAUVEGARDE_BASCULEE);
 
         outil("configurer_collecte_disponibilites", COLLECTE_CONFIGUREE);
         outil("appliquer_declaration_disponibilite", DECLARATION_APPLIQUEE);
         outil("refuser_declaration_disponibilite", DECLARATION_REFUSEE);
+        outil("modifier_foire_echanges", FOIRE_CONFIGUREE);
+        // A refusal states its own action (CurrentAction); the acceptance is the default.
+        outil("modifier_demande_echange", ECHANGE_ACCEPTE);
         outil("configurer_foire_echanges", FOIRE_CONFIGUREE);
         outil("accepter_demande_echange", ECHANGE_ACCEPTE);
         outil("refuser_demande_echange", ECHANGE_REFUSE);

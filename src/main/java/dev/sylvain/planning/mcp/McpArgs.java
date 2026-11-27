@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -195,5 +196,26 @@ final class McpArgs {
                 .orElseThrow(() -> new BusinessError.Invalid(champ + " : valeur inconnue « " + value
                         + " », valeurs possibles : "
                         + Arrays.stream(type.getEnumConstants()).map(Enum::name).collect(Collectors.joining(", "))));
+    }
+
+    /**
+     * One of the words {@code permis}, as written there: the argument that picks
+     * a view or a gesture of a grouped tool. Blank is {@code defaut}, refused
+     * when there is none; any other word is refused with the list.
+     */
+    static String choix(String value, String champ, String defaut, String... permis) {
+        String attendu = String.join(", ", permis);
+        if (value == null || value.isBlank()) {
+            if (defaut == null) {
+                throw new BusinessError.Invalid(champ + " est requis : " + attendu);
+            }
+            return defaut;
+        }
+        String lu = value.strip().toLowerCase(Locale.ROOT);
+        return Arrays.stream(permis)
+                .filter(lu::equals)
+                .findFirst()
+                .orElseThrow(() -> new BusinessError.Invalid(
+                        champ + " : valeur inconnue « " + value + " », valeurs possibles : " + attendu));
     }
 }

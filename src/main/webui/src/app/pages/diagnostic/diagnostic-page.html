@@ -17,13 +17,9 @@
         <mat-icon>engineering</mat-icon>
         <ng-container i18n="@@diagnostic.onglet.besoin">Besoin en animateurs</ng-container>
       </mat-button-toggle>
-      <mat-button-toggle value="tension">
-        <mat-icon>exposure</mat-icon>
-        <ng-container i18n="@@diagnostic.onglet.tension">Tension</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="fragilite">
+      <mat-button-toggle value="risques">
         <mat-icon>personal_injury</mat-icon>
-        <ng-container i18n="@@diagnostic.onglet.fragilite">Fragilité</ng-container>
+        <ng-container i18n="@@diagnostic.onglet.risques">Risques</ng-container>
       </mat-button-toggle>
       @if (conformiteVisible()) {
         <mat-button-toggle value="conformite">
@@ -39,11 +35,8 @@
   @case ('besoin') {
     <app-staffing-page [entete]="false" />
   }
-  @case ('tension') {
-    <app-tension-tab />
-  }
-  @case ('fragilite') {
-    <app-fragilite-page [entete]="false" />
+  @case ('risques') {
+    <app-risques-tab />
   }
   @case ('conformite') {
     @if (conformiteVisible() && editionStore.courant(); as edition) {
