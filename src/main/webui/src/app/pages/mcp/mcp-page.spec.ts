@@ -19,7 +19,7 @@ const PROMPTS: PromptMcp[] = [
   {
     nom: 'construire_la_grille_de_creneaux',
     description: 'Poser une grille de créneaux récurrents.',
-    texte: 'Construis la grille de créneaux. 1. diagnostiquer_grille_creneaux…',
+    texte: 'Construis la grille de créneaux. 1. diagnostiquer_creneaux…',
   },
   {
     nom: 'diagnostiquer_contraintes_dures',

@@ -3,14 +3,15 @@
 // and, within a gravity, newest first. Pure functions, called at runtime so
 // `$localize` resolves after the catalog is loaded.
 
-import { AlerteView, CoherenceReport } from '../../core/models';
+import { AlerteView, CoherenceReport, ConstraintView } from '../../core/models';
 import { AppNotification, NotificationSeverity } from '../../core/notification.service';
 import type { LienEtat } from './accueil';
+import { niveauDeContrainte } from '../../core/problemes';
 import { coherenceLines, familyTitle } from './coherence';
 
 /** Where an item comes from: the `?type=` of the address. */
-export type FilType = 'alertes' | 'coherence' | 'messages';
-export const FIL_TYPES: readonly FilType[] = ['alertes', 'coherence', 'messages'];
+export type FilType = 'alertes' | 'blocages' | 'coherence' | 'messages';
+export const FIL_TYPES: readonly FilType[] = ['alertes', 'blocages', 'coherence', 'messages'];
 
 /** Hard blockers first, then warnings, then messages. */
 export type FilGravite = 'blocage' | 'avertissement' | 'message';
@@ -72,6 +73,7 @@ export function buildFil(
   alertes: readonly AlerteView[],
   coherence: CoherenceReport | null,
   messages: readonly AppNotification[],
+  contraintes: readonly ConstraintView[] = [],
 ): FilItem[] {
   const items: FilItem[] = [];
   for (const alerte of alertes) {
@@ -85,6 +87,28 @@ export function buildFil(
       texte: alerte.libelle,
       href: alerte.lien ?? undefined,
       quand: Date.parse(alerte.declencheLe),
+    });
+  }
+  // The hard rules the last solve broke, as the Diagnostic's Problèmes tab
+  // lists them (`niveauDeContrainte`): the rule and its count, never a person.
+  for (const contrainte of contraintes) {
+    const matchCount = contrainte.matchCount ?? 0;
+    if (niveauDeContrainte(contrainte.niveau) !== 'BLOQUANT' || matchCount === 0) {
+      continue;
+    }
+    items.push({
+      id: `blocages|${contrainte.name}`,
+      type: 'blocages',
+      gravite: 'blocage',
+      variante: VARIANTE.blocage,
+      titre: contrainte.libelleCourt || contrainte.name,
+      texte: $localize`:@@problemes.detail.matches:${matchCount}:count: correspondance(s) sur la dernière analyse.`,
+      lien: {
+        route: '/diagnostic',
+        queryParams: { onglet: 'problemes' },
+        libelle: $localize`:@@fil.blocage.lien:Voir dans Diagnostic › Problèmes`,
+      },
+      quand: null,
     });
   }
   coherenceLines(coherence?.anomalies ?? []).forEach((ligne, index) => {

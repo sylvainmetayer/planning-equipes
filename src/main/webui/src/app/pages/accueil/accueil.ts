@@ -87,7 +87,7 @@ function referentiels(etat: EtatEdition): LigneEtat {
   // stands' openings are typed against them (ADR 0032).
   let route = '/animateurs';
   if (creneaux === 0) {
-    route = '/creneaux';
+    route = '/calendrier';
   } else if (stands === 0) {
     route = '/stands';
   }

@@ -139,7 +139,7 @@ public final class BlockerPlaybook {
 
     static final String TAB_WORKLOAD = "charge";
     static final String ROUTE_STANDS = "/stands";
-    static final String ROUTE_TIMESLOTS = "/creneaux";
+    static final String ROUTE_TIMESLOTS = "/calendrier";
 
     // ---- action codes -----------------------------------------------------
 

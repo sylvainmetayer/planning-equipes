@@ -363,7 +363,7 @@ export function actionsOfBreaks(pauses: RapportPauses): ActionProbleme[] {
       code: 'RACCOURCIR_VACATION',
       libelle: $localize`:@@problemes.action.raccourcirVacation:Raccourcir la vacation`,
       explication: $localize`:@@problemes.action.raccourcirVacation.explication:Une vacation plus courte ne doit plus la pause : elle tombe alors hors de la séquence.`,
-      route: '/creneaux',
+      route: '/calendrier',
       queryParams: shiftParams,
       lang: null,
     },
@@ -477,7 +477,7 @@ export function linksOfViolation(violation: ViolationReference): LienProbleme[] 
   }
   if (violation.creneauId != null) {
     liens.push({
-      route: '/creneaux',
+      route: '/calendrier',
       queryParams: { edit: String(violation.creneauId) },
       libelle: $localize`:@@problemes.lien.creneauFiche:Fiche créneau`,
     });
@@ -497,7 +497,7 @@ export function causeLinks(
   if (cause.creneauId != null) {
     // Straight to the fiche, open for editing: the reader came to fix it.
     liens.push({
-      route: '/creneaux',
+      route: '/calendrier',
       queryParams: { edit: String(cause.creneauId) },
       libelle: $localize`:@@problemes.lien.creneaux:Voir le créneau`,
     });

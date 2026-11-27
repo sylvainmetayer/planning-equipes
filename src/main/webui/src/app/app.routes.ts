@@ -206,7 +206,7 @@ export function standEditToFicheUrl(queryParams: Params): string | null {
 
 /**
  * The former opening hours screen (`/ouvertures`, then the « Horaires des
- * stands » tab of `/creneaux`) is gone with its grid: an address of it lands on
+ * stands » tab of `/calendrier`) is gone with its grid: an address of it lands on
  * the fiche of the stand it names (`stand`, else the first of `stands`), or on
  * the list of the stands.
  */
@@ -217,7 +217,7 @@ export function openingsToStandsUrl(queryParams: Params): string {
   return named ? `/stands/${encodeURIComponent(named)}` : '/stands';
 }
 
-/** Guard of `/creneaux`: `?onglet=horaires`, the retired tab, is redirected. */
+/** Guard of `/calendrier`: `?onglet=horaires`, the retired tab, is redirected. */
 export const retiredHorairesTab: CanActivateFn = (route) =>
   route.queryParamMap.get('onglet') === 'horaires'
     ? inject(Router).parseUrl(openingsToStandsUrl(route.queryParams))
@@ -720,7 +720,7 @@ const adminRoutes: Routes = [
   { path: 'data-setup', redirectTo: 'parametres' },
   // The découpage had a page of its own, then a card on Paramètres, then
   // nothing: a grid is made of vacations, so the address lands on the grid.
-  { path: 'decoupage', redirectTo: 'creneaux' },
+  { path: 'decoupage', redirectTo: 'calendrier' },
   // The card it became, not the page's default one: the address named the
   // validator, and a redirection that drops it lands on the typologies.
   { path: 'validateur-yaml', redirectTo: redirectToFichiers('importer', 'verifier') },
@@ -772,10 +772,12 @@ const adminRoutes: Routes = [
   },
   // The grid of competences became a tab of Animateurs.
   { path: 'competences', redirectTo: redirectToOnglet('animateurs', 'competences') },
+  // The Calendrier's former address (P39): every query param travels along.
+  { path: 'creneaux', redirectTo: redirectKeepingQuery('calendrier') },
   {
     // « Calendrier »: the timeslots. The stands' opening hours are read and
     // written on the fiche stand.
-    path: 'creneaux',
+    path: 'calendrier',
     title: () => $localize`:@@route.calendrier:Calendrier`,
     data: { aide: 'ecran-calendrier' },
     // The stands' hours tab is gone: a bookmark on it lands on the fiche stand.

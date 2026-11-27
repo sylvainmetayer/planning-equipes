@@ -65,7 +65,7 @@ export function buildReferenceDataSections(): HelpSection[] {
           queryParams: { vue: 'editions' },
           label: $localize`:@@nav.link.comparerEditions:Comparer deux éditions`,
         },
-        { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
+        { route: '/calendrier', label: $localize`:@@nav.link.creneaux:Créneaux` },
         lienVersions(),
         lienConsignes(),
       ],
@@ -242,7 +242,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
+        { route: '/calendrier', label: $localize`:@@nav.link.creneaux:Créneaux` },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         {
           route: '/regles',
@@ -268,7 +268,7 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
       links: [
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
+        { route: '/calendrier', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
     },
     {
@@ -369,7 +369,7 @@ export function buildReferenceDataSections(): HelpSection[] {
           label: $localize`:@@aide.lien.exporter:Fichiers — Exporter`,
         },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
-        { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
+        { route: '/calendrier', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
     },
   ];

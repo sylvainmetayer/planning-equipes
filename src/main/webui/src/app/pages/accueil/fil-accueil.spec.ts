@@ -6,6 +6,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { ConstraintsApi } from '../../core/api/constraints-api';
 import { NotificationService } from '../../core/notification.service';
 import { FilAccueil } from './fil-accueil';
 
@@ -29,11 +30,13 @@ const rapport = {
 
 describe('FilAccueil', () => {
   const analysesApi = { alerts: vi.fn() };
+  const constraintsApi = { catalogue: vi.fn() };
   let fixture: ComponentFixture<FilAccueil>;
 
   beforeEach(() => {
     localStorage.clear();
     analysesApi.alerts.mockReset();
+    constraintsApi.catalogue.mockResolvedValue({ contraintes: [] });
     analysesApi.alerts.mockResolvedValue([
       {
         type: 'RAPPEL_VEILLE_INJOIGNABLE',
@@ -51,6 +54,7 @@ describe('FilAccueil', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: AnalysesApi, useValue: analysesApi },
+        { provide: ConstraintsApi, useValue: constraintsApi },
       ],
     });
   });
@@ -119,6 +123,30 @@ describe('FilAccueil', () => {
     expect(notifications.unreadCount()).toBe(0);
   });
 
+  it('lists the hard rules the last solve broke, with a link to the Problèmes tab and no person', async () => {
+    constraintsApi.catalogue.mockResolvedValue({
+      contraintes: [
+        {
+          name: 'mineurSeul',
+          niveau: 'HARD',
+          libelleCourt: 'Mineur seul sur un stand',
+          matchCount: 2,
+        },
+        { name: 'ok', niveau: 'HARD', libelleCourt: 'Sans écart', matchCount: 0 },
+        { name: 'souple', niveau: 'SOFT', libelleCourt: 'Préférence', matchCount: 9 },
+      ],
+    });
+    fixture = TestBed.createComponent(FilAccueil);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+    const rows = el.querySelectorAll('[data-type="blocages"]');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].textContent).toContain('Mineur seul sur un stand');
+    expect(rows[0].textContent).toContain('2 correspondance(s)');
+    expect(rows[0].querySelector('a')?.getAttribute('href')).toBe('/diagnostic?onglet=problemes');
+  });
+
   it('says when nothing is to be reported', async () => {
     analysesApi.alerts.mockResolvedValue([]);
     fixture = TestBed.createComponent(FilAccueil);
@@ -135,6 +163,10 @@ describe('FilAccueil — a weather alert', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
+        {
+          provide: ConstraintsApi,
+          useValue: { catalogue: () => Promise.resolve({ contraintes: [] }) },
+        },
         {
           provide: AnalysesApi,
           useValue: {

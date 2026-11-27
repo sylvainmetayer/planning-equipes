@@ -145,7 +145,7 @@ export function coherenceLink(ligne: CoherenceIssue): LienEtat {
       };
     case 'CRENEAU':
       return {
-        route: '/creneaux',
+        route: '/calendrier',
         queryParams: id ? { edit: id } : undefined,
         libelle: $localize`:@@accueil.coherence.lien.creneau:Fiche créneau`,
       };
@@ -189,7 +189,7 @@ function editionLink(famille: CoherenceFamily): LienEtat {
       };
     case 'CRENEAUX':
       return {
-        route: '/creneaux',
+        route: '/calendrier',
         libelle: $localize`:@@accueil.coherence.lien.grille:Grille de créneaux`,
       };
     case 'STANDS':

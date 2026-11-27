@@ -803,8 +803,16 @@ describe('the screens that became tabs', () => {
     );
   });
 
+  it('redirects the former /creneaux address to /calendrier, query params kept', () => {
+    expect(redirectTarget('creneaux', {})).toBe('/calendrier');
+    expect(redirectTarget('creneaux', { edit: '7', onglet: 'horaires' })).toBe(
+      '/calendrier?edit=7&onglet=horaires',
+    );
+    expect(redirectTarget('decoupage', {})).toBe('calendrier');
+  });
+
   it('sends the retired hours tab of the Calendrier to the fiche stand, and lets the timeslots through', () => {
-    const guard = allRoutes(routes).find((route) => route.path === 'creneaux')
+    const guard = allRoutes(routes).find((route) => route.path === 'calendrier')
       ?.canActivate?.[0] as (route: unknown) => unknown;
     const run = (params: Record<string, string>) =>
       TestBed.runInInjectionContext(() =>

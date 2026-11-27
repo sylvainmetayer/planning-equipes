@@ -55,7 +55,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   button) lives in `app/shell/admin-shell.ts`, a layout route wrapping every
   admin page. The drawer is **one menu for everybody** in **nine entries**,
   in the order of the edition's cycle (Q48, 4.0) — Accueil, Préparer
-  (`/stands`, `/creneaux`, `/animateurs`), Fichiers, Planning (with its
+  (`/stands`, `/calendrier`, `/animateurs`), Fichiers, Planning (with its
   « Calculer » tab), Diagnostic, Règles, Diffuser (`/publication`,
   `/echanges`), Aujourd'hui, Administrer (`/parametres`, `/editions`,
   `/mesures`, `/debug` — the last offered to an admin only, like the
@@ -162,11 +162,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   (`#a-traiter`, where the toolbar's bell lands) is always drawn, and carries
   under it the single feed `pages/accueil/fil-accueil` over the pure `fil.ts`:
   the plan's alerts (`AlerteView` — the night's, a weather alert carrying its
-  « Préparer la consigne » link, `lien` of the server), the anomalies of the
+  « Préparer la consigne » link, `lien` of the server), the hard rules the
+  last solve broke (`GET /api/constraints`, the rule and its count, never a
+  person, linking to Diagnostic › Problèmes), the anomalies of the
   referential (the checklist's « Cohérence du référentiel » line leads to it
   instead of unfolding) and the local history of the application's messages,
   sorted by gravity — blocking, to check, message — then newest first, and
-  narrowed by `?type=alertes|coherence|messages` read from the address;
+  narrowed by `?type=alertes|blocages|coherence|messages` read from the address;
   only the messages are read and cleared. `/notifications` redirects to
   `/?type=messages#a-traiter`), `/solveur` (a redirect to
   `/journee?onglet=calculer`, its `?onglet=versions` to
@@ -333,7 +335,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   shared by the two tables through the page-provided `PublicationSelection`,
   never the URL. « Documents »: the four files the plan becomes, each saying
   who it is for; a screen of its own since issue #320, so the solver page only
-  solves), `/export-csv`, `/creneaux` (« Calendrier » — the timeslots; the
+  solves), `/export-csv`, `/calendrier` (« Calendrier », `/creneaux` its former address, a redirect keeping the query — the timeslots; the
   retired `?onglet=horaires`, the stands' hours tab, is sent by the route's
   `retiredHorairesTab` guard to the fiche stand (`openingsToStandsUrl`); the
   generator's gabarits first — templates (the former
@@ -609,7 +611,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/export-csv` and `/validateur-yaml` redirect to `/fichiers` with their
   params, `/constraints` to `/regles` — its `?regle=` kept, a `#rule` anchor
   turned into it; `/data-transfer` and `/data-setup` are
-  legacy redirects too, `/decoupage` now landing on `/creneaux` since the
+  legacy redirects too, `/decoupage` now landing on `/calendrier` since the
   slicing was removed, kept for old bookmarks/links; so are `/emplacements`,
   landing on `/stands?onglet=lieux` with its params, and `/timeline`, the
   former « Timeline animateur » — `?animateur=X` lands on

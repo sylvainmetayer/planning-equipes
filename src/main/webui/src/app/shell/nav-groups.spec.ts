@@ -130,7 +130,7 @@ describe('buildNavGroups', () => {
         .find((group) => group.id === id)
         ?.links.map((link) => link.path) ?? [];
 
-    expect(pagesOf('preparer')).toEqual(['/stands', '/creneaux', '/animateurs']);
+    expect(pagesOf('preparer')).toEqual(['/stands', '/calendrier', '/animateurs']);
     expect(pagesOf('diffuser')).toEqual(['/publication', '/echanges']);
     expect(pagesOf('administrer')).toEqual(['/parametres', '/editions', '/mesures', '/debug']);
     for (const group of buildNavGroups().filter((entry) => !isFoldable(entry))) {

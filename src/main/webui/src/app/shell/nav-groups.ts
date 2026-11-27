@@ -99,7 +99,7 @@ export function buildNavGroups(): NavGroup[] {
         },
         {
           // The timeslots and their generator (templates, stands' hours, recurrence).
-          path: '/creneaux',
+          path: '/calendrier',
           label: $localize`:@@nav.link.calendrier:Calendrier`,
           icon: 'schedule',
           shortcut: 'c',
@@ -273,7 +273,7 @@ export function buildNavGroups(): NavGroup[] {
           $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
           $localize`:@@nav.keywords.consignes:arrêté canicule fermeture`,
         ),
-        tab('onglet', 'regles', $localize`:@@regles.onglet.regles:Règles`),
+        tab('onglet', 'regles', $localize`:@@regles.onglet.regles:Liste des règles`),
       ],
     }),
     {
