@@ -33,6 +33,7 @@ class McpEditionStructurelleTest {
     private static final Set<String> HORS_EDITION = Set.of(
             "lister_scenarios",
             "valider_scenario_yaml",
+            "diagnostiquer_scenario",
             "arreter_calcul",
             "consulter_calcul",
             "supprimer_calcul",
@@ -43,6 +44,7 @@ class McpEditionStructurelleTest {
             "lister_mesures_edition",
             "supprimer_mesure_edition",
             "etat_sauvegardes",
+            "consulter_sauvegardes",
             "modifier_sauvegardes");
 
     /**
@@ -54,6 +56,7 @@ class McpEditionStructurelleTest {
     private static final Map<String, String> SANS_EDITION_OUVERTS_A_L_ORGANISATEUR = Map.ofEntries(
             Map.entry("lister_scenarios", "les fichiers livrés avec l'application, aucune donnée d'édition"),
             Map.entry("valider_scenario_yaml", "valide le texte reçu, ne lit rien"),
+            Map.entry("diagnostiquer_scenario", "valide le texte reçu, ne lit rien"),
             Map.entry("arreter_calcul", "SolveurMcpTools ne voit que les jobs des éditions visibles"),
             Map.entry("consulter_calcul", "SolveurMcpTools ne voit que les jobs des éditions visibles"),
             Map.entry("supprimer_calcul", "SolveurMcpTools ne voit que les jobs des éditions visibles"),

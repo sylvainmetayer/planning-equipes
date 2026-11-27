@@ -55,7 +55,7 @@ public class McpPrompts {
      */
     static final String ACTIVE_EDITION_CHECK = "Seule l'édition active publie et envoie des courriels : si "
             + "lister_editions ne marque pas cette édition ACTIVE, arrête-toi et dis-le-moi avant tout envoi — "
-            + "n'appelle pas activer_edition de ton propre chef.";
+            + "n'appelle pas modifier_edition (active) de ton propre chef.";
 
     /**
      * Display order on the MCP page, which is the order of a real event:
@@ -103,23 +103,24 @@ public class McpPrompts {
 
                 1. lister_editions : quelles éditions existent, laquelle est ACTIVE, et quelle période \
                 chacune couvre.
-                2. dupliquer_edition pour repartir de cette édition — stands, typologies, emplacements, \
-                créneaux, horaires et paramètres sont recopiés, jamais le planning. Propose-moi de laisser \
-                les animateurs derrière : une personne qui ne s'est pas réinscrite n'a rien à faire dans \
-                l'édition suivante. creer_edition seulement si je veux repartir d'une page blanche. Note \
+                2. creer_edition avec source pour repartir de cette édition — stands, typologies, \
+                emplacements, créneaux, horaires et paramètres sont recopiés, jamais le planning. \
+                Propose-moi de laisser les animateurs derrière : une personne qui \
+                ne s'est pas réinscrite n'a rien à faire dans l'édition suivante. creer_edition sans source \
+                seulement si je veux repartir d'une page blanche. Note \
                 l'id de la nouvelle édition dans ta réponse, et dis-moi à chaque appel sur quelle \
                 édition tu écris.
-                3. renommer_edition si le nom proposé ne dit pas de quelle année il s'agit.
+                3. modifier_edition (nom) si le nom proposé ne dit pas de quelle année il s'agit.
                 4. La nouvelle édition naît inactive : elle n'envoie rien et n'ouvre aucun lien, on la \
                 prépare tranquillement pendant que l'autre vit — horaires des stands, grille de \
                 créneaux, collecte, résolution, avec les prompts dédiés appelés avec \
                 edition=<id de la nouvelle édition> : sans cet argument, ils travaillent sur l'édition \
-                active, celle qui vit. etat_edition dit où elle en est.
-                5. activer_edition seulement le jour de la bascule et après mon accord explicite. Le \
+                active, celle qui vit. consulter_edition dit où elle en est.
+                5. modifier_edition (active true) seulement le jour de la bascule et après mon accord explicite. Le \
                 geste désactive l'ancienne : ses liens d'espace animateur, ses flux de calendrier et \
                 ses affichages muraux cessent de répondre, et c'est la nouvelle qui envoie désormais les \
                 courriels de nuit. Il est refusé tant qu'une résolution tourne sur l'une des deux. \
-                desactiver_edition existe pour l'entre-deux, quand plus rien ne doit partir.
+                modifier_edition (active false) existe pour l'entre-deux, quand plus rien ne doit partir.
 
                 Ne supprime aucune édition.""".formatted(designation(edition), newEditionFrame(edition)));
     }
@@ -160,7 +161,7 @@ public class McpPrompts {
 
                 %s
 
-                1. etat_edition en premier : la checklist du cycle dit déjà ce qui est fait, ce qui \
+                1. consulter_edition en premier : la checklist du cycle dit déjà ce qui est fait, ce qui \
                 reste et ce qui bloque. Le reste de la liste en détaille les lignes.
                 2. volumes : y a-t-il des animateurs et des postes à pourvoir ?
                 3. lister_anomalies_referentiel : traite d'abord les lignes BLOQUANT, puis dis-moi \
@@ -210,7 +211,7 @@ public class McpPrompts {
                 organiser avant de publier.
 
                 6. Rappelle-moi que résoudre n'est pas prévenir : tant que le planning n'est pas \
-                publié, les animateurs lisent toujours le précédent. etat_publication dit depuis quand.
+                publié, les animateurs lisent toujours le précédent. consulter_publication dit depuis quand.
 
                 Ne relance pas une deuxième résolution de ta propre initiative.""".formatted(suffixe(edition), editionFrame(edition)));
     }
@@ -226,7 +227,7 @@ public class McpPrompts {
 
                 %s
 
-                1. etat_edition : la famille CRENEAUX est-elle figée (bloc gel) ? Si oui, toute \
+                1. consulter_edition : la famille CRENEAUX est-elle figée (bloc gel) ? Si oui, toute \
                 création ou modification de créneau sera refusée : dis-le-moi et arrête-toi. \
                 modifier_phase_edition n'est à proposer que si je le demande.
                 2. diagnostiquer_grille_creneaux pour voir ce qui existe déjà, et lister_gabarits \
@@ -324,7 +325,7 @@ public class McpPrompts {
 
                 %s
 
-                1. etat_edition : quelles familles sont déjà figées (bloc gel), et depuis quand ? Le \
+                1. consulter_edition : quelles familles sont déjà figées (bloc gel), et depuis quand ? Le \
                 reste de la checklist dit si la préparation est vraiment finie.
                 2. lister_anomalies_referentiel : une anomalie BLOQUANT sur une famille se corrige \
                 avant de la figer — après, la fiche ne se corrige plus sans rouvrir le référentiel.
@@ -355,7 +356,7 @@ public class McpPrompts {
 
                 %s
 
-                1. etat_publication : depuis quand rien n'est parti, combien de personnes sont \
+                1. consulter_publication : depuis quand rien n'est parti, combien de personnes sont \
                 concernées, et ce que chacune lirait. Zéro concerné veut dire que le planning publié \
                 est déjà à jour — il n'y a rien à faire.
                 2. Si une résolution tourne, ou si le plan à publier est vide, la publication sera \
@@ -369,10 +370,10 @@ public class McpPrompts {
                 5. Signale-moi les personnes dont adresseConnue est faux : elles ne recevront rien et \
                 devront être prévenues autrement.
                 6. publier_planning seulement après mon accord.
-                7. lister_destinataires_publication pour contrôler le résultat. Le suivi des \
-                accusés de réception est le prompt suivre_les_confirmations : synthese_confirmations, \
-                puis relancer_animateurs ou envoyer_planning_animateur — chacun un courriel de plus, \
-                toujours après mon accord.
+                7. consulter_publication (vue destinataires) pour contrôler le résultat. Le suivi des \
+                accusés de réception est le prompt suivre_les_confirmations : consulter_publication \
+                (vue confirmations), puis publier_planning en mode relancer ou renvoyer — chacun un \
+                courriel de plus, toujours après mon accord.
 
                 Les destinataires se désignent par leur id : ni nom ni adresse ne sortent d'ici.""".formatted(suffixe(edition), emittingEditionFrame(edition)));
     }
@@ -388,17 +389,17 @@ public class McpPrompts {
 
                 %s
 
-                1. synthese_confirmations : combien ont confirmé, combien ont été relancés, combien \
+                1. consulter_publication (vue confirmations) : combien ont confirmé, combien ont été relancés, combien \
                 restent silencieux, et depuis quelle publication. jamaisPublie vrai veut dire que la \
                 question n'a encore été posée à personne : arrête-toi là.
-                2. lister_destinataires_publication : les envois en échec et les personnes sans \
+                2. consulter_publication (vue destinataires) : les envois en échec et les personnes sans \
                 adresse, par id. Ceux-là n'ont rien reçu : les relancer ne servirait à rien.
                 3. consulter_parametres (section notifications) : la relance automatique de nuit part d'elle-même \
                 après le délai réglé. Dis-moi si elle suffit avant de proposer une relance à la main.
-                4. relancer_animateurs pour les silencieux que je désigne, après mon accord : personne \
+                4. publier_planning (mode relancer) pour les silencieux que je désigne, après mon accord : personne \
                 ne reçoit deux fois la relance d'une même publication, et le compte rendu dit, par id, \
                 qui a été écarté et pourquoi.
-                5. envoyer_planning_animateur pour un échec isolé, une personne à la fois et après mon \
+                5. publier_planning (mode renvoyer) pour un échec isolé, une personne à la fois et après mon \
                 accord : il renvoie le planning publié, celui que la personne n'a pas reçu.
 
                 Les animateurs se désignent par leur id : ni nom ni adresse ne sortent d'ici.""".formatted(suffixe(edition), emittingEditionFrame(edition)));
@@ -440,7 +441,7 @@ public class McpPrompts {
 
                 %s
 
-                1. etat_edition : la famille STANDS est-elle figée (bloc gel) ? Si oui, aucun horaire \
+                1. consulter_edition : la famille STANDS est-elle figée (bloc gel) ? Si oui, aucun horaire \
                 ne s'écrira : dis-le-moi et arrête-toi — modifier_phase_edition n'est à proposer que \
                 si je le demande.
                 2. lister_stands puis analyser_ouvertures_stands : pars de ce qui existe déjà plutôt \
@@ -566,7 +567,7 @@ public class McpPrompts {
                 %s
 
                 1. consulter_etats_journee : où en est la relecture (« 3 journées sur 12 »), et \
-                quelles journées restent à relire. etat_edition signale celles des sept jours à venir.
+                quelles journées restent à relire. consulter_edition signale celles des sept jours à venir.
                 2. Pour chaque journée à relire, consulter_prerequis_validation : écarts durs, sièges \
                 vides, pauses sans relais, postes irremplaçables, comptés sur cette seule journée.
                 3. changements_journee pour la même date : ce qui a bougé depuis la dernière \
@@ -625,8 +626,8 @@ public class McpPrompts {
 
                 %s
 
-                Le plan de repli vit dans cette édition-ci : n'appelle ni dupliquer_edition ni \
-                activer_edition, et ne change pas d'édition en cours de route.
+                Le plan de repli vit dans cette édition-ci : n'appelle ni creer_edition ni \
+                modifier_edition, et ne change pas d'édition en cours de route.
 
                 1. lister_consignes : ce qui est déjà posé, et les préréglages (« Plan canicule ») \
                 dont on peut partir.
@@ -644,7 +645,7 @@ public class McpPrompts {
                 7. diagnostiquer_plan : le plan de repli tient-il les règles dures ?
                 8. consulter_prerequis_validation pour chaque journée touchée : la consigne a retiré \
                 leur validation, elles sont à relire.
-                9. etat_publication, puis publier_planning seulement après mon accord — sans quoi les \
+                9. consulter_publication, puis publier_planning seulement après mon accord — sans quoi les \
                 animateurs continuent de lire le plan nominal.
 
                 Retour arrière, si l'alerte est levée : simuler_levee_consigne montre ce qui serait \
@@ -682,10 +683,10 @@ public class McpPrompts {
                 7. lister_consignes : une consigne posée change les horaires de toute une journée — \
                 le planning doit avoir été résolu depuis.
                 8. consulter_etats_journee : quelles journées sont encore à relire ?
-                9. lister_destinataires_publication : qui a reçu quoi la dernière fois. Signale les \
+                9. consulter_publication (vue destinataires) : qui a reçu quoi la dernière fois. Signale les \
                 personnes sans adresse connue — elles devront être prévenues autrement — et rappelle \
                 que le courriel porte le planning individuel, donc des données personnelles.
-                10. etat_sauvegardes : une sauvegarde récente existe-t-elle avant une diffusion qui \
+                10. consulter_sauvegardes : une sauvegarde récente existe-t-elle avant une diffusion qui \
                 engage l'organisation ?
 
                 Conclus par une liste de ce qui bloque la diffusion et une liste de ce qui mérite \
@@ -708,7 +709,7 @@ public class McpPrompts {
                 2. Applique le changement, après mon accord :
                    - un désistement : modifier_animateur, pour le jour indisponible ;
                    - un seul stand qui ferme à une date à venir : creer_plage_stand sur ce stand. \
-                Il est refusé quand la famille STANDS est figée (etat_edition dit lesquelles le sont) : \
+                Il est refusé quand la famille STANDS est figée (consulter_edition dit lesquelles le sont) : \
                 dis-le-moi, modifier_phase_edition ne se fait que si je le demande ;
                    - une bande horaire fermée à tous les stands (arrêté, alerte météo) : une consigne — \
                 simuler_consigne puis appliquer_consigne. Elle ferme la bande pour tous les stands et ne \
@@ -723,7 +724,7 @@ public class McpPrompts {
                 4. changements_journee pour chaque journée touchée, avec reference=publication : \
                 siège par siège et personne par personne, qui gagne, perd ou change de vacation par \
                 rapport à ce qui a été annoncé. Ce sont exactement les gens à prévenir.
-                5. etat_publication puis publier_planning après mon accord — sans quoi les animateurs \
+                5. consulter_publication puis publier_planning après mon accord — sans quoi les animateurs \
                 continuent de lire la version d'avant.
 
                 Si le changement touche beaucoup de monde, dis-le-moi plutôt que de l'appliquer : une \
@@ -754,10 +755,10 @@ public class McpPrompts {
                 5. Ne relance pas de résolution : le jour J, un planning que tout le monde a lu vaut \
                 mieux qu'un planning meilleur que personne n'attend. Et ne pose pas de consigne : elle \
                 ne vaut que pour une date à venir, jamais pour aujourd'hui.
-                6. Quand tout est arbitré, etat_publication dit qui verrait un changement. Seul \
-                publier_planning envoie le nouveau planning, et seulement après mon accord. \
-                N'appelle pas envoyer_planning_animateur pour prévenir un remplaçant : il renvoie le \
-                planning déjà publié, donc l'ancien. Un appel téléphonique va souvent plus vite.
+                6. Quand tout est arbitré, consulter_publication dit qui verrait un changement. Seul \
+                publier_planning envoie le nouveau planning (mode publier), et seulement après mon \
+                accord. N'appelle pas publier_planning en mode renvoyer pour prévenir un remplaçant : il \
+                renvoie le planning déjà publié, donc l'ancien. Un appel téléphonique va souvent plus vite.
 
                 Marquer quelqu'un absent pour la suite de la journée se fait sur l'écran \
                 « Aujourd'hui », pas ici : ces outils déplacent des affectations, ils n'enregistrent \
@@ -783,7 +784,7 @@ public class McpPrompts {
                 dernière résolution de cette édition à celle de l'édition précédente.
                 3. equite_planning et heures_travaillees : les écarts d'heures, de soirées, de \
                 week-ends et de postes pénibles, que l'organisation doit pouvoir expliquer.
-                4. synthese_confirmations et consulter_foire_echanges : combien ont accusé réception, \
+                4. consulter_publication (vue confirmations) et consulter_foire_echanges : combien ont accusé réception, \
                 et ce que la foire aux échanges a donné.
                 5. Conclus par trois listes courtes : ce qui a tenu, ce qui a coûté, et ce qu'il faudra \
                 régler autrement pour l'édition suivante — recrutement, formation, horaires, \
@@ -850,7 +851,7 @@ public class McpPrompts {
                 ? "appelle d'abord lister_editions et retiens celle marquée ACTIVE ; s'il n'y en a aucune, "
                         + "pose-moi la question plutôt que d'en choisir une"
                 : "« " + edition.trim() + " »";
-        return "Édition source : " + source + ". Elle se passe en argument source de dupliquer_edition, et "
+        return "Édition source : " + source + ". Elle se passe en argument source de creer_edition, et "
                 + "n'est jamais celle que tu renommes ou actives. Une fois la nouvelle édition créée, passe "
                 + "son id en argument edition à chaque outil qui en prend un : un appel sans édition est "
                 + "refusé.";

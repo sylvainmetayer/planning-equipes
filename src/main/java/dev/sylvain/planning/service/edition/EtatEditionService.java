@@ -85,7 +85,7 @@ import java.util.stream.Collectors;
 
 /**
  * Where the current edition stands in its cycle — the one aggregation the
- * home screen and the MCP tool {@code etat_edition} read (issue #485).
+ * home screen and the MCP tool {@code consulter_edition} read (issue #485).
  *
  * <p>Nothing here is computed for the first time: every figure already had a
  * screen and a route. What was missing was the answer to "where am I?", which

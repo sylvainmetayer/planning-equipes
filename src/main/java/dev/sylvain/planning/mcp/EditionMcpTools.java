@@ -45,7 +45,7 @@ import java.util.stream.Stream;
  * the right one by, and editions are counted in units, not in thousands.</p>
  *
  * <p>Two tools here work <em>inside</em> an edition rather than on the
- * list — {@code etat_edition}, which reads it, and {@code modifier_phase_edition},
+ * list — {@code consulter_edition}, which reads it, and {@code modifier_phase_edition},
  * which moves its phase (ADR 0115, in place of the 3.x {@code figer_referentiel}
  * and {@code lever_gel}) —
  * hence the {@code @EditionCiblee} on the class: their {@code edition}
@@ -135,9 +135,11 @@ public class EditionMcpTools {
                 .toList();
     }
 
+    @Deprecated
     @Tool(
             name = "edition_courante",
-            description = "Nomme l'édition active : la seule qui publie, envoie des courriels et ouvre l'espace "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser lister_editions (la ligne active). "
+                    + "Nomme l'édition active : la seule qui publie, envoie des courriels et ouvre l'espace "
                     + "animateur, le flux ICS et l'affichage mural. Répond une erreur quand aucune édition n'est "
                     + "active (entre deux événements). Les autres outils exigent leur argument « edition » : celui-ci "
                     + "ne le remplace pas.",
@@ -150,8 +152,9 @@ public class EditionMcpTools {
     EditionView currentEdition() {
         String active = editionContext
                 .activeEditionId()
-                .orElseThrow(() -> new BusinessError.Conflict(
-                        "Aucune édition n'est active : activer_edition en désigne une (voir lister_editions)."));
+                .orElseThrow(
+                        () -> new BusinessError.Conflict(
+                                "Aucune édition n'est active : modifier_edition (active) en désigne une (voir lister_editions)."));
         if (!editionContext.visibleToCaller(active)) {
             throw new BusinessError.Conflict("Aucune édition active n'est visible avec vos droits.");
         }
@@ -159,8 +162,37 @@ public class EditionMcpTools {
     }
 
     @Tool(
-            name = "etat_edition",
+            name = "consulter_edition",
             description = "État de l'édition : la checklist du cycle, calculée — référentiels saisis, cohérence "
+                    + "du référentiel (anomalies bloquantes, à vérifier, pour information ; le détail par "
+                    + "lister_anomalies_referentiel), collecte "
+                    + "des disponibilités, ouvertures des stands, besoin en animateurs, dernière résolution (et si "
+                    + "les données ont bougé depuis, ou si une résolution est en cours), problèmes bloquants et "
+                    + "avertissements, publication, accusés de réception, foire au planning ; et le bloc aTraiter "
+                    + "(« à traiter aujourd'hui », jugé sur la date du jour du serveur) : déclarations de "
+                    + "disponibilité en attente, demandes d'échange à arbitrer et celles en alerte, journées non "
+                    + "relues des sept jours à venir (aujourd'hui compris), silencieux à relancer, données modifiées depuis la "
+                    + "résolution, personnes à prévenir — des comptes et des dates, jamais un nom ; et le bloc gel : les "
+                    + "familles du référentiel que la phase de l'édition fige (stands, créneaux, typologies et "
+                    + "emplacements, compétences) et depuis quand. Chaque ligne porte un "
+                    + "statut A_FAIRE, ATTENTION, INFO (des chiffres à lire, rien qui bloque) ou FAIT, et les "
+                    + "chiffres qui le décident ; aucune donnée nominative. "
+                    + "À appeler en premier pour savoir où en est l'organisateur, avant de choisir un outil plus fin.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    EtatEditionView consultEdition(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return etatEditionService.etat();
+    }
+
+    @Deprecated
+    @Tool(
+            name = "etat_edition",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_edition. "
+                    + "État de l'édition : la checklist du cycle, calculée — référentiels saisis, cohérence "
                     + "du référentiel (anomalies bloquantes, à vérifier, pour information ; le détail par "
                     + "lister_anomalies_referentiel), collecte "
                     + "des disponibilités, ouvertures des stands, besoin en animateurs, dernière résolution (et si "
@@ -240,9 +272,15 @@ public class EditionMcpTools {
     @InstanceOnlyTool
     @Tool(
             name = "creer_edition",
-            description = "Crée une édition vide ; son id (E suivi d'un nombre) est attribué par l'application "
-                    + "et figure dans la réponse. Pour repartir d'une édition existante (stands, animateurs, "
-                    + "paramètres), utiliser dupliquer_edition à la place.",
+            description = "Crée une édition ; son id (E suivi d'un nombre) est attribué par l'application et "
+                    + "figure dans la réponse. Sans « source », l'édition naît vide. Avec « source », elle est la "
+                    + "copie d'une édition existante : stands, typologies, emplacements, créneaux, horaires et "
+                    + "paramètres sont recopiés, jamais le planning résolu ; avec_animateurs=false laisse les "
+                    + "personnes derrière (le modèle d'année, pour préparer l'édition suivante sans recopier un "
+                    + "fichier de personnes qui ne se sont pas réinscrites). La nouvelle édition naît INACTIVE : "
+                    + "elle ne publie rien et n'écrit à personne tant que modifier_edition (active) ne l'a pas "
+                    + "désignée. Un plan de repli (canicule, orage) ne se fait pas par copie mais par une consigne "
+                    + "datée dans l'édition vivante (simuler_consigne, appliquer_consigne).",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -253,14 +291,36 @@ public class EditionMcpTools {
             @ToolArg(
                             description = "Nom affiché (ex. « Année 2027 ») ; un nom de la forme E12 est refusé, c'est "
                                     + "celle des identifiants")
-                    String nom) {
-        return view(editionService.create(new Edition(null, nom, false, null)));
+                    String nom,
+            @ToolArg(
+                            description = "Édition à copier : son id ou son nom (voir lister_editions) ; omis, "
+                                    + "l'édition naît vide",
+                            required = false)
+                    String source,
+            @ToolArg(
+                            description = "Avec « source » seulement : reprendre les animateurs et ce qui les "
+                                    + "concerne (compétences, indisponibilités, souhaits, ajustements manuels). Par "
+                                    + "défaut true.",
+                            required = false,
+                            name = "avec_animateurs")
+                    Boolean avecAnimateurs) {
+        if (source == null || source.isBlank()) {
+            if (avecAnimateurs != null) {
+                throw new BusinessError.Invalid("avec_animateurs ne vaut qu'avec « source » : l'édition à copier");
+            }
+            return view(editionService.create(new Edition(null, nom, false, null)));
+        }
+        // The catalogue files the tool under the creation; a copy is its own line.
+        currentAction.action("EDITION_DUPLIQUEE");
+        return duplicateEdition(source, nom, avecAnimateurs);
     }
 
+    @Deprecated
     @InstanceOnlyTool
     @Tool(
             name = "dupliquer_edition",
-            description = "Duplique une édition dans une nouvelle : stands, typologies, emplacements, créneaux, "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser creer_edition (source). "
+                    + "Duplique une édition dans une nouvelle : stands, typologies, emplacements, créneaux, "
                     + "horaires et paramètres sont recopiés, jamais le planning résolu. La copie naît INACTIVE : "
                     + "elle ne publie rien et n'écrit à personne tant qu'activer_edition ne l'a pas désignée. Un "
                     + "plan de repli (canicule, orage) ne se fait pas par duplication mais par une consigne datée "
@@ -290,7 +350,7 @@ public class EditionMcpTools {
     }
 
     /**
-     * Two editions named as plain arguments, like {@code dupliquer_edition}'s
+     * Two editions named as plain arguments, like {@code creer_edition}'s
      * source: the comparison spans both, so neither is « the edition the call
      * works in ». Animateurs leave by id only: {@link EditionDeltaService#compare}
      * is the anonymous delta, the labels the screen shows are another method.
@@ -328,8 +388,49 @@ public class EditionMcpTools {
 
     @InstanceOnlyTool
     @Tool(
+            name = "modifier_edition",
+            description = "Modifie une édition, un réglage par appel. « nom » la renomme : seul le nom affiché "
+                    + "change, l'id est repris dans les URLs et les configurations et n'est pas modifiable. "
+                    + "« active » true en fait l'édition ACTIVE et désactive l'ancienne dans le même geste : seule "
+                    + "l'édition active publie, envoie des courriels (rappels, relances, invitations) et ouvre "
+                    + "l'espace animateur, le flux ICS et l'affichage mural, les liens de l'ancienne cessent de "
+                    + "fonctionner. « active » false la désactive sans en activer d'autre : plus rien ne part vers "
+                    + "l'extérieur, l'état normal entre deux événements (sans effet sur une édition déjà inactive). "
+                    + "N'envoie rien lui-même. Changer l'activation est refusé pendant une résolution sur l'une des "
+                    + "éditions concernées, et ne se fait qu'avec l'accord explicite de l'utilisateur. La phase de "
+                    + "l'édition se change par modifier_phase_edition.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    EditionView modifyEdition(
+            @ToolArg(description = "Nouveau nom affiché ; absent quand « active » est donné", required = false)
+                    String nom,
+            @ToolArg(
+                            description = "true : l'édition devient l'édition active ; false : elle est désactivée. "
+                                    + "Absent quand « nom » est donné.",
+                            required = false)
+                    Boolean active,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        if ((nom == null) == (active == null)) {
+            throw new BusinessError.Invalid("Donner « nom » ou « active », l'un des deux et pas les deux.");
+        }
+        if (nom != null) {
+            return renameEdition(edition, nom);
+        }
+        // The catalogue files the tool under the renaming; an activation is its own line.
+        currentAction.action(active ? "EDITION_ACTIVEE" : "EDITION_DESACTIVEE");
+        return active ? activateEdition(edition) : deactivateEdition(edition);
+    }
+
+    @Deprecated
+    @InstanceOnlyTool
+    @Tool(
             name = "renommer_edition",
-            description = "Renomme une édition. Seul le nom affiché change : l'id, lui, est repris dans les URLs "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_edition (nom). "
+                    + "Renomme une édition. Seul le nom affiché change : l'id, lui, est repris dans les URLs "
                     + "et les configurations, il n'est pas modifiable.",
             annotations =
                     @Tool.Annotations(
@@ -344,10 +445,12 @@ public class EditionMcpTools {
         return view(editionService.renommer(id, new Edition(id, nom, false, null)));
     }
 
+    @Deprecated
     @InstanceOnlyTool
     @Tool(
             name = "activer_edition",
-            description = "Fait de cette édition l'édition ACTIVE, et désactive l'ancienne dans le même geste. "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_edition (active true). "
+                    + "Fait de cette édition l'édition ACTIVE, et désactive l'ancienne dans le même geste. "
                     + "Seule l'édition active publie, envoie des courriels (rappels, relances, invitations) et ouvre "
                     + "l'espace animateur, le flux ICS et l'affichage mural : les liens de l'ancienne cessent de "
                     + "fonctionner. N'envoie rien lui-même. Refusé pendant une résolution sur l'une des deux "
@@ -363,10 +466,12 @@ public class EditionMcpTools {
         return view(activationService.activate(id));
     }
 
+    @Deprecated
     @InstanceOnlyTool
     @Tool(
             name = "desactiver_edition",
-            description = "Désactive l'édition active, sans en activer d'autre : plus rien ne part vers "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_edition (active false). "
+                    + "Désactive l'édition active, sans en activer d'autre : plus rien ne part vers "
                     + "l'extérieur (ni publication, ni courriel, ni espace animateur) — l'état normal entre deux "
                     + "événements. Sans effet sur une édition déjà inactive. Refusé pendant une résolution sur "
                     + "cette édition. À ne lancer qu'avec l'accord explicite de l'utilisateur.",

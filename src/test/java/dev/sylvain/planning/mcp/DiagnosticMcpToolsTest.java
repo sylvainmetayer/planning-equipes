@@ -76,7 +76,7 @@ class DiagnosticMcpToolsTest {
 
     private void loadScenario() {
         scenarioTools.resetData("E1");
-        scenarioTools.importScenario("scenario.yml", "E1");
+        scenarioTools.importScenario("scenario.yml", null, "E1");
     }
 
     @Test

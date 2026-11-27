@@ -264,7 +264,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   consultation dialog is gone), `/animateurs/:id` (« Fiche animateur »
   — one person on one page and every gesture on them: a head of actions — the
   espace link copied, the planning mailed through the service the MCP tool
-  `envoyer_planning_animateur` uses, the reminder, the PDF and the ICS, the
+  `publier_planning` uses in its `renvoyer` mode, the reminder, the PDF and the ICS, the
   whole planning locked or released, the adjustment form pre-filled on the
   person, the fiche's form — and « précédent / suivant » through the list's
   view, rebuilt by the pure `pages/animateurs/animateur-roster.ts` the list

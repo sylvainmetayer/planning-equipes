@@ -74,7 +74,7 @@ class EditionMcpToolsTest {
     }
 
     private String createTestEdition() {
-        return editionTools.createEdition(NOM_TEST).id();
+        return editionTools.createEdition(NOM_TEST, null, null).id();
     }
 
     @Test

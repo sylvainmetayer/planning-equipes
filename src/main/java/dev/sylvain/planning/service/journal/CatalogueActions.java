@@ -813,7 +813,10 @@ public final class CatalogueActions {
         outil("definir_prereglage_consigne", PREREGLAGE_CONSIGNE_ENREGISTRE);
         outil("supprimer_prereglage_consigne", PREREGLAGE_CONSIGNE_SUPPRIME);
 
+        // A copy states its own action (CurrentAction); the empty edition is the default.
         outil("creer_edition", EDITION_CREEE);
+        // An activation states its own action (CurrentAction); the renaming is the default.
+        outil("modifier_edition", EDITION_RENOMMEE);
         outil("renommer_edition", EDITION_RENOMMEE);
         outil("dupliquer_edition", EDITION_DUPLIQUEE);
         outil("activer_edition", EDITION_ACTIVEE);
@@ -831,6 +834,7 @@ public final class CatalogueActions {
         outil("resoudre_incremental", SOLVE_INCREMENTAL_LANCE);
         outil("arreter_solveur", SOLVE_ARRETE);
         outil("supprimer_job", JOB_SUPPRIME);
+        outil("supprimer_donnees_edition", PLANNING_REINITIALISE);
         outil("reinitialiser_donnees", PLANNING_REINITIALISE);
         outil("deplacer_affectation", AFFECTATION_DEPLACEE);
         outil("affecter_poste", AFFECTATION_POSEE);
@@ -838,6 +842,7 @@ public final class CatalogueActions {
         outil("creer_version", INSTANTANE_CAPTURE);
         outil("restaurer_version", INSTANTANE_RESTAURE);
         outil("supprimer_version", INSTANTANE_SUPPRIME);
+        // A resend or a reminder states its own action (CurrentAction); the publication is the default.
         outil("publier_planning", PLANNING_PUBLIE);
         outil("envoyer_planning_animateur", PLANNING_ENVOYE);
         outil("relancer_animateurs", ANIMATEURS_RELANCES);
@@ -850,6 +855,9 @@ public final class CatalogueActions {
         // section route has its own; this one only names a call refused on an
         // unknown section.
         outil("modifier_parametres", PARAMETRES_MODIFIES);
+        outil("modifier_parametres_legaux", PARAMETRES_LEGAUX_MODIFIES);
+        outil("modifier_parametres_qualite", PARAMETRES_QUALITE_MODIFIES);
+        outil("modifier_parametres_notifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
         // The tool states the setting it changed (CurrentAction): one setting per call.
         outil("modifier_contrainte", CONTRAINTE_PONDEREE);
         outil("activer_contrainte", CONTRAINTE_ACTIVEE);

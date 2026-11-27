@@ -49,7 +49,7 @@ const ANCHORS = new Set(['a-traiter', 'alertes-nuit']);
  * « État de l'édition », the home screen (issue #485): the cycle of the
  * guide as a checklist, each line with its state, its figures and the screen
  * that moves it. One call, `GET /api/editions/courant/etat`; the states are
- * decided server-side so an assistant reading `etat_edition` sees the same
+ * decided server-side so an assistant reading `consulter_edition` sees the same
  * thing as the organiser.
  *
  * Its form follows the phase the server judges on its own today: while

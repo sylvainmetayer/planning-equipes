@@ -279,7 +279,7 @@ class McpPromptsWordingTest {
 
         assertThat(text)
                 .contains("Seul publier_planning envoie le nouveau planning")
-                .contains("N'appelle pas envoyer_planning_animateur")
+                .contains("N'appelle pas publier_planning en mode renvoyer")
                 .contains("« Aujourd'hui »")
                 .contains("modifier_affectation (mode deplacer)")
                 .doesNotContain("Mode jour J");
@@ -302,7 +302,7 @@ class McpPromptsWordingTest {
         String text = prompts.startANewEdition("Année 2026").content().asText().text();
 
         assertThat(text)
-                .contains("argument source de dupliquer_edition")
+                .contains("argument source de creer_edition")
                 .contains("n'est jamais celle que tu renommes ou actives")
                 .contains("edition=<id de la nouvelle édition>");
     }
@@ -313,7 +313,7 @@ class McpPromptsWordingTest {
         String text = prompts.prepareAFallbackPlan(null).content().asText().text();
 
         assertThat(text)
-                .contains("n'appelle ni dupliquer_edition ni activer_edition")
+                .contains("n'appelle ni creer_edition ni modifier_edition")
                 .contains("appliquer_consigne")
                 .contains("lever_consigne");
     }

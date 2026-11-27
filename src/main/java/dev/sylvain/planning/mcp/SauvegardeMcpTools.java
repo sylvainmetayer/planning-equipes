@@ -14,7 +14,7 @@ import jakarta.inject.Inject;
  *
  * <p>Exposed because a backup nobody looks at is a backup nobody has: an
  * assistant about to run {@code importer_scenario} or
- * {@code reinitialiser_donnees} can now check what the last dump was worth
+ * {@code supprimer_donnees_edition} can now check what the last dump was worth
  * before overwriting an edition.</p>
  *
  * <p><b>Reading the state is all there is</b>, deliberately. The dumps are
@@ -42,8 +42,27 @@ public class SauvegardeMcpTools {
 
     @InstanceOnlyTool
     @Tool(
-            name = "etat_sauvegardes",
+            name = "consulter_sauvegardes",
             description = "État de la sauvegarde nocturne, toutes éditions confondues : si elle est configurée, "
+                    + "où elle écrit, sa périodicité, sa rétention, sa prochaine exécution, comment s'est passée la "
+                    + "dernière et les fichiers présents. Les dumps eux-mêmes ne sont jamais servis : ils portent "
+                    + "toutes les données personnelles.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    BackupState consultBackups() {
+        return backupService.state();
+    }
+
+    @Deprecated
+    @InstanceOnlyTool
+    @Tool(
+            name = "etat_sauvegardes",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_sauvegardes. "
+                    + "État de la sauvegarde nocturne, toutes éditions confondues : si elle est configurée, "
                     + "où elle écrit, sa périodicité, sa rétention, sa prochaine exécution, comment s'est passée la "
                     + "dernière et les fichiers présents. Les dumps eux-mêmes ne sont jamais servis : ils portent "
                     + "toutes les données personnelles.",

@@ -218,6 +218,7 @@ class OidcMcpTest {
             assertThat(instance.toString()).contains("administrateurs");
 
             assertThat(isError(call(organisateur, "etat_sauvegardes", "{}"))).isTrue();
+            assertThat(isError(call(organisateur, "consulter_sauvegardes", "{}"))).isTrue();
 
             JsonNode permis = call(organisateur, "lister_stands", "{\"edition\":\"E1\"}");
             assertThat(isError(permis)).as(permis.toString()).isFalse();

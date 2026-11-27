@@ -1,6 +1,6 @@
 # 0127 — Un outil MCP par objet et par verbe, les anciens noms en alias jusqu'en 5.0
 
-- **Statut** : accepté, implémenté (plan, calcul, règles, échanges ; les autres familles suivent)
+- **Statut** : accepté, implémenté (plan, calcul, règles, échanges ; paramètres, éditions, scénarios, publication, sauvegardes ; les autres familles suivent)
 - **Date** : novembre 2026
 - **Portée** : outils MCP, table `mcp-renommages.tsv`, invites et ressources MCP, guide de migration 4.0
 - **Révise** : [0100](0100-convention-de-nommage-des-outils-mcp.md) § 5 (« pas d'alias »)
@@ -18,6 +18,10 @@ La 3.1 publie 157 outils. Un assistant les relit tous à chaque connexion, et be
 4. **Les anciens noms restent publiés jusqu'en 5.0**, avec leurs arguments et leurs réponses, la description commençant par « Ancien nom, gardé jusqu'en 5.0 : utiliser … ». La table `mcp-renommages.tsv` donne pour chacun le nouvel outil ; un outil ajouté en 4.0 et regroupé avant toute version publiée (`modifier_niveau_contrainte`) disparaît sans alias.
 5. **Un outil regroupé journalise le geste fait** : le catalogue lui donne une action par défaut, et l'outil déclare l'autre (`CurrentAction`) quand l'argument en choisit une autre — un déplacement, un refus d'échange, une activation de règle.
 
+6. **Deux outils pour un même objet quand leurs appelants diffèrent.** Un argument ne change pas non plus qui peut appeler l'outil (ADR 0097) : `modifier_phase_edition` reste ouvert à l'organisateur connecté par OAuth, `modifier_edition` (`nom`, `active`) et `creer_edition` (`source` pour une copie) sont réservés à l'administrateur de l'instance. Les fondre aurait fermé la phase à l'organisateur, ou ouvert l'activation à tous.
+7. **Les paramètres sont un outil à sections** (`consulter_parametres` et `modifier_parametres`, `section` = `legal`, `organisation`, `notifications` ou `calcul`) : deux outils et non un, parce qu'un outil qui lit et écrit ne peut pas se déclarer en lecture seule. Les anciens noms de la 3.x reviennent en alias, sauf `modifier_parametres_solveur` : le budget de calcul qu'il réglait est passé à l'instance (ADR 0110), un alias n'aurait su que refuser.
+8. **Un seul outil écrit aux animateurs** : `publier_planning`, `mode` = `publier` (défaut), `renvoyer` ou `relancer`, les trois gestes ayant les mêmes hints et le même `openWorldHint`. Appelé sans `mode`, il publie comme en 3.x et rend les mêmes clés au premier niveau ; un renvoi et une relance répondent sous leur propre clé. La liste des outils sortants garde ses anciens noms jusqu'en 5.0, et chaque mode passe par une méthode de service gardée par `@RequiresActiveEdition`.
+
 ## Options écartées
 
 - **Pas d'alias** (0100 § 5) : une invite écrite pour la 3.x casserait au premier appel, sans que l'opérateur sache quoi changer ; le coût des doublons dans les tests structurels est une ligne par ancien nom, retirée en 5.0.
@@ -26,4 +30,5 @@ La 3.1 publie 157 outils. Un assistant les relit tous à chaque connexion, et be
 ## Conséquences
 
 - Plan, calcul, règles et échanges passent de 33 outils à 21, plus 23 anciens noms publiés jusqu'en 5.0.
+- Paramètres, éditions, scénarios, publication, météo et sauvegardes passent de 37 outils à 21, plus 22 anciens noms publiés jusqu'en 5.0.
 - En 5.0, les méthodes `@Deprecated` des classes `mcp` partent avec leurs lignes des listes structurelles.

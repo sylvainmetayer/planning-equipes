@@ -252,7 +252,7 @@ class RegroupementPlanningMcpToolsTest {
     private AffectationView firstFilledSeat() {
         awaitSolverIdle();
         scenarioTools.resetData("E1");
-        scenarioTools.importScenario("scenario.yml", "E1");
+        scenarioTools.importScenario("scenario.yml", null, "E1");
         JobMcpView job = solveurTools.startCalcul(1L, null, null, null, "E1");
         dernierCalcul = job.id();
         assertThat(awaitFinished(job.id()).status()).isEqualTo(JobStatus.COMPLETED.name());

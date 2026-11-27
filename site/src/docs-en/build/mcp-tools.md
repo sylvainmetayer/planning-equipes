@@ -9,11 +9,11 @@ Everywhere, a tool that reads a plan reads the **saved plan**, and a person come
 
 ## Knowing where the edition stands
 
-`etat_edition` is the first useful call. It returns the cycle checklist that the home page displays (reference data, collection, openings, need, last solve, publication, acknowledgements of receipt, fair), each line with its status (`A_FAIRE`, `ATTENTION`, `INFO`, `FAIT`) and the figures that decide it, computed on the server side and therefore identical for the screen and the assistant. A solve in progress reads there as a status, without making the call fail. It contains only counts and dates.
+`consulter_edition` is the first useful call. It returns the cycle checklist that the home page displays (reference data, collection, openings, need, last solve, publication, acknowledgements of receipt, fair), each line with its status (`A_FAIRE`, `ATTENTION`, `INFO`, `FAIT`) and the figures that decide it, computed on the server side and therefore identical for the screen and the assistant. A solve in progress reads there as a status, without making the call fail. It contains only counts and dates.
 
 - The `coherence` block counts the input anomalies; `lister_anomalies_referentiel` gives the detail (family, severity, code, record concerned by `objet` and `objetId`) without the sentence or the date that the screen displays. This is the rule of `WarningCodes` applied to the whole list: the warning about a minor dates their coming of age.
 - The `aTraiter` block answers "what must I do this morning?": declarations and swaps pending, unreviewed days of the next seven days, silent staff to remind. "Today" is that of `JourJClock`, simulated date included.
-- `consulter_planning` says when the solver last ran, `etat_publication` when the staff were notified. Only the second describes what people have under their eyes: a plan computed this morning and published last week is, for them, last week's. `etat_publication` also says who would be concerned by the next publication, without sending anything.
+- `consulter_planning` says when the solver last ran, `consulter_publication` when the staff were notified. Only the second describes what people have under their eyes: a plan computed this morning and published last week is, for them, last week's. `consulter_publication` also says who would be concerned by the next publication, without sending anything.
 - `changements_journee` says what moved on a date, since the last publication (`reference=publication`) or since the plan before the last solve (`reference=resolution`), by seat and by staff member. A seat kept by the same person at other hours is a `HORAIRES` line. `referenceDisponible` false means "nothing to compare", never "no change".
 - `comparer_realise_planifie` returns the screen of the same name for each stand and each **elapsed** day: seats published, held, absences, replacements, empty, removed (consigne, deleted timeslot: never an absence) or added, minutes published, done and lost. Each day is compared with the publication in force at its first timeslot; a day begun before any publication (`lateReference`) enters no total. `nature` is `DECLARED`: what was recorded, not a clock-in.
 - `consulter_planning`, view `synthese`, answers in a few dozen lines (seats filled in total, per stand and per day), where the `affectations` view would spend the assistant's context before it sees that a stand is understaffed on Saturday.
@@ -70,7 +70,7 @@ An arrêté (an official order) closes a time band for all stands, and the quest
 1. `consulter_preselection_consigne` on each date: what the band takes from each stand, the stands proposed, those set aside for hours set by hand. Writes nothing.
 2. `simuler_consigne`: per day, seats and minutes before and after, timeslots to add, locks and ad hoc rules touched. This is the full validation without writing: a request that the simulation accepts will be accepted as is.
 3. `appliquer_consigne`, same arguments: lays down or replaces the consigne of a date and adds to the grid only the timeslots that the openings require. The dates must be in the future and are all written together or not at all.
-4. `lancer_correction`, then `etat_publication` and `publier_planning`.
+4. `lancer_correction`, then `consulter_publication` and `publier_planning`.
 
 Lifting follows the same pattern: `simuler_levee_consigne` names the added timeslots that would leave with their seats and warns when the frozen days exhaust the available people, `lever_consigne` removes them and refuses a past or current date, a worked day keeping the consigne that governed it. A preset ("Heatwave plan") memorises band, reason and windows and follows the edition's duplication. `consulter_alertes_meteo` returns the alerts raised in the morning with the preset suggested for the phenomenon; it lays nothing down, applying the suggestion remains an explicit `appliquer_consigne`.
 
@@ -80,9 +80,15 @@ Availability declarations and swap requests arrive from the staff espace. `appli
 
 `consulter_foire_echanges` returns the fair's window and its statistics (volumes, rates, delays, breakdowns by day and by stand) over a creation period (`du`, `au`, or `touteEdition`, refused together with the other two). No staff member appears there, not even by id.
 
-`synthese_confirmations` counts, among the staff who have a seat on the published plan, those confirmed, reminded, silent and the **send failures** (counted apart, with no address) and dates the publication they are answering; `jamaisPublie` true means the question has not yet been put to anyone.
+`consulter_publication`, view `confirmations`, counts, among the staff who have a seat on the published plan, those confirmed, reminded, silent and the **send failures** (counted apart, with no address) and dates the publication they are answering; `jamaisPublie` true means the question has not yet been put to anyone.
 
 `lister_demandes_covoiturage` returns the "I'm coming with…" requests of the collection, apart from the declaration: members, status, `confirmedByAll`, days where unavailabilities diverge, adjustment created, all by id, with status `EN_ATTENTE` (not validated) or `VALIDEE`. Validation, set-aside and cancellation remain screen gestures, because validation notifies the staff by e-mail; an assistant creates an `ARRIVEE_GROUPEE` directly through `creer_contrainte_ad_hoc`. On the other hand, `supprimer_contrainte_ad_hoc` on a grouped arrival that a validated request supports returns a result in error carrying the sentence of the Manual adjustments screen (cancel it from Availability > Carpool).
+
+## Editions, scenarios and publication
+
+One tool per object and per verb, the gesture passed as an argument ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)). `creer_edition` creates an empty edition, or the copy of another one with `source`, with or without its staff. `modifier_edition` changes one setting per call: `nom`, or `active` (true: it becomes the active edition and the former one stops being so; false: nothing leaves any more). The phase stays `modifier_phase_edition`, open to the organiser signed in through OAuth, whereas `creer_edition` and `modifier_edition` are reserved to the instance administrator.
+
+`importer_scenario` takes a shipped scenario (`nom`) or YAML content (`yaml`), one of the two; `diagnostiquer_scenario` checks a YAML without importing anything, and `supprimer_donnees_edition` empties the edition. `consulter_publication` reads the publication under a `vue`: `etat` (default), `destinataires` (the trace of a publication) or `confirmations`. `publier_planning` is the only tool of the family that writes to people, under three `mode`s: `publier` (default, everyone), `renvoyer` (the published schedule of one staff member) and `relancer` (the designated silent ones). A publication returns the same keys as in 3.x (`snapshotId`, `envoyes`…), a resend its `envoi` key, a reminder its `relance` key. `consulter_sauvegardes` gives the state of the nightly backup, `modifier_sauvegardes` suspends it.
 
 ## Prompts and resources
 
@@ -90,7 +96,7 @@ The server also serves **twenty-two prompts**, one for each moment of an event's
 
 Each prompt takes an **optional** `edition` argument. Provided, the text names it; omitted, it asks the assistant to call `lister_editions` and retain the active edition, or to ask the question if there is none. In both cases it asks the assistant to pass the edition on every tool call. For `demarrer_une_nouvelle_edition`, it is the **source** edition of the duplication; for `tirer_le_bilan_de_l_evenement`, omitted, it has the assistant propose the edition whose event has just ended, rarely still the active one. `preparer_un_plan_de_repli` prepares the fallback as a dated consigne in the live edition, without duplicating it.
 
-A prompt that names an outgoing tool requires explicit agreement and first has the assistant check that the edition is the active one; the assistant stops rather than activating one of its own accord. `tenir_le_jour_j` notifies through `publier_planning`: `envoyer_planning_animateur` would resend the plan already published, that is, the old one. The interface's MCP page reads them on `GET /api/mcp/prompts` instead of copying them: one text, one source. They are **not translated**. `McpPromptsWordingTest` re-reads their rendered text, with and without an edition: every snake_case word must name an announced tool or prompt (otherwise it appears, argued, in the test's exceptions), and any tool whose `openWorldHint` is true cited by a prompt that is silent on agreement makes the build fail. A renamed tool therefore cannot leave a prompt behind.
+A prompt that names an outgoing tool requires explicit agreement and first has the assistant check that the edition is the active one; the assistant stops rather than activating one of its own accord. `tenir_le_jour_j` notifies through `publier_planning`: its `renvoyer` mode would resend the plan already published, that is, the old one. The interface's MCP page reads them on `GET /api/mcp/prompts` instead of copying them: one text, one source. They are **not translated**. `McpPromptsWordingTest` re-reads their rendered text, with and without an edition: every snake_case word must name an announced tool or prompt (otherwise it appears, argued, in the test's exceptions), and any tool whose `openWorldHint` is true cited by a prompt that is silent on agreement makes the build fail. A renamed tool therefore cannot leave a prompt behind.
 
 Two **resources**, to attach once to inform all following calls:
 
@@ -101,13 +107,14 @@ Two **resources**, to attach once to inform all following calls:
 
 ## Old tool names
 
-4.0 renames, groups or removes tools of 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). A grouped tool does under one name, with an argument (`vue`, `mode`, `decision`), what several used to do ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)); its old names stay published until 5.0 next to the new one, their description starting with « Ancien nom »: those of the day review, those of the day templates, the recurring timeslots and the derivation, which the timeslot generator grouped ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), and those of the plan, the solve, the rules and the swaps. This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
+4.0 renames, groups or removes tools of 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). A grouped tool does under one name, with an argument (`vue`, `mode`, `decision`), what several used to do ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)); its old names stay published until 5.0 next to the new one, their description starting with « Ancien nom »: those of the day review, those of the day templates, the recurring timeslots and the derivation, which the timeslot generator grouped ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), those of the plan, the solve, the rules and the swaps, and those of the parameters, the editions, the scenarios, the publication and the backups. The former solver settings tool is no longer published: the compute budget it set moved to the instance, and only the end-of-solve mail stays in `modifier_parametres` (section `calcul`). This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
 
 <!-- mcp-renommages:debut -->
 | Name in 3.x | Name in 4.0 |
 | --- | --- |
 | `accepter_demande_echange` | `modifier_demande_echange` |
 | `activer_contrainte` | `modifier_contrainte` |
+| `activer_edition` | `modifier_edition` |
 | `affecter_journee_type` | `modifier_gabarit` |
 | `affecter_poste` | `modifier_affectation` |
 | `ajouter_fermeture_stand` | `creer_plage_stand` |
@@ -129,16 +136,25 @@ Two **resources**, to attach once to inform all following calls:
 | `definir_journee_type` | `modifier_gabarit` |
 | `deplacer_affectation` | `modifier_affectation` |
 | `desactiver_contrainte` | `modifier_contrainte` |
+| `desactiver_edition` | `modifier_edition` |
+| `dupliquer_edition` | `creer_edition` |
+| `edition_courante` | `lister_editions` |
 | `effacer_horaires_stand` | `supprimer_horaires_stand` |
 | `effacer_plages_stand` | `supprimer_plage_stand` |
+| `envoyer_planning_animateur` | `publier_planning` |
+| `etat_edition` | `consulter_edition` |
 | `etat_planning` | `consulter_planning` |
+| `etat_publication` | `consulter_publication` |
+| `etat_sauvegardes` | `consulter_sauvegardes` |
 | `expliquer_affectation` | `analyser_affectation` |
 | `expliquer_echec_contraintes_dures` | `diagnostiquer_plan` |
 | `figer_referentiel` | `modifier_phase_edition` |
 | `generer_creneaux_depuis_stands` | `appliquer_generateur_creneaux` |
+| `importer_scenario_yaml` | `importer_scenario` |
 | `lancer_solveur` | `lancer_calcul` |
 | `lever_gel` | `modifier_phase_edition` |
 | `lister_affectations` | `consulter_planning` |
+| `lister_destinataires_publication` | `consulter_publication` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_jobs` | `consulter_calcul` |
 | `lister_journees_types` | `lister_gabarits` |
@@ -157,6 +173,9 @@ Two **resources**, to attach once to inform all following calls:
 | `realise_vs_planifie` | `comparer_realise_planifie` |
 | `reconnaitre_journees_types` | `appliquer_generateur_creneaux` |
 | `refuser_demande_echange` | `modifier_demande_echange` |
+| `reinitialiser_donnees` | `supprimer_donnees_edition` |
+| `relancer_animateurs` | `publier_planning` |
+| `renommer_edition` | `modifier_edition` |
 | `resoudre_incremental` | `lancer_correction` |
 | `restaurer_instantane` | `restaurer_version` |
 | `resultats_animateur` | `consulter_planning` |
@@ -171,6 +190,8 @@ Two **resources**, to attach once to inform all following calls:
 | `supprimer_journee_type` | `supprimer_gabarit` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |
 | `synthese_affectations` | `consulter_planning` |
+| `synthese_confirmations` | `consulter_publication` |
+| `valider_scenario_yaml` | `diagnostiquer_scenario` |
 <!-- mcp-renommages:fin -->
 
 ## What has no tool
@@ -178,7 +199,7 @@ Two **resources**, to attach once to inform all following calls:
 | What stays outside | Why |
 | --- | --- |
 | YAML scenario export | it contains first name, last name and date of birth, since it must be re-importable |
-| Backups before emptying | each is a scenario export. `reinitialiser_donnees` and the imports write one, but only an administrator reads, restores or deletes it, through the API ([ADR 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) |
+| Backups before emptying | each is a scenario export. `supprimer_donnees_edition` and the imports write one, but only an administrator reads, restores or deletes it, through the API ([ADR 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) |
 | SQL dump, PDF, ICS and CSV exports | all the personal data, or binaries meant for download from the interface |
 | CSV import of volunteers | the spreadsheet carries last name, first name, date of birth and address: a tool that accepted it would let in through MCP what does not leave through it |
 | `/api/planning/sample`, `/persisted` | a whole `PlanningEvenement`, several dozen MB with the personal data; `consulter_planning` (view `affectations`) covers the need while staying filtered |

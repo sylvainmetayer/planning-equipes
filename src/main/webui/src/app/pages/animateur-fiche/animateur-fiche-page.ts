@@ -556,7 +556,7 @@ export class AnimateurFichePage implements OnInit {
 
   /**
    * « Envoyer son planning » : the individual publication mail — the same
-   * send as the MCP tool `envoyer_planning_animateur`, built server-side from
+   * send as the MCP tool `publier_planning` (mode renvoyer), built server-side from
    * the persisted plan. Real mail to a real person: asked first.
    */
   protected async sendPlanning(): Promise<void> {

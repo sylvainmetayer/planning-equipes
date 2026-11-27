@@ -1,0 +1,9 @@
+---
+ordre: 92
+---
+
+### MCP tools of the parameters, the editions, the scenarios and the publication
+
+- **Before (3.x)**: 37 tools, several of them for one object: eight for the parameters (`consulter_parametres_legaux`, `modifier_parametres_qualite`…), `edition_courante`, `etat_edition`, `dupliquer_edition`, `renommer_edition`, `activer_edition` and `desactiver_edition` for the editions, `importer_scenario` and `importer_scenario_yaml` for an import, `etat_publication`, `lister_destinataires_publication` and `synthese_confirmations` to read a publication, `publier_planning`, `envoyer_planning_animateur` and `relancer_animateurs` to write to the staff.
+- **After (4.0)**: one tool per object and per verb ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)): `consulter_parametres` and `modifier_parametres` (`section`), `consulter_edition`, `creer_edition` (`source` to copy an edition), `modifier_edition` (`nom` or `active`), `importer_scenario` (`nom` or `yaml`), `diagnostiquer_scenario`, `supprimer_donnees_edition`, `consulter_publication` (`vue`: `etat`, `destinataires`, `confirmations`), `publier_planning` (`mode`: `publier`, `renvoyer`, `relancer`) and `consulter_sauvegardes`. These families go down to 21 tools. `publier_planning` stays the only one that sends e-mail; called without `mode`, it publishes as before and returns the same keys.
+- **What you do**: nothing right away. The old names stay published until 5.0, with their arguments and their answers, their description starting with « Ancien nom ». Only `modifier_parametres_solveur` has none any more: the compute budget it set is an instance setting since 4.0, and the end-of-solve mail is set through `modifier_parametres` (section `calcul`). A prompt, an instruction or a script that names the old tools must move to the new names before 5.0: the mapping is in [the old tool names](../comprendre/mcp-outils.md#anciens-noms-doutils).
