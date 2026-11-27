@@ -10,6 +10,8 @@ import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -374,5 +376,72 @@ class McpPromptsWordingTest {
                     .orElseThrow();
             assertThat(expose.texte()).as("texte de %s", nom).contains("id");
         }
+    }
+
+    /**
+     * The renaming table's « old » column, from {@code mcp-renommages.tsv}: the names an assistant must
+     * no longer be told to call, since they stay published until 5.0 only as aliases. A name that did
+     * not change, or one without an underscore (a plain word of prose), is not a trap and is left out.
+     */
+    private static Set<String> oldToolNames() throws Exception {
+        Set<String> old = new TreeSet<>();
+        for (var row : McpRenommageTest.table(Files.readString(Path.of("src/main/resources/mcp-renommages.tsv")))
+                .entrySet()) {
+            if (!row.getKey().equals(row.getValue()) && row.getKey().contains("_")) {
+                old.add(row.getKey());
+            }
+        }
+        assertThat(old).as("old names of the table").isNotEmpty();
+        return old;
+    }
+
+    /** Prompts and resources speak the current names only: an alias is a courtesy to old scripts, not to them. */
+    @Test
+    void noPromptNorResourceCitesAnOldToolName() throws Exception {
+        List<String> texts = new ArrayList<>(renderedTexts());
+        texts.add(new McpResources().vocabulaire().text());
+        texts.add(new McpResources().catalogueContraintes().text());
+
+        Set<String> old = oldToolNames();
+        for (String text : texts) {
+            Set<String> cited = snakeCaseWords(text);
+            cited.retainAll(old);
+            assertThat(cited)
+                    .as("old names cited in: %s", text.lines().findFirst().orElse(""))
+                    .isEmpty();
+        }
+    }
+
+    /** What the vocabulary and the catalogue name in snake case is a tool or a prompt the server announces. */
+    @Test
+    void theResourcesCiteExistingToolsOnly() throws Exception {
+        Set<String> known =
+                new TreeSet<>(OutilsMcp.all().stream().map(FeatureNames::of).toList());
+        prompts.catalogue().forEach(expose -> known.add(expose.nom()));
+
+        Set<String> cited = snakeCaseWords(new McpResources().vocabulaire().text());
+        cited.removeAll(known);
+        assertThat(cited).as("vocabulary words naming no tool and no prompt").isEmpty();
+    }
+
+    /** The vocabulary's menu table sends the reader to every prompt, and to the nine entries of the menu. */
+    @Test
+    void theVocabularyMapsEveryPromptToAMenuEntry() {
+        String vocabulary = new McpResources().vocabulaire().text();
+
+        for (PromptExpose expose : prompts.catalogue()) {
+            assertThat(vocabulary).as("menu table lists %s", expose.nom()).contains("`" + expose.nom() + "`");
+        }
+        assertThat(vocabulary)
+                .contains(
+                        "**Accueil**",
+                        "**Préparer**",
+                        "**Fichiers**",
+                        "**Planning**",
+                        "**Diagnostic**",
+                        "**Règles**",
+                        "**Diffuser**",
+                        "**Aujourd'hui**",
+                        "**Administrer**");
     }
 }

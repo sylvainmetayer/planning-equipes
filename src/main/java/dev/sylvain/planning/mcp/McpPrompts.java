@@ -170,7 +170,7 @@ public class McpPrompts {
                 non décidée n'est pas dans le référentiel, et résoudre avant de la traiter, c'est \
                 résoudre le mauvais problème. La section covoiturage de même : une arrivée groupée encore \
                 EN_ATTENTE ne pèse rien tant qu'elle n'est pas validée depuis l'onglet Covoiturage de \
-                l'écran Disponibilités. Dis-moi combien il en reste de chaque.
+                la page Animateurs. Dis-moi combien il en reste de chaque.
                 5. diagnostiquer_creneaux (section controle) : la grille est-elle cohérente ?
                 6. lister_anomalies_referentiel, famille STANDS : y a-t-il des stands jamais ouverts, des \
                 fenêtres sans effet, des segments trop courts ?
@@ -203,7 +203,7 @@ public class McpPrompts {
                 2. Si une partie du planning est déjà bonne, fige-la avec verrouiller avant de \
                 relancer — sinon la résolution la défera.
                 3. lancer_calcul, puis consulter_calcul jusqu'à la fin du job.
-                4. comparer_versions entre l'instantané capturé et « courant ».
+                4. comparer_versions entre la version créée et « courant ».
                 5. Dis-moi ce qui a changé : score, postes pourvus, écarts par contrainte. Si le \
                 résultat est moins bon, propose restaurer_version — mais ne le fais pas sans mon \
                 accord. Si la pause sur le poste est déclarée (consulter_parametres (section legal)), appelle \
@@ -309,7 +309,7 @@ public class McpPrompts {
                 5. consulter_disponibilites (section covoiturage) : les demandes « Je viens avec… » sont \
                 distinctes des \
                 déclarations, et appliquer une déclaration ne les touche pas. Dis-moi celles qui sont \
-                EN_ATTENTE : elles se valident depuis l'onglet Covoiturage de l'écran Disponibilités, \
+                EN_ATTENTE : elles se valident depuis l'onglet Covoiturage de la page Animateurs, \
                 pas ici.
                 6. Quand il n'en reste plus, rappelle-moi que le planning résolu est maintenant \
                 périmé : consulter_planning le dit, et il faut relancer une résolution.
@@ -492,7 +492,7 @@ public class McpPrompts {
                 manquante) et former (compétence à faire monter chez quelqu'un de déjà présent), en \
                 nommant la typologie à chaque ligne.
 
-                L'onglet « Fragilité » de l'écran Diagnostic montre la même lecture poste par poste, \
+                L'onglet « Risques » du Diagnostic montre la même lecture poste par poste, \
                 si le détail est nécessaire. Les animateurs se désignent par leur id.""".formatted(designation(edition), editionFrame(edition)));
     }
 
@@ -538,7 +538,7 @@ public class McpPrompts {
 
                 1. consulter_disponibilites (section covoiturage) : les demandes EN_ATTENTE ne pèsent \
                 rien tant qu'elles \
-                ne sont pas validées, depuis l'onglet Covoiturage de l'écran Disponibilités. Signale \
+                ne sont pas validées, depuis l'onglet Covoiturage de la page Animateurs. Signale \
                 celles dont les membres ne se sont pas tous nommés, ou dont les jours d'indisponibilité \
                 divergent.
                 2. analyser_arrivees_groupees sur le planning résolu : jour par jour, qui travaille, \

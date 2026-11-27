@@ -33,7 +33,7 @@ Les quatre *hints* de la spécification MCP sont déclarés sur **tous** les out
 | Hint | Valeur |
 | --- | --- |
 | `readOnlyHint` | vrai pour les outils qui ne font que lire |
-| `destructiveHint` | vrai pour les suppressions, les imports, une restauration d'instantané et les résolutions, qui remplacent le plan enregistré |
+| `destructiveHint` | vrai pour les suppressions, les imports, une restauration de version et les résolutions, qui remplacent le plan enregistré |
 | `idempotentHint` | vrai quand rappeler l'outil avec les mêmes arguments ne change plus rien |
 | `openWorldHint` | vrai pour les seuls outils qui envoient du courriel, faux partout ailleurs |
 
