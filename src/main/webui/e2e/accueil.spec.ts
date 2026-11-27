@@ -111,12 +111,13 @@ test("la cloche et l'ancienne page Notifications mènent au fil d'alertes et de 
   await expect(page).toHaveURL(/\/#a-traiter$/);
   await expect(page.locator('#a-traiter')).toBeVisible();
   await expect(page.locator('#fil-accueil')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Tout marquer comme lu' })).toBeVisible();
 
   // The former address opens the feed on its messages, the filter in the URL.
   await page.goto('/notifications');
   await expect(page).toHaveURL(/\/\?type=messages#a-traiter$/);
   await expect(page.locator('#fil-accueil a[aria-current="true"]')).toContainText('Messages');
+  // The messages are folded in the plain feed but always open under their filter.
+  await expect(page.getByRole('button', { name: 'Tout marquer comme lu' })).toBeVisible();
 
   // Another type: the address follows, and "Tout" drops the filter.
   await page.locator('#fil-accueil nav a', { hasText: 'Alertes du plan' }).click();

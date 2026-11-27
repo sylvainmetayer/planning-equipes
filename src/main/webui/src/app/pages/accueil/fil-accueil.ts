@@ -5,6 +5,7 @@ import {
   inject,
   input,
   resource,
+  signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,8 +16,16 @@ import { ConstraintsApi } from '../../core/api/constraints-api';
 import { intlLocale } from '../../core/locale';
 import { CoherenceReport } from '../../core/models';
 import { NotificationService, NotificationSeverity } from '../../core/notification.service';
+import {
+  defaultPanelStorage,
+  readPanelCollapsed,
+  writePanelCollapsed,
+} from '../../core/panel-collapse';
 import { errorText } from '../../core/resource-state';
 import { buildFil, filType, filterFeed, FilItem, FilType, graviteLabel } from './fil';
+
+/** Where « messages open » is kept: stored as `true` when open, so unreadable means folded. */
+export const MESSAGES_OPEN_STORAGE_KEY = 'planning-equipes.accueil.messagesOpen';
 
 const SEVERITY_ICONS: Record<NotificationSeverity, string> = {
   info: 'info',
@@ -72,7 +81,40 @@ export class FilAccueil {
       (this.blocagesResource.hasValue() ? this.blocagesResource.value() : null)?.contraintes ?? [],
     ),
   );
-  protected readonly items = computed(() => filterFeed(this.tout(), this.type()));
+
+  /**
+   * The messages are traces of what happened, not things to do: folded by
+   * default, the choice kept by this browser. `?type=messages` is an explicit
+   * request for them and always shows them, and so does an unread alert-severity
+   * message: the bell flags it, the feed it leads to must not hide it. The helpers
+   * are named for a *collapsed* panel; here the stored `true` means *open*, so an
+   * unreadable store reads as folded.
+   */
+  protected readonly messagesOpen = signal(
+    readPanelCollapsed(defaultPanelStorage(), MESSAGES_OPEN_STORAGE_KEY),
+  );
+  protected readonly messagesCount = computed(
+    () => this.tout().filter((item) => item.type === 'messages').length,
+  );
+  private readonly unreadAlert = computed(() =>
+    this.notifications.notifications().some((n) => n.severity === 'alert' && !n.read),
+  );
+  protected readonly messagesShown = computed(
+    () =>
+      this.type() === 'messages' ||
+      (this.type() === null && (this.messagesOpen() || this.unreadAlert())),
+  );
+  protected readonly items = computed(() =>
+    filterFeed(this.tout(), this.type()).filter(
+      (item) => item.type !== 'messages' || this.messagesShown(),
+    ),
+  );
+
+  protected toggleMessages(): void {
+    const open = !this.messagesOpen();
+    this.messagesOpen.set(open);
+    writePanelCollapsed(defaultPanelStorage(), MESSAGES_OPEN_STORAGE_KEY, open);
+  }
 
   /** The filter's choices, each with how many items it holds. */
   protected readonly filtres = computed(() => {
