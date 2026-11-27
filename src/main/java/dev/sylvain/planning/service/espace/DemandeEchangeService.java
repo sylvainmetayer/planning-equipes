@@ -151,7 +151,8 @@ public class DemandeEchangeService {
     }
 
     private DemandeEchange buildDemande(String demandeurId, NouvelleDemande nouvelle, PlanningEvenement planning) {
-        if (nouvelle.creneauId() == null
+        if (nouvelle == null
+                || nouvelle.creneauId() == null
                 || nouvelle.standId() == null
                 || nouvelle.standId().isBlank()) {
             throw new BusinessError.Invalid("Créneau ou stand manquant sur une demande");
