@@ -15,7 +15,7 @@ import { intlLocale } from '../../core/locale';
 import { CoherenceReport } from '../../core/models';
 import { NotificationService, NotificationSeverity } from '../../core/notification.service';
 import { errorText } from '../../core/resource-state';
-import { buildFil, filType, filtrerFil, FilItem, FilType, graviteLabel } from './fil';
+import { buildFil, filType, filterFeed, FilItem, FilType, graviteLabel } from './fil';
 
 const SEVERITY_ICONS: Record<NotificationSeverity, string> = {
   info: 'info',
@@ -65,7 +65,7 @@ export class FilAccueil {
       this.notifications.notifications(),
     ),
   );
-  protected readonly items = computed(() => filtrerFil(this.tout(), this.type()));
+  protected readonly items = computed(() => filterFeed(this.tout(), this.type()));
 
   /** The filter's choices, each with how many items it holds. */
   protected readonly filtres = computed(() => {

@@ -128,6 +128,6 @@ export function buildFil(
 }
 
 /** The feed narrowed to one type; `null` keeps everything. */
-export function filtrerFil(items: readonly FilItem[], type: FilType | null): FilItem[] {
+export function filterFeed(items: readonly FilItem[], type: FilType | null): FilItem[] {
   return type ? items.filter((item) => item.type === type) : [...items];
 }

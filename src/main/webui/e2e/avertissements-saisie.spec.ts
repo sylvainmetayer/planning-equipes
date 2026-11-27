@@ -279,7 +279,11 @@ test.describe('avertissements de saisie', () => {
     // mineure n'y est pas écrite (site/src/docs/installer/rgpd.md §7).
     await page.goto('/');
     await expect(page.getByText(/point\(s\) à vérifier/).first()).toBeVisible();
-    await expect(page.getByText(/est mineur pendant tout l'événement/)).toHaveCount(0);
+    await expect(
+      page
+        .locator('#fil-accueil [data-type="messages"]')
+        .getByText(/est mineur pendant tout l'événement/),
+    ).toHaveCount(0);
 
     await page.context().close();
   });

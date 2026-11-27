@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { AlerteView, CoherenceReport } from '../../core/models';
 import { AppNotification } from '../../core/notification.service';
-import { buildFil, filtrerFil, filType } from './fil';
+import { buildFil, filterFeed, filType } from './fil';
 
 const alerte = (partial: Partial<AlerteView>): AlerteView => ({
   type: 'RAPPEL_VEILLE_INJOIGNABLE',
@@ -104,8 +104,8 @@ describe('the type filter', () => {
   const items = buildFil([alerte({})], rapport('BLOQUANT'), [message({})]);
 
   it('keeps one type, or everything when none is asked', () => {
-    expect(filtrerFil(items, 'coherence').map((item) => item.type)).toEqual(['coherence']);
-    expect(filtrerFil(items, null)).toHaveLength(3);
+    expect(filterFeed(items, 'coherence').map((item) => item.type)).toEqual(['coherence']);
+    expect(filterFeed(items, null)).toHaveLength(3);
   });
 
   it('reads a known type from the address and ignores any other value', () => {
