@@ -107,7 +107,7 @@ describe('ChargeTab', () => {
 
   it('reads its state from the address, and writes it back', async () => {
     const page = await monter(
-      '/diagnostic?onglet=charge&q=Ali&sort=heuresTotal&dir=desc&sansRepos=1&source=persiste',
+      '/diagnostic?onglet=charge&nom=Ali&sort=heuresTotal&dir=desc&sansRepos=1&source=persiste',
     );
 
     expect(page['filtre']()).toBe('Ali');
@@ -121,7 +121,7 @@ describe('ChargeTab', () => {
     await fixture.whenStable();
     const url = TestBed.inject(Location).path();
     expect(url).toContain('onglet=charge');
-    expect(url).toContain('q=Ali');
+    expect(url).toContain('nom=Ali');
     expect(url).toContain('sort=heuresTotal');
     expect(url).not.toContain('sansRepos');
     expect(url).not.toContain('source=');

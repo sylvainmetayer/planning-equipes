@@ -110,10 +110,26 @@ export function chargeUrl(queryParams: Params, sortValues: Record<string, string
     const value = queryParams[key];
     if (value !== undefined && value !== null && value !== '') {
       const text = paramText(value as string | readonly string[]);
-      params.set(key, key === 'sort' && Object.hasOwn(sortValues, text) ? sortValues[text] : text);
+      // The former screens filtered on `q`, the tab on `nom` (`q` is the Risques tab's).
+      params.set(
+        key === 'q' ? 'nom' : key,
+        key === 'sort' && Object.hasOwn(sortValues, text) ? sortValues[text] : text,
+      );
     }
   }
   return `/diagnostic?${params.toString()}`;
+}
+
+/**
+ * The breaks and the meals are the Diagnostic's « Repas et pauses » tab. A day
+ * the former address named — `jour`, or the Planning page's `date` — goes along
+ * as the tab's `jour`; the other keys of the former views are not the tab's.
+ */
+export function repasPausesUrl(queryParams: Params): string {
+  const jour = [queryParams['jour'], queryParams['date']].find(
+    (valeur) => typeof valeur === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(valeur),
+  );
+  return `/diagnostic?onglet=repas-pauses${jour ? `&jour=${jour}` : ''}`;
 }
 
 const equiteToCharge: RedirectFunction = (route) =>
@@ -239,9 +255,9 @@ export function equityFicheUrl(queryParams: Params): string | null {
  * and Carte): their addresses land on the screen that holds their reading
  * today — the synthesis of « Par personne » in the Diagnostic's Charge, the
  * table by game category in the Diagnostic's Besoin, the
- * breaks among the Diagnostic's problems, what changed since the publication
+ * breaks and the meals in the Diagnostic's « Repas et pauses », what changed since the publication
  * on the day's row of Diffuser — until the screens built for them exist
- * (Besoin, « Repas et pauses »). A day named by `date` (or an ISO `jour`) goes
+ * (Besoin). A day named by `date` (or an ISO `jour`) goes
  * along where the target reads one.
  */
 export function planningFormerViewUrl(queryParams: Params): string | null {
@@ -267,7 +283,7 @@ export function planningFormerViewUrl(queryParams: Params): string | null {
   }
   switch (text('vue')) {
     case 'pauses':
-      return '/diagnostic?onglet=problemes';
+      return repasPausesUrl(queryParams);
     case 'changements': {
       const jour = [text('date'), text('jour')].find((valeur) =>
         /^\d{4}-\d{2}-\d{2}$/.test(valeur),
@@ -794,9 +810,9 @@ const adminRoutes: Routes = [
   // stand and its animateur land there; the month it showed is the day's own.
   { path: 'calendar', redirectTo: redirectToPlanning({}, { month: '' }) },
   // The intendance of the meals and the breaks have no view of the Planning
-  // page any more: the Diagnostic's problems are where they are read today. The
+  // page any more: the Diagnostic's « Repas et pauses » tab reads them. The
   // graph's descent emplacement → stand → timeslot → animateur is the map's.
-  { path: 'intendance', redirectTo: () => '/diagnostic?onglet=problemes' },
+  { path: 'intendance', redirectTo: ({ queryParams }) => repasPausesUrl(queryParams) },
   { path: 'graphe', redirectTo: redirectToJournee('carte') },
   // The six screens the two grids and the table of the Planning page gathered
   // (issue #713), their view state carried along — the treemap's day under a
@@ -817,7 +833,7 @@ const adminRoutes: Routes = [
   { path: 'day-calendar', redirectTo: redirectToJournee('jour', {}, 'tableau') },
   { path: 'rail-jour', redirectTo: redirectToJournee('jour', { vue: 'lignes' }, 'rail') },
   { path: 'carte-jour', redirectTo: redirectToJournee('carte') },
-  { path: 'pauses', redirectTo: () => '/diagnostic?onglet=problemes' },
+  { path: 'pauses', redirectTo: ({ queryParams }) => repasPausesUrl(queryParams) },
   {
     // What the next solve must respect (issue #720): the hard rules with the
     // thresholds they read, the quality rules with their importance. The solve

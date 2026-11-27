@@ -87,6 +87,16 @@ Deux exports CSV : « Heures pour la paie » et « Équité ».
 
 Le Solveur compte les modifications faites depuis le calcul enregistré. « Corriger après un changement » les montre avant de proposer quoi rouvrir, par famille et avec les dernières lignes de l'historique. Voir [Calculer le planning](calculer-planning.md#choisir-comment-lancer).
 
+## Lire les pauses et les repas : l'onglet Repas et pauses
+
+L'onglet *Repas et pauses* du Diagnostic dit où tombent, un jour donné, les pauses légales et les repas. Tout est lu sur le planning enregistré, rien n'est recalculé ; le jour se choisit en tête et reste dans l'adresse.
+
+- **Les pauses**, stand par stand : qui s'arrête, à quelle heure au plus tard, et qui relaie. Une pause que personne ne peut relayer est un écart dur ; « Ouvrir le siège » mène à la page Planning, sur ce siège, pour chercher qui peut venir. Dessous, la coupure repas due à qui travaille de part et d'autre d'une fenêtre de repas (celles dont la journée n'a pas la place passent en premier), et les pauses déjà prévues par la grille.
+- **L'intendance** : combien de personnes sont en coupure repas, heure par heure et emplacement par emplacement, pour savoir quoi préparer et où le porter. Les mineurs sont comptés entre parenthèses, jamais nommés. « Tout l'événement en CSV » exporte tous les jours.
+- **Les enchaînements serrés** : les trajets entre deux postes consécutifs qui laissent peu de temps, ceux qui ne tiennent pas en premier, avec le temps de marche et ce qu'il manque.
+
+Le placement préféré de la coupure repas dans sa fenêtre se règle dans *Paramètres*, onglet *Organisation* ; la règle « Coupure repas » et son importance sont dans *Règles du planning*. L'onglet renvoie vers les deux.
+
 ## Quand un calcul dégrade le plan
 
 Le score d'avant s'affiche à côté de celui d'après. Si le nouveau plan est moins bon sans qu'aucune règle impérative soit enfreinte, l'écran le dit et propose de revenir au plan précédent. Les versions et leur comparaison sont décrites dans [Calculer le planning](calculer-planning.md#garder-des-versions-du-plan).

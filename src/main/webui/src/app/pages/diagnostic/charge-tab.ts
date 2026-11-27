@@ -34,6 +34,9 @@ import { readHoursSource } from '../planning-personne/planning-personne';
  * axis as it was: the same two reports, the same joins, the same columns, only
  * asked for here, where the fairness of a plan is read next to what blocks it.
  *
+ * <p>The name filter is `nom`, not `q`: the Risques tab's fragility filter owns `q`, and
+ * the two tabs left each other's filter in the address.</p>
+ *
  * <p>Its view state (`sort`, `dir`, `colonnes`, `sansRepos`, `source`) is the
  * synthesis's own and lives in the address, next to the `onglet` the page writes.</p>
  */
@@ -82,13 +85,13 @@ export class ChargeTab {
   constructor() {
     // The address bar, not the router's snapshot: this tab is built each time it is opened.
     const params = currentViewParams();
-    this.filtre.set(params.get('q') ?? '');
+    this.filtre.set(params.get('nom') ?? '');
     this.tri.set(readSort(params));
     this.allColumns.set(params.get('colonnes') === 'toutes');
     this.noRestOnly.set(params.get('sansRepos') === '1');
     this.hoursSource.set(readHoursSource(params.get('source')));
     keepViewInQueryParams(() => ({
-      q: optionalParam(this.filtre()),
+      nom: optionalParam(this.filtre()),
       ...sortQueryParams(this.tri()),
       colonnes: this.allColumns() ? 'toutes' : null,
       sansRepos: this.noRestOnly() ? '1' : null,

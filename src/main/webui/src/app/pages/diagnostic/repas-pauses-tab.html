@@ -1,0 +1,80 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-content>
+    <p class="hint" i18n="@@repasPauses.intro">
+      Où tombent les pauses et qui relaie, qui mange et où, quels trajets entre deux postes sont serrés. Lu sur le planning
+      persisté, au jour choisi ; rien n'est recalculé.
+    </p>
+    <p class="hint">
+      <ng-container i18n="@@repasPauses.renvoi">Le placement préféré de la coupure repas se règle dans</ng-container>
+      <a routerLink="/parametres" [queryParams]="{ onglet: 'organisation' }" i18n="@@repasPauses.lienParametres">Paramètres</a>
+      <ng-container i18n="@@repasPauses.renvoiRegle">; la règle « Coupure repas » et son poids sont dans</ng-container>
+      <a routerLink="/regles" [queryParams]="{ regle: 'coupureRepasObligatoire' }" i18n="@@repasPauses.lienRegle">Règles du planning</a>.
+    </p>
+    <app-status-message [text]="erreur() || erreurWalks()" tone="error" />
+    @if (jours().length > 0) {
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@repasPauses.jour">Jour</mat-label>
+        <mat-select [value]="jour()" (selectionChange)="choisir($event.value)">
+          @for (date of jours(); track date) {
+            <mat-option [value]="date">{{ date }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+  </mat-card-content>
+</mat-card>
+
+<app-pauses-vue [rapport]="rapportPauses()" [date]="jour()" />
+
+<app-intendance-jour [date]="jour()" />
+
+<mat-card appearance="outlined" class="page-card repas-pauses-enchainements">
+  <mat-card-content>
+    <h2 class="pauses-stand-titre" i18n="@@repasPauses.enchainements.title">Enchaînements serrés entre deux stands</h2>
+    @if (nonGeolocalise()) {
+      <p class="empty-hint" i18n="@@repasPauses.enchainements.nonGeolocalise">
+        Aucun stand n'est sur un emplacement géolocalisé : les trajets ne peuvent pas être calculés.
+      </p>
+    } @else if (enchainements().length === 0) {
+      <p class="empty-hint" i18n="@@repasPauses.enchainements.aucun">Aucun enchaînement serré ce jour-là.</p>
+    } @else {
+      <div class="table-wrapper">
+        <table class="pauses-table">
+          <caption class="visually-hidden" i18n="@@repasPauses.enchainements.caption">Trajets serrés du jour, ceux qui ne tiennent pas d'abord</caption>
+          <thead>
+            <tr>
+              <th scope="col" i18n="@@repasPauses.enchainements.col.animateur">Animateur</th>
+              <th scope="col" i18n="@@repasPauses.enchainements.col.trajet">Trajet</th>
+              <th scope="col" i18n="@@repasPauses.enchainements.col.ecart">Temps entre les deux</th>
+              <th scope="col" i18n="@@repasPauses.enchainements.col.marche">Marche</th>
+              <th scope="col" i18n="@@repasPauses.enchainements.col.manque">Manque</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (walk of enchainements(); track walk.fromPosteId + '|' + walk.toPosteId) {
+              <tr [class.pauses-ligne-alerte]="walk.missingMinutes > 0">
+                <th scope="row"><a [routerLink]="['/animateurs', walk.animateurId]">{{ animateurNom(walk.animateurId) }}</a></th>
+                <td>
+                  {{ standNom(walk.fromStandId) }} → {{ standNom(walk.toStandId) }}
+                  <span class="pauses-duree">{{ heure(walk.end ?? '') }}–{{ heure(walk.start ?? '') }}</span>
+                  @if (walk.walkOnBreak) {
+                    <span class="pauses-simultanee" i18n="@@repasPauses.enchainements.surPause">sur le temps de la pause légale</span>
+                  }
+                </td>
+                <td>{{ walk.gapMinutes }} min</td>
+                <td>{{ walk.walkMinutes }} min · {{ walk.distanceMetres }} m</td>
+                <td>
+                  @if (walk.missingMinutes > 0) {
+                    <strong>{{ walk.missingMinutes }} min</strong>
+                  } @else {
+                    —
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

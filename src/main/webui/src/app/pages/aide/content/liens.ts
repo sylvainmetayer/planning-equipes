@@ -48,8 +48,8 @@ export const lienFragilite = (): HelpLink => ({
 
 export const lienPauses = (): HelpLink => ({
   route: '/diagnostic',
-  queryParams: { onglet: 'problemes' },
-  label: $localize`:@@aide.link.pausesProblemes:Pauses sans relais (Problèmes)`,
+  queryParams: { onglet: 'repas-pauses' },
+  label: $localize`:@@aide.link.repasPauses:Repas et pauses`,
 });
 
 export const lienTypologies = (): HelpLink => ({

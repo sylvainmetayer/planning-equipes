@@ -56,7 +56,7 @@ The day on the map of locations, with a time slider. Each place is coloured acco
 
 - **By game category**: the reading by game category (seats, hours, skilled, assigned without the skill) is the *Typology* section of the *Staffing need* tab of the Diagnostic.
 - **Summary by person**: the hours, fairness and the two CSV exports are the Diagnostic's *Workload* tab.
-- **Breaks and meals**: the breaks without relay are read in *Diagnostic*, *Problems* tab.
+- **Breaks and meals**: the breaks, the catering of the meals and the tight walks are the Diagnostic's *Meals and breaks* tab.
 - **Changes**: what moved since the last publication is read in *Publish*, *Send* tab, one row per person, and what the last solve rewrote in the result of the *Calculate* tab.
 - **Compare two days**: removed.
 

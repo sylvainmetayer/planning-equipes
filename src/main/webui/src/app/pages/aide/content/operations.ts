@@ -346,6 +346,10 @@ export function buildOperationsSections(): HelpSection[] {
               text: $localize`:@@aide.views.def.charge:L'onglet Charge du Diagnostic : ce que chaque animateur a reçu sur tout l'événement, une ligne par personne, chaque colonne triable d'un clic sur son titre. Les heures et leur écart à la médiane, les heures par semaine (au-delà de 35 h, le plafond d'un mineur, ou de 48 h, le plafond légal de tous, la semaine est signalée), la soirée, le week-end, les jours fériés, le dimanche et « Nuit (paie) » ; les postes et les postes exigeants, les stands, typologies et emplacements distincts, les souhaits et appréciations satisfaits, les jours travaillés, les jours de repos et la plus longue série. Les colonnes où tout le monde est à zéro sont masquées tant que « Colonnes toujours vides » n'est pas cochée ; « Seulement sans jour de repos » ne garde que les personnes qui n'en ont aucun. Les heures se lisent au choix sur le plan publié, celui que les animateurs ont reçu, ou sur le plan enregistré ; l'écran dit lequel et de quand. « Heures pour la paie (CSV) » et « Équité (CSV) » exportent les deux fichiers de toujours. Le nom d'une personne mène à sa fiche et à son radar.`,
             },
             {
+              term: $localize`:@@aide.views.term.repasPauses:Repas et pauses`,
+              text: $localize`:@@aide.views.def.repasPauses:L'onglet Repas et pauses du Diagnostic : où tombent les pauses et les repas d'une journée, lus sur le planning enregistré, jamais recalculés. Choisissez le jour : les pauses légales, stand par stand, disent qui s'arrête au plus tard à quelle heure et qui relaie (une pause sans relais est un écart dur, avec « Ouvrir le siège » pour chercher qui peut venir) ; la coupure repas due à qui travaille de part et d'autre d'une fenêtre de repas dit si la journée lui laisse une place ; l'intendance compte les personnes qui mangent, heure par heure et emplacement par emplacement (les mineurs entre parenthèses), et tout l'événement s'exporte en CSV ; les enchaînements serrés listent les trajets entre deux postes qui laissent trop peu de temps, ceux qui ne tiennent pas d'abord. Le placement préféré de la coupure repas se règle dans Paramètres, onglet Organisation ; la règle « Coupure repas » et son importance, dans Règles du planning.`,
+            },
+            {
               term: $localize`:@@aide.views.term.former:À former`,
               text: $localize`:@@aide.views.def.formerSection:Section de l'onglet Risques, entre la Fragilité et la Tension : qui former, typologie par typologie. Une typologie y figure quand le besoin la dit en manque, ou quand la Fragilité y trouve un stand tenu par un seul spécialiste ou aucun ; les chiffres sont ceux de ces deux lectures, jamais recalculés. Chaque typologie mène à la grille des compétences filtrée sur elle. Les candidats sont les débutants et les autonomes de la typologie, classés par jours en tension où ils sont disponibles, puis souhait, puis niveau ; un référent, un polyvalent ou quelqu'un sans la compétence n'y figure jamais. Une typologie sans candidat relève du recrutement. Sans planning persisté, seul le besoin parle. La section s'exporte en CSV.`,
             },
@@ -377,6 +381,11 @@ export function buildOperationsSections(): HelpSection[] {
           route: '/diagnostic',
           queryParams: { onglet: 'charge' },
           label: $localize`:@@diagnostic.onglet.charge:Charge`,
+        },
+        {
+          route: '/diagnostic',
+          queryParams: { onglet: 'repas-pauses' },
+          label: $localize`:@@diagnostic.onglet.repasPauses:Repas et pauses`,
         },
         {
           route: '/diagnostic',

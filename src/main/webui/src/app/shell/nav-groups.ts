@@ -238,6 +238,12 @@ export function buildNavGroups(): NavGroup[] {
             ),
             tab(
               'onglet',
+              'repas-pauses',
+              $localize`:@@diagnostic.onglet.repasPauses:Repas et pauses`,
+              $localize`:@@nav.keywords.repasPauses:pauses coupure repas intendance relais trajets enchaînements sandwichs`,
+            ),
+            tab(
+              'onglet',
               'conformite',
               $localize`:@@diagnostic.onglet.conformite:Conformité`,
               $localize`:@@nav.keywords.conformite:rapport inspection du travail RH plafonds mineurs`,

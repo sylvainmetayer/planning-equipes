@@ -110,6 +110,9 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   // The former synthesis of « Par personne » lands on Charge.
   { path: '/journee?vue=personne&rendu=synthese', marker: 'Écart méd.' },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },
+  { path: '/diagnostic?onglet=repas-pauses', marker: 'Enchaînements serrés' },
+  // The former breaks and meals screens land on Repas et pauses.
+  { path: '/pauses', marker: 'Enchaînements serrés' },
   // Fragilité, « À former » and Tension are the three sections of Risques: the old tabs land there.
   { path: '/diagnostic?onglet=risques', marker: 'Fragilité', sheet: 'fragilite-message' },
   { path: '/diagnostic?onglet=former', marker: 'À former', sheet: 'risques-titre' },
