@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.sylvain.planning.config.ConfigWebhooks;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
+import dev.sylvain.planning.service.demo.RefusedOnDemoInstance;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -216,6 +217,7 @@ public class WebhookService {
 
     /* --------------------------------- Writes --------------------------------- */
 
+    @RefusedOnDemoInstance("aucun webhook ne s'y configure ni ne s'y envoie.")
     public WebhookSaved create(WebhookRequest request) {
         WebhookFormat format = requireFormat(request);
         String name = requireName(request.name());
@@ -258,6 +260,7 @@ public class WebhookService {
      * turning a webhook into a generic one generates its HMAC secret, given
      * back once like at creation.
      */
+    @RefusedOnDemoInstance("aucun webhook ne s'y configure ni ne s'y envoie.")
     public WebhookSaved update(String id, WebhookRequest request) {
         Webhook before = require(id);
         WebhookFormat format = requireFormat(request);
@@ -317,6 +320,7 @@ public class WebhookService {
     }
 
     /** A new HMAC secret for a generic webhook; deliveries still waiting are signed with it. */
+    @RefusedOnDemoInstance("aucun webhook ne s'y configure ni ne s'y envoie.")
     public WebhookSecret regenerateSecret(String id) {
         Webhook webhook = require(id);
         if (webhook.format() != WebhookFormat.GENERIC) {
@@ -349,6 +353,7 @@ public class WebhookService {
      * switching it on. Recorded in its journal like any delivery, never
      * retried — a « Renvoyer » of it is one attempt again.
      */
+    @RefusedOnDemoInstance("aucun webhook ne s'y configure ni ne s'y envoie.")
     public WebhookTestResult test(String id) {
         requireOutboundEnabled();
         Webhook webhook = require(id);
@@ -361,6 +366,7 @@ public class WebhookService {
     }
 
     /** « Renvoyer »: the delivery starts its schedule again, under the same id. */
+    @RefusedOnDemoInstance("aucun webhook ne s'y configure ni ne s'y envoie.")
     public WebhookDeliveryView resend(String deliveryId) {
         requireOutboundEnabled();
         UUID id = deliveryUuid(deliveryId);

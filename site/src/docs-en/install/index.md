@@ -21,6 +21,7 @@ docs:
   - automatic-sends
   - tune-the-solve
   - solve-on-another-machine
+  - demo-instance
   - outgoing-calls
   - monitoring
   - observability
@@ -65,6 +66,7 @@ You host Planning Équipes for an organiser, or for yourself: an application and
 
 - [Tune the automatic sends](envois-automatiques.md): day-before reminder, reminders, alerts.
 - [Tune the schedule solve](calcul-du-planning.md) and [Solve on another machine](calcul-sur-une-autre-machine.md).
+- [Host a demo instance](instance-de-demo.md): fictitious data, reset every thirty minutes.
 - [Allow webhooks and the weather alert](appels-sortants.md).
 
 ## I want to update or release

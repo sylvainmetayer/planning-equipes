@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.mcp;
 
 import dev.sylvain.planning.config.ConfigMcp;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.demo.RefusedOnDemoInstance;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.sql.DataSource;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * The MCP API key, rotated from the screen instead of the server (ADR 0097).
@@ -61,10 +63,17 @@ public class McpKeyService {
      */
     private final AtomicLong generation = new AtomicLong();
 
+    /** A demo instance (ADR 0130): no key opens {@code /mcp}, the configured one included. */
+    private final boolean demoInstance;
+
     @Inject
-    public McpKeyService(DataSource dataSource, ConfigMcp config) {
+    public McpKeyService(
+            DataSource dataSource,
+            ConfigMcp config,
+            @ConfigProperty(name = "planning.demo-instance", defaultValue = "false") boolean demoInstance) {
         this.dataSource = dataSource;
         this.config = config;
+        this.demoInstance = demoInstance;
     }
 
     /** Where the key in force comes from, for the screen. */
@@ -91,7 +100,7 @@ public class McpKeyService {
 
     /** Whether {@code presented} opens the MCP transport right now. Blocking: reads the state on first use. */
     public boolean accepts(String presented) {
-        if (presented == null || presented.isEmpty()) {
+        if (demoInstance || presented == null || presented.isEmpty()) {
             return false;
         }
         State current = state();
@@ -117,7 +126,7 @@ public class McpKeyService {
      */
     public boolean isLiveGeneratedKey(String presented) {
         State current = state.get();
-        if (current == null || presented == null || presented.isEmpty()) {
+        if (demoInstance || current == null || presented == null || presented.isEmpty()) {
             return false;
         }
         Row row = current.byFingerprint.get(fingerprint(presented));
@@ -147,6 +156,7 @@ public class McpKeyService {
     }
 
     /** Generates a key, retiring the one in force after {@code overlapMinutes} (zero: now). */
+    @RefusedOnDemoInstance("aucune clé MCP ne s'y génère.")
     public synchronized Rotation rotate(long overlapMinutes) {
         if (overlapMinutes < 0 || overlapMinutes > MAX_OVERLAP_MINUTES) {
             throw new BusinessError.Invalid(
@@ -258,8 +268,9 @@ public class McpKeyService {
         return new State(Map.copyOf(rows), anyGenerated);
     }
 
-    private Optional<String> configured() {
-        return config.apiKey().filter(key -> !key.isBlank());
+    /** The key of the configuration, when one is set — never on a demo instance, where it opens nothing. */
+    public Optional<String> configured() {
+        return demoInstance ? Optional.empty() : config.apiKey().filter(key -> !key.isBlank());
     }
 
     private static String fingerprint(String key) {

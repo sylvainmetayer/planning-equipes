@@ -27,6 +27,7 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
   // door every deployment has until its operator plugs a provider in.
   authOidc: false,
   authSecours: true,
+  demoInstance: false,
 };
 
 /**

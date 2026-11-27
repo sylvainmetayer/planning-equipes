@@ -6,6 +6,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.RateLimitVerdict;
 import dev.sylvain.planning.service.Sha256;
 import dev.sylvain.planning.service.SlidingWindowCounter;
+import dev.sylvain.planning.service.demo.RefusedOnDemoInstance;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.espace.CodeRequestLimiter;
 import dev.sylvain.planning.service.publication.MailService;
@@ -152,6 +153,7 @@ public class CompteAccesService {
      * request. The failure propagates: the administrator is told it did not
      * leave. {@code invitation} picks the wording and the lifetime.
      */
+    @RefusedOnDemoInstance("les mots de passe ne s'y changent pas.")
     public void sendLink(String compteId, boolean invitation) {
         Compte compte = comptes.findById(compteId)
                 .orElseThrow(() -> new BusinessError.NotFound("Compte inconnu : " + compteId));
@@ -184,6 +186,7 @@ public class CompteAccesService {
      * so that the time it takes never tells whether an address has an account.
      * A full queue drops the request silently, like any other refusal.
      */
+    @RefusedOnDemoInstance("les mots de passe ne s'y changent pas.")
     public void forgotAsync(String email) {
         if (pendingForgot.incrementAndGet() > MAX_PENDING_FORGOT) {
             pendingForgot.decrementAndGet();
@@ -236,6 +239,7 @@ public class CompteAccesService {
      * a password closes every session opened with the previous one (the epoch
      * moves) and tells the owner by mail.
      */
+    @RefusedOnDemoInstance("les mots de passe ne s'y changent pas.")
     public void choose(String token, String password) {
         LocalPassword.check(password);
         if (token == null || token.isBlank()) {

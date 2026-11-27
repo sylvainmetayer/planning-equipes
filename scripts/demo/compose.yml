@@ -1,0 +1,52 @@
+# Pile jetable de scripts/demo/generer-dump.sh : PostgreSQL, Mailpit et
+# l'application, ports sur la boucle locale seulement. L'application y tourne
+# en mode ordinaire (pas DEMO_INSTANCE) : c'est elle qui crée les comptes de
+# démonstration, ce que le mode démo refuse. Démontée, volumes compris, à la fin.
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:19}
+    environment:
+      POSTGRES_DB: festival
+      POSTGRES_USER: festival
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?generer-dump.sh le fournit}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U festival -d festival"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:v1.34
+    ports:
+      - "127.0.0.1:${MAILPIT_PORT:-18025}:8025"
+
+  app:
+    image: ${APP_IMAGE:-ghcr.io/sylvainmetayer/planning-equipes:main}
+    ports:
+      - "127.0.0.1:${APP_PORT:-18080}:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/festival
+      DB_USER: festival
+      DB_PASSWORD: ${DB_PASSWORD}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?generer-dump.sh le fournit}
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      # Une adresse réservée, pas localhost : les liens de mot de passe ne s'écrivent pas vers localhost.
+      PUBLIC_URL: https://demo.example.org
+      AUTH_LOCAL_SECONDE_ETAPE: "false"
+      LEGAL_DEMO_INSTANCE: "true"
+      PUBLIC_INSTANCE: "false"
+      METEO_ENABLED: "false"
+      WEBHOOKS_ENABLED: "false"
+      SOLVER_SECONDS_LIMIT: "40"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /q/health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started

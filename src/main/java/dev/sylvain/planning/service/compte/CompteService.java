@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.compte;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.demo.RefusedOnDemoInstance;
 import dev.sylvain.planning.service.edition.EditionRepository;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -64,6 +65,7 @@ public class CompteService {
     }
 
     /** Creates an account, to grant it a right before the person arrives. */
+    @RefusedOnDemoInstance("on n'y crée pas de compte.")
     public Compte create(String email, String nom) {
         String cle = normalize(email);
         String nomPropre = blankToNull(nom);
@@ -77,6 +79,7 @@ public class CompteService {
     }
 
     /** Refused for the account of the caller (one cannot lock oneself out) and for the last administrator. */
+    @RefusedOnDemoInstance("les comptes ne s'y désactivent pas.")
     public Compte deactivate(String id) {
         String par = acteur();
         if (id != null && id.equals(par)) {
@@ -85,6 +88,7 @@ public class CompteService {
         return setDeactivated(id, Instant.now(), par);
     }
 
+    @RefusedOnDemoInstance("les comptes ne s'y réactivent pas.")
     public Compte reactivate(String id) {
         return setDeactivated(id, null, acteur());
     }
@@ -106,11 +110,13 @@ public class CompteService {
      * the last one without anybody acting); an expiry already past would be a
      * right that never opened anything; the same right twice is a conflict.
      */
+    @RefusedOnDemoInstance("les droits des comptes ne s'y modifient pas.")
     public Compte grant(String compteId, RoleHabilitation role, String editionId, Instant expireLe) {
         return grant(compteId, role, editionId, expireLe, null);
     }
 
     /** Same, for a responsable de stand's right: {@code standIds} are the stands of {@code editionId} it covers. */
+    @RefusedOnDemoInstance("les droits des comptes ne s'y modifient pas.")
     public Compte grant(
             String compteId, RoleHabilitation role, String editionId, Instant expireLe, List<String> standIds) {
         required(compteId);
@@ -174,6 +180,7 @@ public class CompteService {
     }
 
     /** Refused when it is the last administrator right in force. */
+    @RefusedOnDemoInstance("les droits des comptes ne s'y modifient pas.")
     public Compte withdraw(String compteId, String habilitationId) {
         required(compteId);
         switch (repository.withdrawHabilitation(compteId, habilitationId, Instant.now(), acteur())) {

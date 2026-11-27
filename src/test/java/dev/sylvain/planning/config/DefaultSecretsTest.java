@@ -67,4 +67,14 @@ class DefaultSecretsTest {
     void anAbsentSecretDoesNotBlock() {
         assertThatCode(() -> DefaultSecrets.check(null, null)).doesNotThrowAnyException();
     }
+
+    @Test
+    void aDemoInstanceKeepsTheExamplePasswordsButNotAnEmptyOne() {
+        assertThatCode(() -> DefaultSecrets.check(
+                        DefaultSecrets.SHIPPED_ADMIN_PASSWORD, DefaultSecrets.SHIPPED_DATABASE_PASSWORD, true))
+                .doesNotThrowAnyException();
+        assertThatThrownBy(() -> DefaultSecrets.check("", DefaultSecrets.SHIPPED_DATABASE_PASSWORD, true))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ADMIN_PASSWORD");
+    }
 }
