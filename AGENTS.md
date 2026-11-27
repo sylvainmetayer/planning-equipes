@@ -414,6 +414,15 @@ Single Quarkus service, no separate solver microservice. Package root:
   filters answer an inactive edition's token exactly like an unknown one.
   `ActiveEditionEmissionStructuralTest` fails on a `MailService` send or an
   outward MCP tool that is neither guarded nor argued.
+- **A demo instance changes no account and lets nothing out** (ADR 0130).
+  `DEMO_INSTANCE=true` forces, through the config interceptor
+  `config/DemoInstance`, the settings it implies (public instance, mocked
+  mailer, webhooks, weather and MCP OAuth off; `McpKeyService` accepts no key) — add one there, never a
+  check beside the flag. A service method that changes an account, a right, a
+  password or an MCP key, or configures or sends a webhook, carries `@RefusedOnDemoInstance` (`service/demo/`,
+  `409`); `DemoInstanceStructuralTest` fails on a public method of
+  `CompteService`, `CompteAccesService`, `McpKeyService` or `WebhookService` that is neither
+  annotated nor argued open.
 - **Mails follow two opposite failure policies, and the split is structural.**
   `MailService` holds only what an admin explicitly asks for (an animateur's
   planning, an espace access code, the Débogage test mail): the mail *is* the

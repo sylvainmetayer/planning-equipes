@@ -30,6 +30,10 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * <p>Read as a boot check rather than a {@code @ConfigMapping}, unlike the rest
  * of this package: both keys are Quarkus settings, and what matters about them
  * is not their value but that somebody chose it.</p>
+ *
+ * <p>A demo instance ({@code DEMO_INSTANCE}, ADR 0130) keeps the example
+ * values: its passwords are printed on the showcase for anybody to use, and
+ * its data are fictitious. An empty one stays refused there too.</p>
  */
 @ApplicationScoped
 public class DefaultSecrets {
@@ -50,19 +54,23 @@ public class DefaultSecrets {
 
     private final Optional<String> databasePassword;
 
+    private final boolean demoInstance;
+
     @Inject
     public DefaultSecrets(
             @ConfigProperty(name = "quarkus.security.users.embedded.users.admin") Optional<String> adminPassword,
-            @ConfigProperty(name = "quarkus.datasource.password") Optional<String> databasePassword) {
+            @ConfigProperty(name = "quarkus.datasource.password") Optional<String> databasePassword,
+            @ConfigProperty(name = "planning.demo-instance", defaultValue = "false") boolean demoInstance) {
         this.adminPassword = adminPassword;
         this.databasePassword = databasePassword;
+        this.demoInstance = demoInstance;
     }
 
     void checkAtStartup(@Observes StartupEvent startup) {
         // Only a real deployment: dev and test are precisely the two modes the
         // defaults exist for.
         if (LaunchMode.current().isProduction()) {
-            check(adminPassword.orElse(null), databasePassword.orElse(null));
+            check(adminPassword.orElse(null), databasePassword.orElse(null), demoInstance);
         }
     }
 
@@ -71,15 +79,20 @@ public class DefaultSecrets {
      * production boot, like {@code BackupConfiguration.checkRetention}.
      */
     static void check(String adminPassword, String databasePassword) {
+        check(adminPassword, databasePassword, false);
+    }
+
+    /** Same, on a demo instance when {@code demoInstance}: the example values pass, an empty one does not. */
+    static void check(String adminPassword, String databasePassword, boolean demoInstance) {
         refuse(
                 "ADMIN_PASSWORD",
                 adminPassword,
-                SHIPPED_ADMIN_PASSWORD,
+                demoInstance ? null : SHIPPED_ADMIN_PASSWORD,
                 "le compte admin démarrerait avec le mot de passe d'exemple");
         refuse(
                 "DB_PASSWORD",
                 databasePassword,
-                SHIPPED_DATABASE_PASSWORD,
+                demoInstance ? null : SHIPPED_DATABASE_PASSWORD,
                 "la base démarrerait avec le mot de passe d'exemple");
     }
 
@@ -100,7 +113,7 @@ public class DefaultSecrets {
             throw new IllegalStateException(
                     variable + " est vide : " + consequence + ". Donnez-lui une valeur avant de déployer.");
         }
-        if (exemple.equals(valeur)) {
+        if (valeur.equals(exemple)) {
             throw new IllegalStateException(variable + " vaut encore la valeur d'exemple livrée avec les sources : "
                     + consequence + ". Donnez-lui une valeur propre à ce déploiement.");
         }

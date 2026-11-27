@@ -200,7 +200,7 @@ describe('EspaceAnimateurShell — accessibility groundwork', () => {
             erreur: signal(null),
             authRequise: signal(true),
             charger: vi.fn(() => Promise.resolve(undefined)),
-            demanderCode: vi.fn(() => Promise.resolve('a***@example.org')),
+            demanderCode: vi.fn(() => Promise.resolve({ emailMasque: 'a***@example.org' })),
             validerCode: validateCode,
           },
         },
@@ -249,5 +249,19 @@ describe('EspaceAnimateurShell — accessibility groundwork', () => {
     const alert = root().querySelector('[role="alert"]');
     expect(alert).not.toBeNull();
     expect(alert!.textContent).toContain('Code incorrect');
+  });
+  it('shows and fills in the code a demo instance hands back, since no mail leaves there', async () => {
+    const espace = TestBed.inject(EspaceAnimateurService) as unknown as {
+      demanderCode: ReturnType<typeof vi.fn>;
+    };
+    espace.demanderCode.mockResolvedValueOnce({
+      emailMasque: 'a***@example.org',
+      codeDemo: '123456',
+    });
+    (root().querySelector('.espace-code button[matButton="filled"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+
+    expect(root().querySelector('.espace-code-demo')?.textContent).toContain('123456');
+    expect(root().querySelector<HTMLInputElement>('input[name="code"]')!.value).toBe('123456');
   });
 });

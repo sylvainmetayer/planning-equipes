@@ -27,6 +27,7 @@ const CONFIG: AppConfig = {
   mailMock: false,
   authOidc: false,
   authSecours: true,
+  demoInstance: false,
 };
 
 describe('loadAppConfig', () => {
@@ -53,6 +54,7 @@ describe('loadAppConfig', () => {
       mailMock: false,
       authOidc: false,
       authSecours: true,
+      demoInstance: false,
     });
   });
 
@@ -67,6 +69,7 @@ describe('loadAppConfig', () => {
       mailMock: false,
       authOidc: false,
       authSecours: true,
+      demoInstance: false,
     });
   });
 });

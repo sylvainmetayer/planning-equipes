@@ -38,6 +38,7 @@ api.CompteResource$NouvelleHabilitation.standIds
 api.ConfigResource$ConfigView.authOidc
 api.ConfigResource$ConfigView.authSecours
 api.ConfigResource$ConfigView.cloudflareWebAnalyticsToken
+api.ConfigResource$ConfigView.demoInstance
 api.ConfigResource$ConfigView.devMode
 api.ConfigResource$ConfigView.mailMock
 api.ConfigResource$ConfigView.sentryDsn

@@ -40,6 +40,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * leaves then, yet every send is recorded as gone, and the Animateurs page
  * must word that « simulé » rather than let it pass for a delivery.</p>
  *
+ * <p>And whether this is a <b>demo instance</b> ({@code DEMO_INSTANCE}, ADR
+ * 0130): every page, the login page included, then says that its data are
+ * fictitious and reset every half hour. Public, since the login page shows it.</p>
+ *
  * <p>The route is public: the login page and the espace animateur read it
  * before anybody signs in. A <b>visitor without a session</b> therefore gets
  * only what those two screens need — the observability keys, the two sign-in
@@ -67,6 +71,8 @@ public class ConfigResource {
 
     private final SecurityIdentity identity;
 
+    private final boolean demoInstance;
+
     @Inject
     public ConfigResource(
             ConfigObservabilite observabilite,
@@ -75,7 +81,8 @@ public class ConfigResource {
             @ConfigProperty(name = "quarkus.mailer.mock", defaultValue = "false") boolean mailMock,
             ConfigOidc oidc,
             ConfigSecours secours,
-            SecurityIdentity identity) {
+            SecurityIdentity identity,
+            @ConfigProperty(name = "planning.demo-instance", defaultValue = "false") boolean demoInstance) {
         this.observabilite = observabilite;
         this.devMode = devMode;
         this.version = version;
@@ -83,6 +90,7 @@ public class ConfigResource {
         this.oidc = oidc;
         this.secours = secours;
         this.identity = identity;
+        this.demoInstance = demoInstance;
     }
 
     @GET
@@ -96,7 +104,8 @@ public class ConfigResource {
                 version,
                 session ? mailMock : null,
                 oidc.enabled(),
-                secours.open(oidc.enabled()));
+                secours.open(oidc.enabled()),
+                demoInstance);
     }
 
     /**
@@ -114,8 +123,10 @@ public class ConfigResource {
      * @param authOidc           a provider signs people in: the login page offers its button
      * @param authSecours        the form login of the {@code admin} account is open: the
      *                           login page offers its password form
+     * @param demoInstance       a public demonstration with fictitious data, reset every half hour:
+     *                           every page says so
      */
-    @Schema(requiredProperties = {"version", "authOidc", "authSecours"})
+    @Schema(requiredProperties = {"version", "authOidc", "authSecours", "demoInstance"})
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ConfigView(
             String sentryDsn,
@@ -125,5 +136,6 @@ public class ConfigResource {
             String version,
             Boolean mailMock,
             boolean authOidc,
-            boolean authSecours) {}
+            boolean authSecours,
+            boolean demoInstance) {}
 }

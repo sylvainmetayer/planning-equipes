@@ -83,15 +83,15 @@ export class EspaceAnimateurService {
 
   /**
    * Asks the server to mail a fresh access code; returns the masked address
-   * it went to, for the confirmation line under the input.
+   * it went to, for the confirmation line under the input — and, on a demo
+   * instance whose mails never leave, the code itself.
    */
-  async demanderCode(): Promise<string> {
+  async demanderCode(): Promise<{ emailMasque: string; codeDemo?: string }> {
     const jeton = this.requireJeton();
-    const reponse = await this.api.post<{ emailMasque: string }>(
+    return this.api.post<{ emailMasque: string; codeDemo?: string }>(
       `/api/espace-animateur/${jeton}/code`,
       null,
     );
-    return reponse.emailMasque;
   }
 
   /** Exchanges the received code for the session cookie, then loads the espace. */

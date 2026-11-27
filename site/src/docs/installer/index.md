@@ -20,6 +20,7 @@ docs:
   - envois-automatiques
   - calcul-du-planning
   - calcul-sur-une-autre-machine
+  - instance-de-demo
   - appels-sortants
   - surveillance
   - observabilite
@@ -65,6 +66,7 @@ Vous hébergez Planning Équipes pour un organisateur, ou pour vous-même : une 
 
 - [Régler les envois automatiques](envois-automatiques.md) : rappel de la veille, relances, alertes.
 - [Régler le calcul du planning](calcul-du-planning.md) et [Résoudre sur une autre machine](calcul-sur-une-autre-machine.md).
+- [Héberger une instance de démonstration](instance-de-demo.md) : données fictives, remise à zéro toutes les trente minutes.
 - [Autoriser les webhooks et l'alerte météo](appels-sortants.md).
 
 ## Je veux mettre à jour ou publier

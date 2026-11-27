@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.espace;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
@@ -22,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import javax.sql.DataSource;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Passwordless authentication of the espace animateur (issue #165 follow-up):
@@ -61,6 +63,9 @@ public class EspaceAccesService {
 
     private final CodeRequestLimiter limiteurDemandesCode;
 
+    /** A demo instance (ADR 0130): no mail leaves, so the code is handed back to whoever holds the link. */
+    private final boolean demoInstance;
+
     @Inject
     public EspaceAccesService(
             DataSource dataSource,
@@ -68,17 +73,26 @@ public class EspaceAccesService {
             EditionContext editionContext,
             ReferenceDataService referenceDataService,
             MailService mailService,
-            CodeRequestLimiter limiteurDemandesCode) {
+            CodeRequestLimiter limiteurDemandesCode,
+            @ConfigProperty(name = "planning.demo-instance", defaultValue = "false") boolean demoInstance) {
         this.dataSource = dataSource;
         this.scope = scope;
         this.editionContext = editionContext;
         this.referenceDataService = referenceDataService;
         this.mailService = mailService;
         this.limiteurDemandesCode = limiteurDemandesCode;
+        this.demoInstance = demoInstance;
     }
 
-    /** What the "send me a code" call tells the interface. */
-    public record CodeEnvoye(String emailMasque) {}
+    /**
+     * What the "send me a code" call tells the interface.
+     *
+     * @param codeDemo the code itself, on a demo instance only, where the mail it
+     *     went in never leaves: the URL token stays the one key, as it is the one
+     *     key that asks for a code anywhere else
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CodeEnvoye(String emailMasque, String codeDemo) {}
 
     /** Too many codes asked for without using any: carries the delay before the next try. */
     public static class TooManyRequests extends RuntimeException {
@@ -137,7 +151,7 @@ public class EspaceAccesService {
         // replaced code is strictly safer than the previous one, and the next
         // request will replace it again. The send failure itself propagates.
         mailService.sendAccessCode(animateurId, animateur.getEmail(), animateur.getPrenom(), code);
-        return new CodeEnvoye(mask(animateur.getEmail()));
+        return new CodeEnvoye(mask(animateur.getEmail()), demoInstance ? code : null);
     }
 
     /**

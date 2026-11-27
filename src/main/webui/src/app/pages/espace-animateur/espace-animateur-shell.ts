@@ -144,6 +144,8 @@ export class EspaceAnimateurShell {
 
   /** Masked address the code went to, `null` while none was requested. */
   protected readonly codeEnvoyeA = signal<string | null>(null);
+  /** The code itself, handed back by a demo instance only (no mail leaves there). */
+  protected readonly codeDemo = signal<string | null>(null);
   protected readonly codeSaisi = signal('');
   protected readonly authEnCours = signal(false);
   protected readonly erreurAuth = signal<string | null>(null);
@@ -151,9 +153,12 @@ export class EspaceAnimateurShell {
   protected async demanderCode(): Promise<void> {
     this.authEnCours.set(true);
     this.erreurAuth.set(null);
+    this.codeDemo.set(null);
     try {
-      this.codeEnvoyeA.set(await this.espace.demanderCode());
-      this.codeSaisi.set('');
+      const envoi = await this.espace.demanderCode();
+      this.codeEnvoyeA.set(envoi.emailMasque);
+      this.codeDemo.set(envoi.codeDemo ?? null);
+      this.codeSaisi.set(envoi.codeDemo ?? '');
     } catch (error) {
       this.erreurAuth.set(errorMessage(error));
     } finally {

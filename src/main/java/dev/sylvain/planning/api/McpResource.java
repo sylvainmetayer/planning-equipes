@@ -19,6 +19,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -123,12 +124,13 @@ public class McpResource {
             // Only its fingerprint is kept: a generated key is shown once, when it is generated.
             return Response.status(Response.Status.CONFLICT).build();
         }
-        if (mcp.apiKey().isEmpty() || mcp.apiKey().get().isBlank()) {
-            // Recent enough, nothing to reveal: 404 rather than an empty string.
+        Optional<String> configured = keys.configured();
+        if (configured.isEmpty()) {
+            // Recent enough, nothing to reveal (or a demo instance): 404 rather than an empty string.
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         return Response.ok(new McpKey(
-                        mcp.apiKey().get(),
+                        configured.get(),
                         mcp.pangolin().accessTokenId().filter(v -> !v.isBlank()).orElse(null),
                         mcp.pangolin().accessToken().filter(v -> !v.isBlank()).orElse(null)))
                 .build();

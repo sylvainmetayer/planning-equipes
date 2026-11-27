@@ -2477,6 +2477,8 @@ export interface AppConfig {
   authOidc: boolean;
   /** The form login of the `admin` account is open: the login page offers its password form. */
   authSecours: boolean;
+  /** A public demonstration (`DEMO_INSTANCE`): every page carries the demo banner. */
+  demoInstance: boolean;
 }
 
 /**

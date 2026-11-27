@@ -74,6 +74,9 @@
             <mat-icon inline>mark_email_read</mat-icon>
             <span i18n="@@espace.code.envoye">Code envoyé à {{ adresse }} — il est valable 10 minutes.</span>
           </p>
+          @if (codeDemo(); as code) {
+            <p class="espace-code-demo" i18n="@@espace.code.demo">Instance de démonstration : aucun e-mail ne part, votre code est {{ code }}.</p>
+          }
           <form class="espace-code-form" (submit)="$event.preventDefault(); validerCode()">
             <mat-form-field appearance="outline">
               <mat-label i18n="@@espace.code.champ">Code reçu</mat-label>
