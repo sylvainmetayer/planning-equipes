@@ -21,6 +21,10 @@
         <mat-icon>personal_injury</mat-icon>
         <ng-container i18n="@@diagnostic.onglet.risques">Risques</ng-container>
       </mat-button-toggle>
+      <mat-button-toggle value="charge">
+        <mat-icon>balance</mat-icon>
+        <ng-container i18n="@@diagnostic.onglet.charge">Charge</ng-container>
+      </mat-button-toggle>
       @if (conformiteVisible()) {
         <mat-button-toggle value="conformite">
           <mat-icon>gavel</mat-icon>
@@ -37,6 +41,9 @@
   }
   @case ('risques') {
     <app-risques-tab />
+  }
+  @case ('charge') {
+    <app-charge-tab />
   }
   @case ('conformite') {
     @if (conformiteVisible() && editionStore.courant(); as edition) {

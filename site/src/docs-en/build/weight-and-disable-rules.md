@@ -34,7 +34,7 @@ The inventory is [`ConstraintParameters`](repo:src/main/java/dev/sylvain/plannin
 | `REPAIR` | "Proposer une réparation" (suggest a repair) | the Planning page, on the day and stand of the breach |
 | `GAME_CATEGORY_CAP` | "Régler le plafond de la typologie" (set the game category's cap) | the Categories screen |
 | `ANIMATEUR_PROFILES` | "Revoir les fiches" (review the profiles) | the person's profile: unavailability, wishes |
-| `WORKLOAD` | "Voir la charge par personne" (see the workload per person) | the Planning page, by person |
+| `WORKLOAD` | "Voir la charge par personne" (see the workload per person) | the Diagnostic, Workload tab |
 | `LOCK` | "Verrouiller ce qui doit tenir" (lock what must hold) | the locks |
 | `ADJUSTMENTS` | "Review the adjustment" | the manual adjustments involved |
 | `MEAL_WINDOW`, `SHIFT` | "Régler la fenêtre repas" (set the meal window), "Shorten the shift" | the line of the meal break, the timeslots |

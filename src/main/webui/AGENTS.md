@@ -423,10 +423,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   per stand, a density in `?densite=noms|compteurs|couverture`, closed told
   from empty, a total per day, and the treemap of the former Répartition des
   heures as `?rendu=treemap` (`pages/repartition-heures`, its day in
-  `?jourTreemap=`); per person, the days alone in the grid, and the Équité and
-  payroll columns, all sortable, in a table of their own as `?rendu=synthese`
-  (where `/equite` and `/hours` land), the always-empty ones hidden until
-  `?colonnes=toutes`, the frise as `?rendu=frise`, and the two CSV files. The one evening is `EquiteService`'s settable start; the
+  `?jourTreemap=`); per person, the days alone in the grid and the frise as
+  `?rendu=frise` — the Équité and payroll columns, the always-empty ones hidden
+  until `?colonnes=toutes`, and the two CSV files are the Diagnostic's Charge
+  (below), `planningFormerViews` sending `?rendu=synthese` there. The one evening is `EquiteService`'s settable start; the
   fixed 22:00 is the payroll's night alone (ADR 0055). The plan and the breaks
   read once by the page and handed to the rendering on screen — the views under
   `pages/calendar-day`, `pages/rail-jour`, `pages/carte-jour`,
@@ -451,7 +451,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `stand=`), the bench's old keys, is resolved to a seat once the plan is read),
   `/diagnostic` (« Diagnostic » — what blocks, what is missing, what is at
   risk, as tabs chosen by
-  `?onglet=problemes|besoin|risques|conformite`. Problèmes: each card says
+  `?onglet=problemes|besoin|risques|charge|conformite`. Problèmes: each card says
   « Où » (its hotspots, each opening the Planning page's Siège panel on that
   stand and timeslot), « Qui » (each name opening `/animateurs/:id`) and the
   gestures `ConstraintCatalog` gives the rule, in its order, « Baisser
@@ -477,7 +477,16 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   URL next to the page's key; `?onglet=banc` is sent to the Planning page by
   `benchTabToJournee`, `?onglet=fragilite|former|tension` and
   `?onglet=besoin&section=former` to `?onglet=risques&section=…` by
-  `formerTabsToRisques` — guards the route re-runs on a query change alone), `/echanges` (« Échanges » —
+  `formerTabsToRisques` — guards the route re-runs on a query change alone).
+  Charge (`pages/diagnostic/charge-tab.ts`) hosts the synthesis of the person
+  axis as it was — `PlanningPersonneView` with `view="synthese"`, the Équité and
+  Heures reports joined person by person, the two CSV files, the plan the hours
+  are read on — and keeps its own state (`q`, `sort`/`dir`, `colonnes`,
+  `sansRepos`, `source`) in the address; `/hours`, `/equite` and the former
+  `?rendu=synthese` land on `?onglet=charge` through `chargeUrl`, and the
+  playbook's « Voir la charge par personne » opens it. The classes of the axis
+  bar and legend are the shared partial `styles/planning-axe.css`, attached
+  by both pages), `/echanges` (« Échanges » —
   opens on the queue, under the foire's one-line state (`shared/guichet-etat`);
   an accepted swap offers « Prévenir les 2 personnes », a publication
   aimed at those two through `PlanningApi.publishTo`, and « Corriger le
@@ -580,7 +589,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   through `redirectToPlanning` of `app.routes.ts`, and the six its axes
   absorbed in issue #713: `/heatmap`, `/repartition-heures` (`?vue=treemap`,
   its `date` becoming `jourTreemap`) and `/typologies-planning`, then `/hours`,
-  `/repos` and `/equite` on `?axe=personne` — `/equite?vue=fiche&animateur=`
+  `/repos` on `?axe=personne`, `/hours` and `/equite` on the Diagnostic's
+  Charge (`?onglet=charge`) — `/equite?vue=fiche&animateur=`
   landing on the fiche's « Charge et équité » section,
   `/animateurs/:id?section=equite`, its `axes` and `comparer` kept).
   Adding a functional block means adding a route, a `app/pages/<block>/`

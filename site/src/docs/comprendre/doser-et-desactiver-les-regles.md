@@ -31,7 +31,7 @@ L'inventaire est [`ConstraintParameters`](repo:src/main/java/dev/sylvain/plannin
 | `REPAIR` | « Proposer une réparation » | la page Planning, sur le jour et le stand de l'écart |
 | `GAME_CATEGORY_CAP` | « Régler le plafond de la typologie » | l'écran Typologies |
 | `ANIMATEUR_PROFILES` | « Revoir les fiches » | la fiche de la personne : indisponibilités, souhaits |
-| `WORKLOAD` | « Voir la charge par personne » | la page Planning, par personne |
+| `WORKLOAD` | « Voir la charge par personne » | le Diagnostic, onglet Charge |
 | `LOCK` | « Verrouiller ce qui doit tenir » | les verrouillages |
 | `ADJUSTMENTS` | « Revoir l'ajustement » | les ajustements manuels en cause |
 | `MEAL_WINDOW`, `SHIFT` | « Régler la fenêtre repas », « Raccourcir la vacation » | la ligne de la coupure repas, les créneaux |

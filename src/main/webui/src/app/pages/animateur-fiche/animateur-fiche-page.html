@@ -372,7 +372,7 @@
         }
         @if (fiche.planCalcule) {
           <p>
-            <a routerLink="/journee" [queryParams]="{ vue: 'personne', rendu: 'synthese', animateur: fiche.animateur.id }" i18n="@@fiche.equite.lien">Voir sa ligne dans Planning, par personne</a>
+            <a routerLink="/diagnostic" [queryParams]="{ onglet: 'charge' }" i18n="@@fiche.equite.lien">Le comparer à l'équipe dans Diagnostic, Charge</a>
           </p>
         }
       </details>

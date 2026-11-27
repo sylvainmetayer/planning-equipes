@@ -19,13 +19,13 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
-test('le planning par personne liste les animateurs du planning enregistré', async ({
+test('Charge liste les animateurs du planning enregistré, heures pour la paie comprises', async ({
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  // The former Heures address lands on the axis that absorbed it.
+  // The former Heures address lands on the Diagnostic's Charge, which absorbed it.
   await page.goto('/hours');
-  await expect(page).toHaveURL(/\/journee\?.*vue=personne/);
+  await expect(page).toHaveURL(/\/diagnostic\?.*onglet=charge/);
   await expect(page.locator('#contenu')).toContainText('Heures pour la paie (CSV)');
   await expect(page.locator('#contenu')).toContainText('E2E');
   await page.context().close();

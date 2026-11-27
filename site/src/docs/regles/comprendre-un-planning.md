@@ -66,6 +66,23 @@ La section *Tension*, au pied de l'onglet *Risques*, croise le jour avec la tran
 
 La marge *avant* résolution est une colonne de l'onglet Besoin : voir [Savoir combien de personnes recruter](dimensionner-l-equipe.md).
 
+## Lire la charge de chacun : l'onglet Charge
+
+L'onglet *Charge* du Diagnostic dit ce que chaque animateur a reçu sur tout l'événement, une ligne par personne, chaque valeur triable d'un clic sur son titre. C'est là que vous choisissez qui alléger, et là que se lisent les heures pour la paie.
+
+- les heures, leur écart à la médiane et les heures de chaque semaine, signalées au-delà de 35 h (le plafond d'un mineur) et de 48 h (le plafond légal de tous) ;
+- la soirée (à partir de l'heure réglée dans *Paramètres*, onglet *Calcul*, la seule soirée de l'application), le week-end, les jours fériés, le dimanche et « Nuit (paie) » après 22 h ;
+- l'amplitude maximale d'une journée (du premier début à la dernière fin, trous compris) et le nombre de journées au-delà de 12 h, signalées sans aucune règle derrière ;
+- les postes et les postes exigeants ; les stands, typologies et emplacements distincts ;
+- les souhaits et appréciations satisfaits ;
+- les jours travaillés, les jours de repos et la plus longue série.
+
+Les colonnes où tout le monde est à zéro sont masquées tant que vous ne cochez pas « Colonnes toujours vides » ; « Seulement sans jour de repos » ne garde que les personnes qui n'en ont aucun, et le filtre par nom réduit la liste. Le nom d'une personne mène à sa fiche, où son radar la compare à l'équipe.
+
+Les heures, celles du tableau comme l'export pour la paie, se lisent au choix sur le **plan publié**, ce que les animateurs ont reçu, proposé d'office dès qu'il existe, ou sur le **plan enregistré**. Le fichier dit lequel et de quand. Sur le plan publié, l'écran rappelle que les autres compteurs restent ceux du plan enregistré.
+
+Deux exports CSV : « Heures pour la paie » et « Équité ».
+
 ## Savoir ce qui a changé depuis le dernier calcul
 
 Le Solveur compte les modifications faites depuis le calcul enregistré. « Corriger après un changement » les montre avant de proposer quoi rouvrir, par famille et avec les dernières lignes de l'historique. Voir [Calculer le planning](calculer-planning.md#choisir-comment-lancer).

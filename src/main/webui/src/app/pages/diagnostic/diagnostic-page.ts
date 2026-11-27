@@ -22,15 +22,17 @@ import { ConformiteRapport } from '../rh/conformite-rapport';
 import { ProblemesPage } from '../problemes/problemes-page';
 import { StaffingPage } from '../staffing/staffing-page';
 import { OngletDiagnostic, readOnglet } from './diagnostic';
+import { ChargeTab } from './charge-tab';
 import { RisquesTab } from './risques-tab';
 
 /**
- * « Diagnostic » : what blocks, what is missing, what is at risk — four tabs
+ * « Diagnostic » : what blocks, what is missing, what is at risk — five tabs
  * of one screen instead of the six screens they were. The bench, once a tab,
  * is the Siège panel's « Qui peut tenir ce siège ? »; Besoin carries the
  * « avant » margin as a column, and Risques gathers the fragility, « À former »
  * and the tension (the former Marge disponible screen's « après » and
- * « tension » readings).
+ * « tension » readings); Charge is the hours and the fairness of the plan,
+ * person by person.
  *
  * <p>Each tab is the screen it was, hosted without its heading; its own view
  * state (the fragility filters) still lives in
@@ -47,10 +49,11 @@ import { RisquesTab } from './risques-tab';
     ProblemesPage,
     StaffingPage,
     RisquesTab,
+    ChargeTab,
     ConformiteRapport,
   ],
   templateUrl: './diagnostic-page.html',
-  styleUrl: './diagnostic-page.css',
+  styleUrls: ['../../../styles/planning-axe.css', './diagnostic-page.css'],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

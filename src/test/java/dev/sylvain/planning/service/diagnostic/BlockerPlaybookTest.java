@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -329,6 +330,20 @@ class BlockerPlaybookTest {
                 .satisfies(action -> {
                     assertThat(action.route()).isEqualTo("/stands");
                     assertThat(action.parametres()).isEmpty();
+                });
+    }
+
+    /** The hours and the fairness of each person are the Diagnostic's Charge tab, not a grid of the Planning page. */
+    @Test
+    void theWorkloadActionOpensTheChargeTabOfTheDiagnostic() {
+        ConstraintDefinition charge = ConstraintCatalog.PAR_NOM.get("equilibrerCharge");
+
+        assertThat(BlockerPlaybook.forRule(charge, null, SHORTFALL))
+                .filteredOn(action -> action.code().equals(BlockerPlaybook.CODE_WORKLOAD))
+                .singleElement()
+                .satisfies(action -> {
+                    assertThat(action.route()).isEqualTo("/diagnostic");
+                    assertThat(action.parametres()).isEqualTo(Map.of("onglet", "charge"));
                 });
     }
 
