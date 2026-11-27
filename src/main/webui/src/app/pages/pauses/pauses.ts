@@ -87,7 +87,7 @@ export interface SynthesePauses {
 }
 
 /** The days the report covers, chronological — the selector's options. */
-export function joursDuRapport(rapport: RapportPauses | null): JourPauses[] {
+export function reportDays(rapport: RapportPauses | null): JourPauses[] {
   const byDate = new Map<string, number>();
   for (const journee of rapport?.journees ?? []) {
     if (!byDate.has(journee.date)) {
@@ -140,7 +140,7 @@ function correspond(ligne: LignePause, recherche: string): boolean {
  * a stand whose every break has one still shows, so the organiser confirms
  * rather than guesses.
  */
-export function groupesDuJour(
+export function standGroupsOfDay(
   rapport: RapportPauses | null,
   date: string | null,
   recherche = '',
@@ -149,7 +149,7 @@ export function groupesDuJour(
   if (!rapport || !date) {
     return [];
   }
-  const parStand = new Map<string, GroupeStand>();
+  const byStand = new Map<string, GroupeStand>();
   const retenue = (ligne: LignePause): boolean =>
     !(withoutRelaisOnly && ligne.relaisDisponible) &&
     (recherche.trim() === '' || correspond(ligne, recherche));
@@ -158,7 +158,7 @@ export function groupesDuJour(
     .flatMap((journee) => rowsOf(journee))
     .filter(retenue);
   for (const ligne of lignes) {
-    let groupe = parStand.get(ligne.standId);
+    let groupe = byStand.get(ligne.standId);
     if (!groupe) {
       groupe = {
         standId: ligne.standId,
@@ -166,14 +166,14 @@ export function groupesDuJour(
         lignes: [],
         relaisManquants: 0,
       };
-      parStand.set(ligne.standId, groupe);
+      byStand.set(ligne.standId, groupe);
     }
     groupe.lignes.push(ligne);
     if (!ligne.relaisDisponible) {
       groupe.relaisManquants++;
     }
   }
-  const groupes = Array.from(parStand.values());
+  const groupes = Array.from(byStand.values());
   for (const groupe of groupes) {
     groupe.lignes.sort(
       (a, b) => a.debut.localeCompare(b.debut) || a.nomComplet.localeCompare(b.nomComplet),
@@ -187,7 +187,7 @@ export function groupesDuJour(
 }
 
 /** The gaps the grid already gives on that day, by start time then name. */
-export function planifieesDuJour(
+export function plannedOfDay(
   rapport: RapportPauses | null,
   date: string | null,
   recherche = '',
@@ -274,7 +274,7 @@ export function minutesManquantes(
 }
 
 /** The counters of the selected day: breaks to organise, of which without relay, over how many people. */
-export function syntheseDuJour(rapport: RapportPauses | null, date: string | null): SynthesePauses {
+export function daySummary(rapport: RapportPauses | null, date: string | null): SynthesePauses {
   const synthese: SynthesePauses = {
     animateurs: 0,
     pauses: 0,

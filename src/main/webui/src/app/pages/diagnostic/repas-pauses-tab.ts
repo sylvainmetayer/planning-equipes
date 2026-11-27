@@ -23,7 +23,7 @@ import { formatHeure } from '../../core/time-of-day';
 import { StatusMessage } from '../../shared/status-message';
 import { IntendanceJour } from '../intendance/intendance-jour';
 import { PausesView } from '../pauses/pauses-vue';
-import { enchainementsDuJour, joursRepasPauses } from './repas-pauses';
+import { walksOfDay, joursRepasPauses } from './repas-pauses';
 
 /**
  * The Diagnostic's « Repas et pauses » report: how the day's breaks and meals
@@ -76,9 +76,7 @@ export class RepasPausesTab {
   });
 
   protected readonly rapportPauses = this.rapport;
-  protected readonly enchainements = computed(() =>
-    enchainementsDuJour(this.rapportWalks(), this.jour()),
-  );
+  protected readonly enchainements = computed(() => walksOfDay(this.rapportWalks(), this.jour()));
   protected readonly nonGeolocalise = computed(() => this.rapportWalks()?.geolocated === false);
 
   protected readonly heure = formatHeure;

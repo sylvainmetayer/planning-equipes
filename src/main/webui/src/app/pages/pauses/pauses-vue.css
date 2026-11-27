@@ -1,4 +1,4 @@
-/* Écran « Pauses » : un bloc par stand, les stands sans relais en tête. */
+/* The breaks section: one block per stand, the stands with no relay first. */
 
 .pauses-message {
   margin: 0 0 0.75rem;

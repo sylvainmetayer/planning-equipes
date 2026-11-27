@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { JourneeAnimateurPauses, PauseDueView, RapportPauses } from '../../core/models';
 import {
   coupuresRepasJournee,
-  groupesDuJour,
-  joursDuRapport,
+  standGroupsOfDay,
+  reportDays,
   libelleRelais,
   minutesManquantes,
-  planifieesDuJour,
-  syntheseDuJour,
+  plannedOfDay,
+  daySummary,
 } from './pauses';
 
 function pause(overrides: Partial<PauseDueView> = {}): PauseDueView {
@@ -56,9 +56,9 @@ function rapport(
   };
 }
 
-describe('joursDuRapport', () => {
+describe('reportDays', () => {
   it('lists each day once, chronologically, with its number', () => {
-    const jours = joursDuRapport(
+    const jours = reportDays(
       rapport([
         journee({ date: '2026-07-11', jour: 4 }),
         journee({ animateurId: 'bob', date: '2026-07-10', jour: 3 }),
@@ -73,14 +73,14 @@ describe('joursDuRapport', () => {
   });
 
   it('is empty without a report', () => {
-    expect(joursDuRapport(null)).toEqual([]);
-    expect(joursDuRapport(rapport([]))).toEqual([]);
+    expect(reportDays(null)).toEqual([]);
+    expect(reportDays(rapport([]))).toEqual([]);
   });
 });
 
-describe('groupesDuJour', () => {
+describe('standGroupsOfDay', () => {
   it('groups the breaks of the day by stand, deadlines in order, other days left out', () => {
-    const groupes = groupesDuJour(
+    const groupes = standGroupsOfDay(
       rapport([
         journee({
           sequences: [
@@ -130,7 +130,7 @@ describe('groupesDuJour', () => {
   });
 
   it('carries the créneau of each break for the bench link, null when the server named none', () => {
-    const groupes = groupesDuJour(
+    const groupes = standGroupsOfDay(
       rapport([
         journee({
           sequences: [
@@ -151,7 +151,7 @@ describe('groupesDuJour', () => {
   });
 
   it('puts the stands short of a relay first and counts them', () => {
-    const groupes = groupesDuJour(
+    const groupes = standGroupsOfDay(
       rapport([
         journee({
           animateurId: 'a',
@@ -214,34 +214,34 @@ describe('groupesDuJour', () => {
     ];
 
     expect(
-      groupesDuJour(rapport(journees), '2026-07-10', 'alice')
+      standGroupsOfDay(rapport(journees), '2026-07-10', 'alice')
         .flatMap((g) => g.lignes)
         .map((l) => l.animateurId),
     ).toEqual(['alice']);
     expect(
-      groupesDuJour(rapport(journees), '2026-07-10', 'référencement').map((g) => g.standId),
+      standGroupsOfDay(rapport(journees), '2026-07-10', 'référencement').map((g) => g.standId),
     ).toEqual(['REF']);
     expect(
-      groupesDuJour(rapport(journees), '2026-07-10', 'durand')
+      standGroupsOfDay(rapport(journees), '2026-07-10', 'durand')
         .flatMap((g) => g.lignes)
         .map((l) => l.animateurId),
     ).toEqual(['alice']);
     expect(
-      groupesDuJour(rapport(journees), '2026-07-10', '', true)
+      standGroupsOfDay(rapport(journees), '2026-07-10', '', true)
         .flatMap((g) => g.lignes)
         .map((l) => l.animateurId),
     ).toEqual(['carol']);
-    expect(groupesDuJour(rapport(journees), '2026-07-10', 'nobody')).toEqual([]);
+    expect(standGroupsOfDay(rapport(journees), '2026-07-10', 'nobody')).toEqual([]);
   });
 
   it('is empty without a report or a day', () => {
-    expect(groupesDuJour(null, '2026-07-10')).toEqual([]);
-    expect(groupesDuJour(rapport([journee()]), null)).toEqual([]);
-    expect(groupesDuJour(rapport([journee()]), '2026-07-12')).toEqual([]);
+    expect(standGroupsOfDay(null, '2026-07-10')).toEqual([]);
+    expect(standGroupsOfDay(rapport([journee()]), null)).toEqual([]);
+    expect(standGroupsOfDay(rapport([journee()]), '2026-07-12')).toEqual([]);
   });
 });
 
-describe('planifieesDuJour / syntheseDuJour', () => {
+describe('plannedOfDay / daySummary', () => {
   const journees = [
     journee({ pausesPlanifiees: [{ debut: '13:00:00', fin: '14:00:00', minutes: 60 }] }),
     journee({
@@ -266,21 +266,17 @@ describe('planifieesDuJour / syntheseDuJour', () => {
 
   it('lists the scheduled gaps of the day by start time, then filters on the name', () => {
     expect(
-      planifieesDuJour(rapport(journees), '2026-07-10').map((p) => [
-        p.nomComplet,
-        p.debut,
-        p.minutes,
-      ]),
+      plannedOfDay(rapport(journees), '2026-07-10').map((p) => [p.nomComplet, p.debut, p.minutes]),
     ).toEqual([
       ['Bob Durand', '12:00:00', 30],
       ['Alice Martin', '13:00:00', 60],
     ]);
-    expect(planifieesDuJour(rapport(journees), '2026-07-10', 'alice')).toHaveLength(1);
-    expect(planifieesDuJour(null, '2026-07-10')).toEqual([]);
+    expect(plannedOfDay(rapport(journees), '2026-07-10', 'alice')).toHaveLength(1);
+    expect(plannedOfDay(null, '2026-07-10')).toEqual([]);
   });
 
   it('counts the day: breaks, of which without relay, people, scheduled gaps, meal breaks', () => {
-    expect(syntheseDuJour(rapport(journees), '2026-07-10')).toEqual({
+    expect(daySummary(rapport(journees), '2026-07-10')).toEqual({
       animateurs: 2,
       pauses: 2,
       relaisManquants: 1,
@@ -288,7 +284,7 @@ describe('planifieesDuJour / syntheseDuJour', () => {
       coupuresRepas: 0,
       coupuresRepasManquantes: 0,
     });
-    expect(syntheseDuJour(rapport(journees), '2026-07-11')).toEqual({
+    expect(daySummary(rapport(journees), '2026-07-11')).toEqual({
       animateurs: 1,
       pauses: 1,
       relaisManquants: 0,
@@ -296,7 +292,7 @@ describe('planifieesDuJour / syntheseDuJour', () => {
       coupuresRepas: 0,
       coupuresRepasManquantes: 0,
     });
-    expect(syntheseDuJour(null, '2026-07-10')).toEqual({
+    expect(daySummary(null, '2026-07-10')).toEqual({
       animateurs: 0,
       pauses: 0,
       relaisManquants: 0,
@@ -353,7 +349,7 @@ describe('coupuresRepasJournee', () => {
   });
 
   it('counts a day that owes a meal break, whether or not it fits', () => {
-    expect(syntheseDuJour(rapport([withRoom, noRoom]), '2026-07-10')).toMatchObject({
+    expect(daySummary(rapport([withRoom, noRoom]), '2026-07-10')).toMatchObject({
       coupuresRepas: 2,
       coupuresRepasManquantes: 1,
     });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RapportPauses, WalkSequenceReport, WalkView } from '../../core/models';
-import { enchainementsDuJour, joursRepasPauses } from './repas-pauses';
+import { walksOfDay, joursRepasPauses } from './repas-pauses';
 
 function walk(overrides: Partial<WalkView>): WalkView {
   return {
@@ -30,15 +30,15 @@ const WALKS: WalkSequenceReport = {
   ],
 };
 
-describe('enchainementsDuJour', () => {
+describe('walksOfDay', () => {
   it('keeps the day asked, the walks that do not fit first, then by time', () => {
-    const rows = enchainementsDuJour(WALKS, '2026-07-10').map((w) => w.fromPosteId);
+    const rows = walksOfDay(WALKS, '2026-07-10').map((w) => w.fromPosteId);
     expect(rows).toEqual(['c', 'b', 'a']);
   });
 
   it('is empty without a day or a report', () => {
-    expect(enchainementsDuJour(WALKS, null)).toEqual([]);
-    expect(enchainementsDuJour(null, '2026-07-10')).toEqual([]);
+    expect(walksOfDay(WALKS, null)).toEqual([]);
+    expect(walksOfDay(null, '2026-07-10')).toEqual([]);
   });
 });
 

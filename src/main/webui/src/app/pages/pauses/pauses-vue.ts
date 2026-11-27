@@ -12,26 +12,25 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RapportPauses } from '../../core/models';
 import { formatHeure } from '../../core/time-of-day';
-import { IntendanceJour } from '../intendance/intendance-jour';
 import {
   coupuresRepasJournee,
   GroupeStand,
-  groupesDuJour,
+  standGroupsOfDay,
   JourPauses,
-  joursDuRapport,
+  reportDays,
   libelleRelais,
   LigneCoupureRepas,
   LignePausePlanifiee,
-  planifieesDuJour,
-  syntheseDuJour,
+  plannedOfDay,
+  daySummary,
 } from './pauses';
 import { RouterLink } from '@angular/router';
 
 /**
  * « Pauses et repas » : where the legal breaks fall, day by day and stand by
- * stand — who steps out at the latest when, and who is there to cover — and,
- * under them, the meal breaks counted per emplacement for the intendance
- * (`pages/intendance/intendance-jour`, the former `/intendance` screen).
+ * stand — who steps out at the latest when, and who is there to cover.
+ * The meals counted per emplacement for the intendance
+ * (`pages/intendance/intendance-jour`) are the tab's next section, not this view's.
  *
  * A section of the Diagnostic's « Repas et pauses » tab (taken back from the
  * Planning page's former « Pauses » view): it lives inside a day, where relays
@@ -47,14 +46,7 @@ import { RouterLink } from '@angular/router';
  */
 @Component({
   selector: 'app-pauses-vue',
-  imports: [
-    MatCardModule,
-    MatCheckboxModule,
-    MatIconModule,
-    MatTooltipModule,
-    RouterLink,
-    IntendanceJour,
-  ],
+  imports: [MatCardModule, MatCheckboxModule, MatIconModule, MatTooltipModule, RouterLink],
   templateUrl: './pauses-vue.html',
   styleUrl: './pauses-vue.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
@@ -73,7 +65,7 @@ export class PausesView {
   readonly withoutRelaisOnly = model(false);
   /** Narrows the meal-break section to the days that have no room for one. */
   readonly coupuresManquantesSeulement = model(false);
-  protected readonly jours = computed<JourPauses[]>(() => joursDuRapport(this.rapport()));
+  protected readonly jours = computed<JourPauses[]>(() => reportDays(this.rapport()));
   /**
    * The day the tab selected, when the report knows it. The selector lists
    * every day of the plan while the report only knows the days somebody works
@@ -93,7 +85,7 @@ export class PausesView {
   protected readonly groupes = computed<GroupeStand[]>(() => {
     const stand = this.stand();
     const animateur = this.animateur();
-    return groupesDuJour(
+    return standGroupsOfDay(
       this.rapport(),
       this.jourCourant()?.date ?? null,
       this.recherche(),
@@ -108,7 +100,7 @@ export class PausesView {
       .filter((groupe) => groupe.lignes.length > 0);
   });
   protected readonly planifiees = computed<LignePausePlanifiee[]>(() =>
-    planifieesDuJour(this.rapport(), this.jourCourant()?.date ?? null, this.recherche()).filter(
+    plannedOfDay(this.rapport(), this.jourCourant()?.date ?? null, this.recherche()).filter(
       (pause) => !this.animateur() || pause.animateurId === this.animateur(),
     ),
   );
@@ -121,7 +113,7 @@ export class PausesView {
     ).filter((coupure) => !this.animateur() || coupure.animateurId === this.animateur()),
   );
   protected readonly synthese = computed(() =>
-    syntheseDuJour(this.rapport(), this.jourCourant()?.date ?? null),
+    daySummary(this.rapport(), this.jourCourant()?.date ?? null),
   );
   protected readonly heure = formatHeure;
   protected readonly libelleRelais = libelleRelais;

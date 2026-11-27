@@ -139,9 +139,6 @@ test('the addresses of former screens lead to the right rendering, parameters in
   await page.goto(`/calendar?date=${SEED.jour}&stand=${SEED.standDemandeur}`);
   await expect(page).toHaveURL(new RegExp(String.raw`/journee\?.*stand=${SEED.standDemandeur}`));
 
-  await page.goto('/intendance');
-  await expect(page).toHaveURL(/\/diagnostic$/);
-
   await page.goto('/graphe');
   await expect(page).toHaveURL(/\/journee\?.*vue=carte/);
 

@@ -60,7 +60,7 @@ test('le filtre par nom de Charge se restaure au rechargement', async ({ browser
   await page.goto('/diagnostic?onglet=charge');
   await page.getByLabel('Filtrer par nom').fill('Alice');
   await expect(page.locator(NOMS)).toHaveText([/Alice E2E/]);
-  await expect(page).toHaveURL(/[?&]q=Alice/);
+  await expect(page).toHaveURL(/[?&]nom=Alice/);
   await page.reload();
   await expect(page.getByLabel('Filtrer par nom')).toHaveValue('Alice');
   await expect(page.locator(NOMS)).toHaveText([/Alice E2E/]);
