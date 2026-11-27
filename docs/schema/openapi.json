@@ -78,10 +78,6 @@
           }
         }
       },
-      "ActionImport" : {
-        "type" : "string",
-        "enum" : [ "CREE", "MIS_A_JOUR", "REFUSE" ]
-      },
       "ActionType" : {
         "type" : "object",
         "properties" : {
@@ -5686,10 +5682,6 @@
         "type" : "string",
         "enum" : [ "CREATED", "UPDATED", "REJECTED" ]
       },
-      "ImportGrilleAction" : {
-        "type" : "string",
-        "enum" : [ "UPDATED", "REJECTED" ]
-      },
       "ImportImpact" : {
         "required" : [ "animateurs", "demandesEchange", "demandesEnAttente", "planningResolu", "postes", "stands", "verrous" ],
         "type" : "object",
@@ -5723,10 +5715,6 @@
           }
         }
       },
-      "ImportTarget" : {
-        "type" : "string",
-        "enum" : [ "TYPOLOGIES", "EMPLACEMENTS", "STANDS", "CRENEAUX", "JOURNEES_TYPES" ]
-      },
       "ImportTargetView" : {
         "required" : [ "existe" ],
         "type" : "object",
@@ -5742,83 +5730,6 @@
           },
           "editionNomExistant" : {
             "type" : "string"
-          }
-        }
-      },
-      "ImportedColumn" : {
-        "type" : "object",
-        "required" : [ "creneaux", "index" ],
-        "properties" : {
-          "index" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "label" : {
-            "type" : "string"
-          },
-          "date" : {
-            "$ref" : "#/components/schemas/LocalDate"
-          },
-          "heureDebut" : {
-            "$ref" : "#/components/schemas/LocalTime"
-          },
-          "heureFin" : {
-            "$ref" : "#/components/schemas/LocalTime"
-          },
-          "creneauId" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "creneaux" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "reason" : {
-            "type" : "string"
-          }
-        }
-      },
-      "ImportedGrilleRow" : {
-        "type" : "object",
-        "properties" : {
-          "line" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "label" : {
-            "type" : "string"
-          },
-          "standId" : {
-            "type" : "string"
-          },
-          "action" : {
-            "$ref" : "#/components/schemas/ImportGrilleAction"
-          },
-          "reasons" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "cellulesOuvertes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "regles" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "exceptions" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "effectifMin" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "effectifMax" : {
-            "type" : "integer",
-            "format" : "int32"
           }
         }
       },
@@ -6488,37 +6399,6 @@
           },
           "raison" : {
             "type" : "string"
-          }
-        }
-      },
-      "LigneImportee" : {
-        "type" : "object",
-        "required" : [ "action", "line" ],
-        "properties" : {
-          "line" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "id" : {
-            "type" : "string"
-          },
-          "libelle" : {
-            "type" : "string"
-          },
-          "action" : {
-            "$ref" : "#/components/schemas/ActionImport"
-          },
-          "raisons" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "details" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
           }
         }
       },
@@ -9128,70 +9008,6 @@
         "type" : "string",
         "enum" : [ "STANDS", "CRENEAUX", "TYPOLOGIES_EMPLACEMENTS", "COMPETENCES" ]
       },
-      "ReferentielCsvImportReport" : {
-        "required" : [ "accepted", "applied", "cible", "created", "rejected", "total", "updated" ],
-        "type" : "object",
-        "properties" : {
-          "applied" : {
-            "type" : "boolean"
-          },
-          "cible" : {
-            "$ref" : "#/components/schemas/ImportTarget"
-          },
-          "columns" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "separator" : {
-            "type" : "string"
-          },
-          "total" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "accepted" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "rejected" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "created" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "updated" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "typologiesCreees" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "rows" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/LigneImportee"
-            }
-          }
-        }
-      },
-      "ReferentielCsvImportRequest" : {
-        "type" : "object",
-        "properties" : {
-          "fileName" : {
-            "type" : "string"
-          },
-          "content" : {
-            "type" : "string"
-          }
-        }
-      },
       "ReferentielManquant" : {
         "type" : "string",
         "enum" : [ "STANDS", "CRENEAUX", "ANIMATEURS" ]
@@ -10238,65 +10054,6 @@
               "$ref" : "#/components/schemas/PlageStand"
             },
             "deprecated" : true
-          }
-        }
-      },
-      "StandGrilleImportReport" : {
-        "required" : [ "accepted", "applied", "rejected", "total" ],
-        "type" : "object",
-        "properties" : {
-          "applied" : {
-            "type" : "boolean"
-          },
-          "separator" : {
-            "type" : "string"
-          },
-          "columns" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/ImportedColumn"
-            }
-          },
-          "creneauxAbsents" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "total" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "accepted" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "rejected" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "rows" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/ImportedGrilleRow"
-            }
-          },
-          "warnings" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          }
-        }
-      },
-      "StandGrilleImportRequest" : {
-        "type" : "object",
-        "properties" : {
-          "fileName" : {
-            "type" : "string"
-          },
-          "content" : {
-            "type" : "string"
           }
         }
       },
@@ -13400,82 +13157,6 @@
         "tags" : [ "Creneau Resource" ]
       }
     },
-    "/api/creneaux/import-csv" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Import Csv",
-        "tags" : [ "Creneau Resource" ]
-      }
-    },
-    "/api/creneaux/import-csv/analyse" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Analyse Csv",
-        "tags" : [ "Creneau Resource" ]
-      }
-    },
-    "/api/creneaux/import-csv/exemple" : {
-      "get" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "text/csv" : { }
-            }
-          }
-        },
-        "summary" : "Exemple Csv",
-        "tags" : [ "Creneau Resource" ]
-      }
-    },
     "/api/creneaux/recurrence" : {
       "post" : {
         "deprecated" : true,
@@ -14785,82 +14466,6 @@
           }
         },
         "summary" : "Create Emplacement",
-        "tags" : [ "Emplacement Resource" ]
-      }
-    },
-    "/api/emplacements/import-csv" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Import Csv",
-        "tags" : [ "Emplacement Resource" ]
-      }
-    },
-    "/api/emplacements/import-csv/analyse" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Analyse Csv",
-        "tags" : [ "Emplacement Resource" ]
-      }
-    },
-    "/api/emplacements/import-csv/exemple" : {
-      "get" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "text/csv" : { }
-            }
-          }
-        },
-        "summary" : "Exemple Csv",
         "tags" : [ "Emplacement Resource" ]
       }
     },
@@ -16705,82 +16310,6 @@
           }
         },
         "summary" : "Set Calendrier",
-        "tags" : [ "Journee Type Resource" ]
-      }
-    },
-    "/api/journees-types/import-csv" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Import Csv",
-        "tags" : [ "Journee Type Resource" ]
-      }
-    },
-    "/api/journees-types/import-csv/analyse" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Analyse Csv",
-        "tags" : [ "Journee Type Resource" ]
-      }
-    },
-    "/api/journees-types/import-csv/exemple" : {
-      "get" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "text/csv" : { }
-            }
-          }
-        },
-        "summary" : "Exemple Csv",
         "tags" : [ "Journee Type Resource" ]
       }
     },
@@ -20151,158 +19680,6 @@
         "tags" : [ "Stand Resource" ]
       }
     },
-    "/api/stands/import-csv" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Import Csv",
-        "tags" : [ "Stand Resource" ]
-      }
-    },
-    "/api/stands/import-csv/analyse" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Analyse Csv",
-        "tags" : [ "Stand Resource" ]
-      }
-    },
-    "/api/stands/import-csv/exemple" : {
-      "get" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "text/csv" : { }
-            }
-          }
-        },
-        "summary" : "Exemple Csv",
-        "tags" : [ "Stand Resource" ]
-      }
-    },
-    "/api/stands/import-grille" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/StandGrilleImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/StandGrilleImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Import Grille",
-        "tags" : [ "Stand Resource" ]
-      }
-    },
-    "/api/stands/import-grille/analyse" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/StandGrilleImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/StandGrilleImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Analyse Grille",
-        "tags" : [ "Stand Resource" ]
-      }
-    },
-    "/api/stands/import-grille/exemple" : {
-      "get" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "text/csv" : { }
-            }
-          }
-        },
-        "summary" : "Exemple Grille",
-        "tags" : [ "Stand Resource" ]
-      }
-    },
     "/api/stands/suggestions-emplacement" : {
       "get" : {
         "responses" : {
@@ -20560,82 +19937,6 @@
           }
         },
         "summary" : "Create Typologie",
-        "tags" : [ "Typologie Resource" ]
-      }
-    },
-    "/api/typologies/import-csv" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Import Csv",
-        "tags" : [ "Typologie Resource" ]
-      }
-    },
-    "/api/typologies/import-csv/analyse" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Analyse Csv",
-        "tags" : [ "Typologie Resource" ]
-      }
-    },
-    "/api/typologies/import-csv/exemple" : {
-      "get" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "text/csv" : { }
-            }
-          }
-        },
-        "summary" : "Exemple Csv",
         "tags" : [ "Typologie Resource" ]
       }
     },

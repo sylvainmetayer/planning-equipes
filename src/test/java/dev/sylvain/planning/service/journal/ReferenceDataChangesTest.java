@@ -70,7 +70,6 @@ class ReferenceDataChangesTest {
                         "ANIMATEUR_MODIFIE",
                         "ANIMATEUR_SUPPRIME",
                         "STAND_CREE",
-                        "STANDS_IMPORTES",
                         "OUVERTURES_SAISIES",
                         "CRENEAU_SUPPRIME",
                         "JOURNEES_TYPES_APPLIQUEES",

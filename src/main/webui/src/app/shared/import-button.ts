@@ -12,7 +12,7 @@ import { ImportDialog, ImportDialogData } from './import-dialog';
  * store is reloaded by the card itself on a write; `imported` tells the host,
  * for whatever else it reads.
  *
- *   <app-import-button card="stands" />
+ *   <app-import-button card="animateurs" />
  */
 @Component({
   selector: 'app-import-button',

@@ -29,7 +29,7 @@ A stand's hours are set on its fiche (*Stands*, then the stand's name), and nowh
 - A day with no window, the stand is open all day.
 - The fiche says how many open days and seats the stand carries, before any solve. A stand never open or a window outside every timeslot is counted on the home page and in the calendar check.
 
-An organiser's workbook grid can also arrive as is by file: see [Import and export files](importer-exporter.md#importer-la-grille-des-stands).
+An organiser's workbook grid is no longer imported as CSV: it is rewritten in the edition's YAML file, see [Moving from 3.x to 4.0](../installer/passer-a-la-4-0.md#les-imports-csv-des-référentiels-et-de-la-grille-des-stands-sont-retirés).
 
 ## When a consigne from the authority changes the hours
 

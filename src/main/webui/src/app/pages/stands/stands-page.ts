@@ -15,7 +15,6 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -55,7 +54,6 @@ import { TableFilter } from '../../shared/table-filter';
 import { StandBulkEditData, StandBulkEditDialog } from './stand-bulk-edit-dialog';
 import { StandCreationDialog } from './stand-creation-dialog';
 import { StandFormData, StandFormDialog } from './stand-form-dialog';
-import { ImportButton } from '../../shared/import-button';
 import {
   StandSortContext,
   coverageRate,
@@ -100,13 +98,11 @@ const SORTED_COLUMNS = [
   selector: 'app-stands-page',
   imports: [
     ImportedRowsFilter,
-    ImportButton,
     MatCardModule,
     MatButtonModule,
     MatButtonToggleModule,
     MatCheckboxModule,
     MatIconModule,
-    MatMenuModule,
     MatSortModule,
     MatTableModule,
     MatTooltipModule,

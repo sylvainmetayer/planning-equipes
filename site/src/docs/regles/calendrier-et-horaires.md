@@ -26,7 +26,7 @@ Les horaires d'un stand se règlent sur sa fiche (*Stands*, puis le nom du stand
 - Un jour sans plage, le stand est ouvert toute la journée.
 - La fiche dit combien de jours ouverts et de postes le stand porte, avant tout calcul. Un stand jamais ouvert ou une fenêtre hors de tout créneau se compte sur l'accueil et dans le contrôle du calendrier.
 
-La grille du classeur d'un organisateur peut aussi arriver telle quelle par fichier : voir [Importer et exporter des fichiers](importer-exporter.md#importer-la-grille-des-stands).
+La grille du classeur d'un organisateur ne s'importe plus en CSV : elle se réécrit dans le fichier YAML de l'édition, voir [Passer de la 3.x à la 4.0](../installer/passer-a-la-4-0.md#les-imports-csv-des-référentiels-et-de-la-grille-des-stands-sont-retirés).
 
 ## Quand une consigne de l'autorité change les horaires
 

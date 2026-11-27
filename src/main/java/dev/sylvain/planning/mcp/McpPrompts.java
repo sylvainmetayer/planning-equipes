@@ -456,12 +456,7 @@ public class McpPrompts {
                 effet, une plage trop courte pour être une vraie vacation.
                 5. Si la grille de créneaux n'existe pas encore, previsualiser_generateur_creneaux (source stands) la \
                 déduit de ces fenêtres — une coupure à chaque heure où un stand ouvre ou ferme. Montre \
-                l'aperçu avant d'écrire quoi que ce soit.
-
-                Deux choses ne passent pas par ici et méritent d'être dites : l'import de la matrice \
-                du classeur et la grille de saisie case par case vivent dans l'interface, pas dans \
-                ces outils. Si l'organisateur a déjà son tableau, l'écran « Import de la grille des \
-                stands » ira plus vite que trente appels.""".formatted(suffixe(edition), editionFrame(edition)));
+                l'aperçu avant d'écrire quoi que ce soit.""".formatted(suffixe(edition), editionFrame(edition)));
     }
 
     @Prompt(

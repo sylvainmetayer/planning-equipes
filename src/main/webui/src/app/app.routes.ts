@@ -4,6 +4,7 @@ import { responsableGuard } from './core/responsable.guard';
 import { CanActivateFn, Params, RedirectFunction, Router, Routes } from '@angular/router';
 import { TODAY_ANCHOR } from './core/date-mock.service';
 import type { AnimateursPage } from './pages/animateurs/animateurs-page';
+import { IMPORT_CARDS } from './pages/imports/imports';
 import type { ReglesPage } from './pages/regles/regles-page';
 import type { StandFichePage } from './pages/stand-fiche/stand-fiche-page';
 
@@ -288,7 +289,9 @@ function redirectKeepingQuery(path: string): RedirectFunction {
  * A former screen of what Fichiers gathers: its address lands on a tab of the
  * page (`onglet`), and on one card of the Importer tab (`cible`) when the
  * former screen named one — the Imports page's own `onglet` becomes that
- * `cible`. Every other query param travels along.
+ * `cible`, unless that card was withdrawn in 4.0 (the CSV of every referential
+ * but the animateurs', the stand matrix): the address then lands on the tab
+ * alone. Every other query param travels along.
  */
 function redirectToFichiers(onglet: string, importCard?: string): RedirectFunction {
   return ({ queryParams, fragment }) => {
@@ -296,7 +299,12 @@ function redirectToFichiers(onglet: string, importCard?: string): RedirectFuncti
     // The end-of-event archive was a fragment of the Export page.
     params.set('onglet', fragment === 'archive-evenement' ? 'archive' : onglet);
     const former = queryParams['onglet'];
-    const card = importCard ?? (onglet === 'importer' && former ? paramText(former) : undefined);
+    const formerCard = onglet === 'importer' && former ? paramText(former) : undefined;
+    const card =
+      importCard ??
+      (formerCard !== undefined && (IMPORT_CARDS as readonly string[]).includes(formerCard)
+        ? formerCard
+        : undefined);
     if (card !== undefined) {
       params.set('cible', card);
     }

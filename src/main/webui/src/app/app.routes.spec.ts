@@ -529,10 +529,23 @@ describe('app.routes', () => {
    */
   describe('les anciennes adresses de Fichiers', () => {
     it("mène d'Imports à la carte de l'onglet Importer qu'il nommait", () => {
-      expect(redirectTarget('imports', { onglet: 'stands' })).toBe(
-        '/fichiers?onglet=importer&cible=stands',
+      expect(redirectTarget('imports', { onglet: 'animateurs' })).toBe(
+        '/fichiers?onglet=importer&cible=animateurs',
       );
       expect(redirectTarget('imports', {})).toBe('/fichiers?onglet=importer');
+    });
+
+    // The cards withdrawn in 4.0: a bookmark on the CSV of a referential or on
+    // the stand matrix lands on the Importer tab, where the YAML is the way in.
+    it.each([
+      'typologies',
+      'emplacements',
+      'stands',
+      'creneaux',
+      'journees-types',
+      'grille-stands',
+    ])("mène d'Imports, carte %s retirée, à l'onglet Importer", (carte) => {
+      expect(redirectTarget('imports', { onglet: carte })).toBe('/fichiers?onglet=importer');
     });
 
     it("mène d'Export à l'onglet Exporter, ou à l'archive par son ancien fragment", () => {

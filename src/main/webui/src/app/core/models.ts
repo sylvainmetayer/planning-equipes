@@ -4526,54 +4526,6 @@ export interface ImportCsvRapport {
   warnings: string[];
 }
 
-/* ------------------ Import de la grille des stands (`/api/stands/import-grille`) ------------------ */
-
-export type ImportGrilleAction = 'UPDATED' | 'REJECTED';
-
-/** One column of the file: the (date, band) read, and the créneau it landed on — or why it did not. */
-export interface ImportGrilleColonne {
-  index: number;
-  label: string;
-  date: string | null;
-  heureDebut: string | null;
-  heureFin: string | null;
-  creneauId: number | null;
-  /** How many créneaux the column lands on: more than one when the grid is staggered into families. */
-  creneaux: number;
-  reason: string | null;
-}
-
-export interface ImportGrilleLigne {
-  line: number;
-  label: string;
-  standId: string | null;
-  action: ImportGrilleAction;
-  reasons: string[];
-  cellulesOuvertes: number;
-  regles: number;
-  exceptions: number;
-  effectifMin: number | null;
-  effectifMax: number | null;
-}
-
-/** What the matrix would do, stand by stand — the same shape once applied. */
-export interface ImportGrilleRapport {
-  applied: boolean;
-  separator: string;
-  columns: ImportGrilleColonne[];
-  creneauxAbsents: string[];
-  total: number;
-  accepted: number;
-  rejected: number;
-  rows: ImportGrilleLigne[];
-  warnings: string[];
-}
-
-export interface ImportGrilleDemande {
-  fileName: string;
-  content: string;
-}
-
 /** How many rows each referential would write, keyed by its export target. */
 export type VolumesExportCsv = Partial<Record<ExportCsvTarget, number>>;
 
@@ -4594,46 +4546,6 @@ export interface ArchiveAvailability {
   publie: boolean;
   /** A solve holds the edition: the archive carries the last persisted plan. */
   resolutionEnCours: boolean;
-}
-
-/* ---- Referential CSV imports (typologies, emplacements, stands, grid, day templates) ---- */
-
-/**
- * Which referential a file is read against.
- *
- * <p>`CRENEAUX` is matched on `(date, heureDebut, heureFin)` rather than on an
- * id — a timeslot has none of its own — and `JOURNEES_TYPES` on the template's
- * name, its dates merged into the calendar. Neither of the two moves the grid:
- * materialising day templates stays the « Appliquer » of their own screen.</p>
- */
-export type ReferentielImportTarget =
-  'TYPOLOGIES' | 'EMPLACEMENTS' | 'STANDS' | 'CRENEAUX' | 'JOURNEES_TYPES';
-
-export type ActionImportReferentiel = 'CREE' | 'MIS_A_JOUR' | 'REFUSE';
-
-export interface LigneImportReferentiel {
-  line: number;
-  id: string | null;
-  libelle: string | null;
-  action: ActionImportReferentiel;
-  raisons: string[];
-  details: string[];
-}
-
-/** What a referential CSV does, or would do — the same shape for the preview and the write. */
-export interface RapportImportReferentiel {
-  applied: boolean;
-  cible: ReferentielImportTarget;
-  columns: string[];
-  separator: string;
-  total: number;
-  accepted: number;
-  rejected: number;
-  created: number;
-  updated: number;
-  /** Typologie codes a stand named without them existing: created, and listed so nothing is silent. */
-  typologiesCreees: string[];
-  rows: LigneImportReferentiel[];
 }
 
 /* ------------- Competence grid (`/api/animateurs/competences`) ------------- */
