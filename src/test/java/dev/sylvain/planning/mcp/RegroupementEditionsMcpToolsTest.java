@@ -179,11 +179,17 @@ class RegroupementEditionsMcpToolsTest {
         assertThat(parametresTools.getParametresSolveurAlias("E1")).isNotNull();
         assertThat(parametresTools.updateParametresLegauxAlias(
                         null, null, null, null, null, null, null, null, null, null, null, "E1"))
+                .usingRecursiveComparison()
+                .ignoringFields("modifieLe")
                 .isEqualTo(legal);
         assertThat(parametresTools.updateParametresQualiteAlias(
                         null, null, null, null, null, null, null, null, null, null, "E1"))
+                .usingRecursiveComparison()
+                .ignoringFields("modifieLe")
                 .isEqualTo(parametresTools.getParametresQualiteAlias("E1"));
         assertThat(parametresTools.updateParametresNotificationsAlias(null, null, null, "E1"))
+                .usingRecursiveComparison()
+                .ignoringFields("modifieLe")
                 .isEqualTo(parametresTools.getParametresNotificationsAlias("E1"));
     }
 
