@@ -9,7 +9,6 @@ import {
   AnomalieOuverture,
   CelluleJourOuverture,
   EtatOuverture,
-  JourAmplitude,
   RapportOuvertures,
 } from '../../core/models';
 
