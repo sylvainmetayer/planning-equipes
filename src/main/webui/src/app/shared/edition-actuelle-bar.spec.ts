@@ -6,6 +6,7 @@ import { EditionActuelleBar } from './edition-actuelle-bar';
 import { ApiService } from '../core/api.service';
 import { EditionStore } from '../core/edition.store';
 import { Edition } from '../core/models';
+import { EditionActivationActions } from './edition-activation-actions';
 import { seedStore } from '../core/testing/seed-store';
 
 function edition(id: string, nom: string, active = false): Edition {
@@ -175,6 +176,36 @@ describe('EditionActuelleBar', () => {
       '[aria-label^="Activer l\'édition Année 2026"]',
     );
     expect(bouton?.textContent).toContain('Activer la suivante');
+  });
+
+  it('runs the shared gestures from the banner, naming the edition', async () => {
+    const actions = TestBed.inject(EditionActivationActions);
+    const desactiver = vi.spyOn(actions, 'deactivate').mockResolvedValue(true);
+    const activer = vi.spyOn(actions, 'activate').mockResolvedValue(true);
+    seedStore(store, 'courant', edition('A', 'Année 2025', true));
+    seedStore(store, 'situations', [
+      {
+        type: 'ACTIVE_TERMINEE',
+        edition: edition('A', 'Année 2025', true),
+        premierJour: '2025-07-10',
+        dernierJour: '2025-07-12',
+      },
+      {
+        type: 'INACTIVE_IMMINENTE',
+        edition: edition('B', 'Année 2026'),
+        premierJour: '2026-07-10',
+        dernierJour: '2026-07-12',
+      },
+    ]);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    el.querySelector<HTMLButtonElement>('[aria-label="Désactiver l\'édition Année 2025"]')!.click();
+    expect(desactiver).toHaveBeenCalledWith(edition('A', 'Année 2025', true));
+    el.querySelectorAll<HTMLButtonElement>(
+      '[aria-label="Activer l\'édition Année 2026"]',
+    )[0].click();
+    expect(activer).toHaveBeenCalledWith(edition('B', 'Année 2026'));
+    expect(el.querySelector('[aria-label^="Ne plus afficher"]')).not.toBeNull();
   });
 
   it('names the phase of the edition, and bannerises an unblocked structure', async () => {
