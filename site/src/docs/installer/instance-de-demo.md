@@ -47,7 +47,7 @@ Un seul calcul tourne à la fois sur une instance : c'est le fonctionnement de l
 Le script `scripts/demo/generer-dump.sh` du dépôt démarre une pile jetable (PostgreSQL, Mailpit, l'application), importe le scénario de la vitrine, lance un calcul et l'attend, publie le plan, crée les trois comptes locaux puis écrit le dump. Il demande `docker` (avec `docker compose`), `curl` et `jq`, et quelques minutes.
 
 ```bash
-DEMO_PASSWORD='demo-planning' \
+DEMO_PASSWORD='<mot de passe affiché sur /demo>' \
 APP_IMAGE=ghcr.io/sylvainmetayer/planning-equipes:4.2.0 \
   scripts/demo/generer-dump.sh reference.dump
 ```
