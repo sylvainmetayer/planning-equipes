@@ -176,7 +176,7 @@ export function buildScreenSections(): HelpSection[] {
     ],
     calendrier: [
       'schedule',
-      '/creneaux',
+      '/calendrier',
       undefined,
       ['calendrier'],
       'calendrier',
@@ -380,7 +380,7 @@ export function buildScreenSections(): HelpSection[] {
       { onglet: 'regles' },
       ['parametrer-pour-un-planning-complet', 'configuration-solveur'],
       'regles',
-      $localize`:@@aide.ecran.regles.title:Règles`,
+      $localize`:@@aide.ecran.regles.title:Liste des règles`,
       $localize`:@@aide.ecran.regles.repond:Ce qui décide du plan : les seuils légaux et l'importance de chaque règle de qualité.`,
       $localize`:@@aide.ecran.regles.geste:Changez un seuil ou l'importance d'une règle, puis enregistrez ; une règle bloquée par une donnée absente le dit.`,
     ],

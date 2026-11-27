@@ -488,7 +488,7 @@
   "aide.ecran.problemes.title": "Problems",
   "aide.ecran.regles.geste": "Change a threshold or a rule's importance, then save; a rule blocked by a missing piece of data says so.",
   "aide.ecran.regles.repond": "What decides the plan: the legal thresholds and the importance of each quality rule.",
-  "aide.ecran.regles.title": "Rules",
+  "aide.ecran.regles.title": "Rule list",
   "aide.ecran.repas-pauses.geste": "Spot the people with no break or no meal, then adjust their day from the Planning.",
   "aide.ecran.repas-pauses.repond": "Whether everyone gets their breaks and meals: splits, relays and back-to-back shifts.",
   "aide.ecran.repas-pauses.title": "Meals and breaks",
