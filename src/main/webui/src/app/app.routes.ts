@@ -110,7 +110,7 @@ export function chargeUrl(queryParams: Params, sortValues: Record<string, string
     const value = queryParams[key];
     if (value !== undefined && value !== null && value !== '') {
       const text = paramText(value as string | readonly string[]);
-      params.set(key, key === 'sort' ? (sortValues[text] ?? text) : text);
+      params.set(key, key === 'sort' && Object.hasOwn(sortValues, text) ? sortValues[text] : text);
     }
   }
   return `/diagnostic?${params.toString()}`;
@@ -776,6 +776,8 @@ const adminRoutes: Routes = [
     title: () => $localize`:@@route.journee:Planning`,
     data: { aide: 'consulter' },
     canActivate: [planningFormerViews],
+    // An old synthesis address followed from inside the page changes the query alone.
+    runGuardsAndResolvers: 'paramsOrQueryParamsChange',
     loadComponent: () => import('./pages/journee/journee-page').then((m) => m.JourneePage),
   },
   // The month calendar is the Planning page's day selector now: its day, its

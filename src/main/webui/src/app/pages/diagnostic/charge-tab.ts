@@ -42,7 +42,6 @@ import { readHoursSource } from '../planning-personne/planning-personne';
   imports: [PlanningPersonneView, StatusMessage, TableFilter],
   template: `
     <app-table-filter
-      class="charge-filtre"
       [(value)]="filtre"
       label="Filtrer par nom"
       i18n-label="@@journee.filter.label"

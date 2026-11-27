@@ -26,14 +26,14 @@ The break is rest, not actual work (art. L3121-1): it is **deducted**, paid or n
 |---|---|
 | `dureeQuotidienneMax` | actual work: opening span minus the breaks due |
 | `dureeHebdomadaireMax`, `dureeHebdomadaireMaxDeuxSemaines` | same, summed over the ISO week |
-| Planning by person page, "Hours for the payroll" CSV (`PlanningHoursService`), `consulter_charge` tool | same: total and weekly columns |
+| Diagnostic Workload tab, "Hours for the payroll" CSV (`PlanningHoursService`), `consulter_charge` tool | same: total and weekly columns |
 | fairness table (`EquiteService`) | same: this is the quantity being shared out |
 | KPIs (`PlanningKpiService`) | same, except old snapshots |
 | volumes (`ProblemScaleService`) | same for held seats; an empty seat counts its opening span |
 
 `EffectiveWork` is the only place where this calculation lives. A break is due **per day and per staff member** (a sequence does not cross midnight): every weekly reader groups by day before summing, never the reverse (`LegalConstraints.joursAvecParametres`). A real gap between two shifts deducts nothing: no sequence in it exceeds six hours, so no break is due there, the gap is the break. `HeuresCoherentesTest` locks the readings to the same value: summing the opening span on one screen and the actual work on another gave two versions of the same schedule, half an hour a day apart, small enough to pass for rounding.
 
-**The daily opening span is shown, not capped.** From the first start to the last end of a day, gaps and breaks included, it is displayed (maximum, number of days beyond 12 h) in the per-person summary, the hours CSV, `consulter_charge` and the timeline of the staff member's sheet. The threshold is a constant (`PlanningHoursService.SEUIL_AMPLITUDE_MINUTES`) that no rule reads: capping the opening span awaits a lawyer's opinion.
+**The daily opening span is shown, not capped.** From the first start to the last end of a day, gaps and breaks included, it is displayed (maximum, number of days beyond 12 h) in the Diagnostic's Workload tab, the hours CSV, `consulter_charge` and the timeline of the staff member's sheet. The threshold is a constant (`PlanningHoursService.SEUIL_AMPLITUDE_MINUTES`) that no rule reads: capping the opening span awaits a lawyer's opinion.
 
 The opening span remains the quantity for three named cases:
 
