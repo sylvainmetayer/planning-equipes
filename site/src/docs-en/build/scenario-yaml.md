@@ -43,11 +43,11 @@ The application assigns all identifiers ([ADR 0050](repo:docs/decisions/0050-ide
 
 | Order | Staff member | Stand, game category, location |
 | --- | --- | --- |
-| 1 | the record with the same identifier, if it has the same e-mail address (failing an address, the same last and first name) | the row with the same identifier, if its `code` does not contradict the file's |
-| 2 | the only record with this address, then the only one with these last and first names | the row with this `code`, or with the identifier read as a code for a hand-written file (`STRATEGIE`) |
+| 1 | the record with the same identifier, if it has the same e-mail address (failing an address, the same last and first name) | the row carrying this `code`, or the identifier read as a code for a hand-written file (`STRATEGIE`) |
+| 2 | the only record with this address, then the only one with these last and first names | the row with the same identifier, if its `code` does not contradict the file's and no row of the file has already taken it by its code |
 | 3 | a new record | a new row, which keeps the file's identifier as its code when it is readable |
 
-Rule 1 means that a scenario exported then re-imported in the same edition updates instead of recreating: the espace tokens (the links printed on the schedules), the sessions, the swap requests and the confirmations survive. The identity check that goes with it is necessary, because each edition numbers from 1 and the `A3` of another edition is somebody else. The ad hoc constraints, replaced as a block, keep their identifier when the edition carries it and receive one otherwise.
+Rule 1 means that a scenario exported then re-imported in the same edition updates instead of recreating: the espace tokens (the links printed on the schedules), the sessions, the swap requests and the confirmations survive. The identity check that goes with it is necessary, because each edition numbers from 1 and the `A3` of another edition is somebody else. For stands, game categories and locations, the code comes before the identifier, for every row of the file before the first decision by identifier: a code designates a single row of the edition, and a row left without a code never takes the one a neighbour still carries. The ad hoc constraints, replaced as a block, keep their identifier when the edition carries it and receive one otherwise.
 
 ## What the export guarantees
 

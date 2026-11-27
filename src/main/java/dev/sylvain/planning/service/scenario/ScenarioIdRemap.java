@@ -12,6 +12,7 @@ import dev.sylvain.planning.scenario.dto.StandDto;
 import dev.sylvain.planning.scenario.dto.TypologieDto;
 import dev.sylvain.planning.service.IdGenerator;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -33,7 +34,9 @@ import java.util.function.Predicate;
  * <ol>
  *   <li>the row of that id, when the edition has one and it is plausibly the
  *       same thing — for an animateur, the same e-mail or the same name; for a
- *       stand, a typologie or an emplacement, no contradicting code. A file
+ *       stand, a typologie or an emplacement, no contradicting code, and only
+ *       once every code of the file has claimed its row (step 2 comes first
+ *       for those: a code designates one row, see {@link #mapCoded}). A file
  *       exported from this very edition is re-imported in place, tokens and
  *       all, which is what keeps the espace links printed on the PDFs alive.
  *       The check matters because every edition numbers from 1: {@code A3} of
@@ -210,19 +213,14 @@ final class ScenarioIdRemap {
             }
             references.addAll(list(animateur.souhaits()));
         }
-        Map<String, String> existants = edition.codesById(IdGenerator.Kind.TYPOLOGIE);
-        for (String reference : references) {
-            if (reference == null) {
-                continue;
-            }
-            mapCoded(
-                    IdGenerator.Kind.TYPOLOGIE,
-                    reference,
-                    declares.get(reference),
-                    existants,
-                    typologies,
-                    typologieCodes);
-        }
+        references.remove(null);
+        mapCoded(
+                IdGenerator.Kind.TYPOLOGIE,
+                references,
+                declares,
+                edition.codesById(IdGenerator.Kind.TYPOLOGIE),
+                typologies,
+                typologieCodes);
     }
 
     private void mapEmplacements(ScenarioDto scenario) {
@@ -236,60 +234,79 @@ final class ScenarioIdRemap {
                 references.add(stand.emplacementId());
             }
         }
-        Map<String, String> existants = edition.codesById(IdGenerator.Kind.EMPLACEMENT);
-        for (String reference : references) {
-            mapCoded(
-                    IdGenerator.Kind.EMPLACEMENT,
-                    reference,
-                    declares.get(reference),
-                    existants,
-                    emplacements,
-                    emplacementCodes);
-        }
+        mapCoded(
+                IdGenerator.Kind.EMPLACEMENT,
+                references,
+                declares,
+                edition.codesById(IdGenerator.Kind.EMPLACEMENT),
+                emplacements,
+                emplacementCodes);
     }
 
     private void mapStands(ScenarioDto scenario) {
-        Map<String, String> existants = edition.codesById(IdGenerator.Kind.STAND);
+        Map<String, String> declares = new LinkedHashMap<>();
         for (StandDto stand : list(scenario.stands())) {
-            if (stand.id() != null && !stands.containsKey(stand.id())) {
-                mapCoded(IdGenerator.Kind.STAND, stand.id(), stand.code(), existants, stands, standCodes);
+            if (stand.id() != null) {
+                declares.putIfAbsent(stand.id(), stand.code());
             }
         }
+        mapCoded(
+                IdGenerator.Kind.STAND,
+                declares.keySet(),
+                declares,
+                edition.codesById(IdGenerator.Kind.STAND),
+                stands,
+                standCodes);
     }
 
     /**
-     * One reference of a coded referential: the row of that id when no code
-     * contradicts it, else the row of that code, else a new row. Two
-     * references never land on the same row.
+     * The references of a coded referential, in two passes: every code first —
+     * the row carrying it is the natural identity of what the file describes —
+     * then, for the rest, the row of that id when no code contradicts it, else
+     * a new row. Codes first, so that no row a code designates is taken by an
+     * id beforehand: a reference keeping the id of a row without a code would
+     * otherwise write onto it a code another row of the edition still holds,
+     * and the import would stop on the edition's unique code. Two references
+     * never land on the same row.
      */
     private void mapCoded(
             IdGenerator.Kind kind,
-            String reference,
-            String codeDeclare,
+            java.util.Collection<String> references,
+            Map<String, String> declares,
             Map<String, String> existants,
             Map<String, String> ids,
             Map<String, String> codes) {
-        if (ids.containsKey(reference)) {
-            return;
+        Map<String, String> titulaires = new HashMap<>();
+        existants.forEach((id, code) -> {
+            if (code != null) {
+                titulaires.put(code, id);
+            }
+        });
+        for (String reference : references) {
+            String code = blankAsNull(declares.get(reference));
+            String cle = code != null ? code : implicitCode(kind, reference);
+            String titulaire = cle != null ? titulaires.get(cle) : null;
+            if (titulaire != null && !ids.containsKey(reference) && !ids.containsValue(titulaire)) {
+                ids.put(reference, titulaire);
+                codes.put(reference, code != null ? code : existants.get(titulaire));
+            }
         }
-        String code = blankAsNull(codeDeclare);
-        Set<String> pris = new HashSet<>(ids.values());
-        String cible = keepsItsId(reference, code, existants, pris) ? reference : null;
-        String cle = code != null ? code : implicitCode(kind, reference);
-        if (cible == null && cle != null) {
-            cible = existants.entrySet().stream()
-                    .filter(existant -> cle.equals(existant.getValue()) && !pris.contains(existant.getKey()))
-                    .map(Map.Entry::getKey)
-                    .findFirst()
-                    .orElse(null);
+        for (String reference : references) {
+            if (ids.containsKey(reference)) {
+                continue;
+            }
+            String code = blankAsNull(declares.get(reference));
+            Set<String> pris = new HashSet<>(ids.values());
+            String cible;
+            if (keepsItsId(reference, code, existants, pris)) {
+                cible = reference;
+                codes.put(reference, code != null ? code : existants.get(cible));
+            } else {
+                cible = newId(kind, reference, pris);
+                codes.put(reference, code != null ? code : implicitCode(kind, reference));
+            }
+            ids.put(reference, cible);
         }
-        if (cible == null) {
-            cible = newId(kind, reference, pris);
-            codes.put(reference, cle);
-        } else {
-            codes.put(reference, code != null ? code : existants.get(cible));
-        }
-        ids.put(reference, cible);
     }
 
     /** The reference names a free row of the edition whose code, when both sides give one, is the same. */

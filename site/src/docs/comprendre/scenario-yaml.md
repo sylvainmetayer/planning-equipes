@@ -39,11 +39,11 @@ L'application attribue tous les identifiants ([ADR 0050](repo:docs/decisions/005
 
 | Ordre | Animateur | Stand, typologie, emplacement |
 | --- | --- | --- |
-| 1 | la fiche de même identifiant, si elle a la même adresse e-mail (à défaut d'adresse, les mêmes nom et prénom) | la ligne de même identifiant, si son `code` ne contredit pas celui du fichier |
-| 2 | la seule fiche de cette adresse, puis la seule de ces nom et prénom | la ligne de ce `code`, ou de l'identifiant lu comme un code pour un fichier écrit à la main (`STRATEGIE`) |
+| 1 | la fiche de même identifiant, si elle a la même adresse e-mail (à défaut d'adresse, les mêmes nom et prénom) | la ligne qui porte ce `code`, ou l'identifiant lu comme un code pour un fichier écrit à la main (`STRATEGIE`) |
+| 2 | la seule fiche de cette adresse, puis la seule de ces nom et prénom | la ligne de même identifiant, si son `code` ne contredit pas celui du fichier et qu'aucune ligne du fichier ne l'a déjà prise par son code |
 | 3 | une fiche nouvelle | une ligne nouvelle, qui garde l'identifiant du fichier comme code quand il est lisible |
 
-La règle 1 fait qu'un scénario exporté puis réimporté dans la même édition met à jour au lieu de recréer : les jetons d'espace (les liens imprimés sur les plannings), les sessions, les demandes d'échange et les confirmations survivent. La vérification d'identité qui l'accompagne est nécessaire, car chaque édition numérote à partir de 1 et `A3` d'une autre édition est quelqu'un d'autre. Les contraintes ad hoc, remplacées en bloc, gardent leur identifiant quand l'édition le porte et en reçoivent un sinon.
+La règle 1 fait qu'un scénario exporté puis réimporté dans la même édition met à jour au lieu de recréer : les jetons d'espace (les liens imprimés sur les plannings), les sessions, les demandes d'échange et les confirmations survivent. La vérification d'identité qui l'accompagne est nécessaire, car chaque édition numérote à partir de 1 et `A3` d'une autre édition est quelqu'un d'autre. Pour les stands, typologies et emplacements, le code passe avant l'identifiant, pour toutes les lignes du fichier avant la première décision par identifiant : un code désigne une seule ligne de l'édition, et une ligne restée sans code ne prend jamais celui qu'une voisine porte encore. Les contraintes ad hoc, remplacées en bloc, gardent leur identifiant quand l'édition le porte et en reçoivent un sinon.
 
 ## Ce que l'export garantit
 
