@@ -7,15 +7,13 @@
 // sort a commit under two different headings. A parser added there needs its
 // line here — `newsHeadings` and its spec are what make that visible.
 
-import { correspondAuFiltre } from '../../core/text-filter';
-
 /** One commit as the build read it. Written by `scripts/generate-news.js`. */
 export interface NewsCommit {
   /** Commit subject, prefix included: `feat(espace): …`. */
   readonly subject: string;
   /** Authoring day, `YYYY-MM-DD`. */
   readonly date: string;
-  /** The release this commit was tagged with, `vX.Y.Z`, or null. */
+  /** The release this commit was tagged with, `vX.Y.Z` or `vX.Y.Z-rc.N`, or null. */
   readonly tag: string | null;
 }
 
@@ -121,8 +119,12 @@ export function toEntry(commit: NewsCommit): NewsEntry | null {
 export function releases(commits: readonly NewsCommit[]): NewsRelease[] {
   const sections: { version: string | null; commits: NewsCommit[] }[] = [];
   let current: { version: string | null; commits: NewsCommit[] } = { version: null, commits: [] };
+  const tags = new Set(commits.map((commit) => commit.tag));
   for (const commit of commits) {
-    if (commit.tag) {
+    // A pre-release whose stable version exists is folded into it, as `cliff.toml`
+    // (which cuts on stable tags only) does: the stable version keeps what the rc brought.
+    const folded = commit.tag && isPreRelease(commit.tag) && tags.has(commit.tag.split('-')[0]);
+    if (commit.tag && !folded) {
       sections.push(current);
       current = { version: commit.tag, commits: [] };
     }
@@ -149,30 +151,20 @@ export function releases(commits: readonly NewsCommit[]): NewsRelease[] {
     .filter((release) => release.count > 0);
 }
 
+/** The headings a version's entry in the list shows: what a reader should notice, nothing else. */
+export const HIGHLIGHT_HEADINGS: readonly NewsHeading[] = ['attention', 'feature'];
+
 /**
- * The releases a reader asked for: the chosen heading, and a free-text search
- * over what is on screen — the wording, its scope and the version. A release
- * left with no entry disappears with them.
+ * The list of versions: each release cut down to its highlights — the
+ * warnings and the new features — and a release with none disappears. The
+ * fixes, the dependencies and the documentation stay in the release notes.
  */
-export function filterReleases(
-  list: readonly NewsRelease[],
-  heading: NewsHeading | 'all',
-  search: string,
-): NewsRelease[] {
+export function highlights(list: readonly NewsRelease[]): NewsRelease[] {
   return list
     .map((release) => {
-      const groups = release.groups
-        .filter((group) => heading === 'all' || group.heading === heading)
-        .map((group) => ({
-          heading: group.heading,
-          entries: group.entries.filter((entry) =>
-            correspondAuFiltre(search, [entry.summary, entry.scope ?? '', release.version ?? '']),
-          ),
-        }))
-        .filter((group) => group.entries.length > 0);
+      const groups = release.groups.filter((group) => HIGHLIGHT_HEADINGS.includes(group.heading));
       return {
-        version: release.version,
-        date: release.date,
+        ...release,
         groups,
         count: groups.reduce((total, group) => total + group.entries.length, 0),
       };
@@ -180,9 +172,9 @@ export function filterReleases(
     .filter((release) => release.count > 0);
 }
 
-/** Reads a heading off the URL, falling back to « everything » on anything unknown. */
-export function readHeading(value: string | null): NewsHeading | 'all' {
-  return NEWS_HEADINGS.includes(value as NewsHeading) ? (value as NewsHeading) : 'all';
+/** `v4.0.0-rc.1` is a pre-release: a version carrying a suffix, announced as such. */
+export function isPreRelease(version: string | null): boolean {
+  return version !== null && version.includes('-');
 }
 
 /**

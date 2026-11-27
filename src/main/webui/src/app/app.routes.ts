@@ -553,7 +553,7 @@ const adminRoutes: Routes = [
     // that acts on it (issue #485). The solver is the Planning's « Calculer » tab.
     path: '',
     title: () => $localize`:@@route.accueil:État de l'édition`,
-    data: { aide: 'prise-en-main' },
+    data: { aide: 'ecran-accueil' },
     loadComponent: () => import('./pages/accueil/accueil-page').then((m) => m.AccueilPage),
   },
   // The Solveur page is the « Calculer » tab of the Planning page since 4.0,
@@ -562,8 +562,7 @@ const adminRoutes: Routes = [
   {
     path: 'debug',
     title: () => $localize`:@@route.debug:Débogage`,
-    // Its line is in « Imports, exports et outils », with the other tools.
-    data: { aide: 'echanges' },
+    data: { aide: 'ecran-debug' },
     canActivate: [redirectFormerDebugTabs],
     loadComponent: () => import('./pages/debug/debug-page').then((m) => m.DebugPage),
   },
@@ -575,7 +574,7 @@ const adminRoutes: Routes = [
     // The event day's hub (ADR 0066): what « Mode jour J » became.
     path: 'aujourdhui',
     title: () => $localize`:@@route.aujourdhui:Aujourd'hui`,
-    data: { aide: 'jour-j' },
+    data: { aide: 'ecran-aujourdhui' },
     canActivate: [redirectFormerRealiseTab],
     loadComponent: () => import('./pages/jour-j/jour-j-page').then((m) => m.JourJPage),
   },
@@ -585,7 +584,7 @@ const adminRoutes: Routes = [
     // (`?vue=realise`, the default, or `?vue=indicateurs`).
     path: 'mesures',
     title: () => $localize`:@@route.mesures:Mesures d'édition`,
-    data: { aide: 'realise' },
+    data: { aide: 'ecran-mesures' },
     loadComponent: () => import('./pages/mesures/mesures-page').then((m) => m.MesuresPage),
   },
   // The former address, kept for the bookmarks and the links already sent;
@@ -598,7 +597,16 @@ const adminRoutes: Routes = [
   {
     path: 'diagnostic',
     title: () => $localize`:@@route.diagnostic:Diagnostic`,
-    data: { aide: 'lire-les-resultats' },
+    data: {
+      aide: 'ecran-problemes',
+      aideOnglets: {
+        besoin: 'ecran-besoin',
+        risques: 'ecran-risques',
+        charge: 'ecran-charge',
+        'repas-pauses': 'ecran-repas-pauses',
+        conformite: 'ecran-conformite',
+      },
+    },
     canActivate: [benchTabToJournee, formerTabsToRisques],
     // An old `onglet=` followed from inside the page changes the query alone:
     // the redirections above must run on it too, not only on the way in.
@@ -615,7 +623,7 @@ const adminRoutes: Routes = [
   {
     path: 'echanges',
     title: () => $localize`:@@route.echanges:Échanges`,
-    data: { aide: 'foire-au-planning' },
+    data: { aide: 'ecran-echanges', aideOnglets: { stats: 'ecran-echanges-stats' } },
     loadComponent: () => import('./pages/echanges/echanges-page').then((m) => m.EchangesPage),
   },
   // What the animateurs declared became a tab of Animateurs, its covoiturage tab kept.
@@ -634,12 +642,17 @@ const adminRoutes: Routes = [
     path: 'parametres',
     title: () => $localize`:@@route.parametres:Paramètres`,
     data: {
-      aide: 'configuration-solveur',
+      aide: 'ecran-edition',
       aideOnglets: {
-        calcul: 'configuration-solveur',
-        mural: 'affichage-mural',
-        instance: 'webhooks',
-        historique: 'historique-des-actions',
+        notifications: 'ecran-notifications',
+        legal: 'ecran-legal',
+        organisation: 'ecran-organisation',
+        calcul: 'ecran-calcul',
+        mural: 'ecran-mural',
+        comptes: 'ecran-comptes',
+        instance: 'ecran-instance',
+        historique: 'ecran-historique',
+        connexions: 'ecran-connexions',
         mcp: 'assistant-mcp',
       },
     },
@@ -682,7 +695,7 @@ const adminRoutes: Routes = [
   {
     path: 'editions',
     title: () => $localize`:@@route.editions:Éditions`,
-    data: { aide: 'editions' },
+    data: { aide: 'ecran-editions' },
     loadComponent: () => import('./pages/editions/editions-page').then((m) => m.EditionsPage),
   },
   {
@@ -691,7 +704,7 @@ const adminRoutes: Routes = [
     // Served without a menu entry: Versions and Éditions open it.
     path: 'comparer',
     title: () => $localize`:@@route.comparer:Comparer deux versions`,
-    data: { aide: 'calculer' },
+    data: { aide: 'ecran-comparer' },
     loadComponent: () =>
       import('./pages/comparer-editions/comparer-page').then((m) => m.ComparerPage),
   },
@@ -714,7 +727,10 @@ const adminRoutes: Routes = [
   {
     path: 'stands',
     title: () => $localize`:@@route.stands:Stands`,
-    data: { aide: 'donnees' },
+    data: {
+      aide: 'ecran-stands',
+      aideOnglets: { lieux: 'ecran-lieux', typologies: 'ecran-typologies' },
+    },
     loadComponent: () => import('./pages/stands/stands-page').then((m) => m.StandsPage),
     canActivate: [standEditToFiche],
     // A « Voir la fiche » link names `?edit=` while the table is on screen: a
@@ -736,8 +752,12 @@ const adminRoutes: Routes = [
     path: 'animateurs',
     title: () => $localize`:@@route.animateurs:Animateurs`,
     data: {
-      aide: 'donnees',
-      aideOnglets: { disponibilites: 'disponibilites', covoiturage: 'disponibilites' },
+      aide: 'ecran-animateurs',
+      aideOnglets: {
+        competences: 'ecran-competences',
+        disponibilites: 'ecran-disponibilites',
+        covoiturage: 'ecran-covoiturage',
+      },
     },
     loadComponent: () => import('./pages/animateurs/animateurs-page').then((m) => m.AnimateursPage),
     // Unsaved cells of the Compétences tab would silently survive, invisible, until the next reload.
@@ -757,7 +777,7 @@ const adminRoutes: Routes = [
     // written on the fiche stand.
     path: 'creneaux',
     title: () => $localize`:@@route.calendrier:Calendrier`,
-    data: { aide: 'calendrier' },
+    data: { aide: 'ecran-calendrier' },
     // The stands' hours tab is gone: a bookmark on it lands on the fiche stand.
     canActivate: [retiredHorairesTab],
     loadComponent: () => import('./pages/creneaux/creneaux-page').then((m) => m.CreneauxPage),
@@ -767,7 +787,10 @@ const adminRoutes: Routes = [
     // gesture and what closes an edition, on one page of three tabs.
     path: 'fichiers',
     title: () => $localize`:@@route.fichiers:Fichiers`,
-    data: { aide: 'import-csv-animateurs', aideOnglets: { exporter: 'echanges' } },
+    data: {
+      aide: 'ecran-importer',
+      aideOnglets: { exporter: 'ecran-exporter', archive: 'ecran-archive' },
+    },
     loadComponent: () => import('./pages/fichiers/fichiers-page').then((m) => m.FichiersPage),
   },
   // The two screens Fichiers gathers, kept for the bookmarks: the Imports
@@ -777,7 +800,7 @@ const adminRoutes: Routes = [
     // The planning leaves through here, the data through /fichiers (issue #320).
     path: 'publication',
     title: () => $localize`:@@route.publication:Publication`,
-    data: { aide: 'relecture' },
+    data: { aide: 'ecran-envoyer', aideOnglets: { documents: 'ecran-documents' } },
     loadComponent: () =>
       import('./pages/publication/publication-page').then((m) => m.PublicationPage),
   },
@@ -803,7 +826,10 @@ const adminRoutes: Routes = [
     // the plan starts from; the address stayed, for the links already out.
     path: 'journee',
     title: () => $localize`:@@route.journee:Planning`,
-    data: { aide: 'consulter', aideOnglets: { calculer: 'calculer', versions: 'calculer' } },
+    data: {
+      aide: 'ecran-planning',
+      aideOnglets: { calculer: 'ecran-calculer', versions: 'ecran-versions' },
+    },
     canActivate: [planningFormerViews],
     // An old synthesis address followed from inside the page changes the query alone.
     runGuardsAndResolvers: 'paramsOrQueryParamsChange',
@@ -844,8 +870,12 @@ const adminRoutes: Routes = [
     path: 'regles',
     title: () => $localize`:@@route.regles:Règles du planning`,
     data: {
-      aide: 'ajustements-manuels',
-      aideOnglets: { consignes: 'consignes' },
+      aide: 'ecran-ajustements',
+      aideOnglets: {
+        verrouillages: 'ecran-verrouillages',
+        consignes: 'ecran-consignes',
+        regles: 'ecran-regles',
+      },
     },
     canActivate: [redirectCalculToParametres],
     loadComponent: () => import('./pages/regles/regles-page').then((m) => m.ReglesPage),

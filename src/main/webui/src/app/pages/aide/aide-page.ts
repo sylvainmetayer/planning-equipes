@@ -4,9 +4,11 @@ import {
   afterNextRender,
   computed,
   inject,
+  Injector,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -71,10 +73,14 @@ export class AidePage {
    * manual scroll the summary uses.
    */
   constructor() {
-    const fragment = this.route.snapshot.fragment;
-    if (fragment) {
-      afterNextRender(() => this.scrollToSection(fragment));
-    }
+    // Observed, not read once: a « ? » or a « Guide détaillé » link followed from
+    // this very page changes the fragment of the component already on screen.
+    const injector = inject(Injector);
+    this.route.fragment.pipe(takeUntilDestroyed()).subscribe((fragment) => {
+      if (fragment) {
+        afterNextRender(() => this.scrollToSection(fragment), { injector });
+      }
+    });
   }
 
   /**

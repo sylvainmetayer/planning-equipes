@@ -57,8 +57,8 @@
       <app-help-blocks [blocks]="section.blocks" />
       @if (section.links.length > 0) {
         <div class="aide-links">
-          <span class="aide-links-label" i18n="@@aide.links.label">Écrans concernés :</span>
-          @for (link of section.links; track link.label) {
+          <span class="aide-links-label" i18n="@@aide.links.label">Voir aussi :</span>
+          @for (link of section.links; track $index) {
             @if (link.route) {
               <a matButton [routerLink]="link.route" [queryParams]="link.queryParams ?? {}" [fragment]="link.fragment">{{ link.label }}</a>
             } @else {

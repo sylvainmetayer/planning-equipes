@@ -20,8 +20,8 @@ const { dirname, join } = require('node:path');
 /** Field separator: a unit separator cannot appear in a commit subject. */
 const SEP = '\u001f';
 
-/** Only stable release tags structure the screen, exactly as in `cliff.toml`. */
-const TAG_PATTERN = /^v\d+\.\d+\.\d+$/;
+/** The release tags that structure the screen: stable ones (as in `cliff.toml`) and their `-rc.N` pre-releases. */
+const TAG_PATTERN = /^v\d+\.\d+\.\d+(-rc\.\d+)?$/;
 
 const TARGET = join(__dirname, '../src/app/pages/nouveautes/news-data.ts');
 
@@ -36,11 +36,17 @@ function lines(output) {
   return output ? output.split('\n') : [];
 }
 
-/** Numeric comparison of two `vX.Y.Z`: `v1.10.0` is above `v1.9.0`, which a string sort denies. */
+/**
+ * Numeric comparison of two tags: `v1.10.0` is above `v1.9.0`, which a string
+ * sort denies, and a pre-release (`-rc.N`) sits below the stable version of the same number.
+ */
 function compareVersions(left, right) {
-  const parts = (tag) => tag.slice(1).split('.').map(Number);
+  const parts = (tag) => {
+    const [core, rc] = tag.slice(1).split('-rc.');
+    return [...core.split('.').map(Number), rc === undefined ? Infinity : Number(rc)];
+  };
   const [a, b] = [parts(left), parts(right)];
-  return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+  return a[0] - b[0] || a[1] - b[1] || a[2] - b[2] || (a[3] === b[3] ? 0 : a[3] < b[3] ? -1 : 1);
 }
 
 /**

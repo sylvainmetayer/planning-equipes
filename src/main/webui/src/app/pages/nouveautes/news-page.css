@@ -9,24 +9,6 @@
   font: var(--mat-sys-body-medium);
 }
 
-/* Same filter row as the other report screens: wraps rather than scrolls. */
-.news-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-}
-
-.news-search {
-  min-width: 18rem;
-}
-
-.news-count {
-  color: var(--mat-sys-on-surface-variant);
-  font: var(--mat-sys-body-small);
-}
-
 .news-release {
   margin-top: 1.5rem;
 }

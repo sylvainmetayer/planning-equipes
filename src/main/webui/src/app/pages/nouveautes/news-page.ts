@@ -1,33 +1,11 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-  ViewEncapsulation,
-} from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
+import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { ActivatedRoute } from '@angular/router';
 import { intlLocale } from '../../core/locale';
 import { NewsSeenService } from '../../core/news-seen';
-import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { APP_VERSION } from '../../version';
 import { NEWS_COMMITS } from './news-data';
-import {
-  filterReleases,
-  headingIcon,
-  headingLabel,
-  NEWS_HEADINGS,
-  NewsHeading,
-  readHeading,
-  releases,
-} from './news';
+import { headingIcon, headingLabel, highlights, isPreRelease, NewsHeading, releases } from './news';
 
 /**
  * What changed in the application, read off the repository's own history.
@@ -38,21 +16,15 @@ import {
  * build — the alternative, a page an operator updates by hand, is the one that
  * goes stale without anybody noticing.</p>
  *
- * <p>The headings are those of the release notes (`cliff.toml`, see
- * `news.ts`), so an operator reading « À surveiller » here reads the same
- * warning a release note gives them.</p>
+ * <p>A plain list of versions, newest first: each shows its number, its date
+ * and its highlights — the headings are those of the release notes
+ * (`cliff.toml`, see `news.ts`), so an operator reading « À surveiller » here
+ * reads the same warning a release note gives them. A `-rc.N` version is
+ * announced as a pre-release.</p>
  */
 @Component({
   selector: 'app-news-page',
-  imports: [
-    FormsModule,
-    MatButtonModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatIconModule,
-    MatInputModule,
-    MatSelectModule,
-  ],
+  imports: [MatCardModule, MatIconModule],
   templateUrl: './news-page.html',
   styleUrl: './news-page.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partials.
@@ -60,46 +32,20 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NewsPage {
-  private readonly route = inject(ActivatedRoute);
-
-  protected readonly heading = signal<NewsHeading | 'all'>('all');
-  protected readonly search = signal('');
-
   /** The whole history, cut into releases once: the data never changes at runtime. */
-  private readonly all = releases(NEWS_COMMITS);
+  protected readonly shown = highlights(releases(NEWS_COMMITS));
 
-  protected readonly headings = NEWS_HEADINGS;
   protected readonly version = APP_VERSION;
   /** True when the build saw no git history at all — an export of the sources, a bare copy. */
   protected readonly historyMissing = NEWS_COMMITS.length === 0;
 
-  protected readonly shown = computed(() =>
-    filterReleases(this.all, this.heading(), this.search()),
-  );
-  protected readonly shownCount = computed(() =>
-    this.shown().reduce((total, release) => total + release.count, 0),
-  );
-
-  /** True as soon as the screen shows something other than its default view. */
-  protected readonly viewChanged = computed(
-    () => this.heading() !== 'all' || this.search().trim() !== '',
-  );
-
   constructor() {
     // Opening the page is reading the news: the marker on Aide goes out (#706).
     inject(NewsSeenService).markSeen();
-    const params = this.route.snapshot.queryParamMap;
-    this.heading.set(readHeading(params.get('type')));
-    this.search.set(params.get('q') ?? '');
-    keepViewInQueryParams(() => ({
-      type: this.heading() === 'all' ? null : this.heading(),
-      q: optionalParam(this.search()),
-    }));
   }
 
-  protected reset(): void {
-    this.heading.set('all');
-    this.search.set('');
+  protected preRelease(version: string | null): boolean {
+    return isPreRelease(version);
   }
 
   protected label(heading: NewsHeading): string {

@@ -17,7 +17,7 @@ Everything else **derives** from the tag, with no intervention:
 | Where | How |
 | --- | --- |
 | Frontend (`APP_VERSION`, footer of both shells, admin and staff espace, and the *Debug* page) | `generate-version.js`: the exact tag (`v1.2.0`), otherwise the short SHA. The link leads to the GitHub release page for a tag (`/releases/tag/v1.2.0`, which GitHub also renders for a tag with no release), to the commit for a SHA (`core/version-link.ts`) |
-| *What's new* screen (`/nouveautes`) | `generate-news.js`: the git history read at build time, split by `vX.Y.Z` tag; whatever follows the last tag is shown under "Coming up" |
+| *What's new* screen (`/nouveautes`) | `generate-news.js`: the git history read at build time, split by `vX.Y.Z` or `vX.Y.Z-rc.N` tag (a pre-release is shown as such); whatever follows the last tag is shown under "Coming up" |
 | Backend (`quarkus.application.version`, Quarkus startup line) | The `Dockerfile` passes `-Drevision=1.2.0` derived from the same `git describe`, with the `v` removed; outside a release, the short SHA. In a local build, `999-SNAPSHOT` |
 | Sentry, **frontend only** | `release: APP_VERSION`: browser errors are grouped by version, not by commit. Backend events do not carry a `release` yet: `SentryInitializer` sets only the DSN and the environment |
 | Docker image | `docker-ghcr.yml` publishes `ghcr.io/…:1.2.0` and `ghcr.io/…:1.2` on the tag push |
@@ -62,7 +62,7 @@ There is no `CHANGELOG.md`. `cliff.toml` at the root turns conventional messages
 
 So the generated section is not edited by hand: a badly worded entry is fixed by rewording the commit *before* merging, not after.
 
-The same subjects feed the application's **What's new** screen (`/nouveautes`), built from the git history at build time and not from a hand-maintained file: same filters and same subheadings as `cliff.toml`, down to "⚠️ Attention". A badly worded subject is therefore read twice, in the release notes and in the application, which is one more reason to fix it before merging.
+The same subjects feed the application's **What's new** screen (`/nouveautes`), built from the git history at build time and not from a hand-maintained file: same filters and same subheadings as `cliff.toml`, down to "⚠️ Attention", the screen showing only the highlights ("Attention" and new features). A badly worded subject is therefore read twice, in the release notes and in the application, which is one more reason to fix it before merging.
 
 ## 3. Patch an earlier version
 

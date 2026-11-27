@@ -8,13 +8,15 @@
  * — the guide answers "how do I use this screen", not "how is it built".
  *
  * The content itself lives under `content/`, one file per theme, in the order
- * the guide is read; this module assembles it and searches it. The blocks and
+ * the guide is read — then, last, the short help of each screen
+ * (`content/ecrans.ts`); this module assembles it and searches it. The blocks and
  * their renderer are the ones both guides share (`shared/help-blocks.ts`).
  */
 
 import { helpBlockText } from '../../shared/help-blocks';
 import { HelpSection } from './help-section';
 import { buildAnimateurSideSections } from './content/animateurs';
+import { buildScreenSections } from './content/ecrans';
 import { buildGettingStartedSections } from './content/getting-started';
 import { buildOperationsSections } from './content/operations';
 import { buildReferenceDataSections } from './content/reference-data';
@@ -37,6 +39,8 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
     ...buildOperationsSections(),
     ...buildAnimateurSideSections(),
     ...buildToolsAndContactSections(supportEmail),
+    // The short help of each screen, the one the toolbar's « ? » opens: last, the detailed guide above it.
+    ...buildScreenSections(),
   ];
 }
 

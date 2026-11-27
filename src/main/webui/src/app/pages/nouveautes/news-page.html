@@ -2,7 +2,7 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@nouveautes.title">Nouveautés</h1>
     <mat-card-subtitle i18n="@@nouveautes.subtitle">
-      Ce qui a changé dans l'application, version par version, tel que l'historique du dépôt le raconte.
+      Les versions de l'application, la plus récente en haut, avec leurs points marquants.
     </mat-card-subtitle>
   </mat-card-header>
 
@@ -15,48 +15,18 @@
     } @else {
       <p class="news-current" i18n="@@nouveautes.current">Version installée : {{ version }}</p>
 
-      <div class="news-controls">
-        <mat-form-field appearance="outline" class="news-search">
-          <mat-label i18n="@@nouveautes.filter.search">Rechercher</mat-label>
-          <input
-            matInput
-            data-page-filter
-            [ngModel]="search()"
-            (ngModelChange)="search.set($event)"
-            i18n-placeholder="@@nouveautes.filter.searchPlaceholder"
-            placeholder="un écran, un sujet"
-          />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label i18n="@@nouveautes.filter.heading">Nature</mat-label>
-          <mat-select [ngModel]="heading()" (ngModelChange)="heading.set($event)">
-            <mat-option value="all" i18n="@@nouveautes.filter.headingAll">Tout</mat-option>
-            @for (value of headings; track value) {
-              <mat-option [value]="value">{{ label(value) }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        @if (viewChanged()) {
-          <button matButton type="button" (click)="reset()">
-            <mat-icon>filter_alt_off</mat-icon>
-            <ng-container i18n="@@nouveautes.filter.reset">Tout afficher</ng-container>
-          </button>
-        }
-
-        <span class="news-count" i18n="@@nouveautes.count">Évolutions affichées : {{ shownCount() }}</span>
-      </div>
-
-      @if (shown().length === 0) {
-        <p class="empty-hint" i18n="@@nouveautes.empty">Aucune évolution ne correspond à cette recherche.</p>
+      @if (shown.length === 0) {
+        <p class="empty-hint" i18n="@@nouveautes.empty">Aucune version n'a encore de point marquant à raconter.</p>
       }
 
-      @for (release of shown(); track release.version) {
+      @for (release of shown; track release.version) {
         <section class="news-release">
           <h2 class="news-release-title">
             @if (release.version) {
               <span class="news-version">{{ release.version }}</span>
+              @if (preRelease(release.version)) {
+                <span class="news-version news-version-pending" i18n="@@nouveautes.preRelease">Pré-version</span>
+              }
             } @else {
               <span class="news-version news-version-pending" i18n="@@nouveautes.pending">À venir</span>
             }
