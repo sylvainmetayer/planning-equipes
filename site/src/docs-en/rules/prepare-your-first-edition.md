@@ -5,7 +5,7 @@ twin: regles/preparer-edition
 
 You start from an empty edition and describe it: its stands, their game categories, their locations. The staff and the calendar each have their own guide.
 
-An edition is prepared in the order it is built: the stands and what they offer, the calendar they open on, the people, then the files that fill everything in. The *Prepare* group of the menu follows this order (Stands, Calendar, Staff, Files).
+An edition is prepared in the order it is built: the stands and what they offer, the calendar they open on, the people, then the files that fill everything in. The *Prepare* entry of the menu follows this order (Stands, Calendar, Staff), and the *Files* entry comes right after.
 
 The type of event changes the priorities: see [a festival schedule](/planning-festival/), [a trade show or fair schedule](/planning-salon-foire/) or [a sports event schedule](/planning-evenement-sportif/).
 

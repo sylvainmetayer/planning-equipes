@@ -53,16 +53,24 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
 - Shell: `app/app.ts` is a bare `<router-outlet/>`; the admin chrome
   (`mat-toolbar` + `mat-sidenav`, the solver `app-job-monitor`, the logout
   button) lives in `app/shell/admin-shell.ts`, a layout route wrapping every
-  admin page. The drawer is **one menu for everybody**, grouped by moment of
-  the edition's cycle — Accueil / Préparer / Planifier / Diffuser /
-  Aujourd'hui / Administrer — in **twelve entries**: a screen answering a
-  variant of another's question is one of its tabs, hosted through
+  admin page. The drawer is **one menu for everybody** in **nine entries**,
+  in the order of the edition's cycle (Q48, 4.0) — Accueil, Préparer
+  (`/stands`, `/creneaux`, `/animateurs`), Fichiers, Planning (with its
+  « Calculer » tab), Diagnostic, Règles, Diffuser (`/publication`,
+  `/echanges`), Aujourd'hui, Administrer (`/parametres`, `/editions`,
+  `/mesures`, `/debug` — the last offered to an admin only, like the
+  palette): an entry that is one page is drawn as its link, one gathering
+  several as a disclosure button (`aria-expanded`, `aria-controls`) over a
+  `role="group"` named after it, folded and remembered by `core/nav-collapse`;
+  a lecteur sees the same entries. The pages kept their 3.x addresses, so no
+  bookmark moved; `nav-groups.spec.ts` holds the nine and their sub-pages, and
+  a screen answering a variant of another's question is one of its tabs, hosted through
   `core/onglet-hote.ts` (the tab read from `?onglet=` and followed, written
   once when the reader moves, a hosted screen with unsaved entries asked
   before it is left — on the tab as on the route's `canDeactivate`; a hosted
   screen whose own tabs write `onglet` names the host's tab instead of the
   bare address). The help is the toolbar's « ? » icon, the editions open from
-  « Gérer » of the edition bar. **An expert's setting is folded, never
+  « Gérer » of the edition bar too. **An expert's setting is folded, never
   unreachable** (ADR 0090): each screen puts what only an expert sets —
   thresholds and weights, the compute machine, the instance's plumbing, a
   grid's layers — behind its « Réglages avancés » button
@@ -76,11 +84,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   link carries a dot.
   `shell/nav-groups.ts` is the one
   table behind the drawer, the command palette and the `g`+letter shortcuts:
-  `buildNavGroups()` the menu, each entry with its icon (never shared by two
-  entries), its letter and the tabs or views the palette indexes;
-  `buildOffMenuLinks()` the **routes served but listed in no group** —
-  `/debug` (raw technical information, reached by Ctrl+K or its address),
-  `/editions` (« Gérer »), `/aide` (the toolbar's icon),
+  `buildNavGroups()` the menu, each entry and page with its icon (never shared
+  by two), its letter and the tabs or views the palette indexes;
+  `buildOffMenuLinks()` the **routes served but listed in no entry** —
+  `/aide` (the toolbar's icon),
   `/nouveautes` (the foot of the menu), `/comparer` (opened from the
   Versions and Éditions pages) and the Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
   `nav-groups.spec.ts` fails on a route of `app.routes.ts` that none of the
@@ -165,8 +172,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/journee?onglet=calculer`, its `?onglet=versions` to
   `/journee?onglet=versions`, every other param kept: the former solver page
   is the Planning's « Calculer » tab, described there),
-  `/debug` (« Débogage » — the raw and the technical only, served everywhere
-  and reached by its address or Ctrl+K: two tabs chosen by
+  `/debug` (« Débogage » — the raw and the technical only, a page of
+  Administrer offered to an admin, also reached by its address or Ctrl+K: two tabs chosen by
   `?onglet=resolution|verifications`, the raw analysis with the version, the
   application versions that opened the database (`GET /api/debug/versions`)
   and the API docs, and the checks — test notification, test exception, test
@@ -621,8 +628,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   landing on the fiche's « Charge et équité » section,
   `/animateurs/:id?section=equite`, its `axes` and `comparer` kept).
   Adding a functional block means adding a route, a `app/pages/<block>/`
-  folder and its line in `shell/nav-groups.ts` (a group, or the off-menu
-  list), never a new section inside an existing page.
+  folder and its line in `shell/nav-groups.ts` (a page of one of the nine
+  entries, or the off-menu list), never a new section inside an existing page
+  — and never a tenth entry.
 - Layout: `app/core/` holds shared services (`api.service.ts` — the only place
   touching `HttpClient`: the verbs, the error mapping, `downloadFile` returning
   a status string and never touching the DOM; `core/api/` — one service per

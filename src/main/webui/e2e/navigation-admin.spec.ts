@@ -292,37 +292,53 @@ test("la bascule de langue passe l'interface en anglais", async ({ browser }) =>
 });
 
 /**
- * One menu for everybody (#709): no mode hides a step of the cycle, the groups
- * follow the moments of an edition, Débogage is in no group but answers at its
- * address and in the palette, and the legal pages sit at the foot (#706).
+ * One menu for everybody (#709), nine entries since 4.0 (Q48): a page of its
+ * own is a link, Préparer, Diffuser and Administrer fold over their pages,
+ * Débogage is a page of Administrer for an admin, and the legal pages sit at
+ * the foot (#706).
  */
-test('un seul menu par moment du cycle, Débogage hors menu mais servi', async ({ browser }) => {
+test('un menu à neuf entrées, les pages rangées sous la leur', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/stands');
   const navigation = page.getByRole('navigation', { name: 'Navigation principale' });
-  for (const groupe of [
-    'Accueil',
-    'Préparer',
-    'Planifier',
-    'Diffuser',
-    "Aujourd'hui",
-    'Administrer',
-  ]) {
-    // The folding chevron is a ligature, read as part of the button's name.
-    await expect(navigation.getByRole('button', { name: new RegExp(`^${groupe}`) })).toBeVisible();
+  for (const entree of ['Accueil', 'Fichiers', 'Planning', 'Diagnostic', 'Règles', "Aujourd'hui"]) {
+    await expect(navigation.getByRole('link', { name: entree, exact: true })).toBeVisible();
+  }
+  for (const entree of ['Préparer', 'Diffuser', 'Administrer']) {
+    const bouton = navigation.getByRole('button', { name: entree, exact: true });
+    await expect(bouton).toHaveAttribute('aria-expanded', 'true');
+  }
+  await expect(
+    navigation.getByRole('group', { name: 'Préparer' }).getByRole('link', { name: 'Calendrier' }),
+  ).toBeVisible();
+  await expect(
+    navigation.getByRole('group', { name: 'Diffuser' }).getByRole('link', { name: 'Échanges' }),
+  ).toBeVisible();
+  const administrer = navigation.getByRole('group', { name: 'Administrer' });
+  for (const sousPage of ['Paramètres', 'Éditions', "Mesures d'édition", 'Débogage']) {
+    await expect(administrer.getByRole('link', { name: sousPage })).toBeVisible();
   }
   // A variant of another screen's question is one of its tabs, not an entry.
-  await expect(navigation.getByRole('link', { name: 'Calendrier' })).toBeVisible();
-  await expect(navigation.getByRole('link', { name: 'Paramètres' })).toBeVisible();
   await expect(navigation.getByRole('link', { name: 'Compétences' })).toHaveCount(0);
   await expect(navigation.getByRole('button', { name: /Menu simple|Menu avancé/ })).toHaveCount(0);
-  await expect(navigation.getByRole('link', { name: 'Débogage' })).toHaveCount(0);
   await expect(navigation.getByRole('link', { name: 'Accessibilité' })).toBeVisible();
+
+  // Folding an entry hides its pages, and says so; the keyboard does it too.
+  const preparer = navigation.getByRole('button', { name: 'Préparer', exact: true });
+  await preparer.focus();
+  await page.keyboard.press('Enter');
+  await expect(preparer).toHaveAttribute('aria-expanded', 'false');
+  await expect(navigation.getByRole('link', { name: 'Calendrier' })).toBeHidden();
+  await page.keyboard.press('Space');
+  await expect(preparer).toHaveAttribute('aria-expanded', 'true');
 
   // Reached by its address anyway, and by the palette.
   await page.goto('/debug');
   await expect(page.locator('#contenu')).toContainText('Dernière analyse');
-  await expect(navigation.getByRole('link', { name: 'Débogage' })).toHaveCount(0);
+  await expect(administrer.getByRole('link', { name: 'Débogage' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
 
   await page.goto('/stands');
   // The palette listens once the shell is up: a key pressed before it is lost.
@@ -357,7 +373,7 @@ test('un seul menu par moment du cycle, Débogage hors menu mais servi', async (
   await page.getByRole('dialog').getByRole('combobox').fill('figer');
   await page
     .getByRole('dialog')
-    .getByRole('option', { name: /Règles du planning › Verrouillages/ })
+    .getByRole('option', { name: /Règles › Verrouillages/ })
     .click();
   await expect(page).toHaveURL(/\/regles\?onglet=verrouillages/);
   await expect(page.locator('#contenu app-verrouillages-page')).toHaveCount(1);

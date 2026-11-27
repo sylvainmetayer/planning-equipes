@@ -35,6 +35,8 @@ import {
 } from './app.routes';
 import { BRANDING } from './core/branding';
 import { MesuresPage } from './pages/mesures/mesures-page';
+import { buildHelpSections } from './pages/aide/aide-content';
+import { buildNavGroups } from './shell/nav-groups';
 import { ResponsablePage } from './pages/responsable/responsable-page';
 import { BrandingTitleStrategy } from './core/branding-title.strategy';
 
@@ -208,6 +210,22 @@ describe('app.routes', () => {
     const route = routes.find((r) => r.path === 'responsable');
     const component = await (route?.loadComponent as () => Promise<unknown>)();
     expect(component).toBe(ResponsablePage);
+  });
+
+  // Q48: a page of the nine entries is a screen, never a redirect — a bookmark
+  // taken from the menu opens what it showed —, and the toolbar's « ? » opens
+  // a section of the guide that exists.
+  it('serves every page of the menu as a screen with its section of the guide', () => {
+    const shell = routes.find((route) => route.path === '' && route.children);
+    const sections = new Set(buildHelpSections().map((section) => section.id));
+    for (const link of buildNavGroups().flatMap((group) => group.links)) {
+      const route = shell?.children?.find(
+        (child) => `/${child.path}` === link.path || (child.path === '' && link.path === '/'),
+      );
+      expect(route?.loadComponent, link.path).toBeDefined();
+      expect(route?.redirectTo, link.path).toBeUndefined();
+      expect(sections.has(route?.data?.['aide'] as string), link.path).toBe(true);
+    }
   });
 
   it("lazy-loads « Mesures d'édition » from the mesures route", async () => {

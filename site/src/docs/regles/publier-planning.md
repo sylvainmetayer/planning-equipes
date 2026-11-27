@@ -4,7 +4,7 @@ Vous envoyez à chaque animateur son planning, vous voyez qui l'a reçu et confi
 
 ![L'écran Diffuser](/images/fr/diffuser.webp "L'écran Diffuser : qui a reçu quelle version")
 
-Prérequis : l'édition doit être **l'édition active** (voir [Enchaîner les éditions](enchainer-les-editions.md#activer-une-édition)), et le serveur de messagerie doit être configuré par l'hébergeur. Tout se passe dans *Diffuser* (groupe *Diffuser*), onglets *Envoyer* et *Documents*.
+Prérequis : l'édition doit être **l'édition active** (voir [Enchaîner les éditions](enchainer-les-editions.md#activer-une-édition)), et le serveur de messagerie doit être configuré par l'hébergeur. Tout se passe dans *Diffuser le planning* (entrée *Diffuser* du menu), onglets *Envoyer* et *Documents*.
 
 ## Publier et prévenir
 

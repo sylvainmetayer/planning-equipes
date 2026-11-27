@@ -8,7 +8,7 @@ Si vous découvrez l'outil, [peut-on le confier à une équipe de bénévoles ?]
 
 ## Les six moments
 
-L'application s'ouvre sur l'**état de l'édition**, qui dit où vous en êtes. Le menu suit le même fil, en groupes : *Préparer*, *Planifier*, *Diffuser*, *Aujourd'hui* et *Administrer*.
+L'application s'ouvre sur l'**état de l'édition**, qui dit où vous en êtes. Le menu suit le même fil en neuf entrées : *Accueil*, *Préparer* (stands, calendrier, animateurs), *Fichiers*, *Planning* (avec son onglet *Calculer*), *Diagnostic*, *Règles*, *Diffuser* (avec les *Échanges*), *Aujourd'hui* et *Administrer* (avec les *Éditions*). Les entrées qui regroupent plusieurs pages se replient ; la palette Ctrl+K trouve chaque écran et chaque onglet.
 
 | Moment | Ce que vous faites | Guides |
 | --- | --- | --- |

@@ -20,7 +20,13 @@ import { ONGLETS_PARAMETRES, readOngletParametres } from '../pages/parametres/pa
 import { readOngletDiffuser } from '../pages/publication/onglet';
 import { ONGLETS_REGLES, readOngletRegles } from '../pages/regles/regles';
 import { readOngletStands } from '../pages/stands/stands-onglet';
-import { NavLink, buildLegalLinks, buildNavGroups, buildOffMenuLinks } from './nav-groups';
+import {
+  NavLink,
+  buildLegalLinks,
+  buildNavGroups,
+  buildOffMenuLinks,
+  isFoldable,
+} from './nav-groups';
 
 const menuLinks = (): NavLink[] => buildNavGroups().flatMap((group) => group.links);
 
@@ -97,38 +103,69 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
 };
 
 describe('buildNavGroups', () => {
-  // #709: the groups follow the moments of the cycle, in this order.
-  it('groups the menu by moment of the cycle', () => {
-    expect(buildNavGroups().map((group) => group.id)).toEqual([
-      'accueil',
-      'preparer',
-      'planifier',
-      'diffuser',
-      'aujourdhui',
-      'administrer',
+  // Q48 (4.0): nine entries, in this order — the menu changes once, here.
+  it('lists the nine entries of the menu, in the order of the cycle', () => {
+    expect(buildNavGroups().map((group) => group.title)).toEqual([
+      'Accueil',
+      'Préparer',
+      'Fichiers',
+      'Planning',
+      'Diagnostic',
+      'Règles',
+      'Diffuser',
+      "Aujourd'hui",
+      'Administrer',
     ]);
   });
 
-  // The twelve entries: a screen answering a variant of another's question is one of its tabs.
-  it('keeps the menu to twelve entries', () => {
-    expect(menuLinks()).toHaveLength(12);
+  // The ceiling: a new screen is a tab or a sub-page of one of the nine.
+  it('keeps the menu to nine entries', () => {
+    expect(buildNavGroups()).toHaveLength(9);
   });
 
-  it('lists neither Débogage, Éditions, Aide nor the legal pages in a group', () => {
+  // Each entry's sub-pages: the screens the 3.x menu listed apart.
+  it('gathers the other screens as sub-pages of their entry', () => {
+    const pagesOf = (id: string): string[] =>
+      buildNavGroups()
+        .find((group) => group.id === id)
+        ?.links.map((link) => link.path) ?? [];
+
+    expect(pagesOf('preparer')).toEqual(['/stands', '/creneaux', '/animateurs']);
+    expect(pagesOf('diffuser')).toEqual(['/publication', '/echanges']);
+    expect(pagesOf('administrer')).toEqual(['/parametres', '/editions', '/mesures', '/debug']);
+    for (const group of buildNavGroups().filter((entry) => !isFoldable(entry))) {
+      expect(group.links, group.id).toHaveLength(1);
+      expect(group.title, group.id).toBe(group.links[0].label);
+    }
+  });
+
+  // « Planning (avec Calculer) »: the solve is a tab of the Planning page.
+  it('keeps Calculer and Versions as tabs of Planning', () => {
+    const planning = menuLinks().find((link) => link.path === '/journee');
+    expect(planning?.tabs?.filter((tab) => tab.param === 'onglet').map((tab) => tab.value)).toEqual(
+      ['calculer', 'versions'],
+    );
+  });
+
+  it('lists neither Aide, Nouveautés nor the legal pages in an entry', () => {
     const paths = menuLinks().map((link) => link.path);
 
-    expect(paths).not.toContain('/debug');
-    expect(paths).not.toContain('/editions');
     expect(paths).not.toContain('/aide');
+    expect(paths).not.toContain('/nouveautes');
     for (const legal of buildLegalLinks()) {
       expect(paths).not.toContain(legal.path);
     }
   });
 
   it('never uses one icon for two entries', () => {
-    const icons = [...menuLinks(), ...buildOffMenuLinks(true), ...buildLegalLinks()].map(
-      (link) => link.icon,
-    );
+    const icons = [
+      ...buildNavGroups()
+        .filter(isFoldable)
+        .map((group) => group.icon),
+      ...[...menuLinks(), ...buildOffMenuLinks(true), ...buildLegalLinks()].map(
+        (link) => link.icon,
+      ),
+    ];
 
     expect(icons.filter((icon, index) => icons.indexOf(icon) !== index)).toEqual([]);
   });

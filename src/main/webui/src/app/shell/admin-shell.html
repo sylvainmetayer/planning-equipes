@@ -65,34 +65,45 @@
           }
         </button>
       </div>
-      @for (group of navGroups; track group.id) {
-        <mat-nav-list>
-          <button
-            type="button"
-            class="nav-group-header"
-            [attr.aria-expanded]="!isCollapsed(group)"
-            [attr.aria-controls]="'nav-group-' + group.id"
-            (click)="toggleGroup(group)"
-          >
-            <span>{{ group.title }}</span>
-            <mat-icon>{{ isCollapsed(group) ? 'expand_more' : 'expand_less' }}</mat-icon>
-          </button>
-          <div [id]="'nav-group-' + group.id" [hidden]="isCollapsed(group)">
-            @for (link of group.links; track link.path) {
-              <div class="nav-entry">
-                <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link"
-                   #rla="routerLinkActive"
-                   [attr.aria-current]="rla.isActive ? 'page' : null"
-                   [routerLinkActiveOptions]="{ exact: link.path === '/' }" (click)="onNavigate()">
-                  <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
-                  <span matListItemTitle>{{ link.label }}</span>
-                </a>
-              </div>
-            }
-          </div>
-        </mat-nav-list>
-        <mat-divider />
-      }
+      <!-- Nine entries (Q48): a page of its own is one link; an entry gathering
+           several pages is a disclosure button (aria-expanded/aria-controls)
+           over its sub-pages, every one a link in the tab order. The list's own
+           role="navigation" is dropped: the <nav> above is the one landmark. -->
+      <mat-nav-list class="nav-entries" role="none">
+        @for (group of visibleGroups(); track group.id) {
+          @if (isFoldable(group)) {
+            <button
+              type="button"
+              class="nav-group-header"
+              [attr.aria-expanded]="!isCollapsed(group)"
+              [attr.aria-controls]="'nav-group-' + group.id"
+              (click)="toggleGroup(group)"
+            >
+              <mat-icon aria-hidden="true">{{ group.icon }}</mat-icon>
+              <span class="nav-group-title">{{ group.title }}</span>
+              <mat-icon aria-hidden="true">{{ isCollapsed(group) ? 'expand_more' : 'expand_less' }}</mat-icon>
+            </button>
+            <div class="nav-sub" role="group" [attr.aria-label]="group.title" [id]="'nav-group-' + group.id" [hidden]="isCollapsed(group)">
+              @for (link of group.links; track link.path) {
+                <ng-container *ngTemplateOutlet="entry; context: { $implicit: link }" />
+              }
+            </div>
+          } @else {
+            <ng-container *ngTemplateOutlet="entry; context: { $implicit: group.links[0] }" />
+          }
+        }
+      </mat-nav-list>
+      <ng-template #entry let-link>
+        <div class="nav-entry">
+          <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link"
+             #rla="routerLinkActive"
+             [attr.aria-current]="rla.isActive ? 'page' : null"
+             [routerLinkActiveOptions]="{ exact: link.path === '/' }" (click)="onNavigate()">
+            <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
+            <span matListItemTitle>{{ link.label }}</span>
+          </a>
+        </div>
+      </ng-template>
       <!-- The foot of the menu (#706): the news and the four legal pages, in
            text — reachable in one click from every admin page, the
            accessibility statement included (RGAA). -->

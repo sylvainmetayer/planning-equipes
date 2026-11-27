@@ -466,7 +466,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.shortcuts.menu:Le menu latéral est le même pour tout le monde et suit le cycle d'une édition : Accueil, Planning, Préparer, Construire, Diffuser, Aujourd'hui, Administrer. Aucun écran n'y est caché ; les plus rares sont en bas de leur groupe. Débogage n'y figure pas : il s'ouvre par la palette (« débogage », « swagger », « mailpit ») ou par son adresse. Les pages légales et les Nouveautés sont en pied de menu. Après une mise à jour, « nouveautés » s'allume à côté d'Aide et une pastille marque le lien du pied de menu, jusqu'à l'ouverture de la page.`,
+          text: $localize`:@@aide.shortcuts.menu.neuf:Le menu latéral est le même pour tout le monde et tient en neuf entrées : Accueil, Préparer, Fichiers, Planning, Diagnostic, Règles, Diffuser, Aujourd'hui, Administrer. Préparer, Diffuser et Administrer se déplient sur leurs pages ; un écran qui répond à une variante de la même question est un onglet de sa page, que la palette trouve aussi. Débogage, sous Administrer, n'est proposé qu'à l'administrateur. Les pages légales et les Nouveautés sont en pied de menu. Après une mise à jour, « nouveautés » s'allume à côté d'Aide et une pastille marque le lien du pied de menu, jusqu'à l'ouverture de la page.`,
         },
         {
           kind: 'paragraph',

@@ -4,7 +4,7 @@ Un planning laisse des places vides ou une règle cède : vous savez pourquoi, o
 
 ![Le diagnostic d'un planning](/images/fr/diagnostic.webp "Le Diagnostic : ce qui bloque, ce qui manque, ce qui est fragile")
 
-Tout se lit dans *Diagnostic* (groupe *Planifier*) et, pour le résumé, en tête de l'onglet *Calculer* de la page Planning.
+Tout se lit dans *Diagnostic* (entrée du menu) et, pour le résumé, en tête de l'onglet *Calculer* de la page Planning.
 
 Pourquoi un calcul peut ne rien trouver, en termes simples : [quand le calcul ne trouve aucune solution](/comment-marche-le-calcul/).
 

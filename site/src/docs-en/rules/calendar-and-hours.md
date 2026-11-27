@@ -5,7 +5,7 @@ twin: regles/calendrier-et-horaires
 
 You lay down the timeslots of the edition (the shifts the solve will fill) and set when each stand is open.
 
-The calendar is kept on the *Calendar* page (*Prepare* group), a stand's hours on its fiche. A **shift** is a real slice of work: there is no other kind of timeslot.
+The calendar is kept on the *Calendar* page (*Prepare* menu entry), a stand's hours on its fiche. A **shift** is a real slice of work: there is no other kind of timeslot.
 
 ## Lay down timeslots: the generator and timeslots by hand
 

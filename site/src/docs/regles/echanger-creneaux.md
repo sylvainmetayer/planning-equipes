@@ -12,7 +12,7 @@ La foire s'ouvre sur une période datée, comme la collecte des disponibilités.
 
 ## Arbitrer les demandes
 
-1. Ouvrez *Échanges* (groupe *Diffuser*). L'écran s'ouvre sur la file et compte les demandes arrivées depuis votre dernière visite.
+1. Ouvrez *Échanges* (entrée *Diffuser* du menu). L'écran s'ouvre sur la file et compte les demandes arrivées depuis votre dernière visite.
 2. Pour chaque demande, acceptez ou refusez.
 3. Après chaque acceptation, deux suites sont proposées sur place : prévenir les deux personnes, corriger le reste du planning.
 

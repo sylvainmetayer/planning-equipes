@@ -15,7 +15,7 @@ The fair opens on a dated period, like the availability collection. Both are ope
 
 ## Arbitrate the requests
 
-1. Open *Swaps* (*Share* group). The screen opens on the queue and counts the requests that arrived since your last visit.
+1. Open *Swaps* (*Share* menu entry). The screen opens on the queue and counts the requests that arrived since your last visit.
 2. For each request, accept or refuse.
 3. After each acceptance, two follow-ups are offered on the spot: notify the two people, fix the rest of the schedule.
 

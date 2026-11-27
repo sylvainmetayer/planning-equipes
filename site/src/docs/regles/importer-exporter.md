@@ -2,7 +2,7 @@
 
 Vous remplissez une édition depuis vos tableurs, vous exportez ce que vous voulez corriger ou partager, et vous archivez l'édition à la fin de l'événement.
 
-Tout se passe dans *Fichiers* (groupe *Préparer*), un écran à trois onglets : *Importer*, *Exporter*, *Archive*. L'écran des animateurs a en plus son bouton « Importer », qui ouvre le même CSV sans quitter la liste. Le cycle complet tient en trois gestes : exporter, corriger, réimporter.
+Tout se passe dans *Fichiers* (entrée du menu), un écran à trois onglets : *Importer*, *Exporter*, *Archive*. L'écran des animateurs a en plus son bouton « Importer », qui ouvre le même CSV sans quitter la liste. Le cycle complet tient en trois gestes : exporter, corriger, réimporter.
 
 Votre point de départ est un tableur ? [Passer d'un tableur à un logiciel de planning](/tableur-ou-logiciel-de-planning/) dit ce que ce changement apporte, et quand il ne s'impose pas.
 

@@ -7,7 +7,7 @@ You send each staff member their schedule, you see who has received and confirme
 
 ![The Share screen](/images/fr/diffuser.webp "The Share screen: who has received which version")
 
-Prerequisites: the edition must be **the active edition** (see [Chain editions](enchainer-les-editions.md#activer-une-édition)), and the mail server must be configured by the host. Everything happens in *Share* (*Share* group), *Send* and *Documents* tabs.
+Prerequisites: the edition must be **the active edition** (see [Chain editions](enchainer-les-editions.md#activer-une-édition)), and the mail server must be configured by the host. Everything happens in *Share the planning* (*Share* menu entry), *Send* and *Documents* tabs.
 
 ## Publish and notify
 

@@ -8,7 +8,7 @@ Ce que ces écrans changent pendant l'événement est raconté dans [le jour J d
 
 ## Gérer la journée sur l'écran Aujourd'hui
 
-*Aujourd'hui* (groupe *Aujourd'hui*) est l'écran du jour même, pensé pour un téléphone. En tête, la journée en une ligne : jour, stands ouverts, vacations restantes. Des compteurs mènent là où l'on s'en occupe. Aucun calcul n'est relancé.
+*Aujourd'hui* (entrée du menu) est l'écran du jour même, pensé pour un téléphone. En tête, la journée en une ligne : jour, stands ouverts, vacations restantes. Des compteurs mènent là où l'on s'en occupe. Aucun calcul n'est relancé.
 
 ![L'écran Aujourd'hui](/images/fr/docs/aujourdhui.webp "L'écran Aujourd'hui, le jour de l'événement")
 

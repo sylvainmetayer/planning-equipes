@@ -4,7 +4,7 @@ Vous ajustez ce qui décide du plan : les seuils, le niveau de chaque règle d'o
 
 ![La page Règles du planning](/images/fr/regles.webp "Règles du planning")
 
-Tout se règle dans *Règles du planning* (groupe *Planifier*), dans l'onglet *Règles*, en trois blocs. Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul » est à un clic.
+Tout se règle dans *Règles du planning* (entrée *Règles* du menu), dans l'onglet *Règles*, en trois blocs. Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul » est à un clic.
 
 Ces règles viennent du droit du travail : [ce que le Code du travail impose à un planning](/code-du-travail/) dit ce que le logiciel applique de lui-même et ce qu'il laisse à votre jugement.
 

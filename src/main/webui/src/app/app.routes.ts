@@ -562,6 +562,8 @@ const adminRoutes: Routes = [
   {
     path: 'debug',
     title: () => $localize`:@@route.debug:Débogage`,
+    // Its line is in « Imports, exports et outils », with the other tools.
+    data: { aide: 'echanges' },
     canActivate: [redirectFormerDebugTabs],
     loadComponent: () => import('./pages/debug/debug-page').then((m) => m.DebugPage),
   },

@@ -2,7 +2,7 @@
 
 Vous posez les créneaux de l'édition (les vacations que le calcul remplira) et vous réglez quand chaque stand est ouvert.
 
-Le calendrier se tient sur la page *Calendrier* (groupe *Préparer*), les horaires d'un stand sur sa fiche. Une **vacation** est une tranche de travail réelle : il n'y a pas d'autre sorte de créneau.
+Le calendrier se tient sur la page *Calendrier* (entrée *Préparer* du menu), les horaires d'un stand sur sa fiche. Une **vacation** est une tranche de travail réelle : il n'y a pas d'autre sorte de créneau.
 
 ## Poser les créneaux : le générateur et les créneaux à la main
 

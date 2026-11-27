@@ -11,7 +11,7 @@ If you are new to the tool, [can you trust it with a team of volunteers?](/organ
 
 ## The six moments
 
-The application opens on the **edition status**, which tells you where you stand. The menu follows the same thread, in groups: *Prepare*, *Plan*, *Share*, *Today* and *Administer*.
+The application opens on the **edition status**, which tells you where you stand. The menu follows the same thread in nine entries: *Home*, *Prepare* (stands, calendar, staff), *Files*, *Planning* (with its *Calculate* tab), *Diagnostic*, *Rules*, *Share* (with *Swaps*), *Today* and *Administer* (with *Editions*). The entries gathering several pages fold; the Ctrl+K palette finds every screen and every tab.
 
 | Moment | What you do | Guides |
 | --- | --- | --- |

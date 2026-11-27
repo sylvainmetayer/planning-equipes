@@ -1,5 +1,6 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   DOCUMENT,
   ChangeDetectionStrategy,
@@ -67,7 +68,7 @@ import { EditionActuelleBar } from '../shared/edition-actuelle-bar';
 import { VersionFooter } from '../shared/version-footer';
 import { BRANDING } from '../core/branding';
 import { MascotDialog } from './mascot-dialog';
-import { NavGroup, buildLegalLinks, buildNavGroups } from './nav-groups';
+import { NavGroup, buildLegalLinks, buildNavGroups, isFoldable } from './nav-groups';
 import { PageFocusService } from '../core/page-focus.service';
 import { GelInvitation } from '../core/gel-invitation';
 
@@ -81,6 +82,7 @@ import { GelInvitation } from '../core/gel-invitation';
 @Component({
   selector: 'app-admin-shell',
   imports: [
+    NgTemplateOutlet,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
@@ -107,8 +109,11 @@ import { GelInvitation } from '../core/gel-invitation';
 })
 export class AdminShell {
   private readonly destroyRef = inject(DestroyRef);
-  /** One menu for everybody, grouped by moment of the cycle (see `nav-groups.ts`). */
+  /** One menu for everybody, nine entries in the order of the cycle (see `nav-groups.ts`). */
   protected readonly navGroups = buildNavGroups();
+  /** The entries whose heading folds: the only ones a fold state is kept for. */
+  private readonly foldableGroups = this.navGroups.filter(isFoldable);
+  protected readonly isFoldable = isFoldable;
   /** The foot of the drawer: the legal pages, in text. */
   protected readonly legalLinks = buildLegalLinks();
   protected readonly jobs = inject(SolverJobService);
@@ -138,6 +143,20 @@ export class AdminShell {
 
   /** A lecteur: the actions that change something are hidden (global rule of `styles/pages.css`). */
   protected readonly lectureSeule = this.session.lectureSeule;
+
+  /**
+   * The entries as drawn: the same for everybody, a lecteur included, but for
+   * Débogage, which the server refuses to anyone but an admin — the palette
+   * hides it from them the same way (`keyboard-shortcuts.ts`).
+   */
+  protected readonly visibleGroups = computed(() =>
+    this.session.isAdmin()
+      ? this.navGroups
+      : this.navGroups.map((group) => ({
+          ...group,
+          links: group.links.filter((link) => link.path !== '/debug'),
+        })),
+  );
 
   /** Whether this account also holds a responsable de stand's right: « Mon stand » is one click away. */
   protected readonly hasStandRight = computed(
@@ -357,7 +376,7 @@ export class AdminShell {
   protected readonly collapsedGroups = signal<ReadonlySet<string>>(
     readCollapsedGroups(
       this.navStorage,
-      this.navGroups.map((group) => group.id),
+      this.foldableGroups.map((group) => group.id),
     ),
   );
 
@@ -372,14 +391,14 @@ export class AdminShell {
   }
 
   protected readonly allCollapsed = computed(
-    () => this.collapsedGroups().size >= this.navGroups.length,
+    () => this.collapsedGroups().size >= this.foldableGroups.length,
   );
 
   /** One control for every group: folding them one by one is one click per group. */
   protected toggleAllGroups(): void {
     const next = this.allCollapsed()
       ? new Set<string>()
-      : new Set(this.navGroups.map((group) => group.id));
+      : new Set(this.foldableGroups.map((group) => group.id));
     this.collapsedGroups.set(next);
     writeCollapsedGroups(this.navStorage, next);
   }
