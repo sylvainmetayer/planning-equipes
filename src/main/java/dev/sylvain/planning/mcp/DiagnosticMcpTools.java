@@ -20,9 +20,6 @@ import dev.sylvain.planning.service.analyse.KpiHistoriqueService.KpiHistoriqueEn
 import dev.sylvain.planning.service.analyse.MargeAnalyzer.Mode;
 import dev.sylvain.planning.service.analyse.MargeService;
 import dev.sylvain.planning.service.analyse.MarginReading;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.LigneStand;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingService;
@@ -56,8 +53,7 @@ import java.util.Optional;
 
 /**
  * The read-only diagnostics the screens have and MCP did not: how many
- * animateurs the event needs at all ({@code StaffingResource}), when each
- * stand is actually open ({@code OuvertureStandsResource}), how the editions
+ * animateurs the event needs at all ({@code StaffingResource}), how the editions
  * compare over the years ({@code MesuresEditionResource}), what an import would
  * overwrite ({@code ReferenceDataResource}), and the plan read by game
  * category ({@code TypologieAnalyseResource}). The Besoin and Risques tabs and
@@ -532,38 +528,6 @@ public class DiagnosticMcpTools {
             return margeService.tension();
         }
         return margeService.analyzeEdition("apres".equalsIgnoreCase(mode) ? Mode.APRES : Mode.AVANT);
-    }
-
-    @Tool(
-            name = "analyser_ouvertures_stands",
-            description = "Quand chaque stand est réellement ouvert, jour par jour, après application de ses "
-                    + "horaires récurrents et de ses plages datées : amplitude couverte, postes générés, et les anomalies "
-                    + "(STAND_JAMAIS_OUVERT, FENETRE_SANS_EFFET, SEGMENT_TROP_COURT ; et, pour information seulement, "
-                    + "REGLES_CHEVAUCHANTES : deux règles de même portée et de même mode qui se recouvrent, l'effectif le "
-                    + "plus haut l'emporte ; REGLE_MASQUEE : une règle qu'aucun jour n'applique ; FENETRES_CHEVAUCHANTES : "
-                    + "deux fenêtres d'une même règle qui se recouvrent à des effectifs différents). C'est ici qu'on voit "
-                    + "pourquoi un stand ne génère aucun poste. Chaque jour porte ferie, le libellé du jour férié "
-                    + "qui tombe ce jour-là (null sinon). Filtrable sur un stand ; les totaux restent ceux de "
-                    + "l'édition.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = true,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    RapportOuvertures analyzeStandOpenings(
-            @ToolArg(description = "Id de stand pour ne détailler que celui-là", required = false) String standId,
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        RapportOuvertures rapport = OuvertureStandsAnalyzer.analyze(
-                referenceDataService.listSolvedStands(), referenceDataService.listCreneaux());
-        if (standId == null) {
-            return rapport;
-        }
-        List<LigneStand> retenus = rapport.stands().stream()
-                .filter(ligne -> standId.equals(ligne.standId()))
-                .toList();
-        return new RapportOuvertures(
-                rapport.jours(), retenus, rapport.standsJamaisOuverts(), rapport.postesTotal(), rapport.anomalies());
     }
 
     /**

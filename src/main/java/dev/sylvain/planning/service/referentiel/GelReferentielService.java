@@ -26,7 +26,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * The freeze of the referential, which the phase of the edition decides
  * (ADR 0115, replacing the per-family freeze of ADR 0052), and the refusal
  * every write of a frozen family then meets, whatever path it takes — a form,
- * the bulk edit, a CSV or grid import, an MCP tool.
+ * the bulk edit, a scenario import, an MCP tool.
  *
  * <p>What each phase freezes:</p>
  * <ul>

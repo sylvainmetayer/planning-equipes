@@ -61,7 +61,6 @@ MesuresEditionResource#listIndicators GET /mesures-edition/indicateurs
 MesuresEditionResource#previousEdition GET /mesures-edition/realise/precedente
 MesuresEditionResource#report GET /mesures-edition/realise
 OuvertureStandsResource#analyze GET /ouvertures-stands
-OuvertureStandsResource#layers GET /ouvertures-stands/couches
 ParametresResource#getCalcul GET /parametres/calcul
 ParametresResource#getContactOrganisation GET /parametres-contact
 ParametresResource#getLegal GET /parametres/legal

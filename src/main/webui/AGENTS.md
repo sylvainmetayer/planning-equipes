@@ -226,12 +226,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   « Ouvert » the open days and seats read from the openings report and, once
   a plan holds somebody, « Couverture »; « Ajouter » the guided creation
   `stand-creation-dialog.ts` over the pure `stand-creation.ts`, whose last step
-  writes the stand's row through the Horaires des stands grid's save — a
+  writes the stand's row through `PUT /api/ouvertures-stands/grille`, with the
+  pure grid reader `grille-horaires.ts` it keeps beside it — a
   failure of that second call keeping the stand, a retry sending the hours
   alone —, « Édition groupée » the bulk edit of the ticked stands or else of
-  the rows shown, « Saisir en grille », « Importer la grille » and « Compacter
-  les horaires » in a « Plus » menu, and « Dupliquer » the stand form on a
-  copy; and `?onglet=lieux`, « Lieux », the
+  the rows shown, and « Dupliquer » the stand form on a copy; and `?onglet=lieux`, « Lieux », the
   former `/emplacements` — the `pages/emplacements` component drawn in a
   `@defer`, a map of every located place drawn by `lieux-map.ts`, whose
   dragged marker saves the position with no dialog, a sorted table with the
@@ -243,12 +242,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/stands/<id>?modifier=1`, the Lieux tab keeping its own `edit`),
   `/stands/:id` (« Fiche stand » — the
   head of one stand, « Modifier l'identité » the stand form cut down to its
-  identity, `?modifier=1` opening it on arrival; its grid day × timeslot edited
-  in place in `stand-grid-editor.ts` over the pure `stand-grid.ts`, built on
-  `pages/ouvertures/grille-horaires.ts` and saved by the same body as the
-  Horaires des stands grid — the route's `canDeactivate` asks before unsaved
-  cells are dropped —; its opening anomalies; its seats after a solve, an
-  empty one opened in the Siège panel of the Planning page; « Comparer avec… »; its
+  identity, `?modifier=1` opening it on arrival; its recurring model and its
+  dated plages edited in place (`stand-modele-editor.ts`, `stand-plages-editor.ts`);
+  its seats after a solve, an empty one opened in the Siège panel of the
+  Planning page; its
   history; « Règles », folded, the condensed form, and the whole stand form
   behind « Modifier les règles ». « précédent / suivant » walk the table in
   the order of its `?sort=`, over the pure `pages/stands/stand-order.ts` the
@@ -324,10 +321,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   shared by the two tables through the page-provided `PublicationSelection`,
   never the URL. « Documents »: the four files the plan becomes, each saying
   who it is for; a screen of its own since issue #320, so the solver page only
-  solves), `/export-csv`, `/creneaux` (« Calendrier » — two tabs chosen by
-  `?onglet=`: the timeslots, and `?onglet=horaires` the former `/ouvertures`
-  (described there), whose retired views the route's guard still redirects;
-  the timeslots: one path
+  solves), `/export-csv`, `/creneaux` (« Calendrier » — the timeslots; the
+  retired `?onglet=horaires`, the stands' hours tab, is sent by the route's
+  `retiredHorairesTab` guard to the fiche stand (`openingsToStandsUrl`); one path
   first — day templates laid on the calendar, or applied without being kept;
   a single timeslot, recognition and derivation from the stands' hours sit in
   one « Autres façons de créer la grille » menu; the grid check is a band read
@@ -528,20 +524,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   to `?editions=toutes` —, the replay of the former Autopsie is gone;
   under the table, `pages/versions/edition-precedente.ts` says the Réalisé vs
   planifié measure the previous edition froze, and nothing when there is none),
-  `/ouvertures` (a redirect to `/creneaux?onglet=horaires`: « Horaires des stands » — three
-  views chosen by `?vue=`: the grid, the default, read and typed in one place —
-  one field per stand and timeslot, an empty cell is closed, and behind each
-  field the bars of the layers ticked in `?couches=` (the result, the stand's
-  own hours, the consigne) drawn as one `background-image` over the pure
-  `rendu-grille.ts`, a focused cell explained in a sentence by
-  `calendrier-couches.ts` with its links, `?du=`/`?au=` narrowing the days;
-  `?vue=journees-types`, the same cells said once per template;
-  `?vue=comparer&stands=a,b&ref=a`, two to eight stands against a reference,
-  read-only, over the pure `comparaison-ouvertures.ts`, its copy opening the
-  stands' bulk edit preset. The former `?vue=journee` and `?vue=calendrier`
-  are redirected by the route's guard, `vues-retirees.ts`, to `/journee` once
-  a plan is computed or to the grid narrowed to the day, and to the grid with
-  its layers),
+  `/ouvertures` (a redirect, by `openingsToStandsUrl`, to the fiche of the stand
+  its `?stand=` or first `?stands=` names, else to `/stands`: the grid, its
+  comparator and its calendar of layers are gone, a stand's hours being the
+  plages of its fiche),
   `/disponibilites` (a redirect to `/animateurs?onglet=disponibilites`: what the animateurs
   declared), `/editions`, `/comparer` (« Comparer deux versions » — one screen,
   `pages/comparer-editions/comparer-page.ts`, two views chosen by `?vue=`
@@ -707,16 +693,14 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
 - Bulk edits go through one dialog per entity (`<entity>-bulk-edit-dialog.ts`),
   whose rules live in a plain `<entity>-bulk-edit.ts` next to it so they are
   unit-tested without rendering. Every field defaults to "ne pas modifier": a
-  bulk edit only writes what the user explicitly filled in. The **entry grids**
-  (`/ouvertures`, by date and by journée type, and `/competences`) are the other
-  way in and follow the same law from the other end: a move writes only the
+  bulk edit only writes what the user explicitly filled in. The **entry grid**
+  (`/competences`) is the other
+  way in and follows the same law from the other end: a move writes only the
   cells it names — the row it fills, or the one column it runs down — and
   writes them locally, so « Enregistrer » stays the only thing that reaches the
   server and « Annuler les modifications » undoes a move like any keystroke.
-  Their shared moves live in `core/grille-saisie.ts`; each grid contributes an
-  `AccesGrille` saying how it reads and writes one cell, and the per-template
-  grid is what makes "nothing to copy" a real case — a column whose dates
-  disagree is a report, not a value.
+  Its moves live in `core/grille-saisie.ts`; each grid contributes an
+  `AccesGrille` saying how it reads and writes one cell.
 - State flows one way: the solver page pushes the solved planning into
   `PlanningStateService`, calendars read it back read-only and never start a
   solve. Components don't call `fetch` directly.

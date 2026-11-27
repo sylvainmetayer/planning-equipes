@@ -1,36 +1,11 @@
-// The words of a stand's schedule — its rules, its dated exceptions, its
-// anomalies —, read on the fiche stand and by the openings comparator. Kept out
+// The words of a stand's schedule — its rules and its dated exceptions —, read
+// on the fiche stand and in the stand dialogs. Kept out
 // of the components so they are unit-tested without rendering anything — same
 // split as `stand-bulk-edit.ts`.
 
 import { DetailRow } from '../../shared/detail-dialog';
 import { decrireFenetre, libelleJour, libelleJourSemaine } from '../../core/horaire-stand';
-import {
-  AnomalieOuverture,
-  HoraireStand,
-  IndisponibiliteStand,
-  OuvertureStand,
-} from '../../core/models';
-
-/** What an anomaly of the openings is about: the day it falls on, or how the rules are written. */
-export function anomalyLabel(anomalie: AnomalieOuverture): string {
-  switch (anomalie.type) {
-    case 'REGLES_CHEVAUCHANTES':
-      return $localize`:@@detail.stand.anomalie.reglesChevauchantes:Règles qui se recouvrent`;
-    case 'REGLE_MASQUEE':
-      return $localize`:@@detail.stand.anomalie.regleMasquee:Règle sans effet`;
-    case 'FENETRES_CHEVAUCHANTES':
-      if (anomalie.date) {
-        const jour = libelleJour(anomalie.date);
-        return $localize`:@@detail.stand.anomalie.fenetresChevauchantesLe:Fenêtres qui se recouvrent, ${jour}:jour:`;
-      }
-      return $localize`:@@detail.stand.anomalie.fenetresChevauchantes:Fenêtres qui se recouvrent`;
-    default:
-      return anomalie.date
-        ? libelleJour(anomalie.date)
-        : $localize`:@@detail.stand.anomalie.edition:Toute l'édition`;
-  }
-}
+import { HoraireStand, IndisponibiliteStand, OuvertureStand } from '../../core/models';
 
 /**
  * One recurring rule in one line: what it does, which days it covers, and the

@@ -367,41 +367,6 @@ describe('StandBulkEditDialog', () => {
     }
   });
 
-  it("warns under a rule when one selected stand's dated exceptions would replace it everywhere", async () => {
-    const ferme = stand('ferme', {
-      indisponibilites: [
-        { id: null, date: '2026-07-06', heureDebut: '00:00', heureFin: null, motif: null },
-      ],
-    });
-    const { fixture } = mount([stand('ouvert'), ferme], {
-      creneaux: [{ id: 1, jour: 1, date: '2026-07-06', heureDebut: '10:00', heureFin: '12:00' }],
-    });
-    await fixture.whenStable();
-    await fill(fixture, {
-      horaires: {
-        mode: 'REMPLACER',
-        horaires: [
-          {
-            id: null,
-            mode: 'OUVERTURE',
-            jours: 'TOUS',
-            joursSemaine: [],
-            dateDebut: null,
-            dateFin: null,
-            dates: [],
-            fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: null }],
-            motif: null,
-          },
-        ],
-        source: null,
-      },
-    });
-
-    const avertissements = Array.from(root(fixture).querySelectorAll('.horaire-avertissement'));
-    expect(avertissements).toHaveLength(1);
-    expect(avertissements[0].textContent).toContain('des exceptions datées la remplacent partout');
-  });
-
   it('blocks the batch on an invalid horaire rule and says why', async () => {
     const { fixture } = mount([stand('s1')]);
     await fixture.whenStable();

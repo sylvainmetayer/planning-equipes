@@ -8,10 +8,9 @@
 
 import { HelpSection } from '../help-section';
 import {
-  lienCalculer,
+  lienSolve,
   lienAjustements,
   lienFragilite,
-  lienHoraires,
   lienPauses,
   lienStaffing,
   lienVerrouillages,
@@ -85,7 +84,7 @@ export function buildSolverSections(): HelpSection[] {
           text: $localize`:@@aide.calculer.attente:Quand le solveur est occupé, chacun des deux boutons planifie le calcul au lieu de le refuser : il démarrera de lui-même dès que la tâche en cours sera terminée.`,
         },
       ],
-      links: [lienCalculer(), lienVerrouillages()],
+      links: [lienSolve(), lienVerrouillages()],
     },
     {
       id: 'configuration-solveur',
@@ -148,7 +147,7 @@ export function buildSolverSections(): HelpSection[] {
         },
       ],
       links: [
-        lienCalculer(),
+        lienSolve(),
         { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
         {
           route: '/parametres',
@@ -177,7 +176,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.setup.term.ouvertures:Vérifier ce que le solveur lira`,
-              text: $localize`:@@aide.setup.def.ouvertures:La grille « Horaires des stands » montre, stand par créneau, les effectifs résolus et les sièges qu'ils génèrent. Un stand jamais ouvert, une fenêtre hors des créneaux, un segment trop court pour valoir une vacation s'y voient avant tout calcul. Un stand dont personne ne doit s'occuper à une heure donnée se déclare fermé, jamais à effectif zéro.`,
+              text: $localize`:@@aide.setup.def.ouvertures2:La fiche d'un stand donne ses jours ouverts et ses postes. Un stand jamais ouvert, une fenêtre hors des créneaux, un segment trop court pour valoir une vacation se comptent sur l'accueil avant tout calcul. Un stand dont personne ne doit s'occuper à une heure donnée se déclare fermé, jamais à effectif zéro.`,
             },
             {
               term: $localize`:@@aide.setup.term.creneaux:Des blocs, et ce que coûte une coupe`,
@@ -222,7 +221,6 @@ export function buildSolverSections(): HelpSection[] {
       ],
       links: [
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        lienHoraires(),
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
         { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
         lienStaffing(),

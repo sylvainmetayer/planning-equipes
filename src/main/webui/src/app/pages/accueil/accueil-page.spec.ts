@@ -43,7 +43,6 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       anomalies: 0,
       fenetresSansEffet: 0,
       standsJamaisOuverts: 0,
-      informations: 0,
       statut: 'FAIT',
     },
     besoin: { animateurs: 40, minimum: 32, manque: 0, statut: 'FAIT' },
@@ -248,7 +247,7 @@ describe('AccueilPage', () => {
     expect(hrefs).toEqual([
       '/stands',
       '/animateurs?onglet=disponibilites',
-      '/creneaux?onglet=horaires',
+      '/stands',
       '/diagnostic?onglet=besoin',
       '/journee?onglet=calculer',
       '/diagnostic?onglet=problemes',

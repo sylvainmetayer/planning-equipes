@@ -16,7 +16,7 @@ L'effectif minimum est **prouvé** : aucune équipe plus petite ne tient les si�
 
 Chaque journée porte sa **marge avant résolution** : les personnes disponibles moins les sièges, sur sa tranche la plus serrée, dépliable tranche par tranche. Elle ne dépend d'aucun calcul.
 
-Chaque chiffre mène à l'écran qui le change : une borne mène aux horaires des stands de la journée la plus chargée, ou à la ligne de sa règle dans Règles du planning ; chaque journée mène à ses horaires des stands ; un goulot mène à la grille des compétences.
+Chaque chiffre mène à l'écran qui le change : une borne mène à la liste des stands, ou à la ligne de sa règle dans Règles du planning ; chaque journée y mène aussi ; un goulot mène à la grille des compétences.
 
 ## Vérifier le minimum par un vrai calcul
 

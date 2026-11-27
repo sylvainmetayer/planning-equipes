@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { pageRoutes } from '../core/testing/page-routes';
 import { readOngletAnimateurs } from '../pages/animateurs/animateurs-onglet';
-import { readOngletCalendrier } from '../pages/creneaux/calendrier-onglet';
 import { readComparerView } from '../pages/comparer-editions/comparer-page';
 import { readMesuresView } from '../pages/mesures/mesures-page';
 import { ONGLETS_DEBUG, readOngletDebug } from '../pages/debug/debug';
@@ -59,12 +58,6 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
       readOngletAnimateurs(v) === v ||
       (v === 'covoiturage' && readOngletAnimateurs(v) === 'disponibilites'),
     values: ['competences', 'disponibilites', 'covoiturage'],
-  },
-  // The timeslots are the default tab: only the opening hours are named.
-  '/creneaux': {
-    param: 'onglet',
-    opens: (v) => readOngletCalendrier(v) === v,
-    values: ['horaires'],
   },
   '/mesures': { param: 'vue', opens: (v) => readMesuresView(v) === v, values: ['indicateurs'] },
   // The requests are the default tab: only the statistics are named.

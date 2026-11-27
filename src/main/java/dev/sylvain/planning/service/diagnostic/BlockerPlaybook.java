@@ -445,17 +445,16 @@ public final class BlockerPlaybook {
     }
 
     private static ActionType lowerStaffingAction(Context context) {
+        // `edit` opens the fiche of the one stand the breach names, the list of the stands otherwise.
         Map<String, String> params = new LinkedHashMap<>();
-        params.put(PARAM_ONGLET, "horaires");
-        params.put("vue", "saisie");
-        putDate(params, context);
-        putStand(params, context);
+        if (context.standIds().size() == 1) {
+            params.put("edit", context.standIds().getFirst());
+        }
         return new ActionType(
                 CODE_LOWER_STAFFING,
                 "Baisser l'effectif demandé",
-                "Moins de places ouvertes ce jour-là : l'écran Ouvertures montre ce que le planning retiendra avant"
-                        + " d'enregistrer.",
-                ROUTE_TIMESLOTS,
+                "Moins de places ouvertes : la fiche du stand dit ses jours ouverts et ses postes avant tout calcul.",
+                ROUTE_STANDS,
                 params);
     }
 

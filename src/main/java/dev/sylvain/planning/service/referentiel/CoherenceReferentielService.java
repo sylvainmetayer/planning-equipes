@@ -343,7 +343,7 @@ public class CoherenceReferentielService {
         for (OuvertureStandsAnalyzer.Anomaly anomalie : sources.ouvertures().anomalies()) {
             issues.add(new CoherenceIssue(
                     CoherenceFamily.STANDS,
-                    anomalie.type().isInformational() ? CoherenceSeverity.INFORMATION : CoherenceSeverity.A_VERIFIER,
+                    CoherenceSeverity.A_VERIFIER,
                     anomalie.type().name(),
                     anomalie.message(),
                     CoherenceSubject.STAND,

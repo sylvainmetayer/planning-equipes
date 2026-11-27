@@ -54,8 +54,8 @@ const FEASIBILITY: FeasibilityReport = {
           code: 'BAISSER_EFFECTIF',
           libelle: "Baisser l'effectif demandé",
           explication: 'Moins de places ouvertes ce jour-là.',
-          route: '/ouvertures',
-          parametres: { vue: 'saisie', stand: 'S1' },
+          route: '/stands',
+          parametres: { edit: 'S1' },
         },
       ],
     },
@@ -414,7 +414,7 @@ describe('ProblemesPage — « Que faire ? »', () => {
     const links = Array.from(pauses.querySelectorAll('a.probleme-action-bouton')).map((link) =>
       link.getAttribute('href'),
     );
-    expect(links).toEqual(['/creneaux?onglet=horaires&vue=saisie&stand=S2', '/creneaux?edit=7']);
+    expect(links).toEqual(['/stands?edit=S2', '/creneaux?edit=7']);
     // Written here and translated: no `lang` forcing French on them.
     expect(pauses.querySelector('a.probleme-action-bouton')!.getAttribute('lang')).toBeNull();
     // Où: the stand and the timeslot of the break; Qui: the person left alone.

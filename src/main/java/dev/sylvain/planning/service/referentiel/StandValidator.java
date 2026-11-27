@@ -24,9 +24,9 @@ final class StandValidator {
 
     /**
      * The checks a schedule write owes: everything but the typologie rule.
-     * The opening grid writes hours, one transaction for the lot, and a stand
+     * A grid save writes hours, one transaction for the lot, and a stand
      * stored before issue #343 without a typologie would otherwise make the
-     * whole batch fail on a field that screen cannot even show — the
+     * whole batch fail on a field that grid cannot even show — the
      * "tolerated on read" half of the rule, applied to a write that does not
      * touch it.
      */

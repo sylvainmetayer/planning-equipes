@@ -52,7 +52,6 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       anomalies: 0,
       fenetresSansEffet: 0,
       standsJamaisOuverts: 0,
-      informations: 0,
       statut: 'A_FAIRE',
     },
     besoin: { animateurs: 0, minimum: 0, manque: 0, statut: 'A_FAIRE' },
@@ -140,7 +139,6 @@ function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
       anomalies: 0,
       fenetresSansEffet: 0,
       standsJamaisOuverts: 0,
-      informations: 0,
       statut: 'FAIT',
     },
     besoin: { animateurs: 40, minimum: 32, manque: 0, statut: 'FAIT' },
@@ -259,7 +257,7 @@ describe('buildLignes', () => {
   it('links every line to the screen that moves it, with the tab or the filter it needs', () => {
     const liens = new Map(buildLignes(etatComplet()).map((ligne) => [ligne.id, ligne.lien]));
     expect(liens.get('collecte')?.route).toBe('/animateurs');
-    expect(liens.get('ouvertures')?.route).toBe('/creneaux');
+    expect(liens.get('ouvertures')?.route).toBe('/stands');
     expect(liens.get('besoin')).toMatchObject({
       route: '/diagnostic',
       queryParams: { onglet: 'besoin' },
@@ -526,7 +524,6 @@ describe('buildLignes', () => {
         anomalies: 2,
         fenetresSansEffet: 0,
         standsJamaisOuverts: 1,
-        informations: 0,
         statut: 'ATTENTION',
       },
       besoin: { animateurs: 20, minimum: 32, manque: 12, statut: 'ATTENTION' },
@@ -549,25 +546,11 @@ describe('buildLignes', () => {
         anomalies: 3,
         fenetresSansEffet: 2,
         standsJamaisOuverts: 0,
-        informations: 0,
         statut: 'ATTENTION',
       },
     });
     expect(buildLignes(horsGrille).find((ligne) => ligne.id === 'ouvertures')!.detail).toBe(
       '3 anomalie(s), dont 2 fenêtre(s) hors de toute vacation, 0 stand(s) jamais ouvert(s)',
-    );
-    // Only how the rules are written: said for information, not as anomalies to fix.
-    const informationOnly = etatComplet({
-      ouvertures: {
-        anomalies: 2,
-        fenetresSansEffet: 0,
-        standsJamaisOuverts: 0,
-        informations: 2,
-        statut: 'INFO',
-      },
-    });
-    expect(buildLignes(informationOnly).find((ligne) => ligne.id === 'ouvertures')!.detail).toBe(
-      "2 point(s) pour information : règles ou fenêtres d'horaires qui se recouvrent ou ne servent à rien",
     );
     expect(details.get('besoin')).toBe('20 animateurs pour un minimum de 32 : il en manque 12');
     expect(details.get('problemes')).toBe('1 bloquant(s) · 4 avertissement(s)');

@@ -6,7 +6,7 @@
 // only resolves once `main.ts` has loaded the translation catalog.
 
 import { HelpSection } from '../help-section';
-import { lienCalculer, lienDisponibilites } from './liens';
+import { lienSolve, lienDisponibilites } from './liens';
 
 export function buildGettingStartedSections(): HelpSection[] {
   return [
@@ -86,7 +86,7 @@ export function buildGettingStartedSections(): HelpSection[] {
         },
         lienDisponibilites(),
         { route: '/', label: $localize`:@@nav.link.accueil:État de l'édition` },
-        lienCalculer(),
+        lienSolve(),
         { route: '/echanges', label: $localize`:@@nav.link.echanges:Échanges` },
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
       ],

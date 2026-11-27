@@ -81,21 +81,8 @@ function patchInitial(data: StandBulkEditData): StandBulkPatch {
 export class StandBulkEditDialog {
   protected readonly store = inject(ReferenceDataStore);
 
-  /** The edition's days with the end of each one's span: what the rule warnings are judged on. */
+  /** The edition's days with the end of each one's span: what the priorities between rules are judged on. */
   protected readonly joursEdition = computed(() => joursEdition(this.store.creneaux()));
-
-  /**
-   * The dated exceptions of every selected stand: the rules typed here land on
-   * each of them, and an exception wins over a rule on its day — so a rule
-   * every exception of one stand masks is warned about, as the Ouvertures
-   * analysis will once saved.
-   */
-  protected readonly exceptionsByStand = computed(() =>
-    this.data.stands.map((stand) => ({
-      ouvertures: stand.ouvertures ?? [],
-      indisponibilites: stand.indisponibilites ?? [],
-    })),
-  );
 
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */

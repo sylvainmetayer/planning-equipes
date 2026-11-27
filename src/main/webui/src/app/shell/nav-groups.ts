@@ -96,20 +96,11 @@ export function buildNavGroups(): NavGroup[] {
           ],
         },
         {
-          // The timeslots and the stands' opening hours over them.
           path: '/creneaux',
           label: $localize`:@@nav.link.calendrier:Calendrier`,
           icon: 'schedule',
           shortcut: 'c',
-          keywords: $localize`:@@nav.keywords.calendrier:créneaux journées types horaires ouvertures`,
-          tabs: [
-            tab(
-              'onglet',
-              'horaires',
-              $localize`:@@nav.link.ouvertures:Horaires des stands`,
-              $localize`:@@nav.keywords.ouvertures:ouvertures saisie calendrier combiné`,
-            ),
-          ],
+          keywords: $localize`:@@nav.keywords.calendrier:créneaux journées types`,
         },
         {
           path: '/animateurs',

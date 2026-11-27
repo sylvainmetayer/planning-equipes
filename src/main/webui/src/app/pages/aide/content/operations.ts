@@ -8,7 +8,7 @@
 import { buildRaccourcisNavigation } from '../../../core/keyboard-shortcuts';
 import { HelpSection } from '../help-section';
 import {
-  lienCalculer,
+  lienSolve,
   lienAjustements,
   lienConsignes,
   lienFragilite,
@@ -102,7 +102,7 @@ export function buildOperationsSections(): HelpSection[] {
       links: [
         lienConsignes(),
         { route: '/journee', label: $localize`:@@nav.link.journee:Planning` },
-        lienCalculer(),
+        lienSolve(),
       ],
     },
     {
@@ -477,7 +477,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.shortcuts.grilles:Les trois grilles de saisie (« Horaires des stands », par date et par journée type, et « Compétences ») se remplissent comme un tableur : les flèches passent d'une case à l'autre, Entrée descend, et deux gestes évitent de retaper ce qui se répète. Rien n'est enregistré avant « Enregistrer » : une reprise de trop s'annule avec le reste des modifications.`,
+          text: $localize`:@@aide.shortcuts.grille:La grille de saisie des « Compétences » se remplit comme un tableur : les flèches passent d'une case à l'autre, Entrée descend, et deux gestes évitent de retaper ce qui se répète. Rien n'est enregistré avant « Enregistrer » : une reprise de trop s'annule avec le reste des modifications.`,
         },
         {
           kind: 'definitions',

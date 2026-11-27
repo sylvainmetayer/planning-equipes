@@ -22,7 +22,7 @@ export const lienAjustements = (): HelpLink => ({
   label: $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
 });
 
-export const lienCalculer = (): HelpLink => ({
+export const lienSolve = (): HelpLink => ({
   route: '/journee',
   queryParams: { onglet: 'calculer' },
   label: $localize`:@@aide.link.calculer:Planning › Calculer`,
@@ -50,12 +50,6 @@ export const lienPauses = (): HelpLink => ({
   route: '/diagnostic',
   queryParams: { onglet: 'problemes' },
   label: $localize`:@@aide.link.pausesProblemes:Pauses sans relais (Problèmes)`,
-});
-
-export const lienHoraires = (): HelpLink => ({
-  route: '/creneaux',
-  queryParams: { onglet: 'horaires' },
-  label: $localize`:@@nav.link.ouvertures:Horaires des stands`,
 });
 
 export const lienTypologies = (): HelpLink => ({

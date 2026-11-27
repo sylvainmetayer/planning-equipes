@@ -624,7 +624,7 @@ describe('StaffingPage', () => {
    * margin is a column of the days.
    */
   describe('the links from each figure to the screen that changes it', () => {
-    it('links each day to its opening hours, and prints its tightest margin', async () => {
+    it('links the figures to the stands, and prints its tightest margin', async () => {
       analysesApi.margin.mockResolvedValue({
         mode: 'AVANT',
         tranches: [{ debut: '18:00:00', fin: '22:00:00' }],
@@ -664,12 +664,11 @@ describe('StaffingPage', () => {
       const hrefs = Array.from(root.querySelectorAll<HTMLAnchorElement>('a')).map((lien) =>
         lien.getAttribute('href'),
       );
-      expect(hrefs).toContain('/creneaux?onglet=horaires&du=2026-09-01&au=2026-09-01');
+      expect(hrefs).toContain('/stands');
       expect(hrefs).toContain('/regles?onglet=regles&regle=coupureRepasObligatoire');
       expect(hrefs).toContain('/regles?onglet=regles&regle=maxJoursConsecutifsTravailles');
       expect(root.querySelector('.staffing-marge')?.textContent).toBe('-2');
       expect(root.querySelector('.staffing-marge-tranche')?.textContent).toBe('18:00-22:00');
-      expect(root.textContent).toContain('Horaires des stands du 01/09');
     });
 
     // The sections start where the tables above them end: scrolled to while
