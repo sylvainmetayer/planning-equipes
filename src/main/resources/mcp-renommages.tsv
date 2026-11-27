@@ -65,9 +65,8 @@ edition_courante	lister_editions
 effacer_horaires_stand	supprimer_horaires_stand
 effacer_plages_stand	supprimer_plage_stand
 envoyer_planning_animateur	envoyer_planning_animateur
-etat_edition	consulter_edition
 equite_planning	consulter_charge
-etat_edition	etat_edition
+etat_edition	consulter_edition
 etat_planning	consulter_planning
 etat_publication	consulter_publication
 etat_sauvegardes	consulter_sauvegardes
