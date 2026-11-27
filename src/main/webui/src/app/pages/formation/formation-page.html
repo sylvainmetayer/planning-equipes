@@ -22,7 +22,7 @@
         <p class="empty-hint" i18n="@@formation.aucunAnimateur">Aucun animateur saisi : personne à former pour l'instant.</p>
       } @else if (plan.aucuneCompetence) {
         <p class="empty-hint">
-          <ng-container i18n="@@formation.aucuneCompetence">Aucune appréciation n'est saisie : sans compétence déclarée, personne n'est candidat.</ng-container>
+          <ng-container i18n="@@formation.aucuneCompetence">Aucune appréciation n'est saisie : sans compétence déclarée, personne n'est candidat.</ng-container>&ngsp;
           <a routerLink="/animateurs" [queryParams]="{ onglet: 'competences' }" i18n="@@formation.versCompetences">Saisir les compétences</a>
         </p>
       } @else if (plan.typologies.length === 0) {
@@ -53,7 +53,7 @@
             }
             @if (ligne.candidats.length === 0) {
               <p class="formation-recrutement">
-                <ng-container i18n="@@formation.recrutement">Aucun candidat : recrutement.</ng-container>
+                <ng-container i18n="@@formation.recrutement">Aucun candidat : recrutement.</ng-container>&ngsp;
                 <a routerLink="/animateurs" i18n="@@formation.versAnimateurs">Ajouter des animateurs</a>
               </p>
             } @else {

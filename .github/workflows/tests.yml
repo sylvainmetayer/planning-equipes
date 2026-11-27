@@ -648,6 +648,11 @@ jobs:
       - name: New window links check
         run: npm run new-window-check
 
+      # A line break between prose and a link is not a space (Angular drops
+      # whitespace-only nodes): the first line ends with `&ngsp;`.
+      - name: Inline spacing check
+        run: npm run inline-spacing-check
+
       # « Réglages avancés » n'est dessiné que s'il y a quelque chose derrière.
       - name: Réglages avancés check
         run: npm run reglages-avances-check

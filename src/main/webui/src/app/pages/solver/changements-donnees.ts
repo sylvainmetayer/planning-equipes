@@ -37,7 +37,7 @@ import { StatusMessage } from '../../shared/status-message';
     @if (vue(); as bilan) {
       @if (bilan.total > 0) {
         <p class="calendar-meta data-stale-detail">
-          <span i18n="@@solver.changements.resume">Depuis : {{ resume() }}.</span>
+          <span i18n="@@solver.changements.resume">Depuis : {{ resume() }}.</span>&ngsp;
           <a routerLink="/parametres" [queryParams]="{ onglet: 'historique', depuis: depuis(), nature: 'donnees' }" i18n="@@solver.changements.lien">Voir l'historique</a>
         </p>
         <ul class="data-stale-liste">

@@ -32,6 +32,10 @@ describe('feasibility-messages', () => {
       expect(causesRestantesMessage(-3)).toBe('');
     });
 
+    it("retourne une chaîne vide quand le compte n'est pas un nombre (totalCauses absent)", () => {
+      expect(causesRestantesMessage(NaN)).toBe('');
+    });
+
     it('annonce le nombre de causes non détaillées', () => {
       expect(causesRestantesMessage(7)).toContain('7');
     });

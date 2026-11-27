@@ -38,7 +38,7 @@
 
   @if (!rapport.referenceAvailable) {
     <p class="empty-hint">
-      <ng-container i18n="@@realise.sansReference">Rien n'a encore été publié : il n'y a pas de référence à laquelle comparer.</ng-container>
+      <ng-container i18n="@@realise.sansReference">Rien n'a encore été publié : il n'y a pas de référence à laquelle comparer.</ng-container>&ngsp;
       <a routerLink="/publication" i18n="@@realise.versPublication">Publier le planning</a>
     </p>
   } @else if (rapport.days.length === 0) {
