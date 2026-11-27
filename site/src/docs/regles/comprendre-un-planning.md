@@ -43,9 +43,9 @@ Sous chaque problème, l'application liste les gestes réels qui le règlent, da
 
 D'autres liens relient un symptôme à l'écran qui le traite : un siège libre, une pause sans relais ou un stand de la carte ouvrent le panneau du siège sans quitter la page Planning ; un goulot de typologie ou une compétence rare mènent aux animateurs qui la détiennent ; un avertissement à l'enregistrement rouvre la fiche ; une cause d'infaisabilité ouvre le créneau ou le stand en cause.
 
-## Repérer les points de défaillance : l'onglet Fragilité
+## Repérer les points de défaillance : la section Fragilité
 
-L'onglet *Fragilité* dit qui est un point de défaillance unique. Pour chaque personne, il liste les créneaux qui passeraient sous l'effectif minimum si elle se désistait, et surtout ceux que personne d'autre ne pourrait reprendre. Il liste aussi les stands tenus par une seule personne compétente.
+L'onglet *Risques* du Diagnostic réunit trois lectures, de haut en bas : la fragilité, « À former » (voir [Savoir combien de personnes recruter](dimensionner-l-equipe.md)) et la tension. La section *Fragilité* dit qui est un point de défaillance unique. Pour chaque personne, il liste les créneaux qui passeraient sous l'effectif minimum si elle se désistait, et surtout ceux que personne d'autre ne pourrait reprendre. Il liste aussi les stands tenus par une seule personne compétente.
 
 Par personne, trois gestes :
 
@@ -55,9 +55,9 @@ Par personne, trois gestes :
 
 Son nom mène à sa fiche.
 
-## Voir la tension heure par heure : l'onglet Tension
+## Voir la tension heure par heure : la section Tension
 
-L'onglet *Tension* croise le jour avec la tranche horaire, sur le planning enregistré. Dans chaque case : les personnes réellement libres moins les sièges restés vides, croisées avec la fragilité du plan.
+La section *Tension*, au pied de l'onglet *Risques*, croise le jour avec la tranche horaire, sur le planning enregistré. Dans chaque case : les personnes réellement libres moins les sièges restés vides, croisées avec la fragilité du plan.
 
 - Une colonne par heure de début de la grille : un soir qui finit à 22 h en semaine et à minuit le samedi reste une seule colonne.
 - La couleur suit le signe de la marge : rouge en dessous de zéro, vert au-dessus.

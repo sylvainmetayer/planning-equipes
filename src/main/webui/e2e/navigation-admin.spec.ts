@@ -114,8 +114,9 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     sheet: 'ouvertures-synthese',
   },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },
-  // « À former » is the foot of Besoin now: the old tab lands there.
-  { path: '/diagnostic?onglet=former', marker: 'À former', sheet: 'staffing-former' },
+  // Fragilité, « À former » and Tension are the three sections of Risques: the old tabs land there.
+  { path: '/diagnostic?onglet=risques', marker: 'Fragilité', sheet: 'fragilite-message' },
+  { path: '/diagnostic?onglet=former', marker: 'À former', sheet: 'risques-titre' },
   {
     path: '/diagnostic?onglet=tension',
     marker: 'Tension, tranche par tranche',
@@ -124,7 +125,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/diagnostic?onglet=fragilite', marker: 'Fragilité', sheet: 'fragilite-message' },
   { path: '/aujourdhui', marker: "Aujourd'hui", sheet: 'jour-j-entete' },
   { path: '/mesures', marker: "Mesures d'édition", sheet: 'realise-toolbar' },
-  // The former Marge disponible lands on the Diagnostic's Tension tab.
+  // The former Marge disponible lands on the Tension section of the Diagnostic's Risques tab.
   { path: '/marge?mode=tension', marker: 'Tension, tranche par tranche' },
   // The former timeline lands on a fiche's planning section; its own sheet is gone.
   { path: '/animateurs/E2E-A?section=timeline', marker: 'Planning', sheet: 'timeline-day' },
