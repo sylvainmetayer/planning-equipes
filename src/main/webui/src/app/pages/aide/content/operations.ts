@@ -116,7 +116,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.meteo.alerte:Un seuil franchi lève une alerte : sur l'accueil, dans « Messages récents », par courriel à l'administration et par webhook. Elle nomme la date, le phénomène et le préréglage suggéré, ou la consigne déjà posée ce jour-là. « Préparer la consigne » ouvre l'onglet Consignes sur le formulaire rempli à cette date avec ce préréglage : rien n'est posé avant que vous ayez relu les stands et cliqué « Enregistrer ». Une alerte sur aujourd'hui dit la prévision, sans suggestion ni lien : une journée commencée ne prend plus de consigne. Une même prévision ne sonne qu'une fois, et de nouveau seulement si elle s'aggrave (deux degrés, dix km/h de plus, la grêle avec l'orage).`,
+          text: $localize`:@@aide.meteo.alerte:Un seuil franchi lève une alerte : sur l'accueil, dans le fil d'alertes et de messages, par courriel à l'administration et par webhook. Elle nomme la date, le phénomène et le préréglage suggéré, ou la consigne déjà posée ce jour-là. « Préparer la consigne » ouvre l'onglet Consignes sur le formulaire rempli à cette date avec ce préréglage : rien n'est posé avant que vous ayez relu les stands et cliqué « Enregistrer ». Une alerte sur aujourd'hui dit la prévision, sans suggestion ni lien : une journée commencée ne prend plus de consigne. Une même prévision ne sonne qu'une fois, et de nouveau seulement si elle s'aggrave (deux degrés, dix km/h de plus, la grêle avec l'orage).`,
         },
         {
           kind: 'paragraph',

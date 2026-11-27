@@ -1,20 +1,15 @@
-// The coherence checklist as the home screen's unfolded panel shows it: one
+// The coherence checklist as the home screen's feed lists it: one
 // group per family, one line per anomaly with its severity, the source's
 // sentence and the fiche or screen that corrects it. Pure functions, tested
 // without rendering, called at runtime so `$localize` resolves after the
 // catalog is loaded.
 
-import {
-  CoherenceFamily,
-  CoherenceIssue,
-  CoherenceReport,
-  CoherenceSeverity,
-  FamilyCount,
-} from '../../core/models';
+import { CoherenceFamily, CoherenceIssue, CoherenceSeverity } from '../../core/models';
 import type { LienEtat } from './accueil';
 
 /** One line of the panel, ready to render. */
 export interface CoherenceLine {
+  famille: CoherenceFamily;
   gravite: CoherenceSeverity;
   severityLabel: string;
   /** The source's sentence, prefixed by its count when identical anomalies were merged into it. */
@@ -93,14 +88,6 @@ export function mergedSentence(merged: MergedIssue): string {
     : $localize`:@@accueil.coherence.fusion.fois:${message}:message: (${count}:count: fois)`;
 }
 
-/** One family of the panel: its title, its counts in words, its lines. */
-export interface CoherenceGroup {
-  famille: CoherenceFamily;
-  titre: string;
-  comptage: string;
-  lignes: CoherenceLine[];
-}
-
 export function familyTitle(famille: CoherenceFamily): string {
   switch (famille) {
     case 'STANDS':
@@ -125,26 +112,6 @@ export function severityLabel(gravite: CoherenceSeverity): string {
     case 'INFORMATION':
       return $localize`:@@accueil.coherence.gravite.information:Pour information`;
   }
-}
-
-/** The counts of a family in one short sentence, the zeros left out. */
-export function familyCounts(comptage: FamilyCount): string {
-  const parts: string[] = [];
-  if (comptage.bloquants > 0) {
-    const count = comptage.bloquants;
-    parts.push($localize`:@@accueil.coherence.comptage.bloquants:${count}:count: bloquant(s)`);
-  }
-  if (comptage.aVerifier > 0) {
-    const count = comptage.aVerifier;
-    parts.push($localize`:@@accueil.coherence.comptage.aVerifier:${count}:count: à vérifier`);
-  }
-  if (comptage.informations > 0) {
-    const count = comptage.informations;
-    parts.push(
-      $localize`:@@accueil.coherence.comptage.informations:${count}:count: pour information`,
-    );
-  }
-  return parts.join(' · ');
 }
 
 /**
@@ -247,28 +214,11 @@ function editionLink(famille: CoherenceFamily): LienEtat {
 /** One line per set of identical anomalies, with its count, in the report's order. */
 export function coherenceLines(issues: readonly CoherenceIssue[]): CoherenceLine[] {
   return mergeIdentical(issues).map((merged) => ({
+    famille: merged.issue.famille,
     gravite: merged.issue.gravite,
     severityLabel: severityLabel(merged.issue.gravite),
     sentence: mergedSentence(merged),
     lien: coherenceLink(merged.issue),
     count: merged.count,
   }));
-}
-
-/**
- * The panel: the families holding at least one line, in the server's order,
- * lines as sorted there — identical anomalies merged into one line with their
- * count.
- */
-export function coherenceGroups(rapport: CoherenceReport): CoherenceGroup[] {
-  return rapport.familles
-    .map((comptage) => ({
-      famille: comptage.famille,
-      titre: familyTitle(comptage.famille),
-      comptage: familyCounts(comptage),
-      lignes: coherenceLines(
-        rapport.anomalies.filter((ligne) => ligne.famille === comptage.famille),
-      ),
-    }))
-    .filter((groupe) => groupe.lignes.length > 0);
 }

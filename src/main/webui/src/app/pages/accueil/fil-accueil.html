@@ -1,0 +1,65 @@
+<section id="fil-accueil" class="fil-accueil" aria-labelledby="fil-accueil-titre">
+  <h3 id="fil-accueil-titre" class="notification-jour" i18n="@@fil.titre">Alertes et messages ({{ tout().length }})</h3>
+  <nav class="fil-filtres" aria-label="Filtrer par type" i18n-aria-label="@@fil.filtre.aria">
+    @for (filtre of filtres(); track filtre.libelle) {
+      <a matButton [class.fil-filtre-actif]="filtre.type === type()" [attr.aria-current]="filtre.type === type() ? 'true' : null"
+         routerLink="/" [queryParams]="{ type: filtre.type }" queryParamsHandling="merge" fragment="a-traiter">
+        {{ filtre.libelle }} ({{ filtre.compte }})
+      </a>
+    }
+  </nav>
+  @if (alertesErreur()) {
+    <p class="accueil-erreur" role="alert">{{ alertesErreur() }}</p>
+  }
+  @if (coherenceErreur()) {
+    <p class="accueil-erreur" role="alert">{{ coherenceErreur() }}</p>
+  }
+  <p class="empty-hint" i18n="@@fil.description">Du plus grave au plus récent. Une alerte ou une anomalie se referme en traitant ce qu'elle signale ; seuls les messages de l'application, gardés par ce navigateur, se marquent comme lus ou s'effacent.</p>
+  @if (type() === null || type() === 'messages') {
+  <div class="card-actions">
+    <button matButton type="button" [disabled]="notifications.unreadCount() === 0" (click)="notifications.markAllRead()">
+      <mat-icon>done_all</mat-icon>
+      <ng-container i18n="@@notifications.markAllRead">Tout marquer comme lu</ng-container>
+    </button>
+    <button matButton type="button" [disabled]="notifications.notifications().length === 0" (click)="notifications.clear()">
+      <mat-icon>delete_sweep</mat-icon>
+      <ng-container i18n="@@notifications.clear">Effacer l'historique</ng-container>
+    </button>
+  </div>
+  }
+  @if (items().length === 0) {
+    <p class="empty-hint" i18n="@@fil.aucun">Rien à signaler.</p>
+  } @else {
+    <ul class="notification-list fil-liste">
+      @for (item of items(); track item.id) {
+        <li class="notification-item notification-item-{{ item.variante }}" [attr.data-type]="item.type" [attr.data-gravite]="item.gravite"
+            [class.notification-item-unread]="item.message && !item.message.read">
+          <mat-icon class="notification-icon">{{ icon(item) }}</mat-icon>
+          <div class="notification-body">
+            <span class="fil-gravite">{{ graviteLabel(item.gravite) }}</span>
+            @if (item.titre) {
+              <span class="notification-title">{{ item.titre }}</span>
+            }
+            @if (item.texte) {
+              <span class="notification-message">{{ item.texte }}</span>
+            }
+            @if (item.href; as href) {
+              <a [href]="href" (click)="open($event, href)" i18n="@@notifications.alertes.preparerConsigne">Préparer la consigne</a>
+            }
+            @if (item.lien; as lien) {
+              <a [routerLink]="lien.route" [queryParams]="lien.queryParams ?? null">{{ lien.libelle }}</a>
+            }
+            @if (item.message; as message) {
+              @if (!message.read) {
+                <button matButton type="button" (click)="notifications.markRead(message.id)" i18n="@@fil.marquerLu">Marquer comme lu</button>
+              }
+            }
+          </div>
+          @if (item.quand !== null) {
+            <span class="notification-timestamp">{{ formattedDateTime(item.quand) }}</span>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

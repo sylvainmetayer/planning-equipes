@@ -152,11 +152,16 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   a banner while a published edition's structure is unblocked; during the event, the day under way first, opening
   `/aujourdhui`, and the checklist folded; after it, the archive first; on an
   empty edition, a « Démarrer » block. « À traiter aujourd'hui »
-  (`#a-traiter`, where the toolbar's bell lands) is always drawn, and folds
-  under it `pages/accueil/messages-recents` — the night's alerts (a weather
-  alert carrying its « Préparer la consigne » link, `lien` of the server) and
-  the local history of the application's messages, what `/notifications`, now a
-  redirect to `/#a-traiter`, used to show), `/solveur` (the solver page,
+  (`#a-traiter`, where the toolbar's bell lands) is always drawn, and carries
+  under it the single feed `pages/accueil/fil-accueil` over the pure `fil.ts`:
+  the plan's alerts (`AlerteView` — the night's, a weather alert carrying its
+  « Préparer la consigne » link, `lien` of the server), the anomalies of the
+  referential (the checklist's « Cohérence du référentiel » line leads to it
+  instead of unfolding) and the local history of the application's messages,
+  sorted by gravity — blocking, to check, message — then newest first, and
+  narrowed by `?type=alertes|coherence|messages` read from the address;
+  only the messages are read and cleared. `/notifications` redirects to
+  `/?type=messages#a-traiter`), `/solveur` (the solver page,
   the former home: feasibility first, then « Ce calcul tiendra compte de »
   read from `GET /api/solve/entrees`, each counter a link and a zero muted,
   the three ways to launch each with its sentence on the page, the result in
