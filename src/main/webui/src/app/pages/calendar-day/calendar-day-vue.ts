@@ -49,15 +49,10 @@ interface StandLine {
    * it holds, filled or not — and therefore the headcount understaffing is
    * measured against.
    *
-   * <p>Not `stand.effectifMin`: a vacation covering a meal pause under the
-   * `EFFECTIF_REDUIT` strategy is deliberately staffed at half the stand's
-   * usual headcount (see {@code PlanningService#construirePostes}), so
-   * comparing it to `effectifMin` reported every such slot as understaffed
-   * when it was in fact exactly as staffed as intended.</p>
+   * <p>Not `stand.effectifMin`: an opening window may name its own headcount,
+   * so the seats generated are what the slot is measured against.</p>
    */
   effectifRequis: number;
-  /** True when this line is a meal-pause coverage vacation: a deliberately reduced headcount, flagged as information, never as a shortfall. */
-  couverturePause: boolean;
 }
 
 interface SlotCard {
@@ -301,13 +296,6 @@ export class CalendarDayView {
     return formatHeure(time);
   }
 
-  /** True for a meal-pause coverage line: reduced headcount on purpose, shown as an indication. */
-  protected isCouverturePause(stand: StandLine): boolean {
-    return stand.couverturePause;
-  }
-
-  protected readonly couverturePauseTooltip = $localize`:@@calendar.couverturePause:Effectif réduit pendant la pause repas — choix de couverture assumé, pas un manque d'animateurs`;
-
   /** True for a stand-line with at least one filled seat lacking the administrator's appreciation for it. */
   protected hasAppreciationMismatch(stand: StandLine): boolean {
     return isStandLineSansAppreciation(stand);
@@ -424,7 +412,6 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
               entries: entry.entries,
               postesLibres: entry.postesLibres,
               effectifRequis: entry.sieges,
-              couverturePause: creneau.couverturePause === true,
             }))
             .sort(
               (left, right) =>

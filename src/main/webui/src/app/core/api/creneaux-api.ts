@@ -10,7 +10,7 @@ import { DiagnosticGrille, RapportGrille } from '../models';
 export class CreneauxApi {
   private readonly api = inject(ApiService);
 
-  /** What the grid holds: how many vacations, over which dates, with how many meal relays. */
+  /** What the grid holds: how many vacations, over which dates. */
   diagnostic(): Promise<DiagnosticGrille> {
     return this.api.get<DiagnosticGrille>('/api/creneaux/diagnostic');
   }

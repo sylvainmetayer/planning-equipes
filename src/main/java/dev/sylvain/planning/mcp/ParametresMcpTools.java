@@ -103,7 +103,7 @@ public class ParametresMcpTools {
                     + "toleranceTrajetMinutes avant que trajetInsuffisantEntrePostes ne compte quoi que ce soit ; "
                     + "placementRepas dirige la préférence souple de la coupure repas sans toucher à la règle. "
                     + "« notifications » : cet outil n'envoie rien, les envois de nuit ne partent que de l'édition "
-                    + "active (activer_edition) ; l'heure du rappel ne peut pas dépasser 23:00. « calcul » : "
+                    + "active (modifier_edition) ; l'heure du rappel ne peut pas dépasser 23:00. « calcul » : "
                     + "seul le mail de fin de résolution se règle ici, le budget de calcul est celui de "
                     + "l'instance. Les sections répondent avec leur modifieLe : renvoyé à l'écriture, il refuse la "
                     + "modification si la section a changé depuis cette lecture ; omis, rien n'est contrôlé.",
@@ -331,6 +331,202 @@ public class ParametresMcpTools {
                     ? new ParametresSectionView(section, carrier.withWarning(code))
                     : this;
         }
+    }
+
+    /* ------------------- 3.x names, kept until 5.0 (ADR 0127) ------------------ */
+
+    @Deprecated
+    @Tool(
+            name = "consulter_parametres_legaux",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_parametres (section legal). "
+                    + "Consulte les paramètres légaux de l'édition.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ParametresLegauxView getParametresLegauxAlias(
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return getParametresLegaux(edition);
+    }
+
+    @Deprecated
+    @Tool(
+            name = "modifier_parametres_legaux",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_parametres (section legal). "
+                    + "Modifie les paramètres légaux de l'édition ; un argument absent garde sa valeur. Les "
+                    + "plafonds d'ordre public (48 h hebdomadaires pour un majeur, 35 h pour un mineur) sont refusés "
+                    + "au-delà, et les planchers de pause (20 min pour un majeur, 30 pour un mineur) en deçà.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    @WarnsWhileSolving
+    ParametresLegauxView updateParametresLegauxAlias(
+            @ToolArg(description = "Durée hebdomadaire maximale d'un majeur, en minutes", required = false)
+                    Integer dureeHebdomadaireMaxMinutes,
+            @ToolArg(description = "Durée hebdomadaire maximale d'un mineur, en minutes", required = false)
+                    Integer dureeHebdomadaireMaxMineurMinutes,
+            @ToolArg(description = "Durée maximale d'une vacation, en minutes", required = false)
+                    Integer dureeVacationMaxMinutes,
+            @ToolArg(description = "Repos quotidien minimal, en minutes", required = false)
+                    Integer reposQuotidienMinimalMinutes,
+            @ToolArg(description = "Durée de la pause légale, en minutes (au moins 20)", required = false)
+                    Integer dureePauseMinutes,
+            @ToolArg(description = "Durée de la coupure repas, en minutes", required = false)
+                    Integer coupureRepasMinutes,
+            @ToolArg(description = "Début de la fenêtre de la coupure repas du midi (HH:MM)", required = false)
+                    String coupureRepasMidiDebut,
+            @ToolArg(description = "Fin de la fenêtre de la coupure repas du midi (HH:MM)", required = false)
+                    String coupureRepasMidiFin,
+            @ToolArg(description = "Début de la fenêtre de la coupure repas du soir (HH:MM)", required = false)
+                    String coupureRepasSoirDebut,
+            @ToolArg(description = "Fin de la fenêtre de la coupure repas du soir (HH:MM)", required = false)
+                    String coupureRepasSoirFin,
+            @ToolArg(description = "Heure de début de la soirée (HH:MM)", required = false) String heureDebutSoiree,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        currentAction.action("PARAMETRES_LEGAUX_MODIFIES");
+        return updateParametresLegaux(
+                dureeHebdomadaireMaxMinutes,
+                dureeHebdomadaireMaxMineurMinutes,
+                dureeVacationMaxMinutes,
+                reposQuotidienMinimalMinutes,
+                dureePauseMinutes,
+                coupureRepasMinutes,
+                coupureRepasMidiDebut,
+                coupureRepasMidiFin,
+                coupureRepasSoirDebut,
+                coupureRepasSoirFin,
+                heureDebutSoiree,
+                null,
+                edition);
+    }
+
+    @Deprecated
+    @Tool(
+            name = "consulter_parametres_qualite",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_parametres (section organisation). "
+                    + "Consulte les seuils de qualité d'organisation de l'édition.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ParametresQualiteView getParametresQualiteAlias(
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return getParametresQualite(edition);
+    }
+
+    @Deprecated
+    @Tool(
+            name = "modifier_parametres_qualite",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_parametres (section organisation). "
+                    + "Modifie les seuils de qualité d'organisation de l'édition ; un argument absent garde sa "
+                    + "valeur. Aucun seuil n'est une obligation légale.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    @WarnsWhileSolving
+    ParametresQualiteView updateParametresQualiteAlias(
+            @ToolArg(description = "Emplacements distincts par jour et par animateur, au moins 1", required = false)
+                    Integer maxEmplacementsDistinctsParJour,
+            @ToolArg(description = "Typologies distinctes par animateur sur l'édition, au moins 1", required = false)
+                    Integer typologiesDistinctesMax,
+            @ToolArg(description = "Jours travaillés d'affilée, au moins 1", required = false)
+                    Integer joursConsecutifsMax,
+            @ToolArg(description = "Heure d'un service tardif (HH:MM)", required = false) String heureServiceTardif,
+            @ToolArg(description = "Heure d'un service matinal (HH:MM)", required = false) String heureServiceMatinal,
+            @ToolArg(description = "Repos souhaité après un service tardif, en minutes", required = false)
+                    Integer reposSouhaiteApresServiceTardifMinutes,
+            @ToolArg(description = "Vitesse de marche, en km/h (au plus 15)", required = false) Double vitesseMarcheKmH,
+            @ToolArg(description = "Facteur de détour, entre 1 et 5", required = false) Double facteurDetour,
+            @ToolArg(description = "Tolérance de trajet, en minutes (0 à 120)", required = false)
+                    Integer toleranceTrajetMinutes,
+            @ToolArg(description = "Tolérance d'une arrivée groupée, en minutes (0 à 240)", required = false)
+                    Integer toleranceArriveeGroupeeMinutes,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        currentAction.action("PARAMETRES_QUALITE_MODIFIES");
+        return updateParametresQualite(
+                maxEmplacementsDistinctsParJour,
+                typologiesDistinctesMax,
+                joursConsecutifsMax,
+                heureServiceTardif,
+                heureServiceMatinal,
+                reposSouhaiteApresServiceTardifMinutes,
+                vitesseMarcheKmH,
+                facteurDetour,
+                toleranceTrajetMinutes,
+                toleranceArriveeGroupeeMinutes,
+                null,
+                null,
+                edition);
+    }
+
+    @Deprecated
+    @Tool(
+            name = "consulter_parametres_solveur",
+            description =
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_parametres (section calcul). "
+                            + "Consulte le mail de fin de résolution et le budget de calcul de l'instance (en lecture seule) de l'édition.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ParametresSolveurView getParametresSolveurAlias(
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return getParametresSolveur(edition);
+    }
+
+    @Deprecated
+    @Tool(
+            name = "consulter_parametres_notifications",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_parametres (section notifications). "
+                    + "Consulte les délais des notifications planifiées de l'édition.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ParametresNotifications getParametresNotificationsAlias(
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return getParametresNotifications(edition);
+    }
+
+    @Deprecated
+    @Tool(
+            name = "modifier_parametres_notifications",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_parametres (section notifications). "
+                    + "Modifie les délais des notifications planifiées de l'édition ; un argument absent garde sa "
+                    + "valeur. N'envoie rien : les envois de nuit ne partent que de l'édition active.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ParametresNotifications updateParametresNotificationsAlias(
+            @ToolArg(description = "Heure du rappel de la veille (HH:MM), au plus tard 23:00", required = false)
+                    String heureRappelVeille,
+            @ToolArg(description = "Délai avant relance des non-confirmés, en heures", required = false)
+                    Integer delaiRelanceHeures,
+            @ToolArg(
+                            description = "Ancienneté d'une demande d'échange sans réponse avant alerte, en jours",
+                            required = false)
+                    Integer ancienneteEchangeJours,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        currentAction.action("PARAMETRES_NOTIFICATIONS_MODIFIES");
+        return updateParametresNotifications(
+                heureRappelVeille, delaiRelanceHeures, ancienneteEchangeJours, null, edition);
     }
 
     /* ----------------------------- Per-section helpers ------------------------- */

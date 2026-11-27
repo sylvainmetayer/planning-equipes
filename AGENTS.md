@@ -557,8 +557,10 @@ Single Quarkus service, no separate solver microservice. Package root:
      interceptor.
   3. every tool declares the four MCP hints, and only the tools that **send
      mail** (`publier_planning`, `envoyer_planning_animateur`,
-     `configurer_collecte_disponibilites`, `relancer_animateurs`) may declare
-     `openWorldHint = true` — they are enumerated in
+     `envoyer_relance_animateurs`, `configurer_collecte_disponibilites`) may
+     declare `openWorldHint = true`, each a verb of its own — a mail send is
+     never a `mode` of another tool, so a forgotten argument cannot write to the
+     whole team instead of one person (ADR 0127). They are enumerated in
      `McpAnnotationsStructurelleTest`, which also derives the other hints from
      the tool's own name.
   4. a tool class carries `@RefusMetier`, so a refusal from the domain comes

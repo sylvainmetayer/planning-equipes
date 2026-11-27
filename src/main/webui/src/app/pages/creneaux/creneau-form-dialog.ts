@@ -8,13 +8,11 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { creneauName } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -31,13 +29,6 @@ interface CreneauDraft {
   date: string;
   heureDebut: string;
   heureFin: string;
-  /**
-   * A meal-relay vacation: the stands are staffed at half their headcount so
-   * the other half can eat. The server writes `couverture_pause` from whatever
-   * the body says, so the payload always carries it — a body that omitted it
-   * used to reset a generated relay to full headcount on the next solve.
-   */
-  couverturePause: boolean;
   /** The store's `modifieLe` at opening, sent back as the write's precondition (issue #362). */
   modifieLe: string | null;
 }
@@ -58,9 +49,7 @@ export interface CreneauFormData {
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
-    MatCheckboxModule,
     MatIconModule,
-    MatTooltipModule,
     PastilleFerie,
     GelNotice,
   ],
@@ -151,7 +140,6 @@ export class CreneauFormDialog {
       date: draft.date,
       heureDebut: draft.heureDebut,
       heureFin: draft.heureFin,
-      couverturePause: draft.couverturePause,
       modifieLe: draft.modifieLe,
     };
     if (editingId != null) {
@@ -173,13 +161,12 @@ export class CreneauFormDialog {
 
 function toDraft(creneau: Creneau | null): CreneauDraft {
   if (!creneau) {
-    return { date: '', heureDebut: '', heureFin: '', couverturePause: false, modifieLe: null };
+    return { date: '', heureDebut: '', heureFin: '', modifieLe: null };
   }
   return {
     date: creneau.date ?? '',
     heureDebut: creneau.heureDebut ?? '',
     heureFin: creneau.heureFin ?? '',
-    couverturePause: creneau.couverturePause ?? false,
     modifieLe: creneau.modifieLe ?? null,
   };
 }

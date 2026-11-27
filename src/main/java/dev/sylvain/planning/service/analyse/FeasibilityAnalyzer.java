@@ -55,8 +55,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * {@link ProblemBuilder#buildPostes(List, List)} generates seats: for every
  * stand open on that créneau, the seats of its busiest open segment —
  * {@link Creneau#siegesSimultanes(Stand)}, i.e. the window's own effectif or
- * the stand's {@code effectifMin} when the window names none, floored to one
- * and halved on a break-covering shift. Segments of one slot follow each
+ * the stand's {@code effectifMin} when the window names none, floored to one.
+ * Segments of one slot follow each
  * other, so what has to be staffed at any instant is the largest of them, not
  * their sum. {@code effectifMax} is the upper capacity a stand <em>could</em>
  * accept, not the number of seats that must be staffed, and closed stands

@@ -39,7 +39,7 @@ Ce qu'une famille figée ne laisse plus écrire :
 | Famille | Ce qui ne s'écrit plus |
 | --- | --- |
 | Stands | Création, suppression, effectifs min et max, réserve majeurs, typologies proposées, horaires (règles, ouvertures et fermetures datées) |
-| Créneaux | Création, suppression, date, heures, couverture de pause ; gabarits appliqués, dérivation, séries |
+| Créneaux | Création, suppression, date, heures ; gabarits appliqués, dérivation, séries |
 | Typologies et emplacements | Création, suppression, plafond par typologie, typologie polyvalente |
 | Compétences | Niveaux de compétence des animateurs déjà inscrits (fiche, grille, import) |
 

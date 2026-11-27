@@ -17,7 +17,6 @@ A timeslot is a **shift**: a slice of real work on which someone is assigned. Th
 | --- | --- | --- |
 | `VACATION_TROP_LONGUE` | Warning | The shift exceeds `dureeVacationMaxMinutes` (6 h by default, the threshold of art. [L3121-16]). It will contain a break that needs a relay: check that a colleague at the stand holds a seat at that time, or split the day in two |
 | `REPOS_QUOTIDIEN_IMPOSSIBLE` | Error | The shift exceeds `1440 − reposQuotidienMinimalMinutes`: any assignment would produce a breach of a hard rule |
-| `RELAIS_REPAS_HORS_FENETRE` | Warning | A `couverturePause` shift outside every meal window: staffing is halved there, yet no break can be taken in it |
 
 A shift longer than 6 h is therefore not refused: it is legal if a colleague relays the person during the break. The threshold lives in `ParametresLegaux`, because it is an event rule judged on the grid the organiser has, however that grid was written.
 
@@ -29,19 +28,19 @@ The feasibility analysis (`GET /api/feasibility`) **does not see this peak**: it
 
 ### Covering a stand during the meal
 
-Three ways to handle lunchtime, each written by hand on the grid (timeslot form or typical day):
+Three ways to handle lunchtime:
 
 | What you want | How you write it |
 | --- | --- |
-| The stand closes | No shift over the window |
+| The stand closes | No shift over the window, or a closure plage of the stand |
 | Full staffing during the break | An ordinary shift over the window |
-| Reduced staffing | A shift marked `couverturePause` |
+| Reduced staffing | An opening plage of the stand that names its own headcount (*Stands › Horaires*) |
 
-`couverturePause` generates only **half of the open segment's staffing, rounded up** (`Creneau.siegesSegment`). Rounding up means a stand run by a single person keeps that person instead of closing: closing remains an explicit decision, not a side effect of integer division. A full shift over the meal window should be handled with care on a scenario that is already tight: one more team per break on every stand concerned, concentrated on the same window, is exactly the peak described above.
+There is no longer a "meal relay" flag on the shift: reduced staffing is said on the stand, which knows how many people it needs at noon (`Creneau.siegesSegment`, never fewer than one seat). A full shift over the meal window should be handled with care on a scenario that is already tight: one more team per break on every stand concerned, concentrated on the same window, is exactly the peak described above.
 
 ### A single seat count
 
-The number of seats of an open segment (at least one, half rounded up on a break-cover shift) is `Creneau.siegesSegment`, and a stand's busiest segment on a timeslot is `Creneau.siegesSimultanes`. Seat generation, the feasibility analysis, the fragility analysis and the `eviterRoulementStandsPremium` rule all read these two methods: what the solver must fill and what the screens announce cannot be two different numbers.
+The number of seats of an open segment (at least one) is `Creneau.siegesSegment`, and a stand's busiest segment on a timeslot is `Creneau.siegesSimultanes`. Seat generation, the feasibility analysis, the fragility analysis and the `eviterRoulementStandsPremium` rule all read these two methods: what the solver must fill and what the screens announce cannot be two different numbers.
 
 ## The legal settings
 

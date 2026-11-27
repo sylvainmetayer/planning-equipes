@@ -111,7 +111,7 @@ class DiagnosticPlanMcpToolsTest {
     private void solvedPlanning() {
         awaitSolverIdle();
         scenarioTools.resetData("E1");
-        scenarioTools.importScenario("scenario.yml", "E1");
+        scenarioTools.importScenario("scenario.yml", null, "E1");
         JobMcpView job = solveurTools.startSolver(1L, null, null, null, "E1");
         assertThat(awaitFinished(job.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
     }

@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  *   <li>{@link #STANDS} — creation and deletion, the headcounts, the
  *       adults-only reserve, the game categories offered, the opening hours
  *       (rules and dated exceptions);</li>
- *   <li>{@link #CRENEAUX} — creation and deletion, date, hours, break cover,
+ *   <li>{@link #CRENEAUX} — creation and deletion, date, hours,
  *       and the three generators of the grid (day templates applied, grid
  *       derived from the stands, recurring series);</li>
  *   <li>{@link #TYPOLOGIES_EMPLACEMENTS} — creation and deletion of both, the

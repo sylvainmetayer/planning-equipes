@@ -22,14 +22,14 @@ const ETAT: EtatGenerateur = {
       id: 1,
       nom: 'Jour normal',
       vacations: [
-        { heureDebut: '09:00:00', heureFin: '12:00:00', couverturePause: false },
-        { heureDebut: '12:00:00', heureFin: '13:00:00', couverturePause: true },
+        { heureDebut: '09:00:00', heureFin: '12:00:00' },
+        { heureDebut: '12:00:00', heureFin: '13:00:00' },
       ],
     },
     {
       id: 2,
       nom: 'Nocturne',
-      vacations: [{ heureDebut: '14:00:00', heureFin: '00:00:00', couverturePause: false }],
+      vacations: [{ heureDebut: '14:00:00', heureFin: '00:00:00' }],
     },
   ],
   calendrier: [
@@ -115,7 +115,7 @@ describe('GabaritsCard', () => {
     const { racine } = await mount();
 
     expect(racine.querySelectorAll('.gabarit-item')).toHaveLength(2);
-    expect(racine.querySelectorAll('.vacation-chip-relais')).toHaveLength(1);
+    expect(racine.querySelectorAll('.vacation-chip')).toHaveLength(3);
     expect(racine.querySelectorAll('.gabarits-table tbody tr')).toHaveLength(2);
     expect(racine.querySelectorAll('.ligne-en-ecart')).toHaveLength(1);
     expect(racine.querySelector('.gabarits-bornes')!.textContent).toContain('2027-07-12');
@@ -154,7 +154,6 @@ describe('GabaritsCard', () => {
       crees: 3,
       supprimes: 0,
       conserves: 1,
-      misAJour: 0,
       aucunChangement: false,
     };
     api.preview.mockResolvedValue({ source: 'GABARITS', application: apercu });
@@ -288,7 +287,7 @@ describe('GabaritsCard', () => {
   });
 
   it('notifies and reloads when the application dialog returns a report', async () => {
-    const apercu = { crees: 1, supprimes: 0, conserves: 0, misAJour: 0, aucunChangement: false };
+    const apercu = { crees: 1, supprimes: 0, conserves: 0, aucunChangement: false };
     const rapport = { crees: 1, supprimes: 0, conserves: 2 };
     api.preview.mockResolvedValue({ source: 'GABARITS', application: apercu });
     dialog.open.mockReturnValueOnce({ afterClosed: () => of(rapport) });

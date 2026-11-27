@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.TypeVerrouillage;
@@ -235,18 +234,14 @@ class CreneauGridServiceTest {
     /* ------------------------------ Diagnostic ------------------------------ */
 
     @Test
-    void leDiagnosticDecritLaGrilleEtCompteLesRelais() {
-        Creneau relais = creneau("2026-07-06", "12:00", "13:00");
-        relais.setCouverturePause(true);
-
-        CreneauGridService.DiagnosticGrille diagnostic =
-                CreneauGridService.diagnose(List.of(creneau("2026-07-06", "09:00", "12:00"), relais));
+    void leDiagnosticDecritLaGrille() {
+        CreneauGridService.DiagnosticGrille diagnostic = CreneauGridService.diagnose(
+                List.of(creneau("2026-07-06", "09:00", "12:00"), creneau("2026-07-06", "12:00", "13:00")));
 
         assertThat(diagnostic.nombreCreneaux()).isEqualTo(2);
         assertThat(diagnostic.premiereDate()).isEqualTo(LocalDate.of(2026, 7, 6));
         assertThat(diagnostic.derniereDate()).isEqualTo(LocalDate.of(2026, 7, 6));
-        assertThat(diagnostic.contientCouverturePause()).isTrue();
-        assertThat(diagnostic.explication()).contains("1 relais repas");
+        assertThat(diagnostic.explication()).contains("2 vacations sur 1 date(s)");
     }
 
     @Test
@@ -256,36 +251,6 @@ class CreneauGridServiceTest {
         assertThat(diagnostic.nombreCreneaux()).isZero();
         assertThat(diagnostic.premiereDate()).isNull();
         assertThat(diagnostic.explication()).contains("aucun créneau");
-    }
-
-    // A hand-typed meal relay (12-13 at half headcount) is only meaningful
-    // where a meal break may be taken. Outside the windows it halves the seats
-    // for nothing: the grid is the one place that reads the flag against the
-    // legal parameters.
-    @Test
-    void aMealRelayOutsideTheWindowIsReported() {
-        Creneau relais = creneau("2026-07-06", "16:00", "17:00");
-        relais.setCouverturePause(true);
-        Creneau midi = creneau("2026-07-06", "12:00", "13:00");
-        midi.setCouverturePause(true);
-        Creneau nuit = creneau("2026-07-06", "23:00", "00:00");
-        nuit.setCouverturePause(true);
-
-        List<GridAnomaly> anomalies = validate(List.of(relais, midi, nuit), List.of(), List.of(), LEGAUX, List.of())
-                .anomalies();
-
-        List<GridAnomaly> horsFenetre = anomalies.stream()
-                .filter(anomalie -> anomalie.type() == GridAnomalyType.RELAIS_REPAS_HORS_FENETRE)
-                .toList();
-        assertThat(horsFenetre)
-                .hasSize(2)
-                .allSatisfy(anomalie -> {
-                    assertThat(anomalie.severite()).isEqualTo(SeveriteGrille.AVERTISSEMENT);
-                    assertThat(anomalie.message()).contains("relais repas").contains("midi 12:00-14:00");
-                })
-                .extracting(GridAnomaly::message)
-                .anyMatch(message -> message.contains("16:00-17:00"))
-                .anyMatch(message -> message.contains("23:00-00:00"));
     }
 
     // Issue #577: a lock names its vacation by day and hours, so it survives a
@@ -400,7 +365,7 @@ class CreneauGridServiceTest {
             List<dev.sylvain.planning.domain.Animateur> animateurs,
             ParametresLegaux legaux,
             List<VerrouillagePlanning> verrouillages) {
-        return service.validate(creneaux, stands, animateurs, legaux, verrouillages, FenetreRepas.from(legaux));
+        return service.validate(creneaux, stands, animateurs, legaux, verrouillages);
     }
 
     private List<GridAnomalyType> typesDetectes(List<Creneau> creneaux) {

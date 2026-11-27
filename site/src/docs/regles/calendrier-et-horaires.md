@@ -14,7 +14,7 @@ La grille se produit par un **générateur** unique, le menu *Générer des cré
 | *Depuis les horaires des stands* | une coupure à chaque heure où un stand ouvre ou ferme, un créneau sur chaque tranche ouverte ; ajouté à la grille ou à sa place |
 | *Depuis un motif récurrent* | des fenêtres répétées sur des jours choisis, ajoutées à la grille |
 
-Quelle que soit la source, le geste est le même : un **aperçu** chiffré qui n'écrit rien et dit ce que vaudrait la grille obtenue, puis l'**application**. Un **gabarit** est la journée type d'avant la 4.0 : les vacations d'une sorte de journée (un « R » marque un relais repas), posées sur un calendrier de dates, qui sont celles de l'édition.
+Quelle que soit la source, le geste est le même : un **aperçu** chiffré qui n'écrit rien et dit ce que vaudrait la grille obtenue, puis l'**application**. Un **gabarit** est la journée type d'avant la 4.0 : les vacations d'une sorte de journée, posées sur un calendrier de dates, qui sont celles de l'édition.
 
 1. Ouvrez *Calendrier* et définissez vos gabarits (« semaine », « samedi »…).
 2. Posez-les sur les dates de l'édition.

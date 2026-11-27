@@ -117,8 +117,8 @@ class EditionDeltaComparatorTest {
         edition.creneaux.add(creneau(1, "2025-07-12", 10, 14));
         edition.creneaux.add(creneau(2, "2025-07-12", 14, 18));
         edition.creneaux.add(creneau(3, "2025-07-13", 10, 14));
-        edition.journeesTypes.add(new Gabarit(
-                1L, "Jour normal", List.of(new VacationType(LocalTime.of(10, 0), LocalTime.of(14, 0), false))));
+        edition.journeesTypes.add(
+                new Gabarit(1L, "Jour normal", List.of(new VacationType(LocalTime.of(10, 0), LocalTime.of(14, 0)))));
         edition.ajustements.put(TypeContrainteAdHoc.AFFINITE, 2);
         return edition;
     }
@@ -591,8 +591,8 @@ class EditionDeltaComparatorTest {
                         7L,
                         "jour normal",
                         List.of(
-                                new VacationType(LocalTime.of(10, 0), LocalTime.of(14, 0), false),
-                                new VacationType(LocalTime.of(14, 0), LocalTime.of(18, 0), false))));
+                                new VacationType(LocalTime.of(10, 0), LocalTime.of(14, 0)),
+                                new VacationType(LocalTime.of(14, 0), LocalTime.of(18, 0)))));
 
         EditionDelta delta = EditionDeltaComparator.compare(a.side(), b.side());
 

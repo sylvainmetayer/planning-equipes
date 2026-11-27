@@ -186,8 +186,7 @@ class TensionAnalyzerTest {
     }
 
     private static PosteFragile poste(long creneauId, int remplacants) {
-        return new PosteFragile(
-                "S1", "S1", creneauId, JOUR, 1, DEBUT, FIN, 1, false, 1, 1, 1, remplacants, remplacants == 0);
+        return new PosteFragile("S1", "S1", creneauId, JOUR, 1, DEBUT, FIN, 1, 1, 1, 1, remplacants, remplacants == 0);
     }
 
     private static FragiliteFindings fragilite(PosteFragile... postes) {

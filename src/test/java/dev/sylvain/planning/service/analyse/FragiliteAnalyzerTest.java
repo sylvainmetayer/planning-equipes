@@ -359,26 +359,6 @@ class FragiliteAnalyzerTest {
     }
 
     @Test
-    void aBreakCoveringShiftSaysWhyItsFloorIsHalfTheStandsMinimum() {
-        // Seat generation halves the headcount on a couverture de pause, so the
-        // group's floor is 2 where the stand is configured at 4. Both figures
-        // travel, and the flag is what keeps them from reading as a
-        // contradiction.
-        Stand stand = stand("A", 4, "JEUX");
-        Creneau pause = creneau(1, LocalTime.of(12, 0), LocalTime.of(13, 0));
-        pause.setCouverturePause(true);
-        Animateur alice = animateur("alice", "JEUX");
-        Animateur bob = animateur("bob", "JEUX");
-
-        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, bob), seats(stand, pause, alice, bob)));
-
-        PosteFragile poste = ligne(rapport, "alice").postes().getFirst();
-        assertThat(poste.couverturePause()).isTrue();
-        assertThat(poste.effectifMin()).isEqualTo(4);
-        assertThat(poste.siegesRequis()).isEqualTo(2);
-    }
-
-    @Test
     void theEffectifShownIsTheWindowsWhenTheWindowNamesOne() {
         // The stand is configured at 1, but the day's opening window asks for 3:
         // that is the figure the screen must show next to the three seats,

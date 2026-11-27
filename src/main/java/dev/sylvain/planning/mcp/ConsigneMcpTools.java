@@ -162,11 +162,12 @@ public class ConsigneMcpTools {
 
     @Tool(
             name = "appliquer_consigne",
-            description = "Pose une consigne sur une ou plusieurs dates à venir — ou remplace celle qu'une date porte "
-                    + "déjà : ferme la bande pour tous les stands, rouvre les stands nommés sur leurs fenêtres, ajoute "
-                    + "à la grille les créneaux que ces fenêtres exigent. Rien n'est supprimé de la grille nominale. "
-                    + "Prolonger une alerte, c'est le même appel avec les dates ajoutées. Retire la validation de "
-                    + "relecture des journées touchées. Relancer ensuite lancer_correction, puis etat_publication.",
+            description =
+                    "Pose une consigne sur une ou plusieurs dates à venir — ou remplace celle qu'une date porte "
+                            + "déjà : ferme la bande pour tous les stands, rouvre les stands nommés sur leurs fenêtres, ajoute "
+                            + "à la grille les créneaux que ces fenêtres exigent. Rien n'est supprimé de la grille nominale. "
+                            + "Prolonger une alerte, c'est le même appel avec les dates ajoutées. Retire la validation de "
+                            + "relecture des journées touchées. Relancer ensuite lancer_correction, puis consulter_publication.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,

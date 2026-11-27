@@ -449,8 +449,7 @@ public class ReferenceDataService implements ReferenceData {
         // this grid does not hold is reported rather than cascaded away in
         // silence (issue #577) — and reported on a preview, which is where
         // « remplacer la grille » can still be reconsidered.
-        return grille.validate(
-                creneaux, resolus, listAnimateurs(), getParametresLegaux(), verrouillages.list(), fenetresRepas());
+        return grille.validate(creneaux, resolus, listAnimateurs(), getParametresLegaux(), verrouillages.list());
     }
 
     public CreneauGridService.RapportGrille controlerGrille() {
@@ -465,7 +464,7 @@ public class ReferenceDataService implements ReferenceData {
      */
     public List<CreneauGridService.GridAnomaly> gridAnomalies(
             List<Creneau> creneaux, List<VerrouillagePlanning> locks) {
-        return CreneauGridService.gridAnomalies(creneaux, getParametresLegaux(), locks, fenetresRepas());
+        return CreneauGridService.gridAnomalies(creneaux, getParametresLegaux(), locks);
     }
 
     public CreneauGridService.DiagnosticGrille diagnoseGrille() {
