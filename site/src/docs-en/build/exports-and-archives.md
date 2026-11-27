@@ -25,7 +25,7 @@ A cell that contains a possible separator (`;`, comma, tab) comes out in quotati
 
 ## Hours for payroll
 
-`GET /api/planning/hours/export?source=publie|persiste` returns `heures-planning.csv` ("Hours for the payroll (CSV)" on the Planning page): one line per staff member, one column per ISO week (`2026-W33`), then `total`, `dimanche`, `jours feries`, `dont dimanches feries`, `nuit paie (apres 22h)`, `amplitude max (h)` and `jours au-dela du seuil d'amplitude`. The night column is the only trace of the fixed 22:00 boundary in the application: the evening is the adjustable hour of the legal settings, and payroll keeps its night apart ([ADR 0055](repo:docs/decisions/0055-une-seule-soiree-la-nuit-de-la-paie-a-part.md)). `GET /api/planning/hours` returns the same report as JSON, with the source read, its date and `publicationAvailable`.
+`GET /api/planning/hours/export?source=publie|persiste` returns `heures-planning.csv` ("Hours for the payroll (CSV)" in the Diagnostic's Workload tab): one line per staff member, one column per ISO week (`2026-W33`), then `total`, `dimanche`, `jours feries`, `dont dimanches feries`, `nuit paie (apres 22h)`, `amplitude max (h)` and `jours au-dela du seuil d'amplitude`. The night column is the only trace of the fixed 22:00 boundary in the application: the evening is the adjustable hour of the legal settings, and payroll keeps its night apart ([ADR 0055](repo:docs/decisions/0055-une-seule-soiree-la-nuit-de-la-paie-a-part.md)). `GET /api/planning/hours` returns the same report as JSON, with the source read, its date and `publicationAvailable`.
 
 The server reads the plan, the browser does not send it. The file must be guaranteeable in front of a payroll or an inspection, which a schedule posted by a tab did not allow: it said what the tab held at one instant, neither what the database contained nor what had been published. Two sources are possible:
 
@@ -40,7 +40,7 @@ The first line names the source and its date (`Source : plan publié le 12/07/20
 
 ## Fairness
 
-`GET /api/planning/equite/export` returns `equite-planning.csv` ("Fairness (CSV)" on the Planning page): the fairness table read on the persisted plan, one line per assigned staff member, in the screen's order. The columns are `heuresTotal`, one per ISO week, then `heuresSoiree`, `heuresWeekEnd`, `heuresJourFerie`, `postes`, `postesPenibles`, `standsDistincts`, `typologiesDistinctes`, `emplacementsDistinctsParJourMax`, `tauxSouhaits`, `tauxAppreciation`, `joursTravailles`, `joursRepos` and `plusLongueSerie`. The rates are ratios (`0,75`), which a spreadsheet turns into a percentage in one click. The summary (median, min, max, standard deviation) is not there: it is recomputed in the spreadsheet, and the screen shows it.
+`GET /api/planning/equite/export` returns `equite-planning.csv` ("Fairness (CSV)" in the Diagnostic's Workload tab): the fairness table read on the persisted plan, one line per assigned staff member, in the screen's order. The columns are `heuresTotal`, one per ISO week, then `heuresSoiree`, `heuresWeekEnd`, `heuresJourFerie`, `postes`, `postesPenibles`, `standsDistincts`, `typologiesDistinctes`, `emplacementsDistinctsParJourMax`, `tauxSouhaits`, `tauxAppreciation`, `joursTravailles`, `joursRepos` and `plusLongueSerie`. The rates are ratios (`0,75`), which a spreadsheet turns into a percentage in one click. The summary (median, min, max, standard deviation) is not there: it is recomputed in the spreadsheet, and the screen shows it.
 
 ## The individual schedule as a PDF
 

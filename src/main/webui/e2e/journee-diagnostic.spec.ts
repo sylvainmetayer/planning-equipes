@@ -110,6 +110,10 @@ test('the addresses of former screens lead to the right rendering, parameters in
   await expect(page).toHaveURL(/\/diagnostic$/);
   await page.goto('/journee?axe=typologie');
   await expect(page).toHaveURL(/\/diagnostic\?onglet=besoin/);
+  // The synthesis of « Par personne » is the Diagnostic's Charge, its sort kept.
+  await page.goto('/journee?vue=personne&rendu=synthese&sort=heuresTotal&dir=desc');
+  await expect(page).toHaveURL(/\/diagnostic\?onglet=charge&sort=heuresTotal&dir=desc/);
+  await expect(page.locator('#contenu')).toContainText('Écart méd.');
   await page.goto(`/journee?vue=changements&date=${SEED.jour}`);
   // Envoyer is the default tab of Diffuser: its address drops `onglet` too.
   await expect(page).toHaveURL(new RegExp(String.raw`/publication\?jour=${SEED.jour}$`));
@@ -181,7 +185,7 @@ test('the addresses of former screens lead to the right rendering, parameters in
 
 test('le diagnostic ne mène à aucune timeline et ne se dit plus à l’essai', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  for (const onglet of ['problemes', 'besoin', 'risques']) {
+  for (const onglet of ['problemes', 'besoin', 'risques', 'charge']) {
     await page.goto(`/diagnostic?onglet=${onglet}`);
     await expect(page.locator('#contenu h1')).toHaveCount(1);
     await expect(page.locator('#contenu a[href^="/timeline"]')).toHaveCount(0);
@@ -263,5 +267,10 @@ test('le diagnostic ouvre ses onglets sans changer de page, chacun avec son éta
   await onglets.getByText('Risques').click();
   await expect(page).toHaveURL(/onglet=risques/);
   await expect(page.locator('#contenu')).toContainText('Tension, tranche par tranche');
+
+  await onglets.getByText('Charge').click();
+  await expect(page).toHaveURL(/onglet=charge/);
+  await expect(page.locator('#contenu')).toContainText('Heures pour la paie (CSV)');
+  await expect(page.locator('#contenu h1')).toHaveCount(1);
   await page.context().close();
 });

@@ -43,25 +43,7 @@ Une ligne par animateur, une colonne par journée (la semaine du jour choisi, ce
 
 Une **frise** dessine une barre par personne, ce qui tient un événement d'un mois sur un écran.
 
-### La vue Synthèse
-
-Ce que chacun a reçu sur tout l'événement, chaque valeur triable :
-
-- heures et écart à la médiane, heures par semaine ;
-- soirée (à partir de l'heure réglée dans *Paramètres*, onglet *Calcul*, la seule soirée de l'application), week-end, jours fériés, dimanche ;
-- « Nuit (paie) » après 22 h ;
-- amplitude maximale d'une journée (du premier début à la dernière fin, trous compris) et nombre de journées au-delà de 12 h, signalées sans aucune règle derrière ;
-- postes et postes exigeants ; stands, typologies et emplacements distincts ;
-- souhaits et appréciations satisfaits ;
-- jours travaillés, de repos et plus longue série.
-
-Les colonnes où tout le monde est à zéro sont masquées tant que vous ne les demandez pas.
-
-### Quel plan sert aux heures
-
-Les heures (celles de la synthèse comme l'export pour la paie) se lisent au choix sur le **plan publié**, ce que les animateurs ont reçu, proposé d'office dès qu'il existe, ou sur le **plan enregistré**. Le fichier dit lequel et de quand. Sur le plan publié, l'écran rappelle que la grille des jours et les autres compteurs restent ceux du plan enregistré.
-
-Deux exports CSV : les heures pour la paie, et l'équité.
+Ce que chacun a reçu sur tout l'événement (heures, équité, paie) se lit dans *Diagnostic*, onglet *Charge* : voir [Comprendre un planning qui coince](comprendre-un-planning.md).
 
 ## Carte
 
@@ -70,6 +52,7 @@ La journée sur la carte des emplacements, avec un curseur temporel. Chaque lieu
 ## Ce qui n'est plus sur cette page
 
 - **Par typologie** : la lecture par typologie de jeu (postes, heures, compétents, affectés sans la compétence) est la section *Typologie* de l'onglet *Besoin en animateurs* du Diagnostic.
+- **Synthèse par personne** : les heures, l'équité et les deux exports CSV sont l'onglet *Charge* du Diagnostic.
 - **Pauses et repas** : les pauses sans relais se lisent dans *Diagnostic*, onglet *Problèmes*.
 - **Changements** : ce qui a bougé depuis la dernière publication se lit dans *Diffuser*, onglet *Envoyer*, une ligne par personne, et ce que le dernier calcul a réécrit dans le résultat de l'onglet *Calculer*.
 - **Comparer deux jours** : retirée.

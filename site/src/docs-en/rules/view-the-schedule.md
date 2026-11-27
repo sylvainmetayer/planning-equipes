@@ -46,25 +46,7 @@ One row per staff member, one column per day (the week of the chosen day, that d
 
 A **timeline** draws one bar per person, which fits a month-long event on one screen.
 
-### The Summary view
-
-What each person received over the whole event, each value sortable:
-
-- hours and gap to the median, hours per week;
-- evening (from the time set in *Settings*, *Solve* tab, the only evening in the application), weekend, public holidays, Sunday;
-- "Night (payroll)" after 22:00;
-- maximum opening span of a day (from the first start to the last end, gaps included) and number of days beyond 12 hours, flagged with no rule behind them;
-- seats and demanding seats; distinct stands, game categories and locations;
-- wishes and ratings satisfied;
-- days worked, rest days and longest streak.
-
-Columns where everyone is at zero are hidden until you ask for them.
-
-### Which plan the hours come from
-
-The hours (those of the summary and the payroll export) are read either on the **published plan**, what the staff received, proposed by default as soon as one exists, or on the **saved plan**. The file says which one and from when. On the published plan, the screen reminds you that the day grid and the other counters remain those of the saved plan.
-
-Two CSV exports: the hours for payroll, and fairness.
+What each person received over the whole event (hours, fairness, payroll) is read in the Diagnostic, *Workload* tab: see [Understand a stuck schedule](comprendre-un-planning.md).
 
 ## Map
 
@@ -73,6 +55,7 @@ The day on the map of locations, with a time slider. Each place is coloured acco
 ## What is no longer on this page
 
 - **By game category**: the reading by game category (seats, hours, skilled, assigned without the skill) is the *Typology* section of the *Staffing need* tab of the Diagnostic.
+- **Summary by person**: the hours, fairness and the two CSV exports are the Diagnostic's *Workload* tab.
 - **Breaks and meals**: the breaks without relay are read in *Diagnostic*, *Problems* tab.
 - **Changes**: what moved since the last publication is read in *Publish*, *Send* tab, one row per person, and what the last solve rewrote in the result of the *Calculate* tab.
 - **Compare two days**: removed.

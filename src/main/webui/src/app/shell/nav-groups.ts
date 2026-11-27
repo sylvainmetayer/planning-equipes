@@ -232,6 +232,12 @@ export function buildNavGroups(): NavGroup[] {
             ),
             tab(
               'onglet',
+              'charge',
+              $localize`:@@diagnostic.onglet.charge:Charge`,
+              $localize`:@@nav.keywords.charge:heures équité paie répartition médiane soirées week-end férié dimanche nuit export CSV`,
+            ),
+            tab(
+              'onglet',
               'conformite',
               $localize`:@@diagnostic.onglet.conformite:Conformité`,
               $localize`:@@nav.keywords.conformite:rapport inspection du travail RH plafonds mineurs`,

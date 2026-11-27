@@ -27,6 +27,16 @@ describe('DiagnosticPage', () => {
   const planningApi = {
     persistedCount: vi.fn(() => Promise.resolve(null)),
     typologiesReport: vi.fn(() => Promise.resolve({ typologies: [], jours: [] })),
+    equityReport: vi.fn(() =>
+      Promise.resolve({
+        heureDebutSoiree: '20:00:00',
+        semaines: [],
+        lignes: [],
+        syntheses: {},
+        colonnesSolveur: [],
+      }),
+    ),
+    hoursReport: vi.fn(() => Promise.resolve(null)),
   };
   const analysesApi = {
     staffing: vi.fn(() => Promise.resolve(null)),
@@ -183,13 +193,24 @@ describe('DiagnosticPage', () => {
     expect(analysesApi.margin).toHaveBeenCalledWith('AVANT');
   });
 
-  it('offers three tabs, and none of the former Fragilité, Tension, « À former » or bench', async () => {
+  it('opens Charge from ?onglet=charge: the synthesis of the people, under the page heading alone', async () => {
+    const page = await monter({ onglet: 'charge' });
+
+    expect(page['onglet']()).toBe('charge');
+    expect(
+      racine().querySelector('app-charge-tab app-planning-personne-vue .planning-axe-barre'),
+    ).not.toBeNull();
+    expect(racine().querySelectorAll('h1')).toHaveLength(1);
+    expect(planningApi.equityReport).toHaveBeenCalled();
+  });
+
+  it('offers four tabs, and none of the former Fragilité, Tension, « À former » or bench', async () => {
     await monter();
 
     const onglets = [...racine().querySelectorAll('mat-button-toggle')].map((toggle) =>
       toggle.getAttribute('value'),
     );
-    expect(onglets).toEqual(['problemes', 'besoin', 'risques']);
+    expect(onglets).toEqual(['problemes', 'besoin', 'risques', 'charge']);
   });
 
   it("opens on the tab the URL names, and keeps that tab's own state next to it", async () => {

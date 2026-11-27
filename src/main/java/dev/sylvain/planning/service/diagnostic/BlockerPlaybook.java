@@ -133,6 +133,11 @@ public final class BlockerPlaybook {
     static final String ROUTE_RULES = "/regles";
 
     static final String ROUTE_DAY = "/journee";
+
+    /** The Diagnostic page; its Charge tab is where the hours and the fairness of each person are read. */
+    static final String ROUTE_DIAGNOSTIC = "/diagnostic";
+
+    static final String TAB_WORKLOAD = "charge";
     static final String ROUTE_STANDS = "/stands";
     static final String ROUTE_TIMESLOTS = "/creneaux";
 
@@ -574,8 +579,8 @@ public final class BlockerPlaybook {
                 CODE_WORKLOAD,
                 "Voir la charge par personne",
                 "Qui travaille le plus, et de combien : c'est là qu'on choisit qui alléger.",
-                ROUTE_DAY,
-                Map.of("axe", AXE_PERSONNE));
+                ROUTE_DIAGNOSTIC,
+                Map.of(PARAM_ONGLET, TAB_WORKLOAD));
     }
 
     private static ActionType lockAction(Context context) {

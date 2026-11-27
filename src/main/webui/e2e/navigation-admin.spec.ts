@@ -102,11 +102,13 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/journee?vue=stand&rendu=treemap', sheet: 'repartition-toolbar' },
   {
     path: '/journee?vue=personne',
-    marker: 'Heures pour la paie (CSV)',
+    marker: 'Jour de repos',
     sheet: 'planning-personne-travaille',
   },
   { path: '/journee?vue=personne&rendu=frise', sheet: 'personne-frise-ligne' },
-  { path: '/journee?vue=personne&rendu=synthese', marker: 'Écart méd.', sheet: 'planning-grille' },
+  { path: '/diagnostic?onglet=charge', marker: 'Écart méd.', sheet: 'planning-grille' },
+  // The former synthesis of « Par personne » lands on Charge.
+  { path: '/journee?vue=personne&rendu=synthese', marker: 'Écart méd.' },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },
   // Fragilité, « À former » and Tension are the three sections of Risques: the old tabs land there.
   { path: '/diagnostic?onglet=risques', marker: 'Fragilité', sheet: 'fragilite-message' },

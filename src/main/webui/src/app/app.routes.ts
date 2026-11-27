@@ -87,32 +87,37 @@ const heatmapToPlanning: RedirectFunction = (route) =>
  * The Heures screen sorted by its payroll columns, under names of its own:
  * « Par personne » sorts by the fields of the reports it joins.
  */
-const HOURS_SORT = {
-  key: 'sort',
-  values: {
-    animateur: 'nom',
-    total: 'heuresTotal',
-    dimanche: 'heuresDimanche',
-    jourFerie: 'heuresJourFerie',
-    nuit: 'heuresNuit',
-  },
+const HOURS_SORT: Record<string, string> = {
+  animateur: 'nom',
+  total: 'heuresTotal',
+  dimanche: 'heuresDimanche',
+  jourFerie: 'heuresJourFerie',
+  nuit: 'heuresNuit',
 };
 
 /**
- * The Équité table is the « Synthèse » of « Par personne » now, sorted by the same fields; its
- * « fiche » reading of one person — the radar with it — is that person's fiche.
+ * The Équité table and the Heures report are the Diagnostic's Charge tab: their
+ * addresses land on it with the state the tab reads (the sort, the empty
+ * columns, the people without rest, the plan the hours are read on, the name
+ * filter) and nothing else. `values` renames the values of
+ * a sort the former screen wrote under names of its own.
  */
-const equiteToPlanning: RedirectFunction = (route) =>
-  equityFicheUrl(route.queryParams) ??
-  redirectToPlanning(
-    { axe: 'personne', vue: 'synthese' },
-    {
-      vue: '',
-      axes: '',
-      comparer: '',
-      sort: { key: 'sort', values: { animateur: 'nom' } },
-    },
-  )(route);
+const CHARGE_KEYS = ['q', 'sort', 'dir', 'colonnes', 'sansRepos', 'source'] as const;
+
+export function chargeUrl(queryParams: Params, sortValues: Record<string, string> = {}): string {
+  const params = new URLSearchParams({ onglet: 'charge' });
+  for (const key of CHARGE_KEYS) {
+    const value = queryParams[key];
+    if (value !== undefined && value !== null && value !== '') {
+      const text = paramText(value as string | readonly string[]);
+      params.set(key, key === 'sort' && Object.hasOwn(sortValues, text) ? sortValues[text] : text);
+    }
+  }
+  return `/diagnostic?${params.toString()}`;
+}
+
+const equiteToCharge: RedirectFunction = (route) =>
+  equityFicheUrl(route.queryParams) ?? chargeUrl(route.queryParams, { animateur: 'nom' });
 
 function redirectToDiagnostic(onglet: string): RedirectFunction {
   return redirectToOnglet('diagnostic', onglet);
@@ -232,7 +237,8 @@ export function equityFicheUrl(queryParams: Params): string | null {
 /**
  * The views the Planning page gave up in 4.0 (it keeps Jour, Stand, Personne
  * and Carte): their addresses land on the screen that holds their reading
- * today — the table by game category in the Diagnostic's Besoin, the
+ * today — the synthesis of « Par personne » in the Diagnostic's Charge, the
+ * table by game category in the Diagnostic's Besoin, the
  * breaks among the Diagnostic's problems, what changed since the publication
  * on the day's row of Diffuser — until the screens built for them exist
  * (Besoin, « Repas et pauses »). A day named by `date` (or an ISO `jour`) goes
@@ -245,6 +251,19 @@ export function planningFormerViewUrl(queryParams: Params): string | null {
   };
   if (text('axe') === 'typologie') {
     return '/diagnostic?onglet=besoin&section=typologie';
+  }
+  // The person axis read as a synthesis — `rendu`, the 3.x `vue`, or the summary
+  // sort and `colonnes=toutes` the links written before it had a name carry.
+  const personAxis = text('vue') === 'personne' || text('axe') === 'personne';
+  const rendu =
+    text('rendu') ||
+    (['jour', 'stand', 'personne', 'carte'].includes(text('vue')) ? '' : text('vue'));
+  const impliedSort = text('sort') !== '' && text('sort') !== 'nom';
+  if (
+    personAxis &&
+    (rendu === 'synthese' || (rendu === '' && (impliedSort || text('colonnes') === 'toutes')))
+  ) {
+    return chargeUrl(queryParams);
   }
   switch (text('vue')) {
     case 'pauses':
@@ -767,6 +786,8 @@ const adminRoutes: Routes = [
     title: () => $localize`:@@route.journee:Planning`,
     data: { aide: 'consulter', aideOnglets: { calculer: 'calculer', versions: 'calculer' } },
     canActivate: [planningFormerViews],
+    // An old synthesis address followed from inside the page changes the query alone.
+    runGuardsAndResolvers: 'paramsOrQueryParamsChange',
     loadComponent: () => import('./pages/journee/journee-page').then((m) => m.JourneePage),
   },
   // The month calendar is the Planning page's day selector now: its day, its
@@ -782,11 +803,8 @@ const adminRoutes: Routes = [
   // key of its own, `date` being the page's day.
   { path: 'heatmap', redirectTo: heatmapToPlanning },
   { path: 'repos', redirectTo: redirectToPlanning({ axe: 'personne' }) },
-  {
-    path: 'hours',
-    redirectTo: redirectToPlanning({ axe: 'personne', vue: 'synthese' }, { sort: HOURS_SORT }),
-  },
-  { path: 'equite', redirectTo: equiteToPlanning },
+  { path: 'hours', redirectTo: ({ queryParams }) => chargeUrl(queryParams, HOURS_SORT) },
+  { path: 'equite', redirectTo: equiteToCharge },
   {
     path: 'repartition-heures',
     redirectTo: redirectToPlanning({ axe: 'stand', vue: 'treemap' }, { date: 'jourTreemap' }),

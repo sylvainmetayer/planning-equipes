@@ -99,15 +99,13 @@ test('le tri par personne survit au rechargement, dans les deux sens', async ({ 
   await page.context().close();
 });
 
-test('une colonne de semaine disparue ne casse pas le planning par personne', async ({
-  browser,
-}) => {
+test('une colonne de semaine disparue ne casse pas Charge', async ({ browser }) => {
   // Exactement ce que porte un lien vers les Heures mis en favori sur
   // l'édition précédente.
   const page = await pageAdmin(browser, admin);
   await page.goto('/hours?sort=2019-W01&dir=asc');
 
-  await expect(page).toHaveURL(/[?&]vue=personne/);
+  await expect(page).toHaveURL(/[?&]onglet=charge/);
   await expect(page.locator('.planning-grille tbody th a.planning-grille-lien')).toHaveCount(2);
   await page.context().close();
 });
