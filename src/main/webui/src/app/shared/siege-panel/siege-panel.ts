@@ -208,21 +208,30 @@ export class SeatPanel {
   });
   protected readonly explanationError = errorText(this.explanation);
 
-  /** « Simuler un changement » is open: closed again when another seat is opened. */
-  protected readonly simulating = linkedSignal<string | null, boolean>({
-    source: this.posteId,
+  /**
+   * What a simulation was read against: the seat and who holds it. A gesture
+   * that changes the holder (free, absent, an échange from elsewhere) makes
+   * every suggestion and preview below stale, and « Appliquer » on a stale
+   * move would write something nobody simulated.
+   */
+  private readonly simulationBasis = computed(
+    () => `${this.posteId() ?? ''}|${this.seat()?.animateur?.id ?? ''}`,
+  );
+  /** « Simuler un changement » is open: closed again when another seat is opened or changes hands. */
+  protected readonly simulating = linkedSignal<string, boolean>({
+    source: this.simulationBasis,
     computation: () => false,
   });
   /* The suggestions are searched on demand — one score analysis per candidate server-side. */
-  protected readonly suggestions = linkedSignal<string | null, SuggestionsReparation | null>({
-    source: this.posteId,
+  protected readonly suggestions = linkedSignal<string, SuggestionsReparation | null>({
+    source: this.simulationBasis,
     computation: () => null,
   });
   /** A suggestion or a move asked of the server: one simulation at a time. */
   protected readonly simulationLoading = signal(false);
   /** The change simulated last, its before and after, until it is applied or dropped. */
-  protected readonly preview = linkedSignal<string | null, SeatPreview | null>({
-    source: this.posteId,
+  protected readonly preview = linkedSignal<string, SeatPreview | null>({
+    source: this.simulationBasis,
     computation: () => null,
   });
   /** On an empty seat, « La garder au prochain calcul » : the placement applied is then locked. */
@@ -342,7 +351,11 @@ export class SeatPanel {
       return;
     }
     await this.simulate(async () => {
-      this.suggestions.set(await this.postesApi.suggestions(seat.id));
+      const found = await this.postesApi.suggestions(seat.id);
+      // Another seat opened meanwhile: this answer is not about it.
+      if (this.posteId() === seat.id) {
+        this.suggestions.set(found);
+      }
     });
   }
 
@@ -387,7 +400,9 @@ export class SeatPanel {
     }
     await this.simulate(async () => {
       const simulation = await this.postesApi.simulate(seat.id, { posteId: choice.target });
-      this.preview.set(movePreview(simulation, (id) => this.name(id)));
+      if (this.posteId() === seat.id) {
+        this.preview.set(movePreview(simulation, (id) => this.name(id)));
+      }
     });
   }
 

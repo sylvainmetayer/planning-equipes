@@ -28,7 +28,7 @@ The day as a table across the full width of the screen: one stand per row with i
 
 ### Rail mode
 
-The same day seen by person: one row per staff member, their shifts placed in time, the legal breaks laid on top (in red without relay), and empty rows for those who remain available. Each shift opens the seat panel, from which "Move to..." hands it to another person or swaps it with theirs.
+The same day seen by person: one row per staff member, their shifts placed in time, the legal breaks laid on top (in red without relay), and empty rows for those who remain available. Each shift opens the seat panel, from which "Simulate a change", then "To another seat...", hands it to another person or swaps it with theirs.
 
 ## Stand
 
