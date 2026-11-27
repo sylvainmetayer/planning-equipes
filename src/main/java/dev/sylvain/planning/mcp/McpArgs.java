@@ -218,4 +218,25 @@ final class McpArgs {
                 .orElseThrow(() -> new BusinessError.Invalid(
                         champ + " : valeur inconnue « " + value + " », valeurs possibles : " + attendu));
     }
+
+    /**
+     * Refuses an argument given outside the part of a grouped tool it belongs to (ADR 0127 § 6):
+     * refused rather than ignored, so a call meant for the other part does not half-succeed.
+     */
+    static void onlyFor(String part, String champ, Object value) {
+        boolean given = value != null
+                && !(value instanceof String text && text.isBlank())
+                && !(value instanceof Collection<?> values && values.isEmpty());
+        if (given) {
+            throw new BusinessError.Invalid(champ + " ne vaut que pour " + part);
+        }
+    }
+
+    /** Refuses a missing argument the chosen part of a grouped tool needs. */
+    static <T> T requiredFor(String part, String champ, T value) {
+        if (value == null) {
+            throw new BusinessError.Invalid(champ + " est requis pour " + part);
+        }
+        return value;
+    }
 }

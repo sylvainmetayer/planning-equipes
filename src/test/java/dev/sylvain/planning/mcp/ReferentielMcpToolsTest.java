@@ -180,7 +180,26 @@ class ReferentielMcpToolsTest {
                 standTools.createTypologie("Jeux d'adresse", "TYPO-MCP-2", "E1").id();
         StandView cree = standTools
                 .createStand(
-                        "Tir à l'arc", "STAND-MCP-1", List.of("TYPO-MCP-2"), 2, 4, true, false, "EPUISANT", null, "E1")
+                        "Tir à l'arc",
+                        "STAND-MCP-1",
+                        List.of("TYPO-MCP-2"),
+                        2,
+                        4,
+                        true,
+                        false,
+                        "EPUISANT",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "E1")
                 .stand();
         String stand = cree.id();
 
@@ -204,12 +223,27 @@ class ReferentielMcpToolsTest {
         assertThat(modifie.typologiesProposees()).containsExactly(typologie);
 
         StandView withClosing = standTools
-                .createStandPlage(stand, "FERMETURE", "2026-07-18", "12:00", "14:00", "Pause repas", null, "E1")
+                .createStandHoraire(
+                        stand,
+                        "plage",
+                        "FERMETURE",
+                        "2026-07-18",
+                        "12:00",
+                        "14:00",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "Pause repas",
+                        "E1")
                 .stand();
         assertThat(fermetures(withClosing)).hasSize(1);
 
         assertThat(fermetures(standTools
-                        .deleteStandPlage(stand, null, "2026-07-18", "E1")
+                        .deleteStandHoraire(stand, "plage", null, "2026-07-18", "E1")
                         .stand()))
                 .isEmpty();
 
@@ -374,7 +408,7 @@ class ReferentielMcpToolsTest {
     void creatingRecurringCreneauxSkipsTheWeekEndAndChecksTheGrid() {
         // Starts from an empty grid so the counts are deterministic; the class leaves it
         // empty on the way out, that is, in the state of a fresh test database.
-        creneauTools.deleteCreneaux(null, null, null, true, "E1");
+        creneauTools.deleteCreneaux(null, null, null, null, true, "E1");
 
         CreneauMcpTools.PrevisualisationRecurrence apercu = creneauTools.previewRecurringCreneaux(
                 "09:00-12:00,14:00-18:00",
@@ -411,15 +445,19 @@ class ReferentielMcpToolsTest {
                 .extracting(anomalie -> anomalie.type().name())
                 .contains("TROU_DANS_LA_JOURNEE");
 
-        assertThat(creneauTools.deleteCreneaux(null, null, "14:00", null, "E1").supprimes())
+        assertThat(creneauTools
+                        .deleteCreneaux(null, null, null, "14:00", null, "E1")
+                        .supprimes())
                 .isEqualTo(5);
-        assertThat(creneauTools.deleteCreneaux(null, null, null, true, "E1").restants())
+        assertThat(creneauTools
+                        .deleteCreneaux(null, null, null, null, true, "E1")
+                        .restants())
                 .isZero();
     }
 
     @Test
     void derivingTheGridFromTheStandsPreviewsWithoutWritingThenWrites() {
-        creneauTools.deleteCreneaux(null, null, null, true, "E1");
+        creneauTools.deleteCreneaux(null, null, null, null, true, "E1");
         dev.sylvain.planning.domain.Stand stand = new dev.sylvain.planning.domain.Stand(
                 "DERIV-MCP", "Dérivé", java.util.Set.of("STRATEGIE"), 1, 1, false);
         for (LocalDate date : List.of(LocalDate.of(2026, 7, 6), LocalDate.of(2026, 7, 7))) {
@@ -442,15 +480,15 @@ class ReferentielMcpToolsTest {
         assertThat(ecrit.nombreGeneres()).isEqualTo(4);
         assertThat(referenceDataService.listCreneaux()).hasSize(4);
 
-        creneauTools.deleteCreneaux(null, null, null, true, "E1");
+        creneauTools.deleteCreneaux(null, null, null, null, true, "E1");
         referenceDataService.deleteStand("DERIV-MCP");
     }
 
     @Test
     void deletingCreneauxWithoutAFilterIsRefused() {
-        assertThatThrownBy(() -> creneauTools.deleteCreneaux(null, null, null, null, "E1"))
+        assertThatThrownBy(() -> creneauTools.deleteCreneaux(null, null, null, null, null, "E1"))
                 .isInstanceOf(ToolCallException.class)
-                .hasMessageContaining("tous=true");
+                .hasMessageContaining("all=true");
     }
 
     /**
@@ -474,7 +512,26 @@ class ReferentielMcpToolsTest {
     @Test
     void anUnknownEffortLevelListsThePossibleValues() {
         assertThatThrownBy(() -> standTools.createStand(
-                        "Stand", "STAND-MCP-2", null, 1, 1, null, null, "TRANQUILLE", null, "E1"))
+                        "Stand",
+                        "STAND-MCP-2",
+                        null,
+                        1,
+                        1,
+                        null,
+                        null,
+                        "TRANQUILLE",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("NORMAL");
     }
@@ -490,13 +547,47 @@ class ReferentielMcpToolsTest {
                         java.time.LocalTime.of(9, 0),
                         java.time.LocalTime.of(20, 0)));
         String stand = standTools
-                .createStand("Village", null, List.of("STRATEGIE"), 1, 4, false, false, null, null, "E1")
+                .createStand(
+                        "Village",
+                        null,
+                        List.of("STRATEGIE"),
+                        1,
+                        4,
+                        false,
+                        false,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "E1")
                 .stand()
                 .id();
         try {
             StandView avecRegle = standTools
-                    .addStandHoraire(
-                            stand, "OUVERTURE", "10:00-12:00@2, 14:00-@4", null, null, null, null, null, null, "E1")
+                    .createStandHoraire(
+                            stand,
+                            "modele",
+                            "OUVERTURE",
+                            null,
+                            null,
+                            null,
+                            null,
+                            "10:00-12:00@2, 14:00-@4",
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            "E1")
                     .stand();
 
             assertThat(ouvertures(avecRegle))
@@ -505,14 +596,44 @@ class ReferentielMcpToolsTest {
             assertThat(ouvertures(avecRegle).get(1).heureFin()).isNull();
 
             StandView avecOuverture = standTools
-                    .createStandPlage(stand, "OUVERTURE", "2026-07-18", "14:00", "20:00", "Tournoi", 3, "E1")
+                    .createStandHoraire(
+                            stand,
+                            "plage",
+                            "OUVERTURE",
+                            "2026-07-18",
+                            "14:00",
+                            "20:00",
+                            3,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            "Tournoi",
+                            "E1")
                     .stand();
             assertThat(ouvertures(avecOuverture)).hasSize(3);
             assertThat(ouvertures(avecOuverture).getLast().effectif()).isEqualTo(3);
 
             // Without the suffix, the window inherits the stand's minimum: nothing named.
             StandView sansEffectif = standTools
-                    .createStandPlage(stand, "OUVERTURE", "2026-07-20", "14:00", null, null, null, "E1")
+                    .createStandHoraire(
+                            stand,
+                            "plage",
+                            "OUVERTURE",
+                            "2026-07-20",
+                            "14:00",
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            "E1")
                     .stand();
             assertThat(ouvertures(sansEffectif).getLast().effectif()).isNull();
             assertThat(fermetures(sansEffectif)).isEmpty();
@@ -532,28 +653,102 @@ class ReferentielMcpToolsTest {
                         java.time.LocalTime.of(9, 0),
                         java.time.LocalTime.of(20, 0)));
         String stand = standTools
-                .createStand("Modèle", null, List.of("STRATEGIE"), 1, 4, false, false, null, null, "E1")
+                .createStand(
+                        "Modèle",
+                        null,
+                        List.of("STRATEGIE"),
+                        1,
+                        4,
+                        false,
+                        false,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "E1")
                 .stand()
                 .id();
         try {
-            standTools.createStandPlage(stand, "OUVERTURE", "2026-07-20", "14:00", "16:00", "Main", null, "E1");
-            standTools.addStandHoraire(stand, "OUVERTURE", "10:00-12:00@2", null, null, null, null, null, null, "E1");
+            standTools.createStandHoraire(
+                    stand,
+                    "plage",
+                    "OUVERTURE",
+                    "2026-07-20",
+                    "14:00",
+                    "16:00",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "Main",
+                    "E1");
+            standTools.createStandHoraire(
+                    stand,
+                    "modele",
+                    "OUVERTURE",
+                    null,
+                    null,
+                    null,
+                    null,
+                    "10:00-12:00@2",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "E1");
             // The same rule again: the model keeps one rule, nothing else moves.
             StandView deux = standTools
-                    .addStandHoraire(stand, "OUVERTURE", "10:00-12:00@2", null, null, null, null, null, null, "E1")
+                    .createStandHoraire(
+                            stand,
+                            "modele",
+                            "OUVERTURE",
+                            null,
+                            null,
+                            null,
+                            null,
+                            "10:00-12:00@2",
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            "E1")
                     .stand();
             assertThat(deux.horaires()).hasSize(1);
             assertThat(deux.horaires().getFirst().fenetres()).containsExactly("10:00-12:00@2");
-            assertThat(standTools.getStand(stand, "E1").horaires()).hasSize(1);
+            assertThat(standTools
+                            .listStands(stand, null, "E1")
+                            .stands()
+                            .getFirst()
+                            .horaires())
+                    .hasSize(1);
             assertThat(ouvertures(deux)).hasSize(2);
 
-            StandView efface = standTools.clearStandHoraires(stand, "E1").stand();
+            StandView efface = standTools
+                    .deleteStandHoraire(stand, "modele", null, null, "E1")
+                    .stand();
             assertThat(efface.horaires()).isEmpty();
             assertThat(ouvertures(efface))
                     .extracting(StandMcpTools.PlageView::motif)
                     .containsExactly("Main");
             // Idempotent.
-            assertThat(ouvertures(standTools.clearStandHoraires(stand, "E1").stand()))
+            assertThat(ouvertures(standTools
+                            .deleteStandHoraire(stand, "modele", null, null, "E1")
+                            .stand()))
                     .hasSize(1);
         } finally {
             referenceDataService.deleteCreneau(jour.getId());
@@ -564,24 +759,88 @@ class ReferentielMcpToolsTest {
     @Test
     void aZeroOrMalformedWindowHeadcountIsRefused() {
         String stand = standTools
-                .createStand("Village", null, List.of("STRATEGIE"), 1, 4, false, false, null, null, "E1")
+                .createStand(
+                        "Village",
+                        null,
+                        List.of("STRATEGIE"),
+                        1,
+                        4,
+                        false,
+                        false,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "E1")
                 .stand()
                 .id();
         try {
-            assertThatThrownBy(() -> standTools.addStandHoraire(
-                            stand, "OUVERTURE", "10:00-12:00@0", null, null, null, null, null, null, "E1"))
+            assertThatThrownBy(() -> standTools.createStandHoraire(
+                            stand,
+                            "modele",
+                            "OUVERTURE",
+                            null,
+                            null,
+                            null,
+                            null,
+                            "10:00-12:00@0",
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            "E1"))
                     .isInstanceOf(ToolCallException.class)
                     .hasMessageContaining("au moins 1");
-            assertThatThrownBy(() -> standTools.addStandHoraire(
-                            stand, "OUVERTURE", "10:00-12:00@deux", null, null, null, null, null, null, "E1"))
+            assertThatThrownBy(() -> standTools.createStandHoraire(
+                            stand,
+                            "modele",
+                            "OUVERTURE",
+                            null,
+                            null,
+                            null,
+                            null,
+                            "10:00-12:00@deux",
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            "E1"))
                     .isInstanceOf(ToolCallException.class)
                     .hasMessageContaining("@N");
-            assertThatThrownBy(() ->
-                            standTools.createStandPlage(stand, "OUVERTURE", "2026-07-18", "14:00", null, null, 0, "E1"))
+            assertThatThrownBy(() -> standTools.createStandHoraire(
+                            stand,
+                            "plage",
+                            "OUVERTURE",
+                            "2026-07-18",
+                            "14:00",
+                            null,
+                            0,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            "E1"))
                     .isInstanceOf(ToolCallException.class)
                     .hasMessageContaining("au moins 1");
             // Nothing was written by the refused calls.
-            assertThat(ouvertures(standTools.getStand(stand, "E1"))).isEmpty();
+            assertThat(ouvertures(
+                            standTools.listStands(stand, null, "E1").stands().getFirst()))
+                    .isEmpty();
         } finally {
             standTools.deleteStand(stand, "E1");
         }

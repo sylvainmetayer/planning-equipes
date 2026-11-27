@@ -268,7 +268,7 @@ public class ReferenceDataService implements ReferenceData {
     /**
      * {@link #writeStand(Stand)} together with the typologies and the
      * emplacement the stand names and that do not exist yet — all written, or
-     * none. Before this, {@code creer_stand_complet} wrote them in three
+     * none. Before this, {@code creer_stand_complet} (now {@code creer_stand}) wrote them in three
      * transactions and a stand refused on its third left the first two behind,
      * created without anyone being told (issue #392, A5). The typologies are
      * validated on the same connection, where the ones written a moment ago

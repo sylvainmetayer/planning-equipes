@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.BusinessError;
@@ -17,8 +18,11 @@ import jakarta.inject.Inject;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * MCP tools for the time referential of {@code ReferenceDataResource}:
@@ -31,6 +35,10 @@ import java.util.NoSuchElementException;
  * safeguards come with that leverage — a preview that writes nothing, and a
  * validation that names the mistakes a bulk write makes cheap to introduce
  * and expensive to spot (see {@link CreneauGridService}).</p>
+ *
+ * <p>One tool per object and per verb (ADR 0127): {@code supprimer_creneaux} removes by ids or by
+ * filters, {@code diagnostiquer_creneaux} reads the grid under a {@code section}; the 3.x names stay
+ * published as aliases until 5.0.</p>
  */
 @EditionCiblee
 @RefusMetier
@@ -128,9 +136,10 @@ public class CreneauMcpTools {
         return written(referenceDataService.writeCreneau(id, creneau));
     }
 
+    @Deprecated
     @Tool(
             name = "supprimer_creneau",
-            description = "Supprime un créneau.",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser supprimer_creneaux (ids). Supprime un créneau.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -147,12 +156,44 @@ public class CreneauMcpTools {
     /* ----------------------------- Grid: checks ------------------------------ */
 
     @Tool(
+            name = "diagnostiquer_creneaux",
+            description = "Lit la grille de créneaux en place, sous la section demandée, sans rien écrire. grille "
+                    + "(défaut) : combien de vacations, sur quelles dates, avec quelle durée médiane, et quelles dates tombent un jour férié (joursFeries, "
+                    + "avec leur libellé) ; le premier appel utile pour découvrir une édition. controle : ce qui cloche "
+                    + "— doublons, trous dans une journée, vacations plus longues que le maximum légal, dates isolées, "
+                    + "stands que personne ne pourra tenir, sous-effectif, et, pour "
+                    + "information, VACATION_JOUR_FERIE : des vacations un jour férié alors que l'édition compte un "
+                    + "mineur ce jour-là (seuls les majeurs y siègent). Deux créneaux qui se chevauchent le même jour "
+                    + "sont normaux : ce sont deux vacations décalées.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    GrilleView diagnoseCreneaux(
+            @ToolArg(description = "grille (défaut) ou controle", required = false) String section,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        String choisie = McpArgs.choix(section, "section", "grille", "grille", "controle");
+        return "grille".equals(choisie)
+                ? new GrilleView(choisie, diagnoseCreneauGrid(edition), null)
+                : new GrilleView(choisie, null, validateCreneaux(edition));
+    }
+
+    /** One section of the grid's reading, the other left out. */
+    public record GrilleView(
+            String section,
+            @JsonInclude(JsonInclude.Include.NON_NULL) DiagnosticGrille grille,
+            @JsonInclude(JsonInclude.Include.NON_NULL) RapportGrille controle) {}
+
+    @Deprecated
+    @Tool(
             name = "diagnostiquer_grille_creneaux",
-            description = "Décrit la grille de créneaux en place : combien de vacations, sur quelles dates, avec "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser diagnostiquer_creneaux (section grille). "
+                    + "Décrit la grille de créneaux en place : combien de vacations, sur quelles dates, avec "
                     + "quelle durée médiane, et quelles "
                     + "dates tombent un jour férié (joursFeries, avec leur libellé). Le premier "
-                    + "appel utile pour découvrir une édition, avant de créer des créneaux ou de lancer "
-                    + "valider_creneaux.",
+                    + "appel utile pour découvrir une édition, avant de créer des créneaux.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -163,9 +204,11 @@ public class CreneauMcpTools {
         return referenceDataService.diagnoseGrille();
     }
 
+    @Deprecated
     @Tool(
             name = "valider_creneaux",
-            description = "Contrôle la cohérence de la grille de créneaux actuelle et signale ce qui cloche : "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser diagnostiquer_creneaux (section controle). "
+                    + "Contrôle la cohérence de la grille de créneaux actuelle et signale ce qui cloche : "
                     + "doublons, trous dans une journée, vacations plus longues que le maximum légal, dates isolées, "
                     + "stands que personne ne pourra tenir, sous-effectif, et, pour "
                     + "information, VACATION_JOUR_FERIE : des vacations un jour férié alors que l'édition compte un "
@@ -351,9 +394,10 @@ public class CreneauMcpTools {
 
     @Tool(
             name = "supprimer_creneaux",
-            description = "Supprime en une fois les créneaux que les filtres désignent — l'inverse de "
-                    + "appliquer_generateur_creneaux, pour reprendre une règle qui s'est trompée. DESTRUCTIF. Au moins un "
-                    + "filtre est exigé ; pour vider toute la grille, passer explicitement tous=true.",
+            description = "Supprime des créneaux, avec leurs sièges : ceux que ids nomme, ou en une fois ceux que "
+                    + "les filtres désignent — l'inverse de appliquer_generateur_creneaux, pour reprendre une règle qui "
+                    + "s'est trompée. DESTRUCTIF. ids ou au moins un filtre est exigé, pas les deux ; pour vider toute "
+                    + "la grille, passer explicitement all=true.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -361,6 +405,7 @@ public class CreneauMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     BulkDeleteResult deleteCreneaux(
+            @ToolArg(description = "Ids des créneaux à supprimer, sans filtre", required = false) List<Long> ids,
             @ToolArg(description = "Ne supprimer qu'à partir de cette date (AAAA-MM-JJ)", required = false)
                     String dateDebut,
             @ToolArg(description = "Ne supprimer que jusqu'à cette date (AAAA-MM-JJ)", required = false) String dateFin,
@@ -376,15 +421,35 @@ public class CreneauMcpTools {
         LocalDate fin = McpArgs.date(dateFin, ARG_DATE_FIN);
         LocalTime heure = McpArgs.heure(heureDebut, ARG_HEURE_DEBUT);
         boolean toutSupprimer = Boolean.TRUE.equals(all);
+        if (ids != null && !ids.isEmpty()) {
+            if (toutSupprimer || debut != null || fin != null || heure != null) {
+                throw new BusinessError.Invalid("ids ou filtres, pas les deux");
+            }
+            return deleteByIds(ids);
+        }
         if (!toutSupprimer && debut == null && fin == null && heure == null) {
-            throw new BusinessError.Invalid("Aucun filtre fourni : préciser dateDebut, dateFin ou heureDebut, "
-                    + "ou passer tous=true pour vider délibérément toute la grille.");
+            throw new BusinessError.Invalid("Aucun filtre fourni : préciser ids, dateDebut, dateFin ou heureDebut, "
+                    + "ou passer all=true pour vider délibérément toute la grille.");
         }
         List<Creneau> cibles = referenceDataService.listCreneaux().stream()
                 .filter(creneau -> toutSupprimer || correspond(creneau, debut, fin, heure))
                 .toList();
         int supprimes = referenceDataService.deleteCreneaux(
                 cibles.stream().map(Creneau::getId).toList());
+        return new BulkDeleteResult(
+                supprimes, referenceDataService.listCreneaux().size());
+    }
+
+    /** The créneaux {@code ids} names, all of them or none: an unknown id refuses the whole call. */
+    private BulkDeleteResult deleteByIds(List<Long> ids) {
+        Set<Long> connus =
+                referenceDataService.listCreneaux().stream().map(Creneau::getId).collect(Collectors.toSet());
+        List<Long> inconnus =
+                ids.stream().filter(id -> !connus.contains(id)).distinct().toList();
+        if (!inconnus.isEmpty()) {
+            throw new BusinessError.Invalid("Créneaux introuvables : " + inconnus);
+        }
+        int supprimes = referenceDataService.deleteCreneaux(new LinkedHashSet<>(ids));
         return new BulkDeleteResult(
                 supprimes, referenceDataService.listCreneaux().size());
     }

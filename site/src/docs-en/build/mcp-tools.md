@@ -46,15 +46,15 @@ The break is set by `consulter_parametres` and `modifier_parametres` (section `l
 
 ## Building the grid and the hours
 
-A grid is made of shifts and is no longer asked for in a mode: a timeslot is a shift, and two timeslots that overlap on the same day are two staggered handovers, never an anomaly ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). The check (`valider_creneaux`, `previsualiser_generateur_creneaux`, `diagnostiquer_grille_creneaux`) always flags a shift beyond `dureeVacationMaxMinutes` (6 h by default), a shift that the daily rest makes untenable, a duplicate, a gap, an isolated date. `diagnostiquer_grille_creneaux` is the first call to discover an edition.
+A grid is made of shifts and is no longer asked for in a mode: a timeslot is a shift, and two timeslots that overlap on the same day are two staggered handovers, never an anomaly ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). The check (`diagnostiquer_creneaux` in section `controle`, `previsualiser_generateur_creneaux`) always flags a shift beyond `dureeVacationMaxMinutes` (6 h by default), a shift that the daily rest makes untenable, a duplicate, a gap, an isolated date. `diagnostiquer_creneaux`, in section `grille` (the default), is the first call to discover an edition. `supprimer_creneaux` removes timeslots with their seats, named by `ids` or picked by filters (dates, start hour, or `all=true` for the whole grid), never both at once.
 
 One generator produces the grid in bulk ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)): `previsualiser_generateur_creneaux` shows what it would produce and checks the resulting grid, `appliquer_generateur_creneaux` writes it, with the same arguments and a `source`. `stands` cuts the grid the stands' hours imply (a cut at each hour where a stand opens or closes), as an addition or, with `remplacer=true`, in place of the grid and of the plan along with it; `recurrence` adds windows repeated over dates; `gabarits` applies the templates' calendar; `grille` reads the templates the grid implies.
 
-A stand's schedule model (its recurring rules, ADR 0104) appears in `consulter_stand` and `lister_stands` under `horaires`. `creer_horaire_stand` with a rule identical to an existing one changes nothing; `supprimer_horaires_stand` clears the model **and** the plages it unfolded, and keeps the hand-entered ones (`creer_plage_stand`).
+A stand's opening hours are one object, in two forms: its **model** (its recurring rules, ADR 0104) and its dated **plages**. `lister_stands` returns them under `horaires` and `plages` (id, mode, day, hours, headcount, and `depliee`: unfolded from the model or typed by hand), for every stand or for one with `id`. `creer_horaire_stand` adds, by `forme`, a rule to the model (`modele`: windows and scope; a rule identical to an existing one changes nothing) or a one-day plage (`plage`: date, hours, headcount of an opening), an opening or a closure (`mode`). `supprimer_horaire_stand` removes a plage (`forme=plage`, by `plageId`) or all those of a day (`date`), or clears the model (`forme=modele`) **and** the plages it unfolded, keeping the hand-entered ones. An argument of one form is refused with the other, and these writes are refused during a solve and when the edition's phase freezes the stands.
 
-A stand's dated plages appear in `consulter_stand` and `lister_stands` under `plages` (id, mode, day, hours, headcount, and `depliee`: unfolded from the model or typed by hand). `creer_plage_stand` lays one, an opening or a closure (`mode`); `supprimer_plage_stand` removes one (`plageId`) or all those of a day (`date`). The three plage writes are refused during a solve and when the edition's phase freezes the stands.
+`creer_stand` also creates, when needed, what the stand depends on: its location (with `emplacementNom`), its missing game categories (with `creerTypologiesManquantes=true`) and its opening windows (`horaires`); the answer lists what it created along the way.
 
-An opening window (`creer_horaire_stand`, `creer_stand_complet`, `creer_plage_stand`) can name its headcount with the suffix `@N` (`10:00-12:00@2,14:00-@4`) or the `effectif` argument of a dated opening; without it, it takes the stand's minimum. Zero is refused (a stand with nobody is a closure) and the suffix is rejected on a timeslot's recurrence.
+An opening window (`creer_horaire_stand`, `creer_stand`) can name its headcount with the suffix `@N` (`10:00-12:00@2,14:00-@4`) or the `effectif` argument of a dated opening; without it, it takes the stand's minimum. Zero is refused (a stand with nobody is a closure) and the suffix is rejected on a timeslot's recurrence.
 
 The templates (« gabarits ») are the day templates of 3.x. `modifier_gabarit` creates or replaces a template by its name and its shifts on one line ("09:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-20:00"), and lays it over a range or dates; `supprimer_gabarit` removes a template, or only dates from the calendar. None of this writes a timeslot: `appliquer_generateur_creneaux` with the source `gabarits` does, after the preview. `lister_gabarits` returns the dates out of line or under a consigne, which applying does not touch ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)).
 
@@ -73,13 +73,13 @@ Lifting follows the same pattern: `simuler_levee_consigne` names the added times
 
 ## Deciding what staff have asked for
 
-Availability declarations and swap requests arrive from the staff espace. `appliquer_declaration_disponibilite` writes the declaration onto the record through the same `write*` as the entry screen: the data is marked modified, `consulter_planning` flags the plan as stale, the journal carries the fields replaced (`joursIndisponibles`, `souhaits`) and the tool returns the warnings as codes.
+Availability declarations and swap requests arrive from the staff espace. `consulter_disponibilites` reads the Availability screen under a `section`: `collecte` (default: the window, its dates, the automatic reminder), `declarations` (filterable by `statut`) or `covoiturage`. `modifier_declaration_disponibilite` decides a declaration: `decision=appliquer` writes it onto the record through the same `write*` as the entry screen (the data is marked modified, `consulter_planning` flags the plan as stale, the journal carries the fields replaced, `joursIndisponibles` and `souhaits`, and the tool returns the warnings as codes); `decision=refuser` leaves the record untouched, with the `commentaire` the staff member will read. Opening the collection stays `configurer_collecte_disponibilites`, apart, because it may write to the staff.
 
 `consulter_foire_echanges` returns the fair's window and its statistics (volumes, rates, delays, breakdowns by day and by stand) over a creation period (`du`, `au`, or `touteEdition`, refused together with the other two). No staff member appears there, not even by id.
 
 `consulter_publication`, view `confirmations`, counts, among the staff who have a seat on the published plan, those confirmed, reminded, silent and the **send failures** (counted apart, with no address) and dates the publication they are answering; `jamaisPublie` true means the question has not yet been put to anyone.
 
-`lister_demandes_covoiturage` returns the "I'm coming with…" requests of the collection, apart from the declaration: members, status, `confirmedByAll`, days where unavailabilities diverge, adjustment created, all by id, with status `EN_ATTENTE` (not validated) or `VALIDEE`. Validation, set-aside and cancellation remain screen gestures, because validation notifies the staff by e-mail; an assistant creates an `ARRIVEE_GROUPEE` directly through `creer_contrainte_ad_hoc`. On the other hand, `supprimer_contrainte_ad_hoc` on a grouped arrival that a validated request supports returns a result in error carrying the sentence of the Manual adjustments screen (cancel it from Availability > Carpool).
+The `covoiturage` section of `consulter_disponibilites` returns the "I'm coming with…" requests of the collection, apart from the declaration: members, status, `confirmedByAll`, days where unavailabilities diverge, adjustment created, all by id, with status `EN_ATTENTE` (not validated) or `VALIDEE`. Validation, set-aside and cancellation remain screen gestures, because validation notifies the staff by e-mail; an assistant creates an `ARRIVEE_GROUPEE` directly through `creer_contrainte_ad_hoc`. On the other hand, `supprimer_contrainte_ad_hoc` on a grouped arrival that a validated request supports returns a result in error carrying the sentence of the Manual adjustments screen (cancel it from Availability > Carpool).
 
 ## Editions, scenarios and publication
 
@@ -104,7 +104,7 @@ Two **resources**, to attach once to inform all following calls:
 
 ## Old tool names
 
-4.0 renames, groups or removes tools of 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). A grouped tool does under one name, with an argument (`vue`, `section`, `mode`, `decision`), what several used to do ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)); its old names stay published until 5.0 next to the new one, their description starting with « Ancien nom »: those of the day review, those of the day templates, the recurring timeslots and the derivation, which the timeslot generator grouped ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), those of the plan, the solve, the rules and the swaps, those of the diagnosis and its reports, and those of the parameters, the editions, the scenarios, the publication and the backups. The `tension` mode of `analyser_marge` became the `tension` section of `consulter_risques`. The former solver settings tool is no longer published: the compute budget it set moved to the instance, and only the end-of-solve mail stays in `modifier_parametres` (section `calcul`). This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
+4.0 renames, groups or removes tools of 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). A grouped tool does under one name, with an argument (`vue`, `section`, `mode`, `decision`), what several used to do ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)); its old names stay published until 5.0 next to the new one, their description starting with « Ancien nom »: those of the day review, those of the day templates, the recurring timeslots and the derivation, which the timeslot generator grouped ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), those of the plan, the solve, the rules and the swaps, those of the diagnosis and its reports, those of the parameters, the editions, the scenarios, the publication and the backups, and those of the stands, the staff, the availabilities and the timeslots. The `tension` mode of `analyser_marge` became the `tension` section of `consulter_risques`. The former solver settings tool is no longer published: the compute budget it set moved to the instance, and only the end-of-solve mail stays in `modifier_parametres` (section `calcul`). The three stand plage and model tools born in 4.0 are not kept: no published version carried them, and the [4.0 guide](../installer/passer-a-la-4-0.md) names them. This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
 
 <!-- mcp-renommages:debut -->
 | Name in 3.x | Name in 4.0 |
@@ -114,9 +114,9 @@ Two **resources**, to attach once to inform all following calls:
 | `activer_edition` | `modifier_edition` |
 | `affecter_journee_type` | `modifier_gabarit` |
 | `affecter_poste` | `modifier_affectation` |
-| `ajouter_fermeture_stand` | `creer_plage_stand` |
+| `ajouter_fermeture_stand` | `creer_horaire_stand` |
 | `ajouter_horaire_stand` | `creer_horaire_stand` |
-| `ajouter_ouverture_stand` | `creer_plage_stand` |
+| `ajouter_ouverture_stand` | `creer_horaire_stand` |
 | `ajouter_validation_journee` | `modifier_etat_journee` |
 | `analyser_effectifs` | `consulter_besoin` |
 | `analyser_enchainements` | `consulter_repas_pauses` |
@@ -125,27 +125,33 @@ Two **resources**, to attach once to inform all following calls:
 | `analyser_ouvertures_stands` | removed |
 | `analyser_pauses` | `consulter_repas_pauses` |
 | `analyser_typologies` | `consulter_besoin` |
+| `appliquer_declaration_disponibilite` | `modifier_declaration_disponibilite` |
 | `arreter_solveur` | `arreter_calcul` |
 | `capturer_instantane` | `creer_version` |
 | `changements_journee` | `comparer_journee` |
 | `compacter_horaires_stands` | removed |
 | `comparer_instantanes` | `comparer_versions` |
 | `configurer_foire_echanges` | `modifier_foire_echanges` |
+| `consulter_animateur` | `lister_animateurs` |
+| `consulter_collecte_disponibilites` | `consulter_disponibilites` |
 | `consulter_historique_ponderation` | removed |
 | `consulter_instantane` | `consulter_version` |
 | `consulter_parametres_legaux` | `consulter_parametres` |
 | `consulter_parametres_notifications` | `consulter_parametres` |
 | `consulter_parametres_qualite` | `consulter_parametres` |
 | `consulter_parametres_solveur` | `consulter_parametres` |
+| `consulter_stand` | `lister_stands` |
 | `creer_creneaux_recurrents` | `appliquer_generateur_creneaux` |
+| `creer_stand_complet` | `creer_stand` |
 | `definir_journee_type` | `modifier_gabarit` |
 | `deplacer_affectation` | `modifier_affectation` |
 | `desactiver_contrainte` | `modifier_contrainte` |
 | `desactiver_edition` | `modifier_edition` |
+| `diagnostiquer_grille_creneaux` | `diagnostiquer_creneaux` |
 | `dupliquer_edition` | `creer_edition` |
 | `edition_courante` | `lister_editions` |
-| `effacer_horaires_stand` | `supprimer_horaires_stand` |
-| `effacer_plages_stand` | `supprimer_plage_stand` |
+| `effacer_horaires_stand` | `supprimer_horaire_stand` |
+| `effacer_plages_stand` | `supprimer_horaire_stand` |
 | `equite_planning` | `consulter_charge` |
 | `etat_edition` | `consulter_edition` |
 | `etat_planning` | `consulter_planning` |
@@ -160,6 +166,8 @@ Two **resources**, to attach once to inform all following calls:
 | `lancer_solveur` | `lancer_calcul` |
 | `lever_gel` | `modifier_phase_edition` |
 | `lister_affectations` | `consulter_planning` |
+| `lister_declarations_disponibilite` | `consulter_disponibilites` |
+| `lister_demandes_covoiturage` | `consulter_disponibilites` |
 | `lister_destinataires_publication` | `consulter_publication` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_jobs` | `consulter_calcul` |
@@ -179,6 +187,7 @@ Two **resources**, to attach once to inform all following calls:
 | `previsualiser_reconnaissance_journees_types` | `previsualiser_generateur_creneaux` |
 | `realise_vs_planifie` | `comparer_realise_planifie` |
 | `reconnaitre_journees_types` | `appliquer_generateur_creneaux` |
+| `refuser_declaration_disponibilite` | `modifier_declaration_disponibilite` |
 | `refuser_demande_echange` | `modifier_demande_echange` |
 | `reinitialiser_donnees` | `supprimer_donnees_edition` |
 | `relancer_animateurs` | `envoyer_relance_animateurs` |
@@ -192,12 +201,14 @@ Two **resources**, to attach once to inform all following calls:
 | `simuler_swap` | `simuler_affectation` |
 | `statut_solveur` | `consulter_calcul` |
 | `suggerer_reparations` | `simuler_affectation` |
+| `supprimer_creneau` | `supprimer_creneaux` |
 | `supprimer_instantane` | `supprimer_version` |
 | `supprimer_job` | `supprimer_calcul` |
 | `supprimer_journee_type` | `supprimer_gabarit` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |
 | `synthese_affectations` | `consulter_planning` |
 | `synthese_confirmations` | `consulter_publication` |
+| `valider_creneaux` | `diagnostiquer_creneaux` |
 | `valider_scenario_yaml` | `diagnostiquer_scenario` |
 | `volumes` | `consulter_besoin` |
 <!-- mcp-renommages:fin -->
