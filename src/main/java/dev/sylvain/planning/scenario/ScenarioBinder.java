@@ -1,8 +1,10 @@
 package dev.sylvain.planning.scenario;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.exc.InputCoercionException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
@@ -16,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -67,7 +70,10 @@ public final class ScenarioBinder {
 
     private ScenarioBinder() {}
 
-    /** A bound scenario and what the conversion of an older format dropped, one sentence each. */
+    /**
+     * A bound scenario, what the conversion of an older format dropped and the
+     * signs the file was cut short ({@link ScenarioTruncation}), one sentence each.
+     */
     public record Bound(ScenarioDto scenario, List<String> warnings) {}
 
     /** @throws ScenarioFormatException on anything the DTO shape does not accept */
@@ -86,10 +92,12 @@ public final class ScenarioBinder {
         int version = readVersion(document);
         ScenarioMigrations.Migrated migrated = ScenarioMigrations.migrate((Map<String, Object>) document, version);
         refuseRetiredSections(migrated.document());
+        List<String> warnings = new ArrayList<>(migrated.warnings());
+        warnings.addAll(ScenarioTruncation.warnings(yamlContent, (Map<?, ?>) document));
         try {
             return new Bound(
                     MAPPER.convertValue(ScenarioYaml.normaliseDates(migrated.document()), ScenarioDto.class),
-                    migrated.warnings());
+                    List.copyOf(warnings));
         } catch (IllegalArgumentException e) {
             throw new ScenarioFormatException(explain(e), e);
         }
@@ -249,8 +257,9 @@ public final class ScenarioBinder {
 
     /**
      * Jackson names the offending property in a reference chain that reads
-     * like a stack trace. The author needs the path and the word, not the
-     * chain.
+     * like a stack trace, in English, with Java types. The author needs the
+     * path, the word, and what was expected — said once per kind of failure
+     * rather than per message.
      */
     private static String explain(IllegalArgumentException e) {
         if (e.getCause() instanceof UnrecognizedPropertyException unknown) {
@@ -259,10 +268,8 @@ public final class ScenarioBinder {
                     + "connaît pas n'est pas appliqué.";
         }
         if (e.getCause() instanceof InvalidFormatException wrongValue) {
-            // Raised by the two deserialisers below, with a sentence of their
-            // own; Jackson attached the path on the way up.
             return "Valeur inattendue dans le scénario, sous " + path(wrongValue.getPath(), false) + " : "
-                    + wrongValue.getOriginalMessage();
+                    + wrongValueSentence(wrongValue);
         }
         if (e.getCause() instanceof MismatchedInputException wrongType) {
             // Without this, Jackson hands back its reference chain, which reads
@@ -274,7 +281,46 @@ public final class ScenarioBinder {
             }
             return "Valeur inattendue dans le scénario, sous " + chemin + " : " + firstLine(wrongType);
         }
+        if (e.getCause() instanceof JsonMappingException mapping
+                && mapping.getCause() instanceof InputCoercionException tooLarge) {
+            // A number past what its field holds: the parser raised it, binding attached the path.
+            return "Nombre hors limites dans le scénario, sous " + path(mapping.getPath(), false) + " : attendu "
+                    + bounds(tooLarge.getTargetType()) + ".";
+        }
+        if (e.getCause() instanceof JsonMappingException mapping
+                && !mapping.getPath().isEmpty()) {
+            return "Valeur inattendue dans le scénario, sous " + path(mapping.getPath(), false) + " : "
+                    + firstLine(mapping);
+        }
         return e.getCause() == null ? e.getMessage() : firstLine(e.getCause());
+    }
+
+    /**
+     * What was written and what was expected instead. The two deserialisers
+     * below already say it for a date and an hour; Jackson's own sentence, for
+     * every other type, names a Java class.
+     */
+    private static String wrongValueSentence(InvalidFormatException wrongValue) {
+        Class<?> cible = wrongValue.getTargetType();
+        if (cible == LocalDate.class || cible == LocalTime.class) {
+            return wrongValue.getOriginalMessage();
+        }
+        String forme = formeAttendue(cible);
+        if (forme == null) {
+            return firstLine(wrongValue);
+        }
+        return "« " + wrongValue.getValue() + " » n'est pas " + forme + ".";
+    }
+
+    /** The range of the integer type a number overflowed, in words. */
+    private static String bounds(Class<?> cible) {
+        if (cible == Long.class || cible == long.class) {
+            return "un entier entre " + Long.MIN_VALUE + " et " + Long.MAX_VALUE;
+        }
+        if (cible == Integer.class || cible == int.class) {
+            return "un entier entre " + Integer.MIN_VALUE + " et " + Integer.MAX_VALUE;
+        }
+        return "un nombre plus petit";
     }
 
     /**
@@ -299,6 +345,9 @@ public final class ScenarioBinder {
         if (cible == Boolean.class || cible == boolean.class) {
             return "true ou false";
         }
+        if (cible == String.class) {
+            return "un texte";
+        }
         return null;
     }
 
@@ -307,8 +356,7 @@ public final class ScenarioBinder {
      *                      <em>is</em> the key, and repeating it would give
      *                      "« prenomm » sous animateurs[0].prenomm"
      */
-    private static String path(
-            java.util.List<com.fasterxml.jackson.databind.JsonMappingException.Reference> refs, boolean sansLeDernier) {
+    private static String path(List<JsonMappingException.Reference> refs, boolean sansLeDernier) {
         StringBuilder path = new StringBuilder();
         int upTo = sansLeDernier ? refs.size() - 1 : refs.size();
         for (int i = 0; i < upTo; i++) {

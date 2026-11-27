@@ -4613,6 +4613,8 @@ export interface ParametresNotifications {
 export interface ScenarioValidationResult {
   valide: boolean;
   erreurs: string[];
+  /** What an import would accept but say: an older format converted, a file that looks cut short. */
+  avertissements: string[];
 }
 
 /* --------------------------- Edition status (home) --------------------------- */

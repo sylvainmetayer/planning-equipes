@@ -36,7 +36,7 @@ class ScenarioBinderTest {
     /**
      * The conversion chain loses nothing on the shipped corpus: each file read
      * as the v1 document it used to be (no {@code schemaVersion}) binds to the
-     * very same scenario as its v2 form, with no warning.
+     * very same scenario as its v2 form, with no warning of its own.
      */
     @Test
     void everyBundledScenarioReadsTheSameAsV1AndAsV2() throws IOException {
@@ -48,7 +48,10 @@ class ScenarioBinderTest {
             ScenarioBinder.Bound lu = ScenarioBinder.bindWithWarnings(v1);
 
             assertThat(lu.scenario()).as(scenario.getFileName().toString()).isEqualTo(ScenarioBinder.bind(v2));
-            assertThat(lu.warnings()).as(scenario.getFileName().toString()).isEmpty();
+            assertThat(lu.warnings())
+                    .as(scenario.getFileName().toString())
+                    .isEqualTo(ScenarioBinder.bindWithWarnings(Files.readString(scenario))
+                            .warnings());
         }
     }
 
@@ -384,6 +387,98 @@ class ScenarioBinderTest {
                     .as(value)
                     .isInstanceOf(ScenarioFormatException.class)
                     .hasMessageContaining("« schemaVersion » doit être un entier entre 1 et 7");
+        }
+    }
+
+    /**
+     * A number past what its field holds names the field and the range, in
+     * French — Jackson's « Numeric value (…) out of range of int » reached the
+     * report as it was.
+     */
+    @Test
+    void aNumberTooLargeForItsFieldNamesTheFieldAndTheRange() {
+        assertThatThrownBy(() ->
+                        ScenarioBinder.bind(MINIMAL.replace("effectifMin: 1", "effectifMin: 99999999999999999999999")))
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("stands[0].effectifMin")
+                .hasMessageContaining("2147483647")
+                .satisfies(e -> assertThat(e.getMessage()).doesNotContain("Numeric value", "out of range"));
+    }
+
+    @Test
+    void textWhereANumberIsExpectedSaysWhatWasWrittenAndWhatWasExpected() {
+        assertThatThrownBy(() -> ScenarioBinder.bind(MINIMAL.replace("effectifMin: 1", "effectifMin: beaucoup")))
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("stands[0].effectifMin")
+                .hasMessageContaining("« beaucoup » n'est pas un nombre")
+                .satisfies(e -> assertThat(e.getMessage()).doesNotContain("Cannot deserialize", "java."));
+    }
+
+    @Test
+    void aBlockWhereATextIsExpectedSaysSo() {
+        assertThatThrownBy(() -> ScenarioBinder.bind(MINIMAL.replace("nom: Stand 1", "nom: {a: b}")))
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("« stands[0].nom » doit être un texte");
+    }
+
+    /** A file the application writes always ends with a line break; a copy cut mid-line does not. */
+    @Test
+    void aFileWithoutAFinalLineBreakIsSaidPossiblyCut() {
+        assertThat(ScenarioBinder.bindWithWarnings(MINIMAL).warnings()).isEmpty();
+
+        assertThat(ScenarioBinder.bindWithWarnings(MINIMAL.stripTrailing()).warnings())
+                .singleElement()
+                .asString()
+                .contains("retour à la ligne", "n° 18");
+    }
+
+    /** The last entry stops before keys every entry above it carries: the cut took them. */
+    @Test
+    void aLastEntryCutShortIsSaid() {
+        String deux = MINIMAL.replace("animateurs: []\n", """
+                animateurs:
+                  - id: A1
+                    prenom: Alice
+                    nom: Durand
+                    dateNaissance: 2000-01-01
+                  - id: A2
+                    prenom: Bob
+                """);
+
+        assertThat(ScenarioBinder.bindWithWarnings(deux).warnings())
+                .singleElement()
+                .asString()
+                .contains("animateurs", "n° 2", "« nom »", "« dateNaissance »");
+    }
+
+    /** An entry that only lacks a key in the middle is a choice of its author, not a cut. */
+    @Test
+    void aLastEntryWithoutAMiddleKeyIsNotACut() {
+        String deux = MINIMAL.replace("animateurs: []\n", """
+                animateurs:
+                  - id: A1
+                    prenom: Alice
+                    nom: Durand
+                    dateNaissance: 2000-01-01
+                  - id: A2
+                    prenom: Bob
+                    dateNaissance: 2001-01-01
+                """);
+
+        assertThat(ScenarioBinder.bindWithWarnings(deux).warnings()).isEmpty();
+    }
+
+    /**
+     * No shipped scenario looks cut short; two hand-written ones simply end
+     * without a line break, which is the one sign a reader may shrug off.
+     */
+    @Test
+    void noBundledScenarioLooksCutShort() throws IOException {
+        for (Path scenario : ScenariosLivres.all()) {
+            assertThat(ScenarioBinder.bindWithWarnings(Files.readString(scenario))
+                            .warnings())
+                    .as(scenario.getFileName().toString())
+                    .allSatisfy(warning -> assertThat(warning).contains("retour à la ligne"));
         }
     }
 }

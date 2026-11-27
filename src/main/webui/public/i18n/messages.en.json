@@ -5296,10 +5296,11 @@
   "voirPlanning.label": "View the schedule",
   "walks.onBreak": "{$fin} → {$debut}: {$trajet} min on foot, taken from the break ({$battement} min gap)",
   "walks.tight": "{$fin} → {$debut}: {$trajet} min on foot, {$battement} min gap",
-  "yamlValidator.description": " Checks the structure of a scenario file (types, required fields, value ranges) without importing anything; cross-references are only checked by the real import. ",
+  "yamlValidator.description": " Checks a scenario file (types, required fields, value ranges, references between sections) without importing anything, and reports a file that looks truncated. ",
   "yamlValidator.empty": "No file analyzed yet.",
   "yamlValidator.invalid": "{$fileName} contains {$count} error(s):",
   "yamlValidator.pickFile": "Choose a YAML file",
   "yamlValidator.title.verifier": "Check a file without importing it",
-  "yamlValidator.valid": "{$fileName} is valid."
+  "yamlValidator.valid": "{$fileName} is valid.",
+  "yamlValidator.warnings": "Warnings:"
 }

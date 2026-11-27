@@ -168,6 +168,14 @@ final class ScenarioDomainMapper {
         for (PosteDto posteDto : postesDto) {
             Stand stand = reference.standsById().get(posteDto.standId());
             Creneau creneau = reference.creneauxParId().get(posteDto.creneauId());
+            // A seat naming what the file does not define: a reference broken, often by a cut file.
+            if (stand == null || creneau == null) {
+                throw new BusinessError.Invalid("Le poste " + posteDto.id() + " cite "
+                        + (stand == null
+                                ? "le stand « " + posteDto.standId() + " »"
+                                : "le créneau « " + posteDto.creneauId() + " »")
+                        + ", absent du scénario.");
+            }
 
             PosteAffectation poste = new PosteAffectation(posteDto.id(), stand, creneau);
             // Mirrors what buildPostes does: a hand-authored seat can still name

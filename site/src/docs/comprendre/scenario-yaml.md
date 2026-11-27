@@ -218,6 +218,6 @@ Après avoir modifié un DTO, régénérez le schéma :
 ./mvnw process-classes -Pgenerate-schema
 ```
 
-Le schéma ne peut pas exprimer qu'un jour ne porte pas à la fois une ouverture et une fermeture, vérifié par `StandValidator`, ni les références croisées, vérifiées à l'import réel.
+Le schéma ne peut pas exprimer qu'un jour ne porte pas à la fois une ouverture et une fermeture, vérifié par `StandValidator`, ni les références croisées, vérifiées par le validateur comme par l'import.
 
 Le fichier est lu en une seule passe, par `ScenarioYamlReader.buildFromScenarioText` ([`ScenarioYamlReader`](repo:src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java)), qui rend le planning et toutes les sections optionnelles ensemble (`ScenarioImporte`, `ScenarioSections`). Ajouter une section optionnelle, c'est un champ dans `ScenarioSections` et son remplissage dans `ScenarioDomainMapper.sections`, pas une méthode publique de plus : une méthode par section lirait de nouveau le fichier entier à chaque appel, soit autant de parses complets que de sections pour un seul clic.
