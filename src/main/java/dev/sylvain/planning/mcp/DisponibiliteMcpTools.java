@@ -143,9 +143,9 @@ public class DisponibiliteMcpTools {
             McpArgs.onlyFor("la décision refuser", "commentaire", commentaire);
             return applied(declarationService.apply(id));
         }
-        DeclarationMcpView refusee = view(declarationService.refuse(id, commentaire));
-        // The catalogue files the tool under the application; a refusal is its own line.
+        // The catalogue files the tool under the application; a refusal is its own line, even a refused one.
         currentAction.action("DECLARATION_REFUSEE");
+        DeclarationMcpView refusee = view(declarationService.refuse(id, commentaire));
         return new DeclarationAppliqueeMcpView(refusee, List.of());
     }
 
