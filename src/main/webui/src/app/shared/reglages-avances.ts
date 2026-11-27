@@ -16,7 +16,7 @@ import { ReglagesAvances } from '../core/reglages-avances';
  * the button alone — a page then shows what the state opens itself (tabs).
  * `utile` is the page saying there is something behind the button on the tab
  * on screen: required, so a new screen has to answer, and a button that would
- * open nothing is not drawn (`reglages-avances.spec.ts` holds every use to it).
+ * open nothing is not drawn (`scripts/check-reglages-avances.js` holds every use to it).
  */
 @Component({
   selector: 'app-reglages-avances',

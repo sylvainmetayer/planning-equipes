@@ -1300,6 +1300,14 @@ describe('SolverPage', () => {
       expect(bouton()).toBeNull();
     });
 
+    // The card that would read it lives behind the button: the page reads it.
+    it('reads the last curve itself, the card being folded away', async () => {
+      createPage();
+      await fixture.whenStable();
+
+      expect(jobs.chargerCourbeScore).toHaveBeenCalled();
+    });
+
     it('is offered once a finished run left a curve', async () => {
       createPage();
       scoreTraceEdition.set({

@@ -452,6 +452,10 @@ export class SolverPage implements OnInit {
     void this.loadLastRun();
     void this.loadLastPublication();
     void this.loadStartingPoint();
+    // The card that reads the curve is only created once the fold is open, and
+    // the fold is only offered once a curve is held: without this read, a
+    // browser the stream does not reach could never get to the last run's curve.
+    void this.jobs.chargerCourbeScore();
   }
 
   /** Shared with the Contraintes screen: see `ProblemesStore.alerteReglesLegales`. */
