@@ -20,8 +20,8 @@ import java.util.regex.Pattern;
 @PreMatching
 public class ImportsRetiresFilter implements ContainerRequestFilter {
 
-    private static final Pattern CSV =
-            Pattern.compile("/?(typologies|emplacements|stands|creneaux|journees-types)/import-csv(/analyse|/exemple)?");
+    private static final Pattern CSV = Pattern.compile(
+            "/?(typologies|emplacements|stands|creneaux|journees-types)/import-csv(/analyse|/exemple)?");
 
     private static final Pattern GRILLE = Pattern.compile("/?stands/import-grille(/analyse|/exemple)?");
 
@@ -31,13 +31,14 @@ public class ImportsRetiresFilter implements ContainerRequestFilter {
         String ce = null;
         var csv = CSV.matcher(chemin);
         if (csv.matches()) {
-            ce = "CSV " + switch (csv.group(1)) {
-                case "typologies" -> "des typologies";
-                case "emplacements" -> "des emplacements";
-                case "stands" -> "des stands";
-                case "creneaux" -> "des créneaux";
-                default -> "des journées types";
-            };
+            ce = "CSV "
+                    + switch (csv.group(1)) {
+                        case "typologies" -> "des typologies";
+                        case "emplacements" -> "des emplacements";
+                        case "stands" -> "des stands";
+                        case "creneaux" -> "des créneaux";
+                        default -> "des journées types";
+                    };
         } else if (GRILLE.matcher(chemin).matches()) {
             ce = "de la grille des stands";
         }
