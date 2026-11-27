@@ -128,7 +128,7 @@ describe('EditionActuelleBar', () => {
     expect(text()).toContain('Activer la suivante');
     expect(text()).toContain('Année 2026');
 
-    fixture.componentInstance['masquer']('ACTIVE_TERMINEE.A');
+    fixture.componentInstance['dismiss']('ACTIVE_TERMINEE.A');
     await fixture.whenStable();
     expect(text()).not.toContain('reste active');
     expect(text()).toContain('Année 2026 commence le 10/07/2026');

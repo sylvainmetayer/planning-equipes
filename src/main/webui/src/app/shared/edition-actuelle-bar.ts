@@ -124,7 +124,7 @@ const DISMISSED_PREFIX = 'planning.bandeau-edition-masque.';
               }
             }
             <a matButton routerLink="/editions" i18n="@@editionActuelle.rappelLien">Voir les éditions</a>
-            <button matButton type="button" (click)="masquer(ligne.cle)"
+            <button matButton type="button" (click)="dismiss(ligne.cle)"
                     [attr.aria-label]="labelDismiss(ligne.situation.edition)"
                     i18n="@@editionActuelle.neplusafficher">Ne plus afficher</button>
           </span>
@@ -249,7 +249,7 @@ export class EditionActuelleBar {
     return $localize`:@@editionActuelle.neplusafficherAria:Ne plus afficher l'alerte sur l'édition ${nom}:nom:`;
   }
 
-  protected masquer(cle: string): void {
+  protected dismiss(cle: string): void {
     writePanelCollapsed(this.storage, DISMISSED_PREFIX + cle, true);
     this.masquees.update((anciennes) => new Set(anciennes).add(cle));
   }
