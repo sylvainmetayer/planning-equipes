@@ -80,6 +80,7 @@ class McpWarnsWhileSolvingStructuralTest {
                             + " PlanningPersistenceService.applyDirectedEchange"),
             Map.entry("materialiser_journees_types", "GenerateurCreneaux.apply"),
             Map.entry("appliquer_consigne", "ConsigneService.poser"),
+            Map.entry("supprimer_consigne", "ConsigneService.lever"),
             Map.entry("lever_consigne", "ConsigneService.lever"),
             Map.entry("deplacer_affectation", "DeplacementService.apply"),
             Map.entry("restaurer_version", "PlanSnapshotService.restaurer"),
@@ -100,6 +101,7 @@ class McpWarnsWhileSolvingStructuralTest {
                     "resoudre_incremental", "le solveur lui-même : mis en file quand un calcul tient déjà le solveur"),
             Map.entry("arreter_solveur", "arrête le calcul en cours, il ne l'ignore pas"),
             Map.entry("supprimer_job", "retire une résolution de la file ou de l'historique"),
+            Map.entry("modifier_prereglage_consigne", "un préréglage n'est lu que par le formulaire de consigne"),
             Map.entry("definir_prereglage_consigne", "un préréglage n'est lu que par le formulaire de consigne"),
             Map.entry("supprimer_prereglage_consigne", "un préréglage n'est lu que par le formulaire de consigne"),
             Map.entry(
@@ -123,6 +125,7 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry(
                     "supprimer_gabarit",
                     "un gabarit ou son calendrier n'atteint la grille que par appliquer_generateur_creneaux"),
+            Map.entry("modifier_collecte_disponibilites", "la fenêtre de collecte n'est pas lue par le calcul"),
             Map.entry("configurer_collecte_disponibilites", "la fenêtre de collecte n'est pas lue par le calcul"),
             Map.entry("refuser_declaration_disponibilite", "un refus ne modifie aucune fiche"),
             Map.entry("configurer_foire_echanges", "la fenêtre de la foire n'est pas lue par le calcul"),

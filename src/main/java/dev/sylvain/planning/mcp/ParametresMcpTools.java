@@ -809,8 +809,8 @@ public class ParametresMcpTools {
     @Tool(
             name = "supprimer_contrainte_ad_hoc",
             description = "Supprime une contrainte ad hoc. Refusé pour une ARRIVEE_GROUPEE issue d'une "
-                    + "demande de covoiturage validée : elle s'annule depuis l'onglet Covoiturage de l'écran "
-                    + "Disponibilités, qui prévient le groupe.",
+                    + "demande de covoiturage validée : elle s'annule depuis l'onglet Covoiturage de la page "
+                    + "Animateurs, qui prévient le groupe.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,

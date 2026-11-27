@@ -252,7 +252,7 @@ public class ConsigneMcpTools {
     }
 
     @Tool(
-            name = "lever_consigne",
+            name = "supprimer_consigne",
             description = "Lève la consigne des dates indiquées, qui doivent être à venir : les stands retrouvent "
                     + "leurs horaires, les créneaux que la consigne avait ajoutés sont retirés avec leurs sièges, la "
                     + "validation de relecture des journées est retirée. Un jour déjà travaillé garde la consigne qui "
@@ -267,6 +267,33 @@ public class ConsigneMcpTools {
     LeveeResult liftConsigne(
             @ToolArg(description = "Dates à lever (AAAA-MM-JJ), séparées par des virgules") String dates,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return lift(dates);
+    }
+
+    @Deprecated
+    @Tool(
+            name = "lever_consigne",
+            description =
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser supprimer_consigne, qui prend les mêmes arguments. "
+                            + "Lève la consigne des dates indiquées, qui doivent être à venir : les stands retrouvent "
+                            + "leurs horaires, les créneaux que la consigne avait ajoutés sont retirés avec leurs sièges, la "
+                            + "validation de relecture des journées est retirée. Un jour déjà travaillé garde la consigne qui "
+                            + "l'a gouverné. Relancer ensuite lancer_correction : la règle de stabilité rend les "
+                            + "après-midis à leurs titulaires.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = true,
+                            idempotentHint = false,
+                            openWorldHint = false))
+    LeveeResult liftConsigneFormerName(
+            @ToolArg(description = "Dates à lever (AAAA-MM-JJ), séparées par des virgules") String dates,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return lift(dates);
+    }
+
+    /** Shared by the tool and its former name: never another @Tool, whose interceptor would journal twice. */
+    private LeveeResult lift(String dates) {
         List<LocalDate> levees = dates(dates);
         // Read before the write: the risk compares the day under its consigne with the day lifted.
         List<ApercuLevee> apercu = consignes.apercuLevee(levees);
@@ -275,7 +302,7 @@ public class ConsigneMcpTools {
     }
 
     @Tool(
-            name = "definir_prereglage_consigne",
+            name = "modifier_prereglage_consigne",
             description = "Crée ou remplace un préréglage de consigne (« Plan canicule : 12h-18h fermé, soir "
                     + "18h-22h ») : la bande, le motif et les fenêtres de compensation par défaut, mémorisés sur "
                     + "l'édition et copiés à sa duplication. Validé à froid, sans rien poser.",
@@ -327,6 +354,104 @@ public class ConsigneMcpTools {
                             required = false)
                     String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return savePreset(
+                nom,
+                fermetureDebut,
+                fermetureFin,
+                motif,
+                fenetres,
+                repasMidi,
+                repasSoir,
+                coupureRepasMinutes,
+                justificationRepas,
+                id,
+                modifieLe);
+    }
+
+    @Deprecated
+    @Tool(
+            name = "definir_prereglage_consigne",
+            description =
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser modifier_prereglage_consigne, qui prend les mêmes arguments. "
+                            + "Crée ou remplace un préréglage de consigne (« Plan canicule : 12h-18h fermé, soir "
+                            + "18h-22h ») : la bande, le motif et les fenêtres de compensation par défaut, mémorisés sur "
+                            + "l'édition et copiés à sa duplication. Validé à froid, sans rien poser.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    PrereglageConsigne defineConsignePresetFormerName(
+            @ToolArg(description = "Nom du préréglage") String nom,
+            @ToolArg(description = "Début de la bande fermée pour tous (HH:MM)") String fermetureDebut,
+            @ToolArg(description = "Fin de la bande (HH:MM) ; omise = jusqu'à minuit", required = false)
+                    String fermetureFin,
+            @ToolArg(description = "Motif proposé aux consignes faites de ce préréglage") String motif,
+            @ToolArg(
+                            description =
+                                    "Fenêtres de compensation par défaut « HH:MM-HH:MM », séparées par des virgules",
+                            required = false)
+                    String fenetres,
+            @ToolArg(
+                            description =
+                                    "Fenêtre repas de midi valable ce jour-là seulement « HH:MM-HH:MM » ; omise = "
+                                            + "celle de l'édition",
+                            required = false)
+                    String repasMidi,
+            @ToolArg(
+                            description =
+                                    "Fenêtre repas du soir valable ce jour-là seulement « HH:MM-HH:MM » — 18:00-22:00 "
+                                            + "pour une compensation 18h-22h, les gens ayant mangé pendant la bande ; omise = "
+                                            + "celle de l'édition",
+                            required = false)
+                    String repasSoir,
+            @ToolArg(
+                            description =
+                                    "Durée de la coupure repas ce jour-là, en minutes ; omise = celle de l'édition",
+                            required = false)
+                    Integer coupureRepasMinutes,
+            @ToolArg(
+                            description =
+                                    "Pourquoi les fenêtres repas changent ce jour-là, en termes métier ; obligatoire "
+                                            + "dès qu'une des trois est renseignée",
+                            required = false)
+                    String justificationRepas,
+            @ToolArg(description = "Id du préréglage à remplacer ; omis = création", required = false) String id,
+            @ToolArg(
+                            description =
+                                    "modifieLe lu avant la modification (précondition : refusé si le préréglage a changé depuis ; omis, pas de contrôle)",
+                            required = false)
+                    String modifieLe,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return savePreset(
+                nom,
+                fermetureDebut,
+                fermetureFin,
+                motif,
+                fenetres,
+                repasMidi,
+                repasSoir,
+                coupureRepasMinutes,
+                justificationRepas,
+                id,
+                modifieLe);
+    }
+
+    /** Shared by the tool and its former name: never another @Tool, whose interceptor would journal twice. */
+    @SuppressWarnings("java:S107") // the tool's arguments, as the assistant passes them
+    private PrereglageConsigne savePreset(
+            String nom,
+            String fermetureDebut,
+            String fermetureFin,
+            String motif,
+            String fenetres,
+            String repasMidi,
+            String repasSoir,
+            Integer coupureRepasMinutes,
+            String justificationRepas,
+            String id,
+            String modifieLe) {
         return consignes.savePrereglage(new PrereglageConsigne(
                 id,
                 nom,

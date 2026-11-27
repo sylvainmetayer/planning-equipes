@@ -2,6 +2,7 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.quarkiverse.mcp.server.Tool;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -35,6 +36,18 @@ class McpRenommageTest {
     static final Pattern CONVENTION = Pattern.compile("(?:lister|consulter|analyser|diagnostiquer|comparer|simuler"
             + "|previsualiser|creer|modifier|supprimer|activer|desactiver|verrouiller|deverrouiller|appliquer"
             + "|lancer|arreter|importer|exporter|publier|envoyer|restaurer)(?:_[a-z0-9]+)+");
+
+    /**
+     * The two verbs of ADR 0100 that carry their object: what is locked is always the planning,
+     * and ADR 0109 kept {@code verrouiller} under that name.
+     */
+    static final Set<String> BARE_VERBS = Set.of("verrouiller", "deverrouiller");
+
+    /** How the description of a former name opens (ADR 0127 § 4), the tool to use next. */
+    static final Pattern FORMER_NAME = Pattern.compile("^Ancien nom, gardé jusqu'en 5\\.0 : utiliser ([a-z0-9_]+)\\b");
+
+    /** A published tool, as the guards below read it: its name, whether it is a former one, its description. */
+    record Published(String name, boolean deprecated, String description) {}
 
     static Map<String, String> table(String tsv) {
         Map<String, String> rows = new LinkedHashMap<>();
@@ -76,6 +89,41 @@ class McpRenommageTest {
         return null;
     }
 
+    /**
+     * Why the published names break ADR 0100 or 0127, or {@code null}: a current tool outside the
+     * convention, a former name that does not say which current tool to use, a description opening
+     * on « Ancien nom » without {@code @Deprecated}, or a former name of v3.1.0 whose row names
+     * another tool than its description.
+     */
+    static String namingViolation(List<Published> tools, Map<String, String> table) {
+        Set<String> current = tools.stream()
+                .filter(tool -> !tool.deprecated())
+                .map(Published::name)
+                .collect(Collectors.toSet());
+        for (Published tool : tools) {
+            var former = FORMER_NAME.matcher(tool.description());
+            boolean saysFormer = former.find();
+            if (!tool.deprecated()) {
+                if (saysFormer) {
+                    return tool.name() + " opens on « Ancien nom » but is not @Deprecated";
+                }
+                if (!BARE_VERBS.contains(tool.name())
+                        && !CONVENTION.matcher(tool.name()).matches()) {
+                    return tool.name() + ": not <verbe>_<objet> with a verb of ADR 0100";
+                }
+            } else if (!saysFormer) {
+                return tool.name() + " is @Deprecated: its description must open on « Ancien nom, gardé jusqu'en "
+                        + "5.0 : utiliser <outil> »";
+            } else if (!current.contains(former.group(1))) {
+                return tool.name() + " sends to " + former.group(1) + ", which is not a current tool";
+            } else if (table.containsKey(tool.name()) && !table.get(tool.name()).equals(former.group(1))) {
+                return tool.name() + " sends to " + former.group(1) + " where " + TABLE + " says "
+                        + table.get(tool.name());
+            }
+        }
+        return null;
+    }
+
     /** The table of {@code mcp-outils.md}: only the rows that changed something. */
     static String rendered(Map<String, String> table) {
         String rows = table.entrySet().stream()
@@ -94,6 +142,15 @@ class McpRenommageTest {
         return table(Files.readString(TABLE, StandardCharsets.UTF_8));
     }
 
+    private static List<Published> publishedTools() throws Exception {
+        return OutilsMcp.all().stream()
+                .map(method -> new Published(
+                        FeatureNames.of(method),
+                        method.isAnnotationPresent(Deprecated.class),
+                        method.getAnnotation(Tool.class).description()))
+                .toList();
+    }
+
     private static Set<String> published() throws Exception {
         return OutilsMcp.all().stream().map(FeatureNames::of).collect(Collectors.toCollection(TreeSet::new));
     }
@@ -105,6 +162,12 @@ class McpRenommageTest {
                 .collect(Collectors.toCollection(TreeSet::new));
         assertThat(frozen).as("the frozen 3.1.0 list").hasSize(157);
         assertThat(violation(frozen, published(), table())).isNull();
+    }
+
+    /** P77, the closing audit: no current name outside the convention, every former name pointing at one. */
+    @Test
+    void everyPublishedNameFollowsTheConventionOrSaysWhereItWent() throws Exception {
+        assertThat(namingViolation(publishedTools(), table())).isNull();
     }
 
     /**
@@ -170,6 +233,61 @@ class McpRenommageTest {
                 .contains("not <verbe>_<objet>");
         assertThat(violation(Set.of("volumes"), Set.of("consulter_volumes"), Map.of("volumes", "consulter_volumes")))
                 .isNull();
+    }
+
+    @Test
+    void aCurrentNameOutsideTheConventionFails() {
+        assertThat(namingViolation(List.of(new Published("lever_consigne", false, "Lève la consigne.")), Map.of()))
+                .contains("lever_consigne: not <verbe>_<objet>");
+        assertThat(namingViolation(List.of(new Published("verrouiller", false, "Fige.")), Map.of()))
+                .isNull();
+    }
+
+    @Test
+    void aFormerNameMustSayWhichCurrentToolToUse() {
+        Published current = new Published("supprimer_consigne", false, "Lève la consigne.");
+        assertThat(namingViolation(
+                        List.of(current, new Published("lever_consigne", true, "Lève la consigne.")), Map.of()))
+                .contains("must open on « Ancien nom");
+        assertThat(namingViolation(
+                        List.of(
+                                current,
+                                new Published(
+                                        "lever_consigne",
+                                        true,
+                                        "Ancien nom, gardé jusqu'en 5.0 : utiliser lever_consigne.")),
+                        Map.of()))
+                .contains("not a current tool");
+        assertThat(namingViolation(
+                        List.of(
+                                current,
+                                new Published(
+                                        "lever_consigne",
+                                        true,
+                                        "Ancien nom, gardé jusqu'en 5.0 : utiliser supprimer_consigne.")),
+                        Map.of("lever_consigne", "modifier_consigne")))
+                .contains("says modifier_consigne");
+        assertThat(namingViolation(
+                        List.of(
+                                current,
+                                new Published(
+                                        "lever_consigne",
+                                        true,
+                                        "Ancien nom, gardé jusqu'en 5.0 : utiliser supprimer_consigne, qui prend les "
+                                                + "mêmes arguments.")),
+                        Map.of("lever_consigne", "supprimer_consigne")))
+                .isNull();
+    }
+
+    @Test
+    void aFormerNameMustBeDeprecated() {
+        assertThat(namingViolation(
+                        List.of(new Published(
+                                "lever_consigne",
+                                false,
+                                "Ancien nom, gardé jusqu'en 5.0 : utiliser supprimer_consigne.")),
+                        Map.of()))
+                .contains("is not @Deprecated");
     }
 
     @Test

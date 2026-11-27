@@ -790,7 +790,9 @@ public final class CatalogueActions {
         outil("deverrouiller", VERROU_RETIRE);
         outil("modifier_etat_journee", JOURNEE_ETAT_CHANGE);
         outil("appliquer_consigne", CONSIGNE_POSEE);
+        outil("supprimer_consigne", CONSIGNE_LEVEE);
         outil("lever_consigne", CONSIGNE_LEVEE);
+        outil("modifier_prereglage_consigne", PREREGLAGE_CONSIGNE_ENREGISTRE);
         outil("definir_prereglage_consigne", PREREGLAGE_CONSIGNE_ENREGISTRE);
         outil("supprimer_prereglage_consigne", PREREGLAGE_CONSIGNE_SUPPRIME);
 
@@ -847,6 +849,7 @@ public final class CatalogueActions {
 
         outil("modifier_sauvegardes", SAUVEGARDE_BASCULEE);
 
+        outil("modifier_collecte_disponibilites", COLLECTE_CONFIGUREE);
         outil("configurer_collecte_disponibilites", COLLECTE_CONFIGUREE);
         // A refusal states its own action (CurrentAction); the application is the default.
         outil("modifier_declaration_disponibilite", DECLARATION_APPLIQUEE);

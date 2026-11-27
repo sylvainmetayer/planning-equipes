@@ -57,7 +57,7 @@ Les gabarits sont les journées types de la 3.x. `modifier_gabarit` crée ou rem
 
 ## Poser une consigne
 
-Un arrêté ferme une bande horaire pour tous les stands, et la question est de savoir si le plan peut être retourné avant la nuit ([ADR 0043](repo:docs/decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)). Huit outils miroitent l'écran Consignes : `lister_consignes`, `consulter_preselection_consigne`, `simuler_consigne`, `appliquer_consigne`, `simuler_levee_consigne`, `lever_consigne`, `definir_prereglage_consigne`, `supprimer_prereglage_consigne`. Aucun ne nomme une personne.
+Un arrêté ferme une bande horaire pour tous les stands, et la question est de savoir si le plan peut être retourné avant la nuit ([ADR 0043](repo:docs/decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)). Huit outils miroitent l'onglet Consignes des Règles : `lister_consignes`, `consulter_preselection_consigne`, `simuler_consigne`, `appliquer_consigne`, `simuler_levee_consigne`, `supprimer_consigne`, `modifier_prereglage_consigne`, `supprimer_prereglage_consigne`. Aucun ne nomme une personne.
 
 Les **fenêtres** s'écrivent `HH:MM-HH:MM` séparées par des virgules, la fin omise ou à `00:00` valant « jusqu'à minuit » (`08:00-10:00,18:00-`). Les **ouvertures** nomment le stand, sa fenêtre et, après `*`, l'effectif de cette fenêtre : `BOURSE=08:00-10:00*2,BOURSE=18:00-22:00*7`. Sans `*N`, la fenêtre hérite du plus fort effectif que le stand perd dans la bande, sinon de son minimum. Le motif est obligatoire : il est imprimé partout où la journée est dite modifiée. Les fenêtres repas (`repasMidi`, `repasSoir`, `coupureRepasMinutes`, `justificationRepas`) ne valent que sur les dates de la consigne.
 
@@ -66,17 +66,17 @@ Les **fenêtres** s'écrivent `HH:MM-HH:MM` séparées par des virgules, la fin 
 3. `appliquer_consigne`, mêmes arguments : pose ou remplace la consigne d'une date et n'ajoute à la grille que les créneaux que les ouvertures exigent. Les dates doivent être à venir et s'écrivent toutes ensemble ou pas du tout.
 4. `lancer_correction`, puis `consulter_publication` et `publier_planning`.
 
-Lever suit le même pli : `simuler_levee_consigne` nomme les créneaux ajoutés qui partiraient avec leurs sièges et avertit quand les journées figées épuisent les gens disponibles, `lever_consigne` les retire et refuse une date passée ou en cours, un jour travaillé gardant la consigne qui l'a gouverné. Un préréglage (« Plan canicule ») mémorise bande, motif et fenêtres et suit la duplication de l'édition. `consulter_alertes_meteo` rend les alertes levées le matin avec le préréglage suggéré pour le phénomène ; il ne pose rien, appliquer la suggestion reste un `appliquer_consigne` explicite.
+Lever suit le même pli : `simuler_levee_consigne` nomme les créneaux ajoutés qui partiraient avec leurs sièges et avertit quand les journées figées épuisent les gens disponibles, `supprimer_consigne` les retire et refuse une date passée ou en cours, un jour travaillé gardant la consigne qui l'a gouverné. Un préréglage (« Plan canicule ») mémorise bande, motif et fenêtres et suit la duplication de l'édition. `consulter_alertes_meteo` rend les alertes levées le matin avec le préréglage suggéré pour le phénomène ; il ne pose rien, appliquer la suggestion reste un `appliquer_consigne` explicite.
 
 ## Décider ce que les animateurs ont demandé
 
-Les déclarations de disponibilité et les demandes d'échange arrivent de l'espace animateur. `consulter_disponibilites` lit l'onglet Disponibilités de la page Animateurs sous une `section` : `collecte` (défaut : la fenêtre, ses dates, la relance automatique), `declarations` (filtrables par `statut`) ou `covoiturage`. `modifier_declaration_disponibilite` décide une déclaration : `decision=appliquer` l'écrit sur la fiche par le même `write*` que l'écran de saisie (les données sont marquées modifiées, `consulter_planning` signale le plan périmé, le journal porte les champs remplacés, `joursIndisponibles` et `souhaits`, et l'outil rend les avertissements en codes) ; `decision=refuser` laisse la fiche intacte, avec le `commentaire` que l'animateur lira. Ouvrir la collecte reste `configurer_collecte_disponibilites`, à part, parce qu'il peut écrire aux animateurs.
+Les déclarations de disponibilité et les demandes d'échange arrivent de l'espace animateur. `consulter_disponibilites` lit l'onglet Disponibilités de la page Animateurs sous une `section` : `collecte` (défaut : la fenêtre, ses dates, la relance automatique), `declarations` (filtrables par `statut`) ou `covoiturage`. `modifier_declaration_disponibilite` décide une déclaration : `decision=appliquer` l'écrit sur la fiche par le même `write*` que l'écran de saisie (les données sont marquées modifiées, `consulter_planning` signale le plan périmé, le journal porte les champs remplacés, `joursIndisponibles` et `souhaits`, et l'outil rend les avertissements en codes) ; `decision=refuser` laisse la fiche intacte, avec le `commentaire` que l'animateur lira. Ouvrir la collecte reste `modifier_collecte_disponibilites`, à part, parce qu'il peut écrire aux animateurs.
 
 `consulter_foire_echanges` rend la fenêtre de la foire et ses statistiques (volumes, taux, délais, répartitions par jour et par stand) sur une période de création (`du`, `au`, ou `touteEdition`, refusé avec les deux autres). Aucun animateur n'y figure, pas même par id.
 
 `consulter_publication`, vue `confirmations`, compte, parmi les animateurs qui ont un poste sur le plan publié, les confirmés, relancés, silencieux et les **échecs d'envoi** (comptés à part, sans adresse) et date la publication à laquelle ils répondent ; `jamaisPublie` vrai veut dire que la question n'a encore été posée à personne.
 
-La section `covoiturage` de `consulter_disponibilites` rend les « Je viens avec… » de la collecte, à part de la déclaration : membres, statut, `confirmedByAll`, jours où les indisponibilités divergent, ajustement créé, le tout par id et avec le statut `EN_ATTENTE` (non validée) ou `VALIDEE`. La validation, l'écart et l'annulation restent des gestes d'écran, parce que la validation prévient les animateurs par courriel ; un assistant crée directement un `ARRIVEE_GROUPEE` par `creer_contrainte_ad_hoc`. En revanche, `supprimer_contrainte_ad_hoc` sur une arrivée groupée qu'une demande validée soutient rend un résultat en erreur portant la phrase de l'écran Ajustements manuels (annulez-la depuis Disponibilités > Covoiturage).
+La section `covoiturage` de `consulter_disponibilites` rend les « Je viens avec… » de la collecte, à part de la déclaration : membres, statut, `confirmedByAll`, jours où les indisponibilités divergent, ajustement créé, le tout par id et avec le statut `EN_ATTENTE` (non validée) ou `VALIDEE`. La validation, l'écart et l'annulation restent des gestes d'écran, parce que la validation prévient les animateurs par courriel ; un assistant crée directement un `ARRIVEE_GROUPEE` par `creer_contrainte_ad_hoc`. En revanche, `supprimer_contrainte_ad_hoc` sur une arrivée groupée qu'une demande validée soutient rend un résultat en erreur portant la phrase de l'onglet Ajustements des Règles (annulez-la depuis Disponibilités > Covoiturage).
 
 ## Éditions, scénarios et publication
 
@@ -101,7 +101,7 @@ Deux **ressources**, à attacher une fois pour informer tous les appels suivants
 
 ## Anciens noms d'outils
 
-La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Un outil regroupé fait sous un seul nom, avec un argument (`vue`, `section`, `mode`, `decision`), ce que faisaient plusieurs ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)) ; ses anciens noms restent publiés jusqu'en 5.0 à côté du nouveau, leur description commençant par « Ancien nom » : ceux de la relecture des journées, ceux des journées types, des créneaux récurrents et de la dérivation, que le générateur de créneaux a regroupés ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), ceux du plan, du calcul, des règles et des échanges, ceux du diagnostic et de ses rapports, ceux des paramètres, des éditions, des scénarios, de la publication et des sauvegardes, et ceux des stands, des animateurs, des disponibilités et des créneaux. Le mode `tension` d'`analyser_marge` est devenu la section `tension` de `consulter_risques`. L'ancien outil de réglage du solveur n'est plus publié : le budget de calcul qu'il réglait est passé à l'instance, et seul le mail de fin de résolution reste dans `modifier_parametres` (section `calcul`). Les trois outils de plages et de modèle d'un stand nés en 4.0 ne sont pas gardés : aucune version publiée ne les a portés, et le [guide de la 4.0](../installer/passer-a-la-4-0.md) les nomme. Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
+La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Un outil regroupé fait sous un seul nom, avec un argument (`vue`, `section`, `mode`, `decision`), ce que faisaient plusieurs ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)) ; ses anciens noms restent publiés jusqu'en 5.0 à côté du nouveau, leur description commençant par « Ancien nom » : ceux de la relecture des journées, ceux des journées types, des créneaux récurrents et de la dérivation, que le générateur de créneaux a regroupés ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), ceux du plan, du calcul, des règles et des échanges, ceux du diagnostic et de ses rapports, ceux des paramètres, des éditions, des scénarios, de la publication et des sauvegardes, ceux des stands, des animateurs, des disponibilités et des créneaux, et trois noms que l'audit de clôture a remis dans la convention (`lever_consigne`, `definir_prereglage_consigne`, `configurer_collecte_disponibilites`). Le mode `tension` d'`analyser_marge` est devenu la section `tension` de `consulter_risques`. L'ancien outil de réglage du solveur n'est plus publié : le budget de calcul qu'il réglait est passé à l'instance, et seul le mail de fin de résolution reste dans `modifier_parametres` (section `calcul`). Les trois outils de plages et de modèle d'un stand nés en 4.0 ne sont pas gardés : aucune version publiée ne les a portés, et le [guide de la 4.0](../installer/passer-a-la-4-0.md) les nomme. Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
 
 <!-- mcp-renommages:debut -->
 | Nom en 3.x | Nom en 4.0 |
@@ -128,6 +128,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `changements_journee` | `comparer_journee` |
 | `compacter_horaires_stands` | retiré |
 | `comparer_instantanes` | `comparer_versions` |
+| `configurer_collecte_disponibilites` | `modifier_collecte_disponibilites` |
 | `configurer_foire_echanges` | `modifier_foire_echanges` |
 | `consulter_animateur` | `lister_animateurs` |
 | `consulter_collecte_disponibilites` | `consulter_disponibilites` |
@@ -141,6 +142,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `creer_creneaux_recurrents` | `appliquer_generateur_creneaux` |
 | `creer_stand_complet` | `creer_stand` |
 | `definir_journee_type` | `modifier_gabarit` |
+| `definir_prereglage_consigne` | `modifier_prereglage_consigne` |
 | `deplacer_affectation` | `modifier_affectation` |
 | `desactiver_contrainte` | `modifier_contrainte` |
 | `desactiver_edition` | `modifier_edition` |
@@ -161,6 +163,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `heures_travaillees` | `consulter_charge` |
 | `importer_scenario_yaml` | `importer_scenario` |
 | `lancer_solveur` | `lancer_calcul` |
+| `lever_consigne` | `supprimer_consigne` |
 | `lever_gel` | `modifier_phase_edition` |
 | `lister_affectations` | `consulter_planning` |
 | `lister_declarations_disponibilite` | `consulter_disponibilites` |

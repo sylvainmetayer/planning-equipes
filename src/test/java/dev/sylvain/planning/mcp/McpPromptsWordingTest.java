@@ -317,7 +317,7 @@ class McpPromptsWordingTest {
         assertThat(text)
                 .contains("n'appelle ni creer_edition ni modifier_edition")
                 .contains("appliquer_consigne")
-                .contains("lever_consigne");
+                .contains("supprimer_consigne");
     }
 
     /**

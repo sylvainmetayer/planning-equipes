@@ -58,6 +58,12 @@ class ActiveEditionEmissionStructuralTest {
             List.of(method(RelanceManuelleService.class, "relancer", List.class)),
             "relancer_animateurs",
             List.of(method(RelanceManuelleService.class, "relancer", List.class)),
+            "modifier_collecte_disponibilites",
+            List.of(method(
+                    DeclarationDisponibiliteService.class,
+                    "configure",
+                    DeclarationDisponibiliteRepository.FenetreCollecte.class,
+                    boolean.class)),
             "configurer_collecte_disponibilites",
             List.of(method(
                     DeclarationDisponibiliteService.class,
