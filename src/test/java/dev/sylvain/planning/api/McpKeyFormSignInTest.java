@@ -2,7 +2,6 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 
 import dev.sylvain.planning.service.compte.SessionOpenings;
@@ -11,7 +10,6 @@ import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -48,17 +46,10 @@ class McpKeyFormSignInTest {
                 .post("/j_security_check");
     }
 
-    /** The instant is noted by an end handler, once the response has left: the client can be faster. */
-    private void awaitNoted(String cookie) {
-        await().atMost(Duration.ofSeconds(5))
-                .until(() -> openings.openedAt(cookie).isPresent());
-    }
-
     @Test
-    void theLoginNotesTheInstantAndTheKeyIsRevealedOnIt() {
+    void theKeyIsRevealedRightAfterTheLoginWithoutWaiting() {
         String session = login().cookie("planning-session");
         assertThat(session).isNotBlank();
-        awaitNoted(session);
         assertThat(openings.openedAt(session))
                 .hasValueSatisfying(at -> assertThat(at)
                         .isBetween(Instant.now().minusSeconds(30), Instant.now().plusSeconds(5)));
@@ -75,7 +66,6 @@ class McpKeyFormSignInTest {
     @Test
     void aReissuedCookieKeepsTheInstantItsSessionOpened() throws Exception {
         String session = login().cookie("planning-session");
-        awaitNoted(session);
         Instant opened = openings.openedAt(session).orElseThrow();
         Thread.sleep(1_500);
 
@@ -85,14 +75,12 @@ class McpKeyFormSignInTest {
                 .cookie("planning-session");
 
         assertThat(renewed).isNotBlank().isNotEqualTo(session);
-        awaitNoted(renewed);
         assertThat(openings.openedAt(renewed)).contains(opened);
     }
 
     @Test
     void anOldSessionIsAskedToSignInAgain() {
         String session = login().cookie("planning-session");
-        awaitNoted(session);
         openings.record(session, Instant.now().minusSeconds(11 * 60));
 
         given().header("X-Edition-Id", "E1")
@@ -103,6 +91,45 @@ class McpKeyFormSignInTest {
                 .statusCode(409)
                 .body("code", org.hamcrest.Matchers.startsWith("RECONNEXION_REQUISE_"))
                 .body("mode", equalTo("BREAK_GLASS"));
+    }
+
+    @Test
+    void signingInAgainWithAnOldSessionNotesAFreshOpening() {
+        String session = login().cookie("planning-session");
+        openings.record(session, Instant.now().minusSeconds(11 * 60));
+
+        String fresh = given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", session)
+                .contentType("application/x-www-form-urlencoded")
+                .formParam("j_username", "admin")
+                .formParam("j_password", "admin")
+                .redirects()
+                .follow(false)
+                .post("/j_security_check")
+                .cookie("planning-session");
+
+        assertThat(fresh).isNotBlank().isNotEqualTo(session);
+        assertThat(openings.openedAt(fresh))
+                .hasValueSatisfying(at -> assertThat(at).isAfter(Instant.now().minusSeconds(30)));
+    }
+
+    /** Only a form post logs in: a GET on the login path with an old session does not make it recent again. */
+    @Test
+    void aGetOnTheLoginPathKeepsTheOpeningOfAnOldSession() throws Exception {
+        String session = login().cookie("planning-session");
+        Instant old = Instant.now().minusSeconds(11 * 60);
+        openings.record(session, old);
+        Thread.sleep(1_500);
+
+        String renewed = given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", session)
+                .redirects()
+                .follow(false)
+                .get("/j_security_check")
+                .cookie("planning-session");
+
+        assertThat(renewed).isNotBlank().isNotEqualTo(session);
+        assertThat(openings.openedAt(renewed)).contains(old);
     }
 
     @Test

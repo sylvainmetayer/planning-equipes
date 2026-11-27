@@ -13,6 +13,7 @@ import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -225,15 +226,26 @@ public class AdminLoginLimiter {
                             + Math.max(1, (attente + 59) / 60) + " minute(s).\"}");
             return;
         }
-        if (!isPasswordStepPath(contexte.normalizedPath())) {
+        if (!isPasswordStepPath(contexte.normalizedPath()) && contexte.request().method() == HttpMethod.POST) {
             boolean locale = isLocalLoginPath(contexte.normalizedPath());
+            // Just before the headers leave, so the instant is noted before the client can use the cookie.
+            String previous = requestSessionCookie(contexte);
+            contexte.addHeadersEndHandler(v -> {
+                String opened = newSessionCookie(contexte, previous);
+                if (opened != null) {
+                    // When this session opens, for the recent sign-in control (ADR 0097).
+                    openings.record(opened, Instant.now());
+                }
+            });
             contexte.addEndHandler(issue -> {
                 if (issue.succeeded() && successfulLogin(contexte)) {
-                    // When this session opens, for the recent sign-in control (ADR 0097).
-                    openings.record(sessionCookieValue(contexte), Instant.now());
                     recordSuccess(address, locale);
                 }
             });
+        } else {
+            // Only a form post logs in: any other request on these paths is an ordinary one, whose
+            // reissued cookie keeps its opening, and which neither journals a login nor clears failures.
+            carryOpeningOver(contexte);
         }
         contexte.next();
     }
@@ -370,12 +382,28 @@ public class AdminLoginLimiter {
         if (cookie == null || openings.openedAt(cookie.getValue()).isEmpty()) {
             return;
         }
-        contexte.addEndHandler(issue -> {
-            String renewed = sessionCookieValue(contexte);
-            if (renewed != null && !renewed.equals(cookie.getValue())) {
+        contexte.addHeadersEndHandler(v -> {
+            String renewed = newSessionCookie(contexte, cookie.getValue());
+            if (renewed != null) {
                 openings.renew(cookie.getValue(), renewed);
             }
         });
+    }
+
+    private String requestSessionCookie(RoutingContext contexte) {
+        Cookie cookie = contexte.request().getCookie(nomCookieSession);
+        return cookie == null ? null : cookie.getValue();
+    }
+
+    /**
+     * The session cookie the response is about to set, {@code null} when it sets
+     * none. Before the headers are written the cookie only lives in the jar the
+     * request shares with the response (it is a {@code Set-Cookie} header later):
+     * it is the one whose value is not the one the request came with.
+     */
+    private String newSessionCookie(RoutingContext contexte, String previous) {
+        String value = requestSessionCookie(contexte);
+        return value == null || value.isEmpty() || value.equals(previous) ? null : value;
     }
 
     /** Whether the response opens a session: a session cookie with a value. */
