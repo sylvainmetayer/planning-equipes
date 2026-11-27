@@ -11,29 +11,23 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom, map } from 'rxjs';
 import { StandsApi } from '../../core/api/stands-api';
-import { isInformationalAnomaly } from '../../core/horaire-stand';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { placesOf } from '../../core/seat-places';
-import { errorText } from '../../core/resource-state';
 import { SolverJobService } from '../../core/solver-job.service';
 import { formatHeure } from '../../core/time-of-day';
 import { typologieLabels } from '../../core/typologie-colors';
 import { consumeQueryParam, readSort, sortQueryParams } from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { GelNotice } from '../../shared/gel-notice';
-import { StatusMessage } from '../../shared/status-message';
-import { anomalyLabel } from '../stands/stand-detail';
 import { StandFormData, StandFormDialog } from '../stands/stand-form-dialog';
 import { sortStands, standCoverage, standOpenings } from '../stands/stand-order';
 import { StandModeleEditor } from './stand-modele-editor';
@@ -54,9 +48,8 @@ interface EmptySeat {
  * location, its headcounts, its levels — and « Modifier l'identité » opens the
  * stand form cut down to those fields. Below, its recurring model, edited in
  * place, and the dated plages it unfolds into, beside the ones typed by hand
- * (ADR 0104); the anomalies of its openings; once a plan is computed, its seats, the empty ones opened in the
- * Siège panel of the Journée; « Comparer avec… » and the history of its
- * changes.
+ * (ADR 0104); once a plan is computed, its seats, the empty ones opened in the
+ * Siège panel of the Journée; the history of its changes.
  *
  * `?modifier=1` opens the identity form on arrival: the `?edit=` links of the
  * application land here.
@@ -67,13 +60,10 @@ interface EmptySeat {
     HhmmPipe,
     MatButtonModule,
     MatCardModule,
-    MatFormFieldModule,
     MatIconModule,
     MatProgressBarModule,
-    MatSelectModule,
     RouterLink,
     GelNotice,
-    StatusMessage,
     StandModeleEditor,
     StandPlagesEditor,
   ],
@@ -121,7 +111,7 @@ export class StandFichePage {
   });
   protected readonly storeLoading = this.storeLoad.isLoading;
 
-  /** The openings of every stand: this one's row, its anomalies, and the columns of the grid. */
+  /** The openings of every stand: this one's row and its cells. */
   private readonly openings = resource({
     params: () => ({ id: this.standId() }),
     loader: () => this.standsApi.openings(),
@@ -129,15 +119,11 @@ export class StandFichePage {
   protected readonly rapport = computed(() =>
     this.openings.hasValue() ? this.openings.value() : null,
   );
-  protected readonly openingsError = errorText(this.openings);
   protected readonly ligne = computed(
     () => this.rapport()?.stands.find((ligne) => ligne.standId === this.standId()) ?? null,
   );
   protected readonly joursOuverts = computed(
     () => this.ligne()?.jours.filter((jour) => jour.etat !== 'FERME').length ?? 0,
-  );
-  protected readonly anomalies = computed(
-    () => this.rapport()?.anomalies.filter((anomalie) => anomalie.standId === this.standId()) ?? [],
   );
 
   /** The persisted plan, for the seats of this stand; nothing before a solve, or when unreadable. */
@@ -207,10 +193,6 @@ export class StandFichePage {
       next: index >= 0 ? (ordered[index + 1] ?? null) : null,
     };
   });
-  /** The other stands « Comparer avec… » offers. */
-  protected readonly others = computed(() =>
-    this.ordered().filter((stand) => stand.id !== this.standId()),
-  );
 
   private readonly modele = viewChild(StandModeleEditor);
 
@@ -219,9 +201,6 @@ export class StandFichePage {
     this.route.queryParamMap.pipe(map((params) => params.get('jour') ?? '')),
     { initialValue: this.route.snapshot.queryParamMap.get('jour') ?? '' },
   );
-
-  protected readonly anomalyLabel = anomalyLabel;
-  protected readonly isInformationalAnomaly = isInformationalAnomaly;
 
   constructor() {
     void this.problemes.reloadFeasibility();
@@ -295,17 +274,6 @@ export class StandFichePage {
       queryParams: { jour: jour || null },
       queryParamsHandling: 'merge',
       replaceUrl: true,
-    });
-  }
-
-  /** « Comparer avec… » : the comparator, this stand as the reference. */
-  protected compareWith(otherId: string | null): void {
-    if (!otherId) {
-      return;
-    }
-    const id = this.standId();
-    void this.router.navigate(['/creneaux'], {
-      queryParams: { onglet: 'horaires', vue: 'comparer', stands: `${id},${otherId}`, ref: id },
     });
   }
 

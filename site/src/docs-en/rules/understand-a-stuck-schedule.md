@@ -40,7 +40,7 @@ When a rule ran into exceptions entered by hand, they are named one by one, alon
 Under each problem, the application lists the real actions that fix it, in the order the rule catalogue gives them, each with its reason.
 
 - "Qui peut tenir ce siège ?" (who can hold this seat?) opens on the spot, and "Place" fills the seat without leaving the Diagnostic.
-- The other actions open the screen already positioned: the Skills grid on the stand's game category, the stand's profile, the rule's row to set its ceiling, the Stand hours, the load per person, the locks, the adjustments involved shown alone, the missing data of a floor.
+- The other actions open the screen already positioned: the Skills grid on the stand's game category, the stand's profile, the rule's row to set its ceiling, the load per person, the locks, the adjustments involved shown alone, the missing data of a floor.
 - "Baisser l'importance" (lower the importance) always comes last, and disappears when the importance is already at its lowest.
 - A day already under way offers nothing that would change it.
 

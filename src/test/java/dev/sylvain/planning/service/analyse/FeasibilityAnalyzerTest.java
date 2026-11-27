@@ -521,7 +521,7 @@ class FeasibilityAnalyzerTest {
         assertThat(cause.actions().getFirst().route()).isEqualTo("/journee");
         assertThat(cause.actions().getFirst().parametres()).containsEntry("creneau", "1");
         assertThat(cause.actions().get(1).parametres()).containsEntry("typologies", "STRATEGIE");
-        assertThat(cause.actions().get(2).parametres()).containsEntry("stand", "stand-1");
+        assertThat(cause.actions().get(2).parametres()).containsEntry("edit", "stand-1");
     }
 
     /** A shortfall on a timeslot already started offers nothing that would rewrite a worked day, and says so. */

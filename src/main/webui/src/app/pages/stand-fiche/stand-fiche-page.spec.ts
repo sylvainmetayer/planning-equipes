@@ -7,7 +7,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ComponentType } from '@angular/cdk/portal';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
-import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { StandsApi } from '../../core/api/stands-api';
@@ -201,10 +201,10 @@ describe('StandFichePage', () => {
     expect(liens).toContain('/stands?onglet=lieux&q=Place%20du%20march%C3%A9');
   });
 
-  it('shows its anomalies, and what the plan did of its seats, the empty one in the Siège panel', async () => {
+  it('shows what the plan did of its seats, the empty one in the Siège panel, and no opening anomaly', async () => {
     await render('S2');
 
-    expect(text()).toContain('Fenêtre 07:00-08:00 hors de tout créneau');
+    expect(text()).not.toContain('Fenêtre 07:00-08:00 hors de tout créneau');
     expect(text()).toContain('2 poste(s) · 1 pourvu(s) · 1 vide(s)');
     const vides = Array.from(
       root().querySelectorAll<HTMLAnchorElement>('#stand-section-plan li a'),
@@ -244,19 +244,6 @@ describe('StandFichePage', () => {
 
     expect(store.reload).toHaveBeenCalledWith(['stands']);
     expect(standsApi.openings.mock.calls.length).toBeGreaterThan(before);
-  });
-
-  it('opens the comparator on the hours tab, this stand as the reference', async () => {
-    await render('S2');
-    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
-
-    fixture.componentInstance['compareWith'](null);
-    expect(navigate).not.toHaveBeenCalled();
-
-    fixture.componentInstance['compareWith']('S3');
-    expect(navigate).toHaveBeenCalledWith(['/creneaux'], {
-      queryParams: { onglet: 'horaires', vue: 'comparer', stands: 'S2,S3', ref: 'S2' },
-    });
   });
 
   it('answers an unknown id with a sentence', async () => {

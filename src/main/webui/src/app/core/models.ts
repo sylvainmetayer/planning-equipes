@@ -246,13 +246,7 @@ export type EtatOuverture = 'OUVERT_TOTAL' | 'OUVERT_PARTIEL' | 'FERME';
 export type SourceHoraire = 'DEFAUT' | 'REGLE' | 'EXCEPTION';
 
 export type TypeAnomalieOuverture =
-  | 'STAND_JAMAIS_OUVERT'
-  | 'FENETRE_SANS_EFFET'
-  | 'SEGMENT_TROP_COURT'
-  // For information only: how a stand's rules are written, which the resolver settles.
-  | 'REGLES_CHEVAUCHANTES'
-  | 'REGLE_MASQUEE'
-  | 'FENETRES_CHEVAUCHANTES';
+  'STAND_JAMAIS_OUVERT' | 'FENETRE_SANS_EFFET' | 'SEGMENT_TROP_COURT';
 
 /**
  * One column of the entry grid: a tranche of a créneau — the whole créneau
@@ -348,8 +342,6 @@ export interface AnomalieOuverture {
   /** `null` on an open-ended window (« jusqu'à la fermeture »). */
   heureFin?: string | null;
   message: string;
-  /** The rule an anomaly about the rules names (the later one of an overlapping pair); absent otherwise. */
-  horaireId?: number | null;
 }
 
 /**
@@ -363,73 +355,6 @@ export interface RapportOuvertures {
   standsJamaisOuverts: number;
   postesTotal: number;
   anomalies: AnomalieOuverture[];
-}
-
-/** One window of a layer of the combined calendar, in minutes from the day's midnight (past 1440 after it). */
-export interface LayerWindow {
-  debutMinutes: number;
-  finMinutes: number;
-  /** The headcount asked; on a reopening, `null` when the consigne inherits it. */
-  effectif: number | null;
-}
-
-/** One timeslot of the grid on a day of the combined calendar. */
-export interface LayerTimeslot {
-  id: number | null;
-  heureDebut: string;
-  heureFin: string;
-  debutMinutes: number;
-  finMinutes: number;
-  /** Created by the day's consigne for its reopenings. */
-  addedByConsigne: boolean;
-}
-
-/** The consigne of a day: the band it closes for every stand, and why. */
-export interface ConsigneLayer {
-  fermetureDebut: string;
-  fermetureFin: string | null;
-  debutMinutes: number;
-  finMinutes: number;
-  motif: string;
-  prereglage: string | null;
-}
-
-export interface LayerDay {
-  date: string;
-  jour: number;
-  /** The public holiday's name, `null` on an ordinary day. */
-  ferie: string | null;
-  vacations: LayerTimeslot[];
-  consigne: ConsigneLayer | null;
-}
-
-/** One stand on one day, layer by layer, before any solve. */
-export interface LayerCell {
-  date: string;
-  /** Which of the stand's own layers decided the day: none (open by default), a rule, a dated exception. */
-  source: SourceHoraire;
-  /** The rules that decided it, when `source` is `REGLE`. */
-  horaireIds: number[];
-  motif: string | null;
-  /** The stand's own windows, before the consigne. */
-  nominal: LayerWindow[];
-  /** The windows the consigne reopens this stand on. */
-  reopenings: LayerWindow[];
-  /** What is left once the consigne has run: what the seats are cut from. */
-  effective: LayerWindow[];
-}
-
-export interface LayerRow {
-  standId: string;
-  nom: string;
-  effectifMin: number;
-  jours: LayerCell[];
-}
-
-/** `GET /api/ouvertures-stands/couches`: stands × timeslots × consignes, before any solve. */
-export interface OpeningLayers {
-  jours: LayerDay[];
-  stands: LayerRow[];
 }
 
 /** One stand of the grid as submitted to `PUT /api/ouvertures-stands/grille`: all its cells. */
@@ -4744,8 +4669,6 @@ export interface EtatOuvertures {
   /** Windows that overlap no créneau of their date: a stand said open at an hour the grid does not have. */
   fenetresSansEffet: number;
   standsJamaisOuverts: number;
-  /** Among the anomalies, those for information only (overlapping rules or windows, a masked rule). */
-  informations: number;
   statut: StatutEtat;
 }
 
