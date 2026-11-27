@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 /**
  * The signs that a scenario file was cut short — a copy interrupted, a
@@ -23,9 +22,6 @@ import java.util.regex.Pattern;
  */
 public final class ScenarioTruncation {
 
-    /** A line that is a whole entry written inline: {@code - { heureDebut: "14:00" }}. */
-    private static final Pattern INLINE_ENTRY = Pattern.compile("\\s*(-\\s+)?[\\[{]");
-
     private ScenarioTruncation() {}
 
     /** @param document the file as SnakeYAML parsed it, before any conversion */
@@ -38,7 +34,7 @@ public final class ScenarioTruncation {
         }
         String derniereLigne =
                 yamlContent.stripTrailing().lines().reduce((a, b) -> b).orElse("");
-        if (INLINE_ENTRY.matcher(derniereLigne).lookingAt()) {
+        if (isInlineEntry(derniereLigne)) {
             // An entry written inline closes on its bracket: a cut through it does not parse at all, and
             // the keys it leaves out were left out on purpose.
             return warnings;
@@ -60,6 +56,15 @@ public final class ScenarioTruncation {
             noeud = dernier;
         }
         return warnings;
+    }
+
+    /** A line that is a whole entry written inline: {@code - { heureDebut: "14:00" }}. */
+    private static boolean isInlineEntry(String line) {
+        String sansTiret = line.strip();
+        if (sansTiret.startsWith("- ")) {
+            sansTiret = sansTiret.substring(2).strip();
+        }
+        return sansTiret.startsWith("{") || sansTiret.startsWith("[");
     }
 
     /**
