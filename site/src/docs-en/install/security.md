@@ -128,6 +128,14 @@ kilobytes, and a cap shared with the SQL dumps would leave ten
 megabytes of margin to an import that needs none of it. The file is
 never written to disk: see [`rgpd.md`](rgpd.md).
 
+A **YAML scenario import** is also bounded by what the file stands for, not
+only by its weight: an alias (`*name`) repeats a list without copying it, and a
+few hundred bytes of nested aliases can stand for billions of elements, enough
+to exhaust the memory of the whole instance. A file past 2,000,000 elements
+once its aliases are resolved, or with an alias that contains itself, is
+refused before anything reads it further. The largest scenario shipped has
+about 85,000.
+
 These caps do not replace those of the reverse proxy, which must remain the
 first line (per-IP rate limiting, per-client connection cap,
 timeouts).
