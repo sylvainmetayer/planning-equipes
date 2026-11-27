@@ -37,8 +37,8 @@ Chaque nuit, toute la base est copiée sur le disque de l'hébergeur, et seules 
 
 ## Retrouver le mode d'emploi dans l'application
 
-- Aide : le mode d'emploi complet de l'application, avec une recherche, consultable pendant qu'une résolution tourne ou sur une édition vide (icône « ? » de la barre d'outils).
-- Nouveautés : ce que la version installée a apporté, et depuis quelle version. Les évolutions sont regroupées par version ; ce qui n'est pas encore publié apparaît sous « À venir », et la liste est triée comme les notes de version, « À surveiller » d'abord. Rien n'est à tenir à jour à la main.
+- Aide : le mode d'emploi de l'application, avec une recherche, consultable pendant qu'une résolution tourne ou sur une édition vide. L'icône « ? » de la barre d'outils ouvre l'aide courte de l'écran où vous êtes, et de l'onglet affiché : ce que l'écran répond, comment faire le geste principal, et le lien vers le guide du site. Les sections détaillées suivent, par exemple « Comment faire sans affectation forcée ».
+- Nouveautés : la liste des versions, la plus récente en haut. Chacune porte son numéro, sa date et ses points marquants (« À surveiller » d'abord, puis les nouveautés) ; une préversion `-rc.N` est annoncée comme telle, et ce qui n'est pas encore publié apparaît sous « À venir ». Le détail complet est dans les notes de version. Rien n'est à tenir à jour à la main.
 
 ## Travailler plus vite
 

@@ -1,6 +1,6 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { NgTemplateOutlet } from '@angular/common';
+import { Location, NgTemplateOutlet } from '@angular/common';
 import {
   DOCUMENT,
   ChangeDetectionStrategy,
@@ -128,6 +128,7 @@ export class AdminShell {
   protected readonly locale: AppLocale = getStoredLocale();
 
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
   private readonly _aideSection = signal<string | undefined>(undefined);
   /** The guide's section for the screen on display (`data.aide` of its route), if it names one. */
   protected readonly aideSection = this._aideSection.asReadonly();
@@ -267,6 +268,10 @@ export class AdminShell {
         this._aideSection.set(this.sectionAide());
         queueMicrotask(() => this.annoncerNavigation());
       });
+    // A tab switched inside a page writes the address bar without navigating
+    // (`keepViewInQueryParams`, ADR 0018): the « ? » must follow it too.
+    const stopUrlWatch = this.location.onUrlChange(() => this._aideSection.set(this.sectionAide()));
+    destroyRef.onDestroy(stopUrlWatch);
     // Global keyboard shortcuts (issue #314), armed for the admin session only:
     // /login and the espace animateur render outside this shell and have
     // neither a palette nor any of these destinations.
@@ -280,8 +285,10 @@ export class AdminShell {
   private sectionAide(): string | undefined {
     let snapshot: ActivatedRouteSnapshot | null = this.router.routerState.snapshot.root;
     let section: string | undefined;
+    // The address bar, not the snapshot: an in-page tab switch only replaces the URL.
+    const onglet =
+      new URLSearchParams(this.location.path().split('?')[1] ?? '').get('onglet') ?? undefined;
     while (snapshot) {
-      const onglet = snapshot.queryParams['onglet'] as string | undefined;
       const byTab = (snapshot.data['aideOnglets'] as Record<string, string> | undefined)?.[
         onglet ?? ''
       ];

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classify, filterReleases, NewsCommit, readHeading, releases, toEntry } from './news';
+import { classify, highlights, isPreRelease, NewsCommit, releases, toEntry } from './news';
 
 function commit(subject: string, partial: Partial<NewsCommit> = {}): NewsCommit {
   return { subject, date: '2026-09-14', tag: null, ...partial };
@@ -113,33 +113,43 @@ describe('releases', () => {
   });
 });
 
-describe('filterReleases', () => {
+describe('highlights', () => {
   const list = releases([
-    commit('feat(espace): ce qui a changé pour vous', { date: '2026-09-14' }),
+    commit('feat(espace): ce qui a changé pour vous', { date: '2026-09-14', tag: 'v4.0.0-rc.1' }),
     commit('fix(publication): numéroter le jour', { date: '2026-09-13' }),
+    commit('feat!: une rupture', { date: '2026-09-12' }),
+    commit('fix: une correction seule', { date: '2026-09-01', tag: 'v3.5.0' }),
   ]);
 
-  it('keeps everything by default', () => {
-    expect(filterReleases(list, 'all', '')).toEqual(list);
+  it('keeps the warnings and the new features, and drops the rest', () => {
+    const [release] = highlights(list);
+    expect(release.groups.map((group) => group.heading)).toEqual(['attention', 'feature']);
+    expect(release.count).toBe(2);
   });
 
-  it('keeps one heading', () => {
-    const filtered = filterReleases(list, 'fix', '');
-    expect(filtered[0].groups.map((group) => group.heading)).toEqual(['fix']);
-    expect(filtered[0].count).toBe(1);
-  });
-
-  it('searches the wording and the scope, accents and case aside', () => {
-    expect(filterReleases(list, 'all', 'PUBLICATION')[0].count).toBe(1);
-    expect(filterReleases(list, 'all', 'change')[0].count).toBe(1);
-    expect(filterReleases(list, 'all', 'introuvable')).toEqual([]);
+  it('leaves out a version that has no highlight', () => {
+    expect(highlights(list).map((release) => release.version)).toEqual(['v4.0.0-rc.1']);
   });
 });
 
-describe('readHeading', () => {
-  it('reads a heading off the URL and falls back on anything unknown', () => {
-    expect(readHeading('fix')).toBe('fix');
-    expect(readHeading('inconnu')).toBe('all');
-    expect(readHeading(null)).toBe('all');
+describe('releases and pre-releases', () => {
+  it('folds a pre-release into its stable version, and keeps one that has none', () => {
+    const history = [
+      commit('fix: après la finale', { tag: 'v4.0.0' }),
+      commit('feat: pendant la préversion', { tag: 'v4.0.0-rc.1' }),
+      commit('feat: avant', { tag: null }),
+    ];
+    const [release] = releases(history);
+    expect(release.version).toBe('v4.0.0');
+    expect(release.count).toBe(3);
+    expect(releases(history.slice(1)).map((each) => each.version)).toEqual(['v4.0.0-rc.1']);
+  });
+});
+
+describe('isPreRelease', () => {
+  it('announces a version with a suffix as a pre-release', () => {
+    expect(isPreRelease('v4.0.0-rc.1')).toBe(true);
+    expect(isPreRelease('v4.0.0')).toBe(false);
+    expect(isPreRelease(null)).toBe(false);
   });
 });

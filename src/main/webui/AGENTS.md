@@ -599,7 +599,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   the repository's commit subjects collected at build time by
   `scripts/generate-news.js` into a gitignored `news-data.ts`, and sorted
   under the headings of `cliff.toml`: no endpoint, no stored page, and
-  nothing to keep up to date by hand), the
+  nothing to keep up to date by hand — a plain list of versions, newest first,
+  each with its number, date and highlights, a `-rc.N` tag shown as a
+  pre-release), the
   four public legal pages `/mentions-legales`, `/conditions-utilisation`,
   `/politique-confidentialite` and `/declaration-accessibilite` (the
   accessibility statement, filled from `planning.legal.accessibilite.*` by the
@@ -693,6 +695,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `confirm-dialog.ts` — replaces `window.confirm`, `output-panel.ts`,
   `help-blocks.ts` — the one block model and renderer of the two user guides
   (`pages/aide/content/*` and `espace-aide-content.ts` only choose their sections),
+  **every page of the menu and every tab that is a screen has its short help**
+  (`pages/aide/content/ecrans.ts`, ids `ecran-*`) named by the route's
+  `data.aide` / `data.aideOnglets` — `aide-content.spec.ts` fails on a screen
+  without one, a short help no route names, or a detailed section nothing leads to,
   `bulk-actions-bar.ts`, `table-filter.ts` — the reference pages' quick-filter
   field, `row-menu.ts` — the « ⋯ » of a row (modify, duplicate, delete, plus
   the page's own items), `filter-chips.ts` — the active filters as removable

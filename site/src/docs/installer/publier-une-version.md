@@ -13,7 +13,7 @@ Tout le reste **dérive** du tag, sans intervention :
 | Où | Comment |
 | --- | --- |
 | Frontend (`APP_VERSION`, pied de page des deux coquilles, admin et espace animateur, et page *Débogage*) | `generate-version.js` : le tag exact (`v1.2.0`), sinon le SHA court. Le lien mène à la page de la release GitHub pour un tag (`/releases/tag/v1.2.0`, que GitHub rend aussi pour un tag sans release), au commit pour un SHA (`core/version-link.ts`) |
-| Écran *Nouveautés* (`/nouveautes`) | `generate-news.js` : l'historique git lu au build, découpé par tag `vX.Y.Z` ; ce qui suit le dernier tag s'affiche sous « À venir » |
+| Écran *Nouveautés* (`/nouveautes`) | `generate-news.js` : l'historique git lu au build, découpé par tag `vX.Y.Z` ou `vX.Y.Z-rc.N` (une préversion s'affiche comme telle) ; ce qui suit le dernier tag s'affiche sous « À venir » |
 | Backend (`quarkus.application.version`, ligne de démarrage Quarkus) | Le `Dockerfile` passe `-Drevision=1.2.0` dérivé du même `git describe`, le `v` retiré ; hors release, le SHA court. En build local, `999-SNAPSHOT` |
 | Sentry, **côté frontend seulement** | `release: APP_VERSION` : les erreurs du navigateur se regroupent par version, pas par commit. Les événements du backend ne portent pas encore de `release` : `SentryInitializer` ne pose que le DSN et l'environnement |
 | Image Docker | `docker-ghcr.yml` publie `ghcr.io/…:1.2.0` et `ghcr.io/…:1.2` sur le push du tag |
@@ -60,7 +60,7 @@ Il n'y a pas de `CHANGELOG.md`. `cliff.toml` à la racine transforme les message
 
 On ne retouche donc pas la section générée à la main : une entrée mal libellée se corrige en reformulant le commit *avant* fusion, pas après.
 
-Les mêmes sujets alimentent l'écran **Nouveautés** de l'application (`/nouveautes`), construit à partir de l'historique git au moment du build et non d'un fichier tenu à la main : mêmes filtres et mêmes intertitres que `cliff.toml`, jusqu'au « ⚠️ Attention ». Un sujet mal libellé se lit donc deux fois, dans les notes de version et dans l'application, ce qui est une raison de plus de le corriger avant fusion.
+Les mêmes sujets alimentent l'écran **Nouveautés** de l'application (`/nouveautes`), construit à partir de l'historique git au moment du build et non d'un fichier tenu à la main : mêmes filtres et mêmes intertitres que `cliff.toml`, jusqu'au « ⚠️ Attention », l'écran n'en montrant que les points marquants (« Attention » et nouveautés). Un sujet mal libellé se lit donc deux fois, dans les notes de version et dans l'application, ce qui est une raison de plus de le corriger avant fusion.
 
 ## 3. Patcher une version antérieure
 

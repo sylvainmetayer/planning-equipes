@@ -4,6 +4,7 @@ import { buildHelpSections, filterHelpSections } from './aide-content';
 import { HelpSection } from './help-section';
 import { helpBlockText } from '../../shared/help-blocks';
 import { buildRaccourcisNavigation } from '../../core/keyboard-shortcuts';
+import { buildNavGroups } from '../../shell/nav-groups';
 import { routes } from '../../app.routes';
 
 /**
@@ -436,5 +437,100 @@ describe('parametrer-pour-un-planning-complet', () => {
     expect(legaux.text).toContain("Rien n'impose d'écart entre deux vacations");
     // The measured figure lives in the guide only.
     expect(legaux.text).not.toContain('quarante-quatre');
+  });
+});
+
+/**
+ * The short help of every screen (Q51): one section per page of the menu and
+ * per tab that answers a question of its own, named by the routes' `data`.
+ */
+describe('short help per screen', () => {
+  const sections = buildHelpSections();
+  const ids = new Set(sections.map((section) => section.id));
+  const shell = routes.find((route) => route.path === '' && route.children !== undefined);
+  const children = shell?.children ?? [];
+
+  /** What the toolbar's « ? » opens on a page and a tab: the shell's own resolution, replayed. */
+  function helpOf(path: string, tab: string | null): string | undefined {
+    const route = children.find(
+      (child) => `/${child.path}` === path || (child.path === '' && path === '/'),
+    );
+    const byTab = (route?.data?.['aideOnglets'] as Record<string, string> | undefined)?.[tab ?? ''];
+    return byTab ?? (route?.data?.['aide'] as string | undefined);
+  }
+
+  it('gives every page of the menu a short help', () => {
+    for (const link of buildNavGroups().flatMap((group) => group.links)) {
+      expect(helpOf(link.path, null), link.path).toMatch(/^ecran-/);
+    }
+  });
+
+  it('gives every tab of the menu a help of its own, not its page’s', () => {
+    for (const link of buildNavGroups().flatMap((group) => group.links)) {
+      for (const tab of (link.tabs ?? []).filter((candidate) => candidate.param === 'onglet')) {
+        const help = helpOf(link.path, tab.value);
+        expect(ids.has(help ?? ''), `${link.path}?onglet=${tab.value}`).toBe(true);
+        // A tab that is the page's default may share its help; any other must have its own.
+        if (help === helpOf(link.path, null)) {
+          expect(help, `${link.path}?onglet=${tab.value}`).toMatch(/^ecran-/);
+        }
+      }
+    }
+  });
+
+  it('names, in the routes, only sections that exist', () => {
+    for (const route of children) {
+      const named = [
+        route.data?.['aide'],
+        ...Object.values((route.data?.['aideOnglets'] as Record<string, string>) ?? {}),
+      ].filter((id): id is string => typeof id === 'string');
+      for (const id of named) {
+        expect(ids, `route ${route.path}`).toContain(id);
+      }
+    }
+  });
+
+  it('leaves no short help without a screen to open it', () => {
+    const named = new Set(
+      children.flatMap((route) => [
+        route.data?.['aide'] as string,
+        ...Object.values((route.data?.['aideOnglets'] as Record<string, string>) ?? {}),
+      ]),
+    );
+    const orphans = sections
+      .filter((section) => section.id.startsWith('ecran-') && !named.has(section.id))
+      .map((section) => section.id);
+    expect(orphans).toEqual([]);
+  });
+
+  it('keeps a detailed section reachable: from a route, or from a short help’s link', () => {
+    const named = new Set(
+      children.flatMap((route) => [
+        route.data?.['aide'] as string,
+        ...Object.values((route.data?.['aideOnglets'] as Record<string, string>) ?? {}),
+      ]),
+    );
+    const linked = new Set(sections.flatMap((section) => section.links.map((l) => l.fragment)));
+    // Read from the guide's own page (no screen of its own): the way in, the shortcuts, the contact.
+    const guideOnly = new Set(['prise-en-main', 'raccourcis-clavier', 'contact']);
+    const unreachable = sections
+      .filter((section) => !section.id.startsWith('ecran-'))
+      .map((section) => section.id)
+      .filter((id) => !named.has(id) && !linked.has(id) && !guideOnly.has(id));
+    expect(unreachable).toEqual([]);
+  });
+
+  it('keeps each short help short: a gesture, the screen, the guide of the site', () => {
+    for (const section of sections.filter((candidate) => candidate.id.startsWith('ecran-'))) {
+      expect(section.blocks, section.id).toHaveLength(1);
+      expect(section.blocks[0].kind, section.id).toBe('paragraph');
+      expect(
+        section.links.filter((link) => link.route && link.fragment === undefined),
+        section.id,
+      ).toHaveLength(1);
+      expect(section.links.at(-1)?.href, section.id).toMatch(
+        /^https:\/\/planning\.sylvain\.dev\/docs\/regles\/[a-z-]+\/$/,
+      );
+    }
   });
 });

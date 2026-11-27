@@ -13,6 +13,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { of } from 'rxjs';
 import { AidePage } from './aide-page';
 
 /** jsdom implements neither of the two, and the page calls both. */
@@ -23,7 +24,7 @@ async function monterAvecFragment(fragment: string | null): Promise<ComponentFix
     providers: [
       provideZonelessChangeDetection(),
       provideRouter([]),
-      { provide: ActivatedRoute, useValue: { snapshot: { fragment } } },
+      { provide: ActivatedRoute, useValue: { snapshot: { fragment }, fragment: of(fragment) } },
     ],
   });
   const fixture = TestBed.createComponent(AidePage);

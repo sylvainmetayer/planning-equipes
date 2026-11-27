@@ -40,8 +40,8 @@ Every night, the whole database is copied to the host's disk, and only the lates
 
 ## Find the user guide in the application
 
-- Help: the application's complete user guide, with a search, available while a solve is running or on an empty edition ("?" icon in the toolbar).
-- What's new: what the installed version brought, and since which version. Changes are grouped by version; what is not yet released appears under "Coming up", and the list is sorted like the release notes, "Worth watching" first. Nothing has to be kept up to date by hand.
+- Help: the application's user guide, with a search, available while a solve is running or on an empty edition. The "?" icon in the toolbar opens the short help of the screen you are on, and of the tab shown: what the screen answers, how to do its main gesture, and the link to the site's guide. The detailed sections follow, for instance "How to do without a forced assignment".
+- What's new: the list of versions, newest first. Each one carries its number, its date and its highlights ("Worth watching" first, then the new features); an `-rc.N` pre-release is announced as such, and what is not yet released appears under "Coming up". The full detail is in the release notes. Nothing has to be kept up to date by hand.
 
 ## Work faster
 
