@@ -145,7 +145,7 @@ test.describe('écriture du référentiel pendant une résolution', () => {
       //    snack bar: the frontend reads body.message and nothing else.
       const corps = (await refus.json()) as { message?: string; id?: string; status?: string };
       expect(corps.message ?? '').toMatch(/résolution est en cours/i);
-      expect(corps.message ?? '').toMatch(/écran Solveur/i);
+      expect(corps.message ?? '').toMatch(/Planning › Calculer/);
       // The blocking run is still named, for whoever wants to act on it.
       expect(corps.id).toBe(jobId);
       expect(corps.status).toMatch(/PENDING|RUNNING/);
@@ -188,7 +188,7 @@ test.describe('écriture du référentiel pendant une résolution', () => {
       const bandeau = page.locator('mat-snack-bar-container');
       await expect(bandeau).toBeVisible();
       await expect(bandeau).toContainText('résolution est en cours');
-      await expect(bandeau).toContainText('écran Solveur');
+      await expect(bandeau).toContainText('Planning › Calculer');
 
       // And nothing was saved.
       const relu = await admin.get('/api/stands');

@@ -848,6 +848,12 @@ export class SolverJobService {
       message: describeResult(job.result),
       variant: 'success',
       desktop: true,
+      // The result is read on the Planning page's « Calculer » tab.
+      lien: {
+        route: '/journee',
+        queryParams: { onglet: 'calculer' },
+        libelle: $localize`:@@job.completedLien:Voir le résultat`,
+      },
     });
     // Raised here rather than by the solving page's onResult handler:
     // that handler only exists while its page is mounted, so a solve finishing

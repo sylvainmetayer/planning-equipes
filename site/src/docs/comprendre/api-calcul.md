@@ -41,7 +41,7 @@ Les postes ne dépendent que des stands et des créneaux : ils sont comptés ava
 - **un échec ne prouve rien** : `realisable: false` dit seulement qu'aucun plan complet n'a été trouvé dans le temps imparti. `posteDoitEtrePourvu` est toujours tenue, même si l'édition l'a éteinte ;
 - les exceptions ad hoc et le plan publié sont laissés de côté, car ils nomment des personnes que l'équipe fictive ne contient pas. Le plan en place sert de point de départ : chaque animateur réel passe à un membre fictif, majeur à majeur, mineur à mineur, les plus chargés d'abord.
 
-`GET /api/solve/entrees` compte en une lecture ce que la page Solveur annonce sous « Ce calcul tiendra compte de », sans rien calculer. `pendingDeclarations` compte les déclarations de disponibilité **en attente** : un calcul lit les fiches, jamais les déclarations, donc ce chiffre dit ce qu'il ne verra pas. `changesSinceSolve` compte les actions journalisées depuis le plan persisté, avec le filtre de `GET /api/historique/changements` (0 sans plan). `disabledRules` ne compte que les règles livrées actives que l'édition a éteintes.
+`GET /api/solve/entrees` compte en une lecture ce que l'onglet Calculer annonce sous « Ce calcul tiendra compte de », sans rien calculer. `pendingDeclarations` compte les déclarations de disponibilité **en attente** : un calcul lit les fiches, jamais les déclarations, donc ce chiffre dit ce qu'il ne verra pas. `changesSinceSolve` compte les actions journalisées depuis le plan persisté, avec le filtre de `GET /api/historique/changements` (0 sans plan). `disabledRules` ne compte que les règles livrées actives que l'édition a éteintes.
 
 ## La file d'attente
 

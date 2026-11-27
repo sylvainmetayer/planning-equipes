@@ -58,6 +58,6 @@ public class SolverOccupeMapper implements ExceptionMapper<SolverBusyException> 
         String edition =
                 job.getEditionNom() == null || job.getEditionNom().isBlank() ? job.getEditionId() : job.getEditionNom();
         return "Une résolution est en cours sur l'édition « " + edition
-                + " » : attendez qu'elle se termine, ou arrêtez-la depuis l'écran Solveur.";
+                + " » : attendez qu'elle se termine, ou arrêtez-la depuis Planning › Calculer.";
     }
 }

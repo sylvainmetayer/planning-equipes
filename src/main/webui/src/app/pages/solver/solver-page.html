@@ -1,30 +1,19 @@
-<h1 class="page-title" i18n="@@nav.link.solver">Solveur</h1>
-<mat-button-toggle-group class="page-onglets" [value]="ongletsPage.onglet()" (change)="ongletsPage.changer($event.value)"
-                         aria-label="Onglet de la page Solveur" i18n-aria-label="@@solver.onglet.label">
-  <mat-button-toggle value="calcul">
-    <mat-icon>play_circle</mat-icon>
-    <ng-container i18n="@@solver.onglet.calcul">Calcul</ng-container>
-  </mat-button-toggle>
-  <mat-button-toggle value="versions">
-    <mat-icon>history</mat-icon>
-    <ng-container i18n="@@nav.link.versions">Versions du plan</ng-container>
-  </mat-button-toggle>
-</mat-button-toggle-group>
-
-@if (ongletsPage.onglet() === 'versions') {
-  <app-versions-page />
-} @else {
-
 <!-- (1) What stands in the way, before anything is launched (issue #719). -->
 <app-feasibility-banner [report]="feasibility()" [hardScore]="hardScore()" [hardIssues]="hardIssues()" />
 <app-problem-summary-banner [problemes]="problemes.problemes()" />
 <app-status-message [text]="alerteReglesLegales()" tone="error" />
 <app-status-message [text]="problemes.alertePausesSansRelais()" tone="warning" />
 
+<!-- Where the relecture stands, as soon as a plan exists, solved here or not. -->
+@if (planEnregistre()) {
+  <app-validation-banner />
+}
+
 <!-- (2) What the next solve receives (issue #704). -->
 <app-solve-inputs [version]="solvesLanded()" />
 
-<!-- (3) The three ways to launch, each said in words on the page. -->
+<!-- (3) The two ways to launch, each said in words on the page; starting
+     over is a box of « Calculer »'s confirmation. -->
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h2 mat-card-title i18n="@@solver.lancer.title">Lancer un calcul</h2>
@@ -37,7 +26,7 @@
           {{ libelleSolve() }}
         </button>
         <p id="solver-mode-calculer" class="solver-mode-phrase" i18n="@@solver.mode.calculer">
-          Repart du plan enregistré, s'il existe, et cherche à l'améliorer ; seuls les verrouillages sont figés.
+          Repart du plan enregistré, s'il existe, et cherche à l'améliorer ; les verrouillages et le passé figé sont respectés.
         </p>
       </li>
       <li>
@@ -47,15 +36,6 @@
         </button>
         <p id="solver-mode-corriger" class="solver-mode-phrase" i18n="@@solver.mode.corriger">
           Ne rouvre que ce que les changements ont invalidé ; le reste du plan est garanti inchangé.
-        </p>
-      </li>
-      <li>
-        <button matButton type="button" [disabled]="!planEnregistre()" (click)="onRecommencerDeZero()" aria-describedby="solver-mode-recommencer">
-          <mat-icon>restart_alt</mat-icon>
-          {{ libelleAFroid() }}
-        </button>
-        <p id="solver-mode-recommencer" class="solver-mode-phrase" i18n="@@solver.mode.recommencer">
-          Ignore le plan enregistré et repart de rien : la qualité déjà atteinte peut être perdue.
         </p>
       </li>
     </ul>
@@ -141,9 +121,6 @@
       (restored)="onPlanPrecedentRestaure($event)"
       (failed)="output.set($event)"
     />
-    <mat-card-content>
-      <app-validation-banner />
-    </mat-card-content>
     <mat-card-actions class="card-actions">
       <app-voir-planning-button />
       <a matButton="tonal" routerLink="/journee" [queryParams]="relireParams()">
@@ -171,4 +148,3 @@
 </app-reglages-avances>
 
 <app-output-panel [text]="output()" />
-}

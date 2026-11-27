@@ -20,6 +20,8 @@ import {
   postesDe,
   publierPlanning,
   seedReferentielSolveur,
+  calculerLePlanning,
+  PAGE_CALCULER,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -73,13 +75,13 @@ async function reseed(): Promise<void> {
   await seedReferentielSolveur(admin, ANIMATEURS, STANDS, CRENEAUX);
 }
 
-test('un solve lancé depuis la page Solveur pourvoit tous les postes', async ({ browser }) => {
+test('un solve lancé depuis Planning › Calculer pourvoit tous les postes', async ({ browser }) => {
   test.slow();
   await reseed();
   // The UI button triggers a quick run: the stack's budget is short (SOLVER_SECONDS_LIMIT).
   const page = await pageAdmin(browser, admin);
-  await page.goto('/solveur');
-  await page.getByRole('button', { name: 'Calculer le planning' }).click();
+  await page.goto(PAGE_CALCULER);
+  await calculerLePlanning(page);
   // The server-side job lock is the source of truth: first see the job start
   // (otherwise an early poll could observe "no job yet" and pass before the
   // solve even ran), then see it end.
@@ -139,9 +141,9 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
   await page.goto('/regles');
   await expect(page.locator('#contenu')).toContainText('Rita et Tom incompatibles');
 
-  // The Solveur announces them before the click, each count a link to its tab
+  // « Calculer » announces them before the click, each count a link to its tab
   // (issues #704, #719).
-  await page.goto('/solveur');
+  await page.goto(PAGE_CALCULER);
   await expect(page.getByRole('link', { name: /ajustement\(s\) manuel\(s\)/ })).toHaveAttribute(
     'href',
     '/regles?onglet=ajustements',
@@ -282,7 +284,7 @@ test('la courbe de score se replie, s’en souvient, et continue d’enregistrer
   expect(premier.status).toBe('COMPLETED');
 
   const page = await pageAdmin(browser, admin);
-  await page.goto('/solveur?avance=1'); // the curve is folded under « Réglages avancés »
+  await page.goto(`${PAGE_CALCULER}&avance=1`); // the curve is folded under « Réglages avancés »
   await expect(page.getByRole('heading', { name: 'Progression du score' })).toBeVisible();
   // Trois cadres, un par niveau : c'est le rendu déplié.
   await expect(page.getByRole('img', { name: /Contraintes dures/ })).toBeVisible();
@@ -299,7 +301,7 @@ test('la courbe de score se replie, s’en souvient, et continue d’enregistrer
   await expect(page.getByRole('img', { name: /Contraintes dures/ })).toBeHidden();
 
   // Panneau fermé, on relance : rien ici ne doit couper le flux.
-  await page.getByRole('button', { name: 'Calculer le planning' }).click();
+  await calculerLePlanning(page);
   await expect
     .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 15_000 })
     .toBe(200);

@@ -493,6 +493,26 @@ export async function lancerSolve(admin: APIRequestContext, seconds: number): Pr
   return awaitJob(admin, id, seconds);
 }
 
+/** Where a solve is launched from since 4.0: the Planning page's « Calculer » tab. */
+export const PAGE_CALCULER = '/journee?onglet=calculer';
+
+/**
+ * Clicks « Calculer le planning » and, when a plan exists, confirms the
+ * question it then asks, « Recommencer de zéro » left unticked: without a
+ * plan the button launches at once, with one it asks first.
+ */
+export async function calculerLePlanning(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Calculer le planning' }).click();
+  const confirmation = page.getByRole('dialog', { name: 'Calculer le planning ?' });
+  const lance = page
+    .locator('app-output-panel')
+    .getByText(/Envoi du calcul|Calcul en cours sur le serveur|Calcul planifié/);
+  await expect(confirmation.or(lance)).toBeVisible();
+  if (await confirmation.isVisible()) {
+    await confirmation.getByRole('button', { name: 'Calculer', exact: true }).click();
+  }
+}
+
 /**
  * Waits for an already-submitted job — a full solve, an incremental one — to
  * complete, and returns its terminal view. Fails loudly on a FAILED or

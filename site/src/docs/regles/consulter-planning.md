@@ -71,7 +71,7 @@ La journée sur la carte des emplacements, avec un curseur temporel. Chaque lieu
 
 - **Par typologie** : la lecture par typologie de jeu (postes, heures, compétents, affectés sans la compétence) est la section *Typologie* de l'onglet *Besoin en animateurs* du Diagnostic.
 - **Pauses et repas** : les pauses sans relais se lisent dans *Diagnostic*, onglet *Problèmes*.
-- **Changements** : ce qui a bougé depuis la dernière publication se lit dans *Diffuser*, onglet *Envoyer*, une ligne par personne, et ce que le dernier calcul a réécrit dans le résultat de la page *Solveur*.
+- **Changements** : ce qui a bougé depuis la dernière publication se lit dans *Diffuser*, onglet *Envoyer*, une ligne par personne, et ce que le dernier calcul a réécrit dans le résultat de l'onglet *Calculer*.
 - **Comparer deux jours** : retirée.
 
 Les anciennes adresses de ces vues mènent à l'écran qui les remplace.

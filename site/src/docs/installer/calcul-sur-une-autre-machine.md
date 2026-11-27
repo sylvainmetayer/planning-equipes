@@ -60,7 +60,7 @@ Dans le `.env.prod` de l'application :
 | `SOLVER_WORKER_TLS_FINGERPRINT` | — | Empreinte SHA-256 de son certificat : lui seul est alors accepté, quel que soit le nom qu'il porte. Vide : la confiance ordinaire (un certificat signé par une autorité reconnue) |
 | `SOLVER_WORKER_DEFAULT` | `local` | `remote` : une résolution part sur le worker quand son lancement ne dit rien |
 
-Une fois configuré, l'écran Solveur propose « Sur place » ou « Sur la machine de calcul » à chaque lancement.
+Une fois configuré, l'onglet *Calculer* de la page Planning propose « Sur place » ou « Sur la machine de calcul » à chaque lancement.
 
 ## 4. Savoir ce qui se passe en cas de panne
 

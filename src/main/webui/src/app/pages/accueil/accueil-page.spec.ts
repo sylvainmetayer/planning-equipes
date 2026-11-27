@@ -249,7 +249,7 @@ describe('AccueilPage', () => {
       '/animateurs?onglet=disponibilites',
       '/stands',
       '/diagnostic?onglet=besoin',
-      '/solveur',
+      '/journee?onglet=calculer',
       '/diagnostic?onglet=problemes',
       '/journee',
       '/publication',

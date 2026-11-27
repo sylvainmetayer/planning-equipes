@@ -286,8 +286,9 @@ function resolution(etat: EtatEdition): LigneEtat {
   const bloc = etat.resolution;
   const titre = $localize`:@@accueil.ligne.resolution:Dernière résolution`;
   const solveur: LienEtat = {
-    route: '/solveur',
-    libelle: $localize`:@@accueil.lien.resolution:Ouvrir le solveur`,
+    route: '/journee',
+    queryParams: { onglet: 'calculer' },
+    libelle: $localize`:@@accueil.lien.resolution:Ouvrir Calculer`,
   };
   if (bloc.solveEnCours) {
     return {
@@ -676,8 +677,9 @@ function requestItems(bloc: EtatEdition['aTraiter']): TodayItem[] {
       sentence: $localize`:@@accueil.aTraiter.donnees:Des données ont changé depuis la dernière résolution`,
       alerte: false,
       lien: {
-        route: '/solveur',
-        libelle: $localize`:@@accueil.aTraiter.lien.donnees:Ouvrir le solveur`,
+        route: '/journee',
+        queryParams: { onglet: 'calculer' },
+        libelle: $localize`:@@accueil.aTraiter.lien.donnees:Ouvrir Calculer`,
       },
     });
   }

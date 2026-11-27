@@ -183,7 +183,7 @@ const ECRANS_DOCS = [
   ['disponibilites', '/animateurs?onglet=disponibilites'],
   ['echanges', '/echanges'],
   ['consignes', '/regles?onglet=consignes'],
-  ['solveur', '/solveur'],
+  ['solveur', '/journee?onglet=calculer'],
   ['webhooks', '/parametres?onglet=instance'],
   ['fichiers', '/fichiers'],
   ['aujourdhui', '/aujourdhui'],
@@ -302,6 +302,9 @@ const L = {
   coequipiers: /Coéquipiers|Teammates/,
   echanges: /Mes échanges|My swaps/,
   recommencer: /Recommencer de zéro|Start over from scratch/,
+  calculerLePlanning: /Calculer le planning|Calculate the schedule/,
+  calculerQuestion: /Calculer le planning \?|Calculate the schedule\?/,
+  calculer: /^(Calculer|Calculate)$/,
   faisable: /Plan faisable|Feasible plan/,
   voirPlanning: /Voir le planning|View the schedule|Show the schedule/,
 };
@@ -346,13 +349,18 @@ async function codeMailpit(etat, email, avant) {
   throw new Error(`Aucun code dans Mailpit pour ${email}`);
 }
 
-/** Un calcul de zéro : l'écran Solveur, la confirmation, l'attente (accélérée), le résultat, le planning. */
+/** Un calcul de zéro : Planning › Calculer, la case « Recommencer de zéro », les deux confirmations, l'attente (accélérée), le résultat, le planning. */
 async function filmCalcul(page, { accelerer, lang, etat }) {
-  await ouvrir(page, '/solveur');
+  await ouvrir(page, '/journee?onglet=calculer');
   await pause(3500);
-  await page.getByRole('button', { name: L.recommencer }).click();
+  await page.getByRole('button', { name: L.calculerLePlanning }).click();
   await pause(1800);
-  await page.getByRole('dialog').getByRole('button', { name: L.recommencer }).click();
+  const question = page.getByRole('dialog', { name: L.calculerQuestion });
+  await question.getByRole('checkbox', { name: L.recommencer }).check();
+  await pause(1200);
+  await question.getByRole('button', { name: L.calculer }).click();
+  await pause(1800);
+  await page.getByRole('dialog', { name: L.recommencer }).getByRole('button', { name: L.recommencer }).click();
   await page.getByText(L.faisable).first().waitFor({ timeout: 120000 });
   await pause(3000);
   // Le reste du calcul se passe sans rien à montrer : sa durée varie, le montage la ramène à 8 s

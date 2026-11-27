@@ -49,7 +49,7 @@ Les anciens onglets *Légal* et *Qualité* de *Règles du planning* mènent à l
 
 Une règle qui pénalise la quasi-totalité de ce qu'elle évalue mesure en réalité une donnée absente du référentiel : aucun souhait déclaré, aucun référent. Ses points sont un **plancher** qu'aucune résolution ne fera bouger.
 
-La page Règles du planning le signale, nomme la donnée et mène à sa saisie. Le score hors plancher s'affiche à côté du score brut dans le récapitulatif du Solveur et dans les Versions du plan.
+La page Règles du planning le signale, nomme la donnée et mène à sa saisie. Le score hors plancher s'affiche à côté du score brut dans le récapitulatif de l'onglet *Calculer* et dans les Versions du plan.
 
 ## Retrouver qui a changé un poids
 

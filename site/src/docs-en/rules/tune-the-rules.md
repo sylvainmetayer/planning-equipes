@@ -52,7 +52,7 @@ The former *Legal* and *Quality* tabs of *Planning rules* lead to the *Rules* ta
 
 A rule that penalises nearly everything it evaluates is in fact measuring data missing from the reference data: no wish declared, no referent. Its points are a **floor** that no solve will move.
 
-The Planning rules page flags it, names the data and leads to where it is entered. The score without the floor is displayed next to the raw score in the Solver summary and in the Plan versions.
+The Planning rules page flags it, names the data and leads to where it is entered. The score without the floor is displayed next to the raw score in the summary of the *Calculate* tab and in the Plan versions.
 
 ## Find who changed a weight
 

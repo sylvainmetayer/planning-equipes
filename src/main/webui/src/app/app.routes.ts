@@ -402,8 +402,20 @@ export const redirectEditionComparison: RedirectFunction = ({ queryParams }) => 
  */
 export const redirectKpiToVersions: RedirectFunction = ({ queryParams }) =>
   queryParams['edition'] === '*'
-    ? '/solveur?onglet=versions&editions=toutes'
-    : '/solveur?onglet=versions';
+    ? '/journee?onglet=versions&editions=toutes'
+    : '/journee?onglet=versions';
+
+/**
+ * The Solveur page became the « Calculer » tab of the Planning page (4.0), and
+ * its « Versions du plan » tab the Planning's neighbouring one: the address
+ * lands on the tab it named, its other params kept (`editions=toutes`, a 3.x
+ * `comparer=` the versions screen sends on to « Comparer deux versions »).
+ */
+export const redirectSolveurToPlanning: RedirectFunction = (route) =>
+  redirectToOnglet(
+    'journee',
+    route.queryParams['onglet'] === 'versions' ? 'versions' : 'calculer',
+  )(route);
 
 /**
  * Paramètres became four sections (`/api/parametres/{section}`): the legal
@@ -502,18 +514,15 @@ export function margeToDiagnostic(queryParams: Params): string {
 const adminRoutes: Routes = [
   {
     // The home: where the edition stands in its cycle, before any screen
-    // that acts on it (issue #485). The solver keeps its page under /solveur.
+    // that acts on it (issue #485). The solver is the Planning's « Calculer » tab.
     path: '',
     title: () => $localize`:@@route.accueil:État de l'édition`,
     data: { aide: 'prise-en-main' },
     loadComponent: () => import('./pages/accueil/accueil-page').then((m) => m.AccueilPage),
   },
-  {
-    path: 'solveur',
-    title: () => $localize`:@@route.solver:Solveur`,
-    data: { aide: 'calculer' },
-    loadComponent: () => import('./pages/solver/solver-page').then((m) => m.SolverPage),
-  },
+  // The Solveur page is the « Calculer » tab of the Planning page since 4.0,
+  // its « Versions du plan » the tab beside it.
+  { path: 'solveur', redirectTo: redirectSolveurToPlanning },
   {
     path: 'debug',
     title: () => $localize`:@@route.debug:Débogage`,
@@ -622,15 +631,16 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/aide/aide-page').then((m) => m.AidePage),
   },
   // The finished solves and the snapshots of the edition, the comparator
-  // beside them (issue #702), became the « Versions du plan » tab of the Solveur.
-  { path: 'versions', redirectTo: redirectToOnglet('solveur', 'versions') },
+  // beside them (issue #702), became the « Versions du plan » tab of the
+  // Solveur, and with it a tab of the Planning page (4.0).
+  { path: 'versions', redirectTo: redirectToOnglet('journee', 'versions') },
   // The Autopsie, the Instantanés and the Comparateur became that one page.
   // Their params named the replay (`edition`, `rang`) and a dosage filter,
   // neither of which survived: the address alone is kept — but for the
   // Autopsie's every-edition view, which the page keeps as a view of its own.
   { path: 'kpi', redirectTo: redirectKpiToVersions },
-  { path: 'instantanes', redirectTo: '/solveur?onglet=versions' },
-  { path: 'comparateur', redirectTo: '/solveur?onglet=versions' },
+  { path: 'instantanes', redirectTo: '/journee?onglet=versions' },
+  { path: 'comparateur', redirectTo: '/journee?onglet=versions' },
   {
     path: 'editions',
     title: () => $localize`:@@route.editions:Éditions`,
@@ -652,8 +662,8 @@ const adminRoutes: Routes = [
   { path: 'editions/comparer', redirectTo: redirectEditionComparison },
   // The solver was the home page until #485, under `/exports` and `/solver`.
   // `/exports` became the export screen, now a tab of Fichiers; only
-  // `/solver` still lands on the solver.
-  { path: 'solver', redirectTo: 'solveur' },
+  // `/solver` still lands on the solver, the Planning's « Calculer » tab.
+  { path: 'solver', redirectTo: redirectSolveurToPlanning },
   // Pre-Paramètres URLs (bookmarks, aide links): the pages were merged there.
   { path: 'data-transfer', redirectTo: 'parametres' },
   { path: 'data-setup', redirectTo: 'parametres' },
@@ -755,7 +765,7 @@ const adminRoutes: Routes = [
     // the plan starts from; the address stayed, for the links already out.
     path: 'journee',
     title: () => $localize`:@@route.journee:Planning`,
-    data: { aide: 'consulter' },
+    data: { aide: 'consulter', aideOnglets: { calculer: 'calculer', versions: 'calculer' } },
     canActivate: [planningFormerViews],
     loadComponent: () => import('./pages/journee/journee-page').then((m) => m.JourneePage),
   },

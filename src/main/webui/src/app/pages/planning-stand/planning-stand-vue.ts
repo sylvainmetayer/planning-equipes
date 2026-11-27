@@ -79,7 +79,7 @@ import {
       @if (planning()?.postes?.length) {
         <p class="empty-hint" i18n="@@planningStand.aucun">Aucun stand ne correspond aux filtres.</p>
       } @else {
-        <p class="empty-hint" i18n="@@calendarDay.empty">Aucune donnée de planning disponible pour le moment. Lancez une résolution depuis la page Solveur.</p>
+        <p class="empty-hint" i18n="@@calendarDay.empty">Aucune donnée de planning disponible pour le moment. Lancez une résolution depuis Planning › Calculer.</p>
       }
     } @else {
       <app-planning-grille
