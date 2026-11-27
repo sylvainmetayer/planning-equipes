@@ -4,6 +4,7 @@
 - **Date** : novembre 2026
 - **Portée** : écran Besoin en animateurs, `POST /api/staffing/verification`, table `verification_besoin`
 - **Remplace en partie** : [0071](0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md) — son point 5 (la vérification par un solve) gagne une alternative, la borne seule, que le défaut adoptera à l'équivalence ; ses points 1 à 4 et 6 restent
+- **Mesure revue par** : [0129](0129-pas-de-couverture-de-pause-sur-un-creneau.md) — sans relais repas, les sièges du midi du rang 20 reprennent l'effectif plein : sa borne et son besoin passent de 105 à 122 (plan de 122 noté sans point dur)
 - **Voisine de** : [0080](0080-un-solveur-exact-pour-la-seule-verification-du-besoin-etude.md) (étude close, inchangée), [0087](0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), [0090](0090-les-reglages-avances-replies-par-ecran.md)
 
 ## Contexte

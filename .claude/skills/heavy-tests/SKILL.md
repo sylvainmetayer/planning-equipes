@@ -34,7 +34,9 @@ narrowed with `-Dtest=...`.
 CI does run them, but **only when something that can break convergence
 changes**: `.github/workflows/scenario-tests.yml` triggers on the `solver/`
 and `domain/` packages, `solverConfig.xml`, `application.properties`, the
-scenario files and `pom.xml` (a Timefold bump is exactly when you want them).
+scenario files, the staffing bound (`StaffingAnalyzer`, played by its own
+job, `StaffingBoundEquivalenceTest`) and `pom.xml` (a Timefold bump is
+exactly when you want them).
 Keep that path list in step with any move of those files — a solver tuning
 that ships without these tests having run is the hole this workflow exists to
 close.
