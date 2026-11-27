@@ -187,8 +187,9 @@ describe('app.routes', () => {
     // `/mesures` (Mesures d'édition, the realised and the indicators) brought one, `/comparer` another;
     // the nine screens that became tabs of another page gave theirs up;
     // `/mot-de-passe`, the page of a mailed link, and `/responsable` (« Mon stand »)
-    // brought one each, and `/rh` (« Conformité RH ») and `/animateur/:jeton/contacts` one more each.
-    expect(titrees).toHaveLength(37);
+    // brought one each, and `/rh` (« Conformité RH ») and `/animateur/:jeton/contacts` one more each;
+    // `/solveur` gave its own up when it became the Planning's « Calculer » tab.
+    expect(titrees).toHaveLength(36);
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), provideRouter([])],
     });
@@ -670,7 +671,7 @@ describe('app.routes', () => {
   it('mène les trois anciennes adresses des versions à la nouvelle page', () => {
     for (const path of ['instantanes', 'comparateur']) {
       expect(allRoutes(routes).find((route) => route.path === path)?.redirectTo).toBe(
-        '/solveur?onglet=versions',
+        '/journee?onglet=versions',
       );
     }
     expect(allRoutes(routes).find((route) => route.path === 'kpi')?.redirectTo).toBe(
@@ -705,9 +706,29 @@ describe('app.routes', () => {
   /** The Autopsie became « Versions du plan » (issue #702): its every-edition view survives. */
   describe("l'ancienne adresse de l'Autopsie", () => {
     it('keeps the every-edition view, and that one alone', () => {
-      expect(kpiTarget({ edition: '*' })).toBe('/solveur?onglet=versions&editions=toutes');
-      expect(kpiTarget({ edition: 'E1', rang: '2' })).toBe('/solveur?onglet=versions');
-      expect(kpiTarget({})).toBe('/solveur?onglet=versions');
+      expect(kpiTarget({ edition: '*' })).toBe('/journee?onglet=versions&editions=toutes');
+      expect(kpiTarget({ edition: 'E1', rang: '2' })).toBe('/journee?onglet=versions');
+      expect(kpiTarget({})).toBe('/journee?onglet=versions');
+    });
+  });
+
+  /** The Solveur became the « Calculer » tab of the Planning page (4.0). */
+  describe("l'ancienne adresse du Solveur", () => {
+    it('lands on « Calculer », its other params kept', () => {
+      expect(redirectTarget('solveur', {})).toBe('/journee?onglet=calculer');
+      expect(redirectTarget('solver', {})).toBe('/journee?onglet=calculer');
+      expect(redirectTarget('solveur', { onglet: 'calcul', avance: '1' })).toBe(
+        '/journee?onglet=calculer&avance=1',
+      );
+    });
+
+    it('lands its « Versions du plan » tab on the Planning tab of that name', () => {
+      expect(redirectTarget('solveur', { onglet: 'versions', editions: 'toutes' })).toBe(
+        '/journee?onglet=versions&editions=toutes',
+      );
+      expect(redirectTarget('versions', { comparer: '1,2' })).toBe(
+        '/journee?onglet=versions&comparer=1%2C2',
+      );
     });
   });
 

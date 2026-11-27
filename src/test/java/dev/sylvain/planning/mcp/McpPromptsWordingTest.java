@@ -292,8 +292,8 @@ class McpPromptsWordingTest {
                 prompts.recoverFromLateChange(null).content().asText().text();
         String freeze = prompts.freezeTheReferential(null).content().asText().text();
 
-        assertThat(lateChange).contains("creer_plage_stand").contains("à tous les stands");
-        assertThat(freeze).contains("creer_plage_stand").doesNotContain("fermer un stand tard");
+        assertThat(lateChange).contains("creer_horaire_stand (forme plage)").contains("à tous les stands");
+        assertThat(freeze).contains("creer_horaire_stand").doesNotContain("fermer un stand tard");
     }
 
     /** The new edition's prompt never renames or activates its source, and sends the other prompts to the new one. */

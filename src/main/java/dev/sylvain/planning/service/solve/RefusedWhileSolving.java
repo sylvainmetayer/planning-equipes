@@ -29,8 +29,8 @@ import java.lang.annotation.Target;
  * rather than a call at the head of the method because an annotation can be
  * checked: {@code RefusedWhileSolvingStructuralTest} fails on a write method
  * of the guarded services that neither carries it nor is argued open, and on
- * an annotated method called on {@code this}, which bypasses the
- * interceptor. A method that refuses only in one branch (a dry run reads
+ * an annotated method called on {@code this}, which ArC intercepts again
+ * (the guard runs twice). A method that refuses only in one branch (a dry run reads
  * freely) keeps the explicit call, and is argued in that test too.</p>
  *
  * <p>On the method, not the class (the type target is for the interceptor

@@ -225,7 +225,7 @@ describe('SolverPage', () => {
     bounds: () => null,
   };
   const notifications = { notify: vi.fn() };
-  const confirm = { ask: vi.fn() };
+  const confirm = { ask: vi.fn(), askWithOption: vi.fn() };
   const modifiedForms = { unsavedEntries: vi.fn((): UnsavedEntry[] => []) };
   const dialog = { open: vi.fn(() => ({ afterClosed: () => ({ subscribe: vi.fn() }) })) };
   const crud = { reload: vi.fn(), reportError: vi.fn() };
@@ -271,6 +271,7 @@ describe('SolverPage', () => {
       solverSettings.refresh,
       notifications.notify,
       confirm.ask,
+      confirm.askWithOption,
       crud.reload,
       crud.reportError,
       resolution.reload,
@@ -363,27 +364,48 @@ describe('SolverPage', () => {
       expect(order).toEqual(['app-feasibility-banner', 'app-solve-inputs', 'ul']);
     });
 
-    it('says what each of the three buttons does on the page, not in a tooltip', async () => {
+    // Q50: « Calculer » and « Corriger »; starting over is a box of the first one's confirmation.
+    it('says what each of the two buttons does on the page, not in a tooltip', async () => {
       createPage();
       await fixture.whenStable();
 
       const modes = Array.from(racine().querySelectorAll('.solver-modes li'));
-      expect(modes).toHaveLength(3);
+      expect(modes).toHaveLength(2);
       for (const mode of modes) {
         const button = mode.querySelector('button')!;
         const phrase = racine().querySelector(`#${button.getAttribute('aria-describedby')}`);
         expect(phrase?.textContent?.trim()).not.toBe('');
         expect(button.hasAttribute('mattooltip')).toBe(false);
       }
+      expect(modes[0].textContent).toContain('le passé figé sont respectés');
       expect(modes[1].textContent).toContain('Ne rouvre que ce que les changements ont invalidé');
+      expect(racine().textContent).not.toContain('Recommencer de zéro');
     });
 
-    it('writes « Solveur » once, and no search space', async () => {
+    // A tab of the Planning page now: the page's title is the Planning's.
+    it('names no « Solveur » page any more, and no search space', async () => {
       createPage();
       await fixture.whenStable();
 
-      expect(racine().textContent!.match(/Solveur/g) ?? []).toHaveLength(1);
+      expect(racine().querySelector('h1')).toBeNull();
+      expect(racine().textContent).not.toMatch(/Solveur/);
       expect(racine().textContent).not.toContain('espace de recherche');
+    });
+
+    // The relecture's progress no longer waits for a solve run from this browser.
+    it('shows where the relecture stands as soon as a plan exists, and not before', async () => {
+      persistedCount(0);
+      createPage();
+      await fixture.whenStable();
+      expect(racine().querySelector('app-validation-banner')).toBeNull();
+
+      fixture.destroy();
+      persistedCount(12);
+      createPage();
+      await vi.waitFor(async () => {
+        await fixture.whenStable();
+        expect(racine().querySelector('app-validation-banner')).not.toBeNull();
+      });
     });
 
     it('puts the plan, its reading and its publication one click away after a run', async () => {
@@ -702,7 +724,7 @@ describe('SolverPage', () => {
    * again in the recap, and the only cold start there is asks first.
    */
   describe('where the solve starts from', () => {
-    it('announces a cold start and disables « Recommencer de zéro » without a plan', async () => {
+    it('announces a cold start, and offers no « Recommencer de zéro », without a plan', async () => {
       persistedCount(0);
       const page = createPage();
       await fixture.whenStable();
@@ -785,13 +807,68 @@ describe('SolverPage', () => {
       );
     });
 
-    it('asks before starting over from scratch, and does nothing when refused', async () => {
+    it('launches without asking when there is no plan to lose', async () => {
+      persistedCount(0);
+      const page = createPage();
+      await fixture.whenStable();
+
+      await page['onTimefoldSolve']();
+
+      expect(confirm.askWithOption).not.toHaveBeenCalled();
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(
+        undefined,
+        false,
+        'AUTO',
+        undefined,
+      );
+    });
+
+    it('asks with the box « Recommencer de zéro » unticked, and keeps the plan when left so', async () => {
       persistedCount(12);
       const page = createPage();
       await fixture.whenStable();
+      confirm.askWithOption.mockResolvedValueOnce({ checked: false });
+
+      await page['onTimefoldSolve']();
+
+      expect(confirm.askWithOption).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Calculer le planning ?',
+          message: expect.stringContaining('12 affectations'),
+          option: expect.objectContaining({
+            label: expect.stringContaining('Recommencer de zéro'),
+            checked: false,
+          }),
+        }),
+      );
+      expect(confirm.ask).not.toHaveBeenCalled();
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(
+        undefined,
+        false,
+        'AUTO',
+        undefined,
+      );
+    });
+
+    it('launches nothing when the confirmation is dismissed', async () => {
+      persistedCount(12);
+      const page = createPage();
+      await fixture.whenStable();
+      confirm.askWithOption.mockResolvedValueOnce(null);
+
+      await page['onTimefoldSolve']();
+
+      expect(jobs.submitSolveFromReferenceData).not.toHaveBeenCalled();
+    });
+
+    it('asks again before starting over from scratch, and does nothing when refused', async () => {
+      persistedCount(12);
+      const page = createPage();
+      await fixture.whenStable();
+      confirm.askWithOption.mockResolvedValueOnce({ checked: true });
       confirm.ask.mockResolvedValueOnce(false);
 
-      await page['onRecommencerDeZero']();
+      await page['onTimefoldSolve']();
 
       expect(confirm.ask).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Recommencer de zéro ?', danger: true }),
@@ -820,13 +897,14 @@ describe('SolverPage', () => {
       expect(jobs.submitSolveFromReferenceData).not.toHaveBeenCalled();
     });
 
-    it('starts cold, by name, once the user confirmed', async () => {
+    it('starts cold, by name, once the user ticked the box and confirmed', async () => {
       persistedCount(12);
       const page = createPage();
       await fixture.whenStable();
+      confirm.askWithOption.mockResolvedValueOnce({ checked: true });
       confirm.ask.mockResolvedValueOnce(true);
 
-      await page['onRecommencerDeZero']();
+      await page['onTimefoldSolve']();
 
       expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(
         undefined,
@@ -851,9 +929,10 @@ describe('SolverPage', () => {
         { jour: '2026-07-08', motif: 'PASSE' },
         { jour: '2026-07-10', motif: 'VERROU' },
       ]);
+      confirm.askWithOption.mockResolvedValueOnce({ checked: true });
       confirm.ask.mockResolvedValueOnce(false);
 
-      await page['onRecommencerDeZero']();
+      await page['onTimefoldSolve']();
 
       const message = (confirm.ask.mock.calls[0][0] as { message: string }).message;
       expect(message).toContain('1 journée(s) relue(s) perdront leur relecture.');
@@ -872,9 +951,10 @@ describe('SolverPage', () => {
         joursValides: [],
       });
       const kept = vi.spyOn(validations, 'keptByColdStart');
+      confirm.askWithOption.mockResolvedValueOnce({ checked: true });
       confirm.ask.mockResolvedValueOnce(false);
 
-      await page['onRecommencerDeZero']();
+      await page['onTimefoldSolve']();
 
       expect(kept).not.toHaveBeenCalled();
       expect((confirm.ask.mock.calls[0][0] as { message: string }).message).not.toContain(
@@ -965,17 +1045,18 @@ describe('SolverPage', () => {
     });
 
     // Two dialogs on one click would be one too many: the blocking question
-    // comes first, and « Recommencer de zéro » asks its own only after it.
-    it('asks it before the cold-start question, and stops there when refused', async () => {
+    // comes first, and « Calculer » asks its own only after it.
+    it('asks it before the start question, and stops there when refused', async () => {
       causesBloquantes.set([bloquante]);
       planningApi.persistedCount.mockResolvedValue({ assignments: 12 });
       const page = createPage();
       await fixture.whenStable();
       confirm.ask.mockResolvedValueOnce(false);
 
-      await page['onRecommencerDeZero']();
+      await page['onTimefoldSolve']();
 
       expect(confirm.ask).toHaveBeenCalledTimes(1);
+      expect(confirm.askWithOption).not.toHaveBeenCalled();
       expect(jobs.submitSolveFromReferenceData).not.toHaveBeenCalled();
     });
   });

@@ -28,7 +28,7 @@ test('deux lignes cochées ouvrent « Comparer deux versions », et l’adresse 
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/solveur?onglet=versions');
+  await page.goto('/journee?onglet=versions');
 
   const ligne = (libelle: string) => page.getByRole('row', { name: new RegExp(libelle) });
   await expect(ligne(LIBELLES[0])).toBeVisible();
@@ -78,7 +78,7 @@ test('les anciennes adresses des versions mènent à la nouvelle page', async ({
   const page = await pageAdmin(browser, admin);
   for (const ancienne of ['/instantanes', '/comparateur', '/kpi?rang=2&dosage=x']) {
     await page.goto(ancienne);
-    await expect(page, ancienne).toHaveURL(/\/solveur\?onglet=versions$/);
+    await expect(page, ancienne).toHaveURL(/\/journee\?onglet=versions$/);
     await expect(page.getByRole('heading', { level: 2, name: 'Versions du plan' })).toBeVisible();
   }
   // The editions' comparison, now a view of « Comparer deux versions », keeps its pair.

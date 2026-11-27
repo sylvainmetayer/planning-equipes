@@ -45,7 +45,7 @@ Seats depend only on the stands and timeslots: they are counted before any staff
 - **a failure proves nothing**: `realisable: false` only says that no complete plan was found in the time allowed. `posteDoitEtrePourvu` is always held, even if the edition switched it off;
 - ad hoc exceptions and the published plan are left aside, because they name people that the made-up team does not contain. The plan in place serves as the starting point: each real staff member is switched to a made-up member, adult to adult, minor to minor, the most loaded first.
 
-`GET /api/solve/entrees` counts in one read what the Solver page announces under "This solve will take into account", without computing anything. `pendingDeclarations` counts the availability declarations **pending**: a solve reads the profiles, never the declarations, so this figure says what it will not see. `changesSinceSolve` counts the actions journalled since the persisted plan, with the filter of `GET /api/historique/changements` (0 with no plan). `disabledRules` counts only the rules shipped active that the edition switched off.
+`GET /api/solve/entrees` counts in one read what the Calculate tab announces under "This solve will take into account", without computing anything. `pendingDeclarations` counts the availability declarations **pending**: a solve reads the profiles, never the declarations, so this figure says what it will not see. `changesSinceSolve` counts the actions journalled since the persisted plan, with the filter of `GET /api/historique/changements` (0 with no plan). `disabledRules` counts only the rules shipped active that the edition switched off.
 
 ## The queue
 

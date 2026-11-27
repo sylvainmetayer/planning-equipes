@@ -5,7 +5,7 @@
 // and going back to « À relire » puts the day back to read.
 //
 // What a unit test cannot see is exactly this: that the bar, the day selector,
-// the banner of the Solveur and the publication note all describe the same
+// the banner of « Calculer » and the publication note all describe the same
 // state.
 
 import { APIRequestContext, expect, Locator, Page, test } from '@playwright/test';
@@ -143,7 +143,9 @@ test('figer demande confirmation et pose le verrou, relire le retire', async ({ 
   await page.context().close();
 });
 
-test('la progression se lit sur le sélecteur de jour et sur le solveur', async ({ browser }) => {
+test('la progression se lit sur le sélecteur de jour et sur Planning › Calculer', async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/journee');
   const dialogue = await ouvrirRelecture(page);
@@ -154,7 +156,14 @@ test('la progression se lit sur le sélecteur de jour et sur le solveur', async 
   await page.locator('.mini-mois-bascule').click();
   await expect(page.locator('.mini-mois-courant')).toContainText('task_alt');
 
-  await page.goto('/solveur');
+  // The banner shows as soon as a plan exists, whether or not this browser solved it.
+  await page
+    .getByRole('radiogroup', { name: 'Vue du planning' })
+    .getByRole('radio', { name: 'Calculer' })
+    .click();
+  await expect(page).toHaveURL(/\/journee\?onglet=calculer$/);
+  await expect(page.locator('.relecture-banniere')).toContainText('relues ou figées');
+  await page.reload();
   await expect(page.locator('.relecture-banniere')).toContainText('relues ou figées');
 
   await page.context().close();

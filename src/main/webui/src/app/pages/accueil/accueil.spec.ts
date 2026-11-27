@@ -663,7 +663,10 @@ describe('buildToday', () => {
       route: '/animateurs',
       queryParams: { silence: '3', relance: 'jamais' },
     });
-    expect(byId.get('donnees')!.lien.route).toBe('/solveur');
+    expect(byId.get('donnees')!.lien).toMatchObject({
+      route: '/journee',
+      queryParams: { onglet: 'calculer' },
+    });
     expect(byId.get('prevenir')!.lien.route).toBe('/publication');
     expect(byId.get('declarations')!.lien).toMatchObject({
       route: '/animateurs',

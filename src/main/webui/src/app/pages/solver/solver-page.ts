@@ -17,11 +17,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { ongletHote } from '../../core/onglet-hote';
 import { reglagesAvances } from '../../core/reglages-avances';
 import { ReglagesAvancesToggle } from '../../shared/reglages-avances';
-import { VersionsPage } from '../versions/versions-page';
-import { readOngletSolveur } from './solveur-onglet';
 import { MachineCalculApi } from '../../core/api/machine-calcul-api';
 import { MatDialog } from '@angular/material/dialog';
 import { PlanningApi } from '../../core/api/planning-api';
@@ -113,7 +110,8 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
 }
 
 /**
- * Solver page: launches the background solve job and receives its result,
+ * « Calculer », a tab of the Planning page (the former Solveur page):
+ * launches the background solve job and receives its result,
  * whoever started it. The server always analyzes the solve result as part of
  * the same job (see {@code SolverJobService.submitSolve} on the backend), so
  * there is no separate analyze action and no client-side chaining to keep in
@@ -122,8 +120,9 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
  *
  * <p>An orchestrator: the queue, the score curve, the volumetry, the recap
  * and the incremental diff are each a component of their own next door; the
- * solve budget is set on « Paramètres › Calcul ». What stays here is what the result handler has to write, and the three
- * ways of launching a solve.</p>
+ * solve budget is set on « Paramètres › Calcul ». What stays here is what the result handler has to write, and the two
+ * ways of launching a solve — « Calculer » and « Corriger », starting over
+ * being a box of the first one's confirmation.</p>
  *
  * <p>The <b>diffusion</b> is no longer one of them (issue #320): exporting the
  * documents and publishing to the animateurs moved to « Export & publication »,
@@ -134,7 +133,6 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
   selector: 'app-solver-page',
   imports: [
     ReglagesAvancesToggle,
-    VersionsPage,
     VoirPlanningButton,
     MatProgressBarModule,
     StatusMessage,
@@ -160,12 +158,6 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SolverPage implements OnInit {
-  /**
-   * Two tabs (`?onglet=`): the solve, and `?onglet=versions` the finished
-   * solves and the snapshots — the former `/versions`.
-   */
-  protected readonly ongletsPage = ongletHote(readOngletSolveur, 'calcul');
-
   /**
    * Where the solve runs, the compute machine, the score curve once the solve
    * is over and the volumetry: read when a solve surprises, folded otherwise.
@@ -271,11 +263,6 @@ export class SolverPage implements OnInit {
       ? $localize`:@@solver.planifierIncremental:Planifier la correction`
       : $localize`:@@solver.incremental:Corriger après un changement`,
   );
-  protected readonly libelleAFroid = computed(() =>
-    this.solverBusy()
-      ? $localize`:@@solver.planifierAFroid:Planifier un calcul de zéro`
-      : $localize`:@@solver.aFroid:Recommencer de zéro`,
-  );
 
   /* ------------------------------ Point de départ ----------------------------- */
 
@@ -287,7 +274,10 @@ export class SolverPage implements OnInit {
    */
   protected readonly affectationsEnregistrees = signal<number | null>(null);
 
-  /** True when a plan exists to start from: what makes « Recommencer de zéro » a choice at all. */
+  /**
+   * True when a plan exists to start from: what makes « Recommencer de zéro »
+   * a choice at all, and the relecture banner worth showing.
+   */
   protected readonly planEnregistre = computed(() => (this.affectationsEnregistrees() ?? 0) > 0);
 
   /** Under the buttons: where the next calculation starts, said before the click rather than after. */
@@ -302,8 +292,8 @@ export class SolverPage implements OnInit {
     const resoluLe = this.resolution.resolution()?.resoluLe;
     const quand = resoluLe ? new Date(resoluLe).toLocaleString(intlLocale()) : '';
     return quand
-      ? $localize`:@@solver.depart.planDate:« Calculer le planning » repart du plan enregistré le ${quand}:date: (${affectations}:count: affectations) ; seuls les verrouillages sont figés.`
-      : $localize`:@@solver.depart.plan:« Calculer le planning » repart du plan enregistré (${affectations}:count: affectations) ; seuls les verrouillages sont figés.`;
+      ? $localize`:@@solver.depart.planDate:« Calculer le planning » repart du plan enregistré le ${quand}:date: (${affectations}:count: affectations) ; les verrouillages et le passé figé sont respectés.`
+      : $localize`:@@solver.depart.plan:« Calculer le planning » repart du plan enregistré (${affectations}:count: affectations) ; les verrouillages et le passé figé sont respectés.`;
   });
 
   /** Where the last finished full solve started from, for the recap. */
@@ -602,18 +592,12 @@ export class SolverPage implements OnInit {
   }
 
   /**
-   * « Recommencer de zéro » (issue #174): the one gesture that can lose the
-   * plan already reached, so it says so and asks. Not offered at all without
-   * a plan — « Calculer le planning » already starts cold then.
+   * « Recommencer de zéro » (issue #174), ticked in « Calculer »'s
+   * confirmation: the one gesture that can lose the plan already reached, so
+   * it says so and asks again. Never offered without a plan — « Calculer le
+   * planning » already starts cold then.
    */
-  protected async onRecommencerDeZero(): Promise<void> {
-    if (
-      !(await this.confirmUnsavedEntries()) ||
-      !(await this.confirmerCausesBloquantes()) ||
-      !(await this.confirmInterruptCheck())
-    ) {
-      return;
-    }
+  private async confirmColdStart(): Promise<boolean> {
     const affectations = this.affectationsEnregistrees() ?? 0;
     const publishedAt = this.lastPublishedAt();
     const message = $localize`:@@solver.aFroid.confirm.message:Le plan enregistré (${affectations}:count: affectations) ne servira pas de point de départ : le calcul repart de rien et peut finir en dessous.`;
@@ -622,15 +606,12 @@ export class SolverPage implements OnInit {
         $localize`:@@solver.aFroid.confirm.publie:Un planning a été publié le ${new Date(publishedAt).toLocaleString(intlLocale())}:date: : repartir de zéro peut bousculer beaucoup de personnes déjà prévenues.`
       : '';
     const relectures = await this.relecturesAFroid();
-    const confirme = await this.confirm.ask({
+    return this.confirm.ask({
       title: $localize`:@@solver.aFroid.confirm.title:Recommencer de zéro ?`,
       message: message + avertissement + relectures,
       confirmLabel: $localize`:@@solver.aFroid.confirm.action:Recommencer de zéro`,
       danger: true,
     });
-    if (confirme) {
-      await this.lancerSolve('AUCUN');
-    }
   }
 
   /**
@@ -676,7 +657,14 @@ export class SolverPage implements OnInit {
     return phrase;
   }
 
-  protected async onTimefoldSolve(reamorcage: Reamorcage = 'AUTO'): Promise<void> {
+  /**
+   * « Calculer » (Q50): the whole solve, from the plan in place when there is
+   * one — locks and the frozen past kept. With a plan, it asks first, and the
+   * question carries the box « Recommencer de zéro »: ticked, the cold start
+   * asks once more, in its own words, before throwing the plan away. Without
+   * a plan there is nothing to lose and nothing to choose: it launches.
+   */
+  protected async onTimefoldSolve(): Promise<void> {
     if (
       !(await this.confirmUnsavedEntries()) ||
       !(await this.confirmerCausesBloquantes()) ||
@@ -684,7 +672,33 @@ export class SolverPage implements OnInit {
     ) {
       return;
     }
-    await this.lancerSolve(reamorcage);
+    const reamorcage = await this.chooseStart();
+    if (reamorcage !== null) {
+      await this.lancerSolve(reamorcage);
+    }
+  }
+
+  /** Where « Calculer » starts from, asked when a plan exists; null when the reader backed out. */
+  private async chooseStart(): Promise<Reamorcage | null> {
+    if (!this.planEnregistre()) {
+      return 'AUTO';
+    }
+    const choix = await this.confirm.askWithOption({
+      title: $localize`:@@solver.calculer.confirm.title:Calculer le planning ?`,
+      message: this.pointDeDepart(),
+      confirmLabel: $localize`:@@solver.calculer.confirm.action:Calculer`,
+      option: {
+        label: $localize`:@@solver.calculer.confirm.zero:Recommencer de zéro : ignorer le plan enregistré, au risque de perdre la qualité déjà atteinte`,
+        checked: false,
+      },
+    });
+    if (choix === null) {
+      return null;
+    }
+    if (!choix.checked) {
+      return 'AUTO';
+    }
+    return (await this.confirmColdStart()) ? 'AUCUN' : null;
   }
 
   /**

@@ -10,11 +10,13 @@ Le calcul affecte les animateurs aux places à pourvoir sous trois niveaux d'exi
 2. la couverture des postes ;
 3. l'équité, les souhaits et le confort.
 
-Il se lance depuis *Solveur* (groupe *Planifier*).
+Il se lance depuis l'onglet *Calculer* de la page *Planning* (groupe *Planifier*), à côté des vues du plan. L'ancienne adresse de la page *Solveur* y mène.
 
 Pour savoir ce que ce calcul garantit avant de le lancer, lisez [comment fonctionne le calcul du planning](/comment-marche-le-calcul/), écrit pour un organisateur.
 
 ## Avant de lancer : ce que le calcul recevra
+
+Dès qu'un plan existe, calculé ou importé, l'onglet s'ouvre aussi sur l'avancement de la relecture : combien de journées sont relues ou figées.
 
 L'écran dit ce que le calcul prendra en compte :
 
@@ -29,13 +31,14 @@ Si des exceptions posées à la main se contredisent, ou si un plafond de jours 
 
 ## Choisir comment lancer
 
-Trois boutons, chacun avec sa phrase sur la page. La page annonce d'où partira le prochain calcul et d'où le dernier est parti.
+Deux boutons, chacun avec sa phrase sur la page. La page annonce d'où partira le prochain calcul et d'où le dernier est parti.
 
 | Bouton | Ce qu'il fait |
 | --- | --- |
-| « Calculer le planning » | Repart du plan enregistré s'il existe et cherche à l'améliorer. Rien n'est figé hormis les verrouillages |
-| « Corriger après un changement » | Fige ce qui tient et ne recalcule que les postes rouverts : quelques dizaines de secondes au lieu de plusieurs minutes. Il montre d'abord ce qui a changé : le compte par famille (« 3 animateurs, 1 stand, 2 créneaux ») et les dernières lignes de l'historique, avec un lien vers celui-ci |
-| « Recommencer de zéro » | Abandonne l'acquis, et le dit avant. Sa confirmation liste les relectures de journées qui survivront |
+| « Calculer le planning » | Le calcul complet. Repart du plan enregistré s'il existe et cherche à l'améliorer ; seuls les verrouillages et le passé figé ne bougent pas. Avec un plan enregistré, il demande confirmation en rappelant d'où il part |
+| « Corriger après un changement » | Répare les seuls sièges en écart : il fige ce qui tient et ne recalcule que les postes rouverts, en quelques dizaines de secondes au lieu de plusieurs minutes. Il montre d'abord ce qui a changé : le compte par famille (« 3 animateurs, 1 stand, 2 créneaux ») et les dernières lignes de l'historique, avec un lien vers celui-ci |
+
+**Recommencer de zéro** n'est plus un bouton : c'est une case de la confirmation de « Calculer le planning », décochée par défaut, proposée seulement quand un plan existe. Cochée, le calcul abandonne l'acquis ; une seconde confirmation le dit et liste les relectures de journées qui survivront.
 
 Après un changement tardif, « Corriger après un changement » bouge le minimum de gens déjà prévenus : une fois le planning envoyé, chaque personne déplacée coûte au calcul, et le récapitulatif dit combien la publication préviendrait.
 
@@ -46,7 +49,7 @@ Après un changement tardif, « Corriger après un changement » bouge le minimu
 - La file d'attente. Vous pouvez planifier une résolution derrière celle qui tourne : elle démarre d'elle-même, ce qui permet de préparer l'édition suivante sans attendre devant l'écran. La file est **en mémoire** : un redémarrage du serveur perd les résolutions planifiées comme celle qui était en cours, signalées comme interrompues ; relancez-les.
 - L'e-mail de fin. Activez-le par édition (Paramètres, onglet *Calcul*) pour être prévenu dès qu'une résolution se termine, avec l'édition, le score et la faisabilité.
 
-![Le suivi d'un calcul en cours](/images/fr/docs/solveur.webp "L'écran Solveur pendant un calcul")
+![Le suivi d'un calcul en cours](/images/fr/docs/solveur.webp "L'onglet Calculer pendant un calcul")
 
 ## Régler la durée du calcul
 
@@ -62,7 +65,7 @@ Pour comprendre pourquoi une place reste vide ou une règle cède, voir [Compren
 
 ## Garder des versions du plan
 
-*Solveur*, onglet *Versions du plan*, réunit dans un seul tableau les résolutions terminées et les versions de l'édition, du plus récent au plus ancien, avec le résultat de chacun en phrases (rien de nominatif).
+*Planning*, onglet *Versions du plan*, réunit dans un seul tableau les résolutions terminées et les versions de l'édition, du plus récent au plus ancien, avec le résultat de chacun en phrases (rien de nominatif).
 
 - Une **version** met un planning de côté et le remet en place plus tard. Elle a une origine, écrite sur sa ligne : *manuelle* (« Enregistrer cet état »), *avant calcul* (prise automatiquement avant chaque résolution) ou *publiée* (le plan que les animateurs ont reçu). En remettre une périmée demande une confirmation qui nomme la cause.
 - Deux versions cochées, ou une version et le plan en place, s'ouvrent dans *Comparer deux versions* : score, couverture, équité et écarts aux règles, toutes éditions confondues sur demande. L'adresse garde la paire, pour la partager.

@@ -13,11 +13,13 @@ The solve assigns staff to the seats to fill under three levels of requirement, 
 2. seat coverage;
 3. fairness, wishes and comfort.
 
-It is started from *Solver* (*Plan* group).
+It is started from the *Calculate* tab of the *Planning* page (*Plan* group), next to the views of the plan. The former address of the *Solver* page leads there.
 
 To know what this solve guarantees before starting it, read [how the schedule solve works](/comment-marche-le-calcul/), written for an organiser.
 
 ## Before starting: what the solve will receive
+
+As soon as a plan exists, solved or imported, the tab also opens on how far the review has got: how many days are reviewed or frozen.
 
 The screen says what the solve will take into account:
 
@@ -32,13 +34,14 @@ If exceptions set by hand contradict each other, or if a cap on days in a row ca
 
 ## Choose how to start
 
-Three buttons, each with its sentence on the page. The page announces where the next solve will start from and where the last one started from.
+Two buttons, each with its sentence on the page. The page announces where the next solve will start from and where the last one started from.
 
 | Button | What it does |
 | --- | --- |
-| "Calculate the schedule" | Starts from the saved plan if there is one and tries to improve it. Nothing is frozen except the locks |
-| "Fix after a change" | Freezes what holds and recomputes only the reopened seats: a few dozen seconds instead of several minutes. It first shows what changed: the count by family ("3 staff members, 1 stand, 2 timeslots") and the last lines of the history, with a link to it |
-| "Start over from scratch" | Drops what was gained, and says so beforehand. Its confirmation lists the day reviews that will survive |
+| "Calculate the schedule" | The full solve. Starts from the saved plan if there is one and tries to improve it; only the locks and the frozen past stay put. With a saved plan, it asks for confirmation and recalls where it starts from |
+| "Fix after a change" | Repairs only the seats in breach: it freezes what holds and recomputes only the reopened seats, in a few dozen seconds instead of several minutes. It first shows what changed: the count by family ("3 staff members, 1 stand, 2 timeslots") and the last lines of the history, with a link to it |
+
+**Starting over from scratch** is no longer a button: it is a box of the confirmation of "Calculate the schedule", unticked by default, offered only when a plan exists. Ticked, the solve drops what was gained; a second confirmation says so and lists the day reviews that will survive.
 
 After a late change, "Fix after a change" moves as few already-notified people as possible: once the schedule has been sent, each person moved costs the solve, and the summary says how many people the publication would notify.
 
@@ -49,7 +52,7 @@ After a late change, "Fix after a change" moves as few already-notified people a
 - The queue. You can schedule a solve behind the one that is running: it starts by itself, so you can prepare the next edition without waiting in front of the screen. The queue is **in memory**: a server restart loses the planned solves as it does the one that was running, flagged as interrupted; launch them again.
 - The end e-mail. Enable it per edition (Settings, *Solve* tab) to be notified as soon as a solve ends, with the edition, the score and the feasibility.
 
-![Following a solve in progress](/images/fr/docs/solveur.webp "The Solver screen during a solve")
+![Following a solve in progress](/images/fr/docs/solveur.webp "The Calculate tab during a solve")
 
 ## Set the solve duration
 
@@ -65,7 +68,7 @@ To understand why a seat stays empty or a rule gives way, see [Understand a stuc
 
 ## Keep versions of the plan
 
-*Solver*, *Plan versions* tab, gathers in a single table the finished solves and the versions of the edition, newest first, with the result of each in sentences (nothing nominative).
+*Planning*, *Plan versions* tab, gathers in a single table the finished solves and the versions of the edition, newest first, with the result of each in sentences (nothing nominative).
 
 - A **version** sets a schedule aside and puts it back later. It has an origin, written on its row: *manual* ("Save this state"), *before a solve* (taken automatically before each solve) or *published* (the plan the staff received). Putting back an outdated one asks for a confirmation that names the cause.
 - Two ticked versions, or one version and the plan in place, open in *Compare two versions*: score, coverage, fairness and rule breaches, across all editions on request. The address keeps the pair, to share it.

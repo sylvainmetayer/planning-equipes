@@ -7,7 +7,14 @@
 // petit jeu qui passe par toutes les capacités de l'outil.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, shiftDate, dialogueOuvert, pageAdmin } from './support';
+import {
+  calculerLePlanning,
+  contexteAdmin,
+  shiftDate,
+  dialogueOuvert,
+  pageAdmin,
+  PAGE_CALCULER,
+} from './support';
 import { repartirDeLaReference } from './reference';
 
 /**
@@ -242,9 +249,9 @@ test('an edition entered end to end, solved, and read back', async ({ browser })
   await page.getByRole('button', { name: /Enregistrer/ }).click();
   await expect(page.getByText('Compétences enregistrées')).toBeVisible();
 
-  // 7. Un solve court, depuis la page Solveur.
-  await page.goto('/solveur');
-  await page.getByRole('button', { name: 'Calculer le planning' }).click();
+  // 7. Un solve court, depuis Planning › Calculer.
+  await page.goto(PAGE_CALCULER);
+  await calculerLePlanning(page);
   await expect
     .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 15_000 })
     .toBe(200);

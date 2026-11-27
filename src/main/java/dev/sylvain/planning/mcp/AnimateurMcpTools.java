@@ -53,8 +53,8 @@ public class AnimateurMcpTools {
             name = "lister_animateurs",
             description = "Liste les animateurs. Ne renvoie aucune donnée personnelle identifiante (pas de nom, "
                     + "prénom, ni date de naissance) : uniquement l'id, le statut majeur/mineur, et les attributs de "
-                    + "planification (compétences, souhaits, jours indisponibles). Sans limite, renvoie tout l'effectif ; "
-                    + "total dit toujours combien il y en a.",
+                    + "planification (compétences, souhaits, jours indisponibles). Avec id, renvoie ce seul animateur ; "
+                    + "sans limite, tout l'effectif ; total dit toujours combien il y en a.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -62,11 +62,16 @@ public class AnimateurMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     AnimateursView listAnimateurs(
+            @ToolArg(description = "Id d'un seul animateur à renvoyer (défaut : tous)", required = false) String id,
             @ToolArg(description = "Nombre maximum d'animateurs renvoyés (défaut : tous)", required = false)
                     Integer limite,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         LocalDate reference = dateReference();
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
+        if (id != null && !id.isBlank()) {
+            McpArgs.onlyFor("une liste sans id", "limite", limite);
+            return new AnimateursView(animateurs.size(), List.of(toView(find(id), reference)));
+        }
         return new AnimateursView(
                 animateurs.size(),
                 animateurs.stream()
@@ -75,9 +80,11 @@ public class AnimateurMcpTools {
                         .toList());
     }
 
+    @Deprecated
     @Tool(
             name = "consulter_animateur",
-            description = "Consulte un animateur par son id. Ne renvoie aucune donnée personnelle identifiante.",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser lister_animateurs (id). "
+                    + "Consulte un animateur par son id. Ne renvoie aucune donnée personnelle identifiante.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,

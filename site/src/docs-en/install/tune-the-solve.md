@@ -33,7 +33,7 @@ The budget above limits **one** solve. An instance open to strangers, or that sh
 | `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (no limit) | Solves accepted over the last 60 rolling minutes |
 | `SOLVER_MAX_QUEUED_JOBS` | `0` (no limit) | Jobs that may wait behind the one running ("Plan the calculation"), the running one not included |
 
-The quota counts every solve **accepted at launch**, whatever the path: full or incremental solve, from the *Solver* screen, the API (including the synchronous `POST /api/solve`) or an MCP assistant, and the staffing check by a solve (*Diagnostic › Staffing need*, the default), which is a real solve; the bound alone does not consume any. A launch refused for another reason does not count; a job that was planned and then removed from the queue does. Beyond the limit, the launch is refused (`409`) with a sentence that the screen displays as is and that the MCP tool returns as an error:
+The quota counts every solve **accepted at launch**, whatever the path: full or incremental solve, from *Planning › Calculate*, the API (including the synchronous `POST /api/solve`) or an MCP assistant, and the staffing check by a solve (*Diagnostic › Staffing need*, the default), which is a real solve; the bound alone does not consume any. A launch refused for another reason does not count; a job that was planned and then removed from the queue does. Beyond the limit, the launch is refused (`409`) with a sentence that the screen displays as is and that the MCP tool returns as an error:
 
 > "Cette instance limite le calcul à 12 résolutions par heure. Prochaine résolution possible à 14:32." (This instance limits solving to 12 solves per hour. Next solve possible at 14:32.)
 

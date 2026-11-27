@@ -69,8 +69,8 @@ import org.junit.jupiter.api.Test;
  * claim, so it is checked: a method read by its name that writes, directly or
  * through what it calls, fails ({@link #noMethodReadByItsNameWrites}).</p>
  *
- * <p>And since an interceptor is bypassed by a call on {@code this}, an
- * annotated method is never called from inside its own class, unless by a
+ * <p>And since ArC intercepts a call on {@code this} again (the guard would run
+ * twice), an annotated method is never called from inside its own class, unless by a
  * method that is itself annotated and has refused already.</p>
  */
 class RefusedWhileSolvingStructuralTest {
@@ -518,10 +518,10 @@ class RefusedWhileSolvingStructuralTest {
     }
 
     /**
-     * A call on {@code this} bypasses the interceptor — and so does a method
+     * A call on {@code this} crosses the interceptor again — so does a method
      * reference {@code this::method}, handed to a {@code forEach} or a
      * transaction: an annotated method called from inside its own class by a
-     * method that is not annotated would write unrefused. A caller that is
+     * method that is not annotated would run its guard a second time. A caller that is
      * annotated itself has refused already.
      */
     @Test
@@ -550,7 +550,7 @@ class RefusedWhileSolvingStructuralTest {
         }
         assertThat(selfCalls)
                 .as("annotated methods called on this from a method that is not annotated, where the interceptor"
-                        + " never runs")
+                        + " would run a second time")
                 .isEmpty();
     }
 

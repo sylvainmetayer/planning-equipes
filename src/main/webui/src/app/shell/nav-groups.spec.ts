@@ -3,14 +3,19 @@ import { pageRoutes } from '../core/testing/page-routes';
 import { readOngletAnimateurs } from '../pages/animateurs/animateurs-onglet';
 import { readComparerView } from '../pages/comparer-editions/comparer-page';
 import { readMesuresView } from '../pages/mesures/mesures-page';
-import { readOngletSolveur } from '../pages/solver/solveur-onglet';
 import { ONGLETS_DEBUG, readOngletDebug } from '../pages/debug/debug';
 import { ONGLETS_DIAGNOSTIC, readOnglet } from '../pages/diagnostic/diagnostic';
 import { readHistoriqueTab } from '../pages/historique/historique';
 import { readEchangesTab } from '../pages/echanges/echanges-filter';
 import { ONGLETS_FICHIERS, readOngletFichiers } from '../pages/fichiers/fichiers';
 import { IMPORT_CARDS, readImportCard } from '../pages/imports/imports';
-import { PLANNING_VIEWS, readAxe, readView, tabOf } from '../pages/journee/journee';
+import {
+  PLANNING_VIEWS,
+  readAxe,
+  readOngletPlanning,
+  readView,
+  tabOf,
+} from '../pages/journee/journee';
 import { ONGLETS_PARAMETRES, readOngletParametres } from '../pages/parametres/parametres';
 import { readOngletDiffuser } from '../pages/publication/onglet';
 import { ONGLETS_REGLES, readOngletRegles } from '../pages/regles/regles';
@@ -31,12 +36,20 @@ interface TabReader {
 }
 
 const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
-  '/journee': {
-    // « Jour » gathers the rail and the table; « Stand » and « Personne » are the two grids.
-    param: 'vue',
-    opens: (v) => readAxe(v) === v || tabOf(readView(v)) === v,
-    values: PLANNING_VIEWS,
-  },
+  '/journee': [
+    {
+      // « Jour » gathers the rail and the table; « Stand » and « Personne » are the two grids.
+      param: 'vue',
+      opens: (v) => readAxe(v) === v || tabOf(readView(v)) === v,
+      values: PLANNING_VIEWS,
+    },
+    // « Calculer », the former Solveur, and its « Versions du plan ».
+    {
+      param: 'onglet',
+      opens: (v) => readOngletPlanning(v) === v,
+      values: ['calculer', 'versions'],
+    },
+  ],
   // The roster is the default tab; « covoiturage », the second tab of the
   // Disponibilités screen, opens that screen.
   '/animateurs': {
@@ -46,7 +59,6 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
       (v === 'covoiturage' && readOngletAnimateurs(v) === 'disponibilites'),
     values: ['competences', 'disponibilites', 'covoiturage'],
   },
-  '/solveur': { param: 'onglet', opens: (v) => readOngletSolveur(v) === v, values: ['versions'] },
   '/mesures': { param: 'vue', opens: (v) => readMesuresView(v) === v, values: ['indicateurs'] },
   // The requests are the default tab: only the statistics are named.
   '/echanges': { param: 'onglet', opens: (v) => readEchangesTab(v) === v, values: ['stats'] },
@@ -97,9 +109,9 @@ describe('buildNavGroups', () => {
     ]);
   });
 
-  // The thirteen entries: a screen answering a variant of another's question is one of its tabs.
-  it('keeps the menu to thirteen entries', () => {
-    expect(menuLinks()).toHaveLength(13);
+  // The twelve entries: a screen answering a variant of another's question is one of its tabs.
+  it('keeps the menu to twelve entries', () => {
+    expect(menuLinks()).toHaveLength(12);
   });
 
   it('lists neither Débogage, Éditions, Aide nor the legal pages in a group', () => {

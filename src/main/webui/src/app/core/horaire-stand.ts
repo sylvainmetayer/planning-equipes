@@ -309,7 +309,7 @@ export function joursEdition(
 /* ------------------------- compact window syntax ------------------------- */
 //
 // `10:00-12:00@2, 14:00-` : the day of a stand on one line — the form MCP
-// clients already send to `creer_stand_complet` (`McpArgs.fenetres`), and the
+// clients already send to `creer_stand` (`McpArgs.fenetres`), and the
 // shape a line of the organiser's own spreadsheet has. Mirrors the server
 // parser: a window is `debut-fin`, an empty end runs until closing time, and
 // `@N` names the seats of that one window.

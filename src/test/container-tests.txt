@@ -131,6 +131,7 @@ dev/sylvain/planning/api/WebhookResourceTest.java
 dev/sylvain/planning/mcp/CarpoolBackedAdHocMcpTest.java
 dev/sylvain/planning/mcp/DiagnosticMcpToolsTest.java
 dev/sylvain/planning/mcp/DiagnosticPlanMcpToolsTest.java
+dev/sylvain/planning/mcp/EchangeJournalMcpTest.java
 dev/sylvain/planning/mcp/EditionMcpToolsTest.java
 dev/sylvain/planning/mcp/GenerateurCreneauxMcpToolsTest.java
 dev/sylvain/planning/mcp/PhaseEditionMcpToolsTest.java
@@ -152,6 +153,7 @@ dev/sylvain/planning/mcp/RefusedWhileSolvingDoorsTest.java
 dev/sylvain/planning/mcp/RegroupementDiagnosticMcpToolsTest.java
 dev/sylvain/planning/mcp/RegroupementEditionsMcpToolsTest.java
 dev/sylvain/planning/mcp/RegroupementPlanningMcpToolsTest.java
+dev/sylvain/planning/mcp/RegroupementReferentielMcpToolsTest.java
 dev/sylvain/planning/mcp/ReparationMcpToolsTest.java
 dev/sylvain/planning/mcp/ScenarioMcpToolsTest.java
 dev/sylvain/planning/mcp/SolverQuotaGuardTest.java

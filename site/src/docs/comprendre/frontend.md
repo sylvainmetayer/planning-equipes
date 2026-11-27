@@ -8,7 +8,7 @@ L'extension Quinoa lance `npm ci && npm run build` pendant `mvn package` et copi
 
 Règle de structure : une question, un écran, ses variantes en onglets (`?onglet=`) ou en vues (`?vue=`) dans l'URL, chargés à la demande. On n'ajoute pas une section à une page existante. Le menu ([`shell/nav-groups.ts`](repo:src/main/webui/src/app/shell/nav-groups.ts)) est le même pour tout le monde et suit le cycle d'une édition ; une route peut être servie sans entrée de menu (Débogage), la palette Ctrl+K la trouve. Les services de `core/` portent l'état partagé et les appels HTTP ; les composants ne font pas de `fetch`.
 
-L'état circule dans un seul sens : la page Solveur pousse le planning résolu, les calendriers le relisent en lecture seule et ne lancent jamais de résolution.
+L'état circule dans un seul sens : l'onglet Calculer de la page Planning pousse le planning résolu, les calendriers le relisent en lecture seule et ne lancent jamais de résolution.
 
 ## Redéployer sans casser les navigateurs ouverts
 

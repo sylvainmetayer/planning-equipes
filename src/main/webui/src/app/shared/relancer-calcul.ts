@@ -44,7 +44,7 @@ import { SolverJobService } from '../core/solver-job.service';
       } @else {
         <span class="calendar-meta">{{ phrase() }}</span>
       }
-      <a matButton routerLink="/solveur" i18n="@@relancer.suivre">Suivre sur le Solveur</a>
+      <a matButton routerLink="/journee" [queryParams]="{ onglet: 'calculer' }" i18n="@@relancer.suivre">Suivre le calcul</a>
     </span>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -98,7 +98,7 @@ export class RelancerCalcul {
       this.notifications.notify({
         title: queued
           ? $localize`:@@relancer.planifie:Calcul planifié : il démarrera dès que la tâche en cours sera terminée.`
-          : $localize`:@@relancer.lance:Calcul lancé : le résultat arrivera sur le Solveur.`,
+          : $localize`:@@relancer.lance:Calcul lancé : le résultat arrivera dans Planning › Calculer.`,
         variant: 'success',
         timeout: 5000,
       });

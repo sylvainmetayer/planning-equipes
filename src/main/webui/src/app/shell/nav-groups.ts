@@ -48,7 +48,7 @@ export interface NavGroup {
 
 /**
  * The menu, one group per moment of the cycle: Accueil, Préparer, Planifier,
- * Diffuser, Aujourd'hui, Administrer — thirteen entries, a screen that answers
+ * Diffuser, Aujourd'hui, Administrer — twelve entries, a screen that answers
  * a variant of another's question being one of its tabs.
  *
  * <p>Built lazily (called from a constructor, not at module scope): $localize
@@ -159,24 +159,10 @@ export function buildNavGroups(): NavGroup[] {
       title: $localize`:@@nav.group.planifier:Planifier`,
       links: [
         {
-          path: '/solveur',
-          label: $localize`:@@nav.link.solver:Solveur`,
-          icon: 'play_circle',
-          shortcut: 's',
-          keywords: $localize`:@@nav.keywords.solver:calculer résolution`,
-          tabs: [
-            tab(
-              'onglet',
-              'versions',
-              $localize`:@@nav.link.versions:Versions du plan`,
-              $localize`:@@nav.keywords.versions:versions instantanés comparateur autopsie restaurer historique résolutions`,
-            ),
-          ],
-        },
-        {
           // The page every reading of the plan starts from (issue #712): the
           // former Journée, which absorbed the month calendar and the graph:
-          // four views, Jour, Stand, Personne and Carte.
+          // four views, Jour, Stand, Personne and Carte, and two tabs:
+          // « Calculer », the former Solveur page, and its « Versions du plan ».
           path: '/journee',
           label: $localize`:@@nav.link.journee:Planning`,
           icon: 'view_day',
@@ -184,6 +170,7 @@ export function buildNavGroups(): NavGroup[] {
           // The bench left the Diagnostic for the Siège panel of this page:
           // « banc » still finds where it went; the screens it absorbed too.
           keywords: $localize`:@@nav.keywords.journee:journée calendrier banc de touche siège remplaçant placer imprimer`,
+          // `s`, the former Solveur's letter, is « Calculer »'s tab now: no letter opens a tab.
           tabs: [
             tab(
               'vue',
@@ -208,6 +195,18 @@ export function buildNavGroups(): NavGroup[] {
               'carte',
               $localize`:@@journee.vue.carte:Carte`,
               $localize`:@@nav.keywords.journeeCarte:plan emplacements graphe`,
+            ),
+            tab(
+              'onglet',
+              'calculer',
+              $localize`:@@planning.onglet.calculer:Calculer`,
+              $localize`:@@nav.keywords.solver:solveur calculer corriger recommencer résolution`,
+            ),
+            tab(
+              'onglet',
+              'versions',
+              $localize`:@@nav.link.versions:Versions du plan`,
+              $localize`:@@nav.keywords.versions:versions instantanés comparateur autopsie restaurer historique résolutions`,
             ),
           ],
         },
@@ -454,7 +453,7 @@ export function buildOffMenuLinks(devMode: boolean): NavLink[] {
     },
     // What the edition leaves behind (issue #272): the realised against the
     // published plan, and the indicators of the solves. Served without a menu
-    // entry — the thirteen are the moments of the cycle —, found by the palette
+    // entry — the twelve are the moments of the cycle —, found by the palette
     // and the help.
     {
       path: '/mesures',

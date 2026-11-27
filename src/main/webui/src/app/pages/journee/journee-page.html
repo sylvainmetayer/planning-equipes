@@ -1,6 +1,6 @@
 <div class="planning-entete">
   <h1 class="planning-titre" i18n="@@planning.title">Planning</h1>
-  <mat-button-toggle-group class="planning-axes" [value]="currentView()" (change)="selectView($event.value)"
+  <mat-button-toggle-group class="planning-axes" [value]="toggleValue()" (change)="selectToggle($event.value)"
                            aria-label="Vue du planning" i18n-aria-label="@@planning.vue.label">
     <mat-button-toggle value="jour">
       <mat-icon>view_day</mat-icon>
@@ -18,7 +18,16 @@
       <mat-icon>map</mat-icon>
       <ng-container i18n="@@journee.vue.carte">Carte</ng-container>
     </mat-button-toggle>
+    <mat-button-toggle value="calculer">
+      <mat-icon>play_circle</mat-icon>
+      <ng-container i18n="@@planning.onglet.calculer">Calculer</ng-container>
+    </mat-button-toggle>
+    <mat-button-toggle value="versions">
+      <mat-icon>history</mat-icon>
+      <ng-container i18n="@@nav.link.versions">Versions du plan</ng-container>
+    </mat-button-toggle>
   </mat-button-toggle-group>
+  @if (ongletsPage.onglet() === 'plan') {
   @switch (axe()) {
   @case ('stand') {
   <mat-button-toggle-group class="journee-vues" [value]="standView()" (change)="standView.set($event.value)"
@@ -62,8 +71,17 @@
   }
   }
   }
+  }
 </div>
 
+@switch (ongletsPage.onglet()) {
+@case ('calculer') {
+  <app-solver-page />
+}
+@case ('versions') {
+  <app-versions-page />
+}
+@default {
 <div class="planning-barre">
   <app-mini-mois [jours]="jours()" [courant]="jourCourant()" [postes]="planning()?.postes ?? []"
                  (choisi)="selectJour($event)" />
@@ -257,3 +275,5 @@
     />
   }
 </div>
+}
+}
