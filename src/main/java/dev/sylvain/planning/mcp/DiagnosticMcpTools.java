@@ -55,14 +55,14 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * The read-only diagnostics the screens have and MCP did not, the Besoin and
- * Risques tabs and the Repas et pauses report each in one tool whose section
- * is the part read (ADR 0127): how many
+ * The read-only diagnostics the screens have and MCP did not: how many
  * animateurs the event needs at all ({@code StaffingResource}), when each
  * stand is actually open ({@code OuvertureStandsResource}), how the editions
  * compare over the years ({@code MesuresEditionResource}), what an import would
  * overwrite ({@code ReferenceDataResource}), and the plan read by game
- * category ({@code TypologieAnalyseResource}).
+ * category ({@code TypologieAnalyseResource}). The Besoin and Risques tabs and
+ * the Repas et pauses report are each one tool whose {@code section} is the
+ * part read (ADR 0127).
  *
  * <p>None of them carries a personal field: they count seats, hours and
  * stands. The animateurs appear only as totals — "il en faut au moins 148",
@@ -176,7 +176,7 @@ public class DiagnosticMcpTools {
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         String choisie =
                 McpArgs.choix(section, "section", "borne", "borne", MARGE, "typologie", "volumetrie", "faisabilite");
-        if (mode != null && !MARGE.equals(choisie)) {
+        if (mode != null && !mode.isBlank() && !MARGE.equals(choisie)) {
             throw new BusinessError.Invalid("mode ne vaut que pour la section marge");
         }
         return switch (choisie) {
@@ -268,7 +268,7 @@ public class DiagnosticMcpTools {
         if (PAUSES.equals(choisie)) {
             return new RepasPausesView(choisie, analyzePauses(date, standId, sansRelaisSeulement, edition), null);
         }
-        if (standId != null || sansRelaisSeulement != null) {
+        if ((standId != null && !standId.isBlank()) || Boolean.TRUE.equals(sansRelaisSeulement)) {
             throw new BusinessError.Invalid("standId et sansRelaisSeulement ne valent que pour la section pauses");
         }
         return new RepasPausesView(choisie, null, analyzeWalks(date, edition));
@@ -438,7 +438,7 @@ public class DiagnosticMcpTools {
             name = "plan_formation",
             description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_risques (section former). "
                     + "Plan de formation suggéré, typologie par typologie : pour chaque typologie en déficit — "
-                    + "manque signalé par analyser_effectifs, ou au moins un couple stand × créneau tenu par un seul "
+                    + "manque signalé par consulter_besoin (section borne), ou au moins un couple stand × créneau tenu par un seul "
                     + "spécialiste ou aucun dans la fragilité du planning persisté —, les chiffres de ces deux "
                     + "analyses (manque, competencesRares, groupesSansSpecialiste, postesIrremplacables), les jours "
                     + "en tension, et les candidats à former : animateurs DEBUTANT ou AUTONOME sur la typologie, "
@@ -505,7 +505,7 @@ public class DiagnosticMcpTools {
                             + "respecte la pause légale entre vacations de part et d'autre, et que les règles dures laissent "
                             + "prendre un siège de la tranche — face aux seuls sièges restés vides. Chaque journée porte sa "
                             + "pire tranche, et le rapport la pire de l'événement. Calcul en Java pur, aucune résolution "
-                            + "lancée, compétences hors périmètre (voir analyser_effectifs pour le goulot par typologie). "
+                            + "lancée, compétences hors périmètre (voir consulter_besoin, section borne, pour le goulot par typologie). "
                             + "Lecture optimiste : une tranche annoncée négative l'est, une tranche confortable ne le "
                             + "garantit pas. Troisième mode, « tension » : la marge « apres » croisée avec la fragilité "
                             + "du même planning persisté, chaque tranche notée CRITIQUE, ELEVEE, SURVEILLEE ou CALME par "

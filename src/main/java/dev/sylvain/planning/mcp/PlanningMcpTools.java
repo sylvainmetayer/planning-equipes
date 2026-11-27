@@ -462,7 +462,7 @@ public class PlanningMcpTools {
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         String choisie = McpArgs.choix(vue, "vue", "equite", "equite", "heures");
         if ("equite".equals(choisie)) {
-            if (source != null) {
+            if (source != null && !source.isBlank()) {
                 throw new BusinessError.Invalid("source ne vaut que pour la vue heures");
             }
             return new ChargeView(choisie, planningFairness(edition), null);
