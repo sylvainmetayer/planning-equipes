@@ -49,6 +49,29 @@ class SlidingWindowCounterTest {
     }
 
     /**
+     * The check behind the account lock of a local sign-in: it consumes
+     * nothing, refuses once the ceiling is spent, and the window does not
+     * stretch with each use — two addresses taking turns cannot keep it open.
+     */
+    @Test
+    void blockedSecondsConsumesNothingAndLiftsWithTheWindow() {
+        MovableClock clock = new MovableClock();
+        SlidingWindowCounter counter = new SlidingWindowCounter(0, clock);
+        Duration window = Duration.ofMinutes(15);
+
+        counter.use("compte", 2, window);
+        assertThat(counter.blockedSeconds("compte", 2, window)).isZero();
+        assertThat(counter.blockedSeconds("compte", 2, window)).isZero();
+        clock.advance(Duration.ofMinutes(14));
+        counter.use("compte", 2, window);
+        assertThat(counter.blockedSeconds("compte", 2, window)).isBetween(1L, 60L);
+        assertThat(counter.blockedSeconds("compte", 0, window)).isZero();
+
+        clock.advance(Duration.ofMinutes(2));
+        assertThat(counter.blockedSeconds("compte", 2, window)).isZero();
+    }
+
+    /**
      * A counter keyed by source address is bounded: a new address past the
      * ceiling evicts the oldest window, and one already counted evicts nothing.
      */

@@ -156,8 +156,18 @@ a **series of attempts cost time** rather than nothing.
 
 `McpRateLimiter` therefore also counts **refused keys**, separately from the rate:
 beyond `PLANNING_MCP_MAX_FAILURES` consecutive failures, the address gets
-`429` for `PLANNING_MCP_LOCKOUT_DURATION`, **even with the right key**,
-otherwise it would be enough to wait one's turn.
+`429` for `PLANNING_MCP_LOCKOUT_DURATION`, otherwise it would be enough to
+wait one's turn.
+
+One exception: **a key generated from the MCP screen, and in force, passes the
+lockout.** The address is not the caller: behind a NAT or an undeclared proxy,
+a stranger's wrong keys used to lock the legitimate assistant out too. A
+generated key carries 256 random bits, which the lockout protects from
+nothing. It passes without taking a slot or clearing the series, so whoever
+is guessing stays locked out. The configuration's key
+(`PLANNING_MCP_API_KEY`), whose strength nobody checked, stays behind the
+lockout, **even when it is right**: generate a key from the screen to get out
+of it.
 
 | Variable | Default | Use |
 | --- | --- | --- |

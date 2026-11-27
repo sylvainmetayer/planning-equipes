@@ -294,12 +294,25 @@ public class AdminLoginLimiter {
     }
 
     /**
-     * A refused attempt: counted against the address, journalled, and the
-     * lockout written when it is the one reaching the ceiling. Also called by
-     * the password step of a local sign-in, which refuses before any form post.
+     * A refused form post: counted against the address, journalled, and the
+     * lockout written when it is the one reaching the ceiling.
      */
     void recordFailure(RoutingContext routage) {
-        recordFailure(routage, null);
+        recordFailure(routage, false, null);
+    }
+
+    /**
+     * Settles the slot {@link #reservePasswordStep} took: a failure is counted
+     * and journalled like any other, a success forgives this pair's failures
+     * and nobody else's, anything else (a refusal before the password was
+     * judged, an error) gives the slot back.
+     */
+    void settlePasswordStep(RoutingContext routage, String account, FailureLockout.Outcome outcome) {
+        if (outcome == FailureLockout.Outcome.FAILURE) {
+            recordFailure(routage, true, account);
+        } else {
+            pairFailures.settle(pairKey(address(routage), account), outcome, config.dureeBlocage());
+        }
     }
 
     /**
@@ -308,19 +321,24 @@ public class AdminLoginLimiter {
      * that: behind a shared address (the wifi of a festival) a few people's
      * typos must not shut everyone out for a quarter of an hour, while a spray
      * of one password at many accounts, or many passwords at one, still meets a
-     * wall. {@code account} is {@code null} on the form post, whose username
-     * the event does not carry.
+     * wall. Only the password step knows the account, and it reserved its pair
+     * slot ({@code reserved}); the form post's event carries no username.
      */
-    void recordFailure(RoutingContext routage, String account) {
+    private void recordFailure(RoutingContext routage, boolean reserved, String account) {
         String address = address(routage);
-        boolean local = isLocalLoginPath(routage.normalizedPath()) || isPasswordStepPath(routage.normalizedPath());
+        // A reserved slot is settled whatever the path looks like: the resource reserves on any path that
+        // reaches it, and a slot left in flight would hold the pair shut for good.
+        boolean local =
+                reserved || isLocalLoginPath(routage.normalizedPath()) || isPasswordStepPath(routage.normalizedPath());
         Instant now = Instant.now();
         int run;
         int ceiling = config.maxEchecs();
         if (local) {
+            int pairRun = reserved
+                    ? pairFailures.settle(
+                            pairKey(address, account), FailureLockout.Outcome.FAILURE, config.dureeBlocage())
+                    : 0;
             int addressRun = localAddressFailures.recordFailure(address, config.dureeBlocage());
-            int pairRun =
-                    account == null ? 0 : pairFailures.recordFailure(pairKey(address, account), config.dureeBlocage());
             boolean reached = pairRun == ceiling || addressRun == ceiling * LOCAL_ADDRESS_FACTOR;
             run = reached ? ceiling : 0;
         } else {
@@ -423,17 +441,23 @@ public class AdminLoginLimiter {
         return null;
     }
 
-    /** Seconds the pair (this address, {@code account}) or the address itself is locked out for, {@code 0} when it may try. */
-    long lockoutFor(RoutingContext contexte, String account) {
+    /**
+     * Takes the pair (this address, {@code account}) a slot for one password
+     * attempt, to be {@link #settlePasswordStep settled} once judged. Returns
+     * {@code 0} when the slot is taken, else the seconds the address or the pair
+     * is locked out for. Reserved rather than checked, so that a burst sent in
+     * parallel from one address gets no more than the ceiling's worth of
+     * guesses — nor feeds the account's own lock more than that
+     * ({@code CompteAccesService}), which is what keeps one address from
+     * locking an account.
+     */
+    long reservePasswordStep(RoutingContext contexte, String account) {
         String address = address(contexte);
-        return Math.max(
-                localAddressLockout(address),
-                pairFailures.lockoutSeconds(pairKey(address, account), config.maxEchecs(), config.dureeBlocage()));
-    }
-
-    /** The account signed in: its own failures from this address are forgiven, nobody else's. */
-    void clearPair(RoutingContext contexte, String account) {
-        pairFailures.clear(pairKey(address(contexte), account));
+        long locked = localAddressLockout(address);
+        if (locked > 0) {
+            return locked;
+        }
+        return pairFailures.reserve(pairKey(address, account), config.maxEchecs(), config.dureeBlocage());
     }
 
     private long localAddressLockout(String address) {

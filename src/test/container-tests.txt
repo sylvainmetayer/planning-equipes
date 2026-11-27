@@ -137,6 +137,7 @@ dev/sylvain/planning/mcp/GenerateurCreneauxMcpToolsTest.java
 dev/sylvain/planning/mcp/PhaseEditionMcpToolsTest.java
 dev/sylvain/planning/mcp/McpApiKeyAuthenticationMechanismTest.java
 dev/sylvain/planning/mcp/McpKeyLockoutTest.java
+dev/sylvain/planning/mcp/McpKeyLockoutGeneratedKeyTest.java
 dev/sylvain/planning/mcp/McpPromptsResourcesTest.java
 dev/sylvain/planning/mcp/McpRateLimitProxyTest.java
 dev/sylvain/planning/mcp/McpRateLimitTest.java
@@ -223,6 +224,7 @@ dev/sylvain/planning/api/LocalSignInTest.java
 dev/sylvain/planning/api/LocalSignInWithoutSecondStepTest.java
 dev/sylvain/planning/api/LocalSignInLockoutTest.java
 dev/sylvain/planning/api/LocalSignInSprayTest.java
+dev/sylvain/planning/api/LocalSignInTargetedLockoutTest.java
 dev/sylvain/planning/api/LecteurCanariTest.java
 dev/sylvain/planning/mcp/OidcMcpLecteurTest.java
 dev/sylvain/planning/service/referentiel/AdHocTypesMigrationTest.java

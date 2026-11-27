@@ -87,6 +87,25 @@ public class SlidingWindowCounter {
     }
 
     /**
+     * Seconds before {@code key}'s window reopens once its {@code ceiling} uses
+     * are spent, {@code 0} while it has one left: a check that consumes nothing,
+     * for a caller that counts only the uses that turned out to fail.
+     */
+    public long blockedSeconds(String key, int ceiling, Duration window) {
+        if (ceiling <= 0) {
+            return 0;
+        }
+        Window current = byKey.get(key);
+        Instant now = clock.instant();
+        if (current == null
+                || current.uses() < ceiling
+                || current.debut().plus(window).isBefore(now)) {
+            return 0;
+        }
+        return refused(now, current, window).secondsBeforeNextTry();
+    }
+
+    /**
      * Same window, counting <b>distinct</b> {@code element}s rather than uses:
      * one already let through in the window is free again, and a new one past
      * the ceiling is refused without being remembered. A person looking for a

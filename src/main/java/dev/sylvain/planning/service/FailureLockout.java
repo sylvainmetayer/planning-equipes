@@ -113,9 +113,14 @@ public final class FailureLockout {
      * Gives back a slot {@link #reserve reserved}, with what the attempt turned
      * out to be: a failure lengthens the run, a success clears it, anything else
      * — no credential was actually tried — does neither.
+     *
+     * @return the failures of the run once settled, {@code 0} when nothing was
+     *         reserved — the caller knows the lock has just engaged when it
+     *         equals its ceiling
      */
-    public void settle(String key, Outcome outcome, Duration duration) {
+    public int settle(String key, Outcome outcome, Duration duration) {
         Instant now = clock.instant();
+        int[] failures = {0};
         byKey.computeIfPresent(key, (ignore, current) -> {
             int inFlight = Math.max(0, current.inFlight() - 1);
             Run run =
@@ -127,8 +132,10 @@ public final class FailureLockout {
                         case SUCCESS -> new Run(0, inFlight, current.last());
                         case NEITHER -> new Run(current.failures(), inFlight, current.last());
                     };
+            failures[0] = run.failures();
             return run.failures() == 0 && run.inFlight() == 0 ? null : run;
         });
+        return failures[0];
     }
 
     /**

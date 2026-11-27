@@ -7,6 +7,7 @@ import dev.sylvain.planning.mcp.McpApiKeyAuthenticationMechanism;
 import dev.sylvain.planning.service.FailureLockout;
 import dev.sylvain.planning.service.RateLimitVerdict;
 import dev.sylvain.planning.service.SlidingWindowCounter;
+import dev.sylvain.planning.service.mcp.McpKeyService;
 import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -46,6 +47,14 @@ import java.util.concurrent.atomic.AtomicReference;
  * punish the one case that is not an attack. A request that authenticates
  * clears the run, so a wrong header corrected on the next try costs nothing
  * either.</p>
+ *
+ * <p><b>A generated key in force passes the lock.</b> The address is not the
+ * caller: behind a NAT or a proxy left undeclared, anybody's wrong keys locked
+ * the legitimate assistant out with them. A key generated from the screen is
+ * 256 random bits, which the lock adds nothing to; it is recognised from memory
+ * ({@link McpKeyService#isLiveGeneratedKey}), takes no slot and leaves the run
+ * alone, so the guesser stays locked. The configured key, whose strength
+ * nobody checked, stays behind the lock.</p>
  *
  * <h2>Why a Vert.x filter after all</h2>
  *
@@ -116,10 +125,13 @@ public class McpRateLimiter {
 
     private final ConfigAdminLogin loginConfig;
 
+    private final McpKeyService keys;
+
     @Inject
-    public McpRateLimiter(ConfigMcp config, ConfigAdminLogin loginConfig) {
+    public McpRateLimiter(ConfigMcp config, ConfigAdminLogin loginConfig, McpKeyService keys) {
         this.config = config;
         this.loginConfig = loginConfig;
+        this.keys = keys;
     }
 
     private final SlidingWindowCounter requests = SlidingWindowCounter.bounded(MAX_ADDRESSES);
@@ -158,10 +170,15 @@ public class McpRateLimiter {
         }
         String address = ClientAddress.of(context, trustedProxies.get());
         int maxFailures = config.lockout().maxFailures();
+        String attempt = McpApiKeyAuthenticationMechanism.presentedKeyAttempt(context, config.apiKeyHeader());
 
         long locked =
                 wrongKeys.lockoutSeconds(address, maxFailures, config.lockout().duration());
-        if (locked > 0) {
+        // A generated key in force goes through: the lock is there to slow the
+        // guessing of a key, and 256 random bits need no slowing, while the
+        // address may be a NAT or an undeclared proxy somebody else locked.
+        boolean rightKey = locked > 0 && keys.isLiveGeneratedKey(attempt);
+        if (locked > 0 && !rightKey) {
             refuse(context, locked, "Trop de clés refusées : réessayez dans " + minutes(locked) + " minute(s).");
             return;
         }
@@ -176,7 +193,8 @@ public class McpRateLimiter {
                 return;
             }
         }
-        if (McpApiKeyAuthenticationMechanism.presentedKeyAttempt(context, config.apiKeyHeader()) != null) {
+        // Admitted through the lock, it neither takes a slot nor clears the run: the guesser stays locked.
+        if (attempt != null && !rightKey) {
             long wait = wrongKeys.reserve(address, maxFailures, config.lockout().duration());
             if (wait > 0) {
                 refuse(context, wait, "Trop de clés refusées : réessayez dans " + minutes(wait) + " minute(s).");
