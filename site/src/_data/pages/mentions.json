@@ -22,6 +22,10 @@
       "texte": "Le site n'a ni compte ni cookie.\n\n**Mesure d'audience.** Cloudflare Web Analytics, sans cookie ni identifiant persistant : des chiffres agrégés (page, origine de la visite, pays, type de navigateur).\n\n**Journaux techniques.** Cloudflare traite l'adresse IP des visiteurs pour servir et protéger le site ([politique de confidentialité de Cloudflare](https://www.cloudflare.com/fr-fr/privacypolicy/)).\n\n**Formulaire de contact.** Il est hébergé par Tally (Tally BV, Belgique), qui stocke les données dans l'Union européenne ([politique de confidentialité de Tally](https://tally.so/help/privacy-policy), en anglais). Les réponses (e-mail, organisation, besoin, taille de l'équipe, durée, date, message) servent uniquement à répondre à votre demande : elles ne sont ni vendues ni utilisées pour du marketing, et supprimées au plus tard trois ans après le dernier échange. La page de contact ne charge le formulaire depuis tally.so que lorsqu'elle est affichée."
     },
     {
+      "h2": "Démonstration en ligne",
+      "texte": "La démo en ligne est une instance à part, aux données fictives, que tout visiteur peut modifier. Elle journalise les connexions (date, adresse IP, compte, résultat) et les actions (laquelle, quand, jamais les valeurs saisies), comme toute instance. Ces journaux, avec tout ce que vous y saisissez, sont effacés à la remise à zéro, toutes les 30 minutes. Elle n'envoie aucun e-mail. N'y saisissez aucune donnée réelle."
+    },
+    {
       "h2": "Vos droits",
       "texte": "Vous pouvez demander l'accès, la rectification ou l'effacement de vos données (RGPD) en écrivant à [planning@sylvain.dev](mailto:planning@sylvain.dev). Vous pouvez aussi introduire une réclamation auprès de la [CNIL](https://www.cnil.fr/)."
     }
@@ -52,6 +56,10 @@
       {
         "h2": "Personal data",
         "texte": "The site has no account and no cookie.\n\n**Audience measurement.** Cloudflare Web Analytics, with no cookie and no persistent identifier: aggregated figures (page, referrer, country, browser type).\n\n**Technical logs.** Cloudflare processes visitors' IP addresses to serve and protect the site ([Cloudflare's privacy policy](https://www.cloudflare.com/privacypolicy/)).\n\n**Contact form.** It is hosted by Tally (Tally BV, Belgium), which stores the data in the European Union ([Tally's privacy policy](https://tally.so/help/privacy-policy)). The answers (e-mail, organisation, need, team size, duration, date, message) are used only to answer your request: they are never sold or used for marketing, and are deleted at the latest three years after the last exchange. The contact page loads the form from tally.so only when it is shown."
+      },
+      {
+        "h2": "Online demo",
+        "texte": "The online demo is a separate instance with made-up data, which any visitor can change. It logs sign-ins (date, IP address, account, outcome) and actions (which one, when, never the values entered), like any instance. These logs, with everything you enter, are erased at the reset, every 30 minutes. It sends no e-mail. Enter no real data in it."
       },
       {
         "h2": "Your rights",
