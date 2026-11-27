@@ -41,14 +41,17 @@ export function filType(valeur: string | null): FilType | null {
   return FIL_TYPES.find((type) => type === valeur) ?? null;
 }
 
-export function graviteLabel(gravite: FilGravite): string {
+/** The tag of a line: only what the application recorded is a « Message »; a gravity-info alert or anomaly is « Information ». */
+export function graviteLabel(gravite: FilGravite, type: FilType): string {
   switch (gravite) {
     case 'blocage':
       return $localize`:@@fil.gravite.blocage:Bloquant`;
     case 'avertissement':
       return $localize`:@@fil.gravite.avertissement:À vérifier`;
     case 'message':
-      return $localize`:@@fil.gravite.message:Message`;
+      return type === 'messages'
+        ? $localize`:@@fil.gravite.message:Message`
+        : $localize`:@@fil.gravite.information:Information`;
   }
 }
 

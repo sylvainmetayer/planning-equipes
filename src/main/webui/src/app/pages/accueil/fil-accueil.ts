@@ -99,10 +99,14 @@ export class FilAccueil {
   private readonly unreadAlert = computed(() =>
     this.notifications.notifications().some((n) => n.severity === 'alert' && !n.read),
   );
+  /** Whether « Tout » lists the messages, whatever filter is active now. */
+  private readonly messagesInTout = computed(() => this.messagesOpen() || this.unreadAlert());
   protected readonly messagesShown = computed(
-    () =>
-      this.type() === 'messages' ||
-      (this.type() === null && (this.messagesOpen() || this.unreadAlert())),
+    () => this.type() === 'messages' || (this.type() === null && this.messagesInTout()),
+  );
+  /** What « Tout » and the title count: the folded messages are not in the list, so not in the count. */
+  protected readonly visibles = computed(
+    () => this.tout().length - (this.messagesInTout() ? 0 : this.messagesCount()),
   );
   protected readonly items = computed(() =>
     filterFeed(this.tout(), this.type()).filter(
@@ -121,7 +125,7 @@ export class FilAccueil {
     const tout = this.tout();
     const compte = (type: FilType) => tout.filter((item) => item.type === type).length;
     return [
-      { type: null, libelle: $localize`:@@fil.filtre.tout:Tout`, compte: tout.length },
+      { type: null, libelle: $localize`:@@fil.filtre.tout:Tout`, compte: this.visibles() },
       {
         type: 'alertes' as const,
         libelle: $localize`:@@fil.filtre.alertes:Alertes du plan`,

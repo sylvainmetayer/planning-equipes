@@ -242,7 +242,6 @@
   font: var(--mat-sys-title-small);
   color: var(--mat-sys-on-surface-variant);
   margin: 1rem 0 0.35rem;
-  text-transform: capitalize;
 }
 
 .fil-accueil {
