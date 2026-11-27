@@ -842,9 +842,9 @@ public final class CatalogueActions {
         outil("creer_version", INSTANTANE_CAPTURE);
         outil("restaurer_version", INSTANTANE_RESTAURE);
         outil("supprimer_version", INSTANTANE_SUPPRIME);
-        // A resend or a reminder states its own action (CurrentAction); the publication is the default.
         outil("publier_planning", PLANNING_PUBLIE);
         outil("envoyer_planning_animateur", PLANNING_ENVOYE);
+        outil("envoyer_relance_animateurs", ANIMATEURS_RELANCES);
         outil("relancer_animateurs", ANIMATEURS_RELANCES);
         outil("supprimer_mesure_edition", KPI_SUPPRIME);
 

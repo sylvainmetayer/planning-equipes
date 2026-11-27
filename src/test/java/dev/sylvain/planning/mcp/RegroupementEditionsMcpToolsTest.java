@@ -10,7 +10,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.mcp.EditionMcpTools.EditionView;
 import dev.sylvain.planning.mcp.ParametresMcpTools.ParametresLegauxView;
-import dev.sylvain.planning.mcp.PublicationMcpTools.PublicationEnvoiView;
+import dev.sylvain.planning.mcp.PublicationMcpTools.RapportPublicationView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionService;
@@ -141,10 +141,8 @@ class RegroupementEditionsMcpToolsTest {
 
         assertThat(publicationTools.consultPublication(null, null, "E1").etat().jamaisPublie())
                 .isTrue();
-        PublicationEnvoiView publication = publicationTools.publishPlanning(null, null, "E1");
-        assertThat(publication.mode()).isEqualTo("publier");
-        assertThat(publication.snapshotId()).isNotNull();
-        assertThat(publication.relance()).isNull();
+        RapportPublicationView publication = publicationTools.publishPlanning("E1");
+        assertThat(publication.snapshotId()).isPositive();
 
         assertThat(publicationTools
                         .consultPublication("destinataires", null, "E1")
@@ -156,23 +154,10 @@ class RegroupementEditionsMcpToolsTest {
                         .confirmations()
                         .jamaisPublie())
                 .isFalse();
-        PublicationEnvoiView relance = publicationTools.publishPlanning("relancer", List.of("RGP-A"), "E1");
-        assertThat(relance.relance().sansEmail()).containsExactly("RGP-A");
-        assertThat(relance.envoyes()).isNull();
+        assertThat(publicationTools.sendReminders(List.of("RGP-A"), "E1").sansEmail())
+                .containsExactly("RGP-A");
 
         refused(() -> publicationTools.consultPublication("etat", 1L, "E1"), BusinessError.Invalid.class, "snapshotId");
-        refused(
-                () -> publicationTools.publishPlanning(null, List.of("RGP-A"), "E1"),
-                BusinessError.Invalid.class,
-                "animateurIds");
-        refused(
-                () -> publicationTools.publishPlanning("renvoyer", List.of("RGP-A", "RGP-B"), "E1"),
-                BusinessError.Invalid.class,
-                "un seul id");
-        refused(
-                () -> publicationTools.publishPlanning("relancer", null, "E1"),
-                BusinessError.Invalid.class,
-                "au moins");
     }
 
     @Test

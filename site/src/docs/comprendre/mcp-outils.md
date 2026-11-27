@@ -85,7 +85,7 @@ Les déclarations de disponibilité et les demandes d'échange arrivent de l'esp
 
 Un outil par objet et par verbe, le geste passé en argument ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)). `creer_edition` crée une édition vide, ou la copie d'une autre avec `source`, avec ou sans ses animateurs. `modifier_edition` change un réglage par appel : `nom`, ou `active` (vrai : elle devient l'édition active et l'ancienne cesse de l'être ; faux : plus rien ne part). La phase reste `modifier_phase_edition`, ouvert à l'organisateur connecté par OAuth, là où `creer_edition` et `modifier_edition` sont réservés à l'administrateur de l'instance.
 
-`importer_scenario` prend un scénario livré (`nom`) ou un contenu YAML (`yaml`), l'un des deux ; `diagnostiquer_scenario` vérifie un YAML sans rien importer, et `supprimer_donnees_edition` vide l'édition. `consulter_publication` lit la publication sous une `vue` : `etat` (défaut), `destinataires` (la trace d'une publication) ou `confirmations`. `publier_planning` est le seul outil de la famille qui écrit aux gens, sous trois `mode` : `publier` (défaut, tout le monde), `renvoyer` (le planning publié d'un seul animateur) et `relancer` (les silencieux désignés). Une publication rend les mêmes clés qu'en 3.x (`snapshotId`, `envoyes`…), un renvoi sa clé `envoi`, une relance sa clé `relance`. `consulter_sauvegardes` dit l'état de la sauvegarde nocturne, `modifier_sauvegardes` la suspend.
+`importer_scenario` prend un scénario livré (`nom`) ou un contenu YAML (`yaml`), l'un des deux ; `diagnostiquer_scenario` vérifie un YAML sans rien importer, et `supprimer_donnees_edition` vide l'édition. `consulter_publication` lit la publication sous une `vue` : `etat` (défaut), `destinataires` (la trace d'une publication) ou `confirmations`. Trois outils écrivent aux gens, chacun avec son verbe : `publier_planning` (tout le monde, mêmes clés qu'en 3.x : `snapshotId`, `envoyes`…), `envoyer_planning_animateur` (le planning publié d'une seule personne) et `envoyer_relance_animateurs` (les silencieux désignés). Un envoi n'est jamais un mode d'un autre outil : un argument oublié ne doit pas écrire à toute l'équipe. `consulter_sauvegardes` dit l'état de la sauvegarde nocturne, `modifier_sauvegardes` la suspend.
 
 ## Les prompts et les ressources
 
@@ -93,7 +93,7 @@ Le serveur sert aussi **vingt-deux prompts**, un par moment du cycle d'un évén
 
 Chaque prompt prend un argument `edition` **facultatif**. Fourni, le texte le nomme ; omis, il demande à l'assistant d'appeler `lister_editions` et de retenir l'édition active, ou de poser la question s'il n'y en a aucune. Dans les deux cas il lui demande de passer l'édition à chaque appel d'outil. Pour `demarrer_une_nouvelle_edition`, c'est l'édition **source** de la duplication ; pour `tirer_le_bilan_de_l_evenement`, omis, il fait proposer l'édition dont l'événement vient de finir, rarement encore l'active. `preparer_un_plan_de_repli` prépare le repli comme une consigne datée dans l'édition vivante, sans la dupliquer.
 
-Un prompt qui nomme un outil sortant exige un accord explicite et fait d'abord vérifier que l'édition est l'active ; l'assistant s'arrête plutôt que d'en activer une de son propre chef. `tenir_le_jour_j` prévient par `publier_planning` : son mode `renvoyer` renverrait le plan déjà publié, donc l'ancien. La page MCP de l'interface les lit sur `GET /api/mcp/prompts` au lieu de les recopier : un texte, une source. Ils ne sont **pas traduits**. `McpPromptsWordingTest` relit leur texte rendu, avec et sans édition : tout mot en snake_case doit nommer un outil ou un prompt annoncé (sinon il figure, argumenté, dans les exceptions du test), et tout outil dont `openWorldHint` est vrai cité par un prompt muet sur l'accord fait échouer le build. Un outil renommé ne peut donc pas laisser un prompt derrière lui.
+Un prompt qui nomme un outil sortant exige un accord explicite et fait d'abord vérifier que l'édition est l'active ; l'assistant s'arrête plutôt que d'en activer une de son propre chef. `tenir_le_jour_j` prévient par `publier_planning` : `envoyer_planning_animateur` renverrait le plan déjà publié, donc l'ancien. La page MCP de l'interface les lit sur `GET /api/mcp/prompts` au lieu de les recopier : un texte, une source. Ils ne sont **pas traduits**. `McpPromptsWordingTest` relit leur texte rendu, avec et sans édition : tout mot en snake_case doit nommer un outil ou un prompt annoncé (sinon il figure, argumenté, dans les exceptions du test), et tout outil dont `openWorldHint` est vrai cité par un prompt muet sur l'accord fait échouer le build. Un outil renommé ne peut donc pas laisser un prompt derrière lui.
 
 Deux **ressources**, à attacher une fois pour informer tous les appels suivants :
 
@@ -138,7 +138,6 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `edition_courante` | `lister_editions` |
 | `effacer_horaires_stand` | `supprimer_horaires_stand` |
 | `effacer_plages_stand` | `supprimer_plage_stand` |
-| `envoyer_planning_animateur` | `publier_planning` |
 | `etat_edition` | `consulter_edition` |
 | `etat_planning` | `consulter_planning` |
 | `etat_publication` | `consulter_publication` |
@@ -171,7 +170,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `reconnaitre_journees_types` | `appliquer_generateur_creneaux` |
 | `refuser_demande_echange` | `modifier_demande_echange` |
 | `reinitialiser_donnees` | `supprimer_donnees_edition` |
-| `relancer_animateurs` | `publier_planning` |
+| `relancer_animateurs` | `envoyer_relance_animateurs` |
 | `renommer_edition` | `modifier_edition` |
 | `resoudre_incremental` | `lancer_correction` |
 | `restaurer_instantane` | `restaurer_version` |

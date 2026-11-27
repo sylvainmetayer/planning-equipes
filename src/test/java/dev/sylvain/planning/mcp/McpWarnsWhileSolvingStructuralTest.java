@@ -149,6 +149,7 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("supprimer_edition", "agit sur les éditions entières, pas dans celle qu'un calcul tient"),
             Map.entry("publier_planning", "publie le plan enregistré, n'écrit rien que le calcul lise"),
             Map.entry("envoyer_planning_animateur", "envoie le plan enregistré, n'écrit rien que le calcul lise"),
+            Map.entry("envoyer_relance_animateurs", "envoie des relances, n'écrit rien que le calcul lise"),
             Map.entry("relancer_animateurs", "envoie des relances, n'écrit rien que le calcul lise"),
             Map.entry("modifier_sauvegardes", "réglage de la base entière, jamais lu par le calcul"),
             Map.entry(

@@ -20,15 +20,16 @@ La 3.1 publie 157 outils. Un assistant les relit tous à chaque connexion, et be
 
 6. **Deux outils pour un même objet quand leurs appelants diffèrent.** Un argument ne change pas non plus qui peut appeler l'outil (ADR 0097) : `modifier_phase_edition` reste ouvert à l'organisateur connecté par OAuth, `modifier_edition` (`nom`, `active`) et `creer_edition` (`source` pour une copie) sont réservés à l'administrateur de l'instance. Les fondre aurait fermé la phase à l'organisateur, ou ouvert l'activation à tous.
 7. **Les paramètres sont un outil à sections** (`consulter_parametres` et `modifier_parametres`, `section` = `legal`, `organisation`, `notifications` ou `calcul`) : deux outils et non un, parce qu'un outil qui lit et écrit ne peut pas se déclarer en lecture seule. Les anciens noms de la 3.x reviennent en alias, sauf `modifier_parametres_solveur` : le budget de calcul qu'il réglait est passé à l'instance (ADR 0110), un alias n'aurait su que refuser.
-8. **Un seul outil écrit aux animateurs** : `publier_planning`, `mode` = `publier` (défaut), `renvoyer` ou `relancer`, les trois gestes ayant les mêmes hints et le même `openWorldHint`. Appelé sans `mode`, il publie comme en 3.x et rend les mêmes clés au premier niveau ; un renvoi et une relance répondent sous leur propre clé. La liste des outils sortants garde ses anciens noms jusqu'en 5.0, et chaque mode passe par une méthode de service gardée par `@RequiresActiveEdition`.
+8. **Un envoi de courriel n'est jamais un mode d'un autre outil.** Trois outils écrivent aux animateurs, chacun avec son verbe : `publier_planning` (publie, à toute la liste, sans argument de mode), `envoyer_planning_animateur` (renvoie le planning publié à **une** personne) et `envoyer_relance_animateurs` (relance les silencieux désignés). Un assistant qui oublie ou se trompe d'un argument `mode` écrirait à toute l'équipe au lieu d'une personne : la portée d'un envoi se lit dans le nom de l'outil, que l'humain voit avant d'approuver. Chacun garde `openWorldHint = true` et passe par une méthode de service gardée par `@RequiresActiveEdition`. `envoyer_planning_animateur` respecte déjà 0100 et reste tel quel ; `relancer_animateurs` (verbe hors de la liste fermée de 0100) devient l'alias de `envoyer_relance_animateurs`, gardé jusqu'en 5.0. **À confirmer** : l'option prudente a été retenue sans avis ; l'alternative, un seul `publier_planning` à `mode`, est écartée ci-dessous.
 
 ## Options écartées
 
 - **Pas d'alias** (0100 § 5) : une invite écrite pour la 3.x casserait au premier appel, sans que l'opérateur sache quoi changer ; le coût des doublons dans les tests structurels est une ligne par ancien nom, retirée en 5.0.
+- **`publier_planning` à trois `mode` (`publier`, `renvoyer`, `relancer`)** : gain de deux outils, mais un `mode` oublié ou faux change le nombre de destinataires, de un à tous.
 - **Un outil qui simule et applique selon un drapeau** : il suffirait d'un argument oublié pour écrire sans étape de relecture.
 
 ## Conséquences
 
 - Plan, calcul, règles et échanges passent de 33 outils à 21, plus 23 anciens noms publiés jusqu'en 5.0.
-- Paramètres, éditions, scénarios, publication, météo et sauvegardes passent de 37 outils à 21, plus 22 anciens noms publiés jusqu'en 5.0.
+- Paramètres, éditions, scénarios, publication, météo et sauvegardes passent de 37 outils à 23, plus 21 anciens noms publiés jusqu'en 5.0.
 - En 5.0, les méthodes `@Deprecated` des classes `mcp` partent avec leurs lignes des listes structurelles.

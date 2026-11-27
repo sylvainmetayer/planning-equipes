@@ -372,7 +372,7 @@ public class McpPrompts {
                 6. publier_planning seulement après mon accord.
                 7. consulter_publication (vue destinataires) pour contrôler le résultat. Le suivi des \
                 accusés de réception est le prompt suivre_les_confirmations : consulter_publication \
-                (vue confirmations), puis publier_planning en mode relancer ou renvoyer — chacun un \
+                (vue confirmations), puis envoyer_relance_animateurs ou envoyer_planning_animateur — chacun un \
                 courriel de plus, toujours après mon accord.
 
                 Les destinataires se désignent par leur id : ni nom ni adresse ne sortent d'ici.""".formatted(suffixe(edition), emittingEditionFrame(edition)));
@@ -396,10 +396,10 @@ public class McpPrompts {
                 adresse, par id. Ceux-là n'ont rien reçu : les relancer ne servirait à rien.
                 3. consulter_parametres (section notifications) : la relance automatique de nuit part d'elle-même \
                 après le délai réglé. Dis-moi si elle suffit avant de proposer une relance à la main.
-                4. publier_planning (mode relancer) pour les silencieux que je désigne, après mon accord : personne \
+                4. envoyer_relance_animateurs pour les silencieux que je désigne, après mon accord : personne \
                 ne reçoit deux fois la relance d'une même publication, et le compte rendu dit, par id, \
                 qui a été écarté et pourquoi.
-                5. publier_planning (mode renvoyer) pour un échec isolé, une personne à la fois et après mon \
+                5. envoyer_planning_animateur pour un échec isolé, une personne à la fois et après mon \
                 accord : il renvoie le planning publié, celui que la personne n'a pas reçu.
 
                 Les animateurs se désignent par leur id : ni nom ni adresse ne sortent d'ici.""".formatted(suffixe(edition), emittingEditionFrame(edition)));
@@ -756,8 +756,8 @@ public class McpPrompts {
                 mieux qu'un planning meilleur que personne n'attend. Et ne pose pas de consigne : elle \
                 ne vaut que pour une date à venir, jamais pour aujourd'hui.
                 6. Quand tout est arbitré, consulter_publication dit qui verrait un changement. Seul \
-                publier_planning envoie le nouveau planning (mode publier), et seulement après mon \
-                accord. N'appelle pas publier_planning en mode renvoyer pour prévenir un remplaçant : il \
+                publier_planning envoie le nouveau planning, et seulement après mon \
+                accord. N'appelle pas envoyer_planning_animateur pour prévenir un remplaçant : il \
                 renvoie le planning déjà publié, donc l'ancien. Un appel téléphonique va souvent plus vite.
 
                 Marquer quelqu'un absent pour la suite de la journée se fait sur l'écran \

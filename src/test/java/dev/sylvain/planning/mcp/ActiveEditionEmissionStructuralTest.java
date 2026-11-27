@@ -45,18 +45,17 @@ class ActiveEditionEmissionStructuralTest {
             "the code ending a local sign-in: accounts serve every edition and nothing about one is in it");
 
     /**
-     * The service methods each outward MCP tool goes through — one per mode of
-     * {@code publier_planning} (ADR 0127). A new outward tool fails until it is
-     * added here, which is the moment to guard it.
+     * The service methods each outward MCP tool goes through — one tool per
+     * mailing gesture, never a mode of another tool (ADR 0127). A new outward
+     * tool fails until it is added here, which is the moment to guard it.
      */
     private static final Map<String, List<Method>> OUTWARD_TOOLS = Map.of(
             "publier_planning",
-            List.of(
-                    method(PlanPublicationService.class, "publier"),
-                    method(PlanningDeliveryService.class, "sendToOneAnimateur", String.class),
-                    method(RelanceManuelleService.class, "relancer", List.class)),
+            List.of(method(PlanPublicationService.class, "publier")),
             "envoyer_planning_animateur",
             List.of(method(PlanningDeliveryService.class, "sendToOneAnimateur", String.class)),
+            "envoyer_relance_animateurs",
+            List.of(method(RelanceManuelleService.class, "relancer", List.class)),
             "relancer_animateurs",
             List.of(method(RelanceManuelleService.class, "relancer", List.class)),
             "configurer_collecte_disponibilites",

@@ -88,7 +88,7 @@ Availability declarations and swap requests arrive from the staff espace. `appli
 
 One tool per object and per verb, the gesture passed as an argument ([ADR 0127](repo:docs/decisions/0127-un-outil-mcp-par-objet-et-par-verbe.md)). `creer_edition` creates an empty edition, or the copy of another one with `source`, with or without its staff. `modifier_edition` changes one setting per call: `nom`, or `active` (true: it becomes the active edition and the former one stops being so; false: nothing leaves any more). The phase stays `modifier_phase_edition`, open to the organiser signed in through OAuth, whereas `creer_edition` and `modifier_edition` are reserved to the instance administrator.
 
-`importer_scenario` takes a shipped scenario (`nom`) or YAML content (`yaml`), one of the two; `diagnostiquer_scenario` checks a YAML without importing anything, and `supprimer_donnees_edition` empties the edition. `consulter_publication` reads the publication under a `vue`: `etat` (default), `destinataires` (the trace of a publication) or `confirmations`. `publier_planning` is the only tool of the family that writes to people, under three `mode`s: `publier` (default, everyone), `renvoyer` (the published schedule of one staff member) and `relancer` (the designated silent ones). A publication returns the same keys as in 3.x (`snapshotId`, `envoyes`…), a resend its `envoi` key, a reminder its `relance` key. `consulter_sauvegardes` gives the state of the nightly backup, `modifier_sauvegardes` suspends it.
+`importer_scenario` takes a shipped scenario (`nom`) or YAML content (`yaml`), one of the two; `diagnostiquer_scenario` checks a YAML without importing anything, and `supprimer_donnees_edition` empties the edition. `consulter_publication` reads the publication under a `vue`: `etat` (default), `destinataires` (the trace of a publication) or `confirmations`. Three tools write to people, each with its own verb: `publier_planning` (everyone, same keys as in 3.x: `snapshotId`, `envoyes`…), `envoyer_planning_animateur` (the published schedule of one person) and `envoyer_relance_animateurs` (the designated silent ones). A send is never a mode of another tool: a forgotten argument must not write to the whole team. `consulter_sauvegardes` gives the state of the nightly backup, `modifier_sauvegardes` suspends it.
 
 ## Prompts and resources
 
@@ -96,7 +96,7 @@ The server also serves **twenty-two prompts**, one for each moment of an event's
 
 Each prompt takes an **optional** `edition` argument. Provided, the text names it; omitted, it asks the assistant to call `lister_editions` and retain the active edition, or to ask the question if there is none. In both cases it asks the assistant to pass the edition on every tool call. For `demarrer_une_nouvelle_edition`, it is the **source** edition of the duplication; for `tirer_le_bilan_de_l_evenement`, omitted, it has the assistant propose the edition whose event has just ended, rarely still the active one. `preparer_un_plan_de_repli` prepares the fallback as a dated consigne in the live edition, without duplicating it.
 
-A prompt that names an outgoing tool requires explicit agreement and first has the assistant check that the edition is the active one; the assistant stops rather than activating one of its own accord. `tenir_le_jour_j` notifies through `publier_planning`: its `renvoyer` mode would resend the plan already published, that is, the old one. The interface's MCP page reads them on `GET /api/mcp/prompts` instead of copying them: one text, one source. They are **not translated**. `McpPromptsWordingTest` re-reads their rendered text, with and without an edition: every snake_case word must name an announced tool or prompt (otherwise it appears, argued, in the test's exceptions), and any tool whose `openWorldHint` is true cited by a prompt that is silent on agreement makes the build fail. A renamed tool therefore cannot leave a prompt behind.
+A prompt that names an outgoing tool requires explicit agreement and first has the assistant check that the edition is the active one; the assistant stops rather than activating one of its own accord. `tenir_le_jour_j` notifies through `publier_planning`: `envoyer_planning_animateur` would resend the plan already published, that is, the old one. The interface's MCP page reads them on `GET /api/mcp/prompts` instead of copying them: one text, one source. They are **not translated**. `McpPromptsWordingTest` re-reads their rendered text, with and without an edition: every snake_case word must name an announced tool or prompt (otherwise it appears, argued, in the test's exceptions), and any tool whose `openWorldHint` is true cited by a prompt that is silent on agreement makes the build fail. A renamed tool therefore cannot leave a prompt behind.
 
 Two **resources**, to attach once to inform all following calls:
 
@@ -141,7 +141,6 @@ Two **resources**, to attach once to inform all following calls:
 | `edition_courante` | `lister_editions` |
 | `effacer_horaires_stand` | `supprimer_horaires_stand` |
 | `effacer_plages_stand` | `supprimer_plage_stand` |
-| `envoyer_planning_animateur` | `publier_planning` |
 | `etat_edition` | `consulter_edition` |
 | `etat_planning` | `consulter_planning` |
 | `etat_publication` | `consulter_publication` |
@@ -174,7 +173,7 @@ Two **resources**, to attach once to inform all following calls:
 | `reconnaitre_journees_types` | `appliquer_generateur_creneaux` |
 | `refuser_demande_echange` | `modifier_demande_echange` |
 | `reinitialiser_donnees` | `supprimer_donnees_edition` |
-| `relancer_animateurs` | `publier_planning` |
+| `relancer_animateurs` | `envoyer_relance_animateurs` |
 | `renommer_edition` | `modifier_edition` |
 | `resoudre_incremental` | `lancer_correction` |
 | `restaurer_instantane` | `restaurer_version` |

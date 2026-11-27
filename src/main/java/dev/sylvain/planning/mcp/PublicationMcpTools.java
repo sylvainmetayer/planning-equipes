@@ -2,7 +2,6 @@ package dev.sylvain.planning.mcp;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService.SyntheseConfirmations;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
@@ -61,10 +60,6 @@ public class PublicationMcpTools {
 
     private static final String DESTINATAIRES = "destinataires";
 
-    private static final String PUBLIER = "publier";
-
-    private static final String RENVOYER = "renvoyer";
-
     private final PlanPublicationService publicationService;
 
     private final PlanPublieService planPublieService;
@@ -77,8 +72,6 @@ public class PublicationMcpTools {
 
     private final ConfirmationPlanningService confirmationService;
 
-    private final CurrentAction currentAction;
-
     @Inject
     PublicationMcpTools(
             PlanPublicationService publicationService,
@@ -86,15 +79,13 @@ public class PublicationMcpTools {
             PublicationTraceRepository traceRepository,
             PlanningDeliveryService deliveryService,
             RelanceManuelleService relanceService,
-            ConfirmationPlanningService confirmationService,
-            CurrentAction currentAction) {
+            ConfirmationPlanningService confirmationService) {
         this.publicationService = publicationService;
         this.planPublieService = planPublieService;
         this.traceRepository = traceRepository;
         this.deliveryService = deliveryService;
         this.relanceService = relanceService;
         this.confirmationService = confirmationService;
-        this.currentAction = currentAction;
     }
 
     @Tool(
@@ -139,79 +130,29 @@ public class PublicationMcpTools {
 
     @Tool(
             name = "publier_planning",
-            description = "Envoie le planning publié aux animateurs. ENVOIE DES COURRIELS. Refusé hors de l'édition "
-                    + "active (voir lister_editions) ; consulter_publication d'abord. mode publier (défaut) : publie "
-                    + "le planning persisté, capturé comme version publiée, puis chaque animateur concerné reçoit "
-                    + "son planning ; refusé si une résolution est en cours, s'il n'y a rien de résolu à publier ou "
-                    + "si personne n'est concerné ; les personnes sans adresse et les échecs d'envoi sont comptés "
-                    + "ici et détaillés par id par consulter_publication (vue destinataires) ; tout le monde de la "
-                    + "liste est prévenu, on ne peut plus en exclure. mode renvoyer : renvoie à un seul animateur "
-                    + "(animateurIds, un id) son planning tel qu'il a été publié, pas le planning de travail en "
-                    + "cours ; échoue si rien n'a jamais été publié, si l'id est inconnu ou si la fiche ne porte pas "
-                    + "d'adresse. mode relancer : relance maintenant les animateurs désignés qui n'ont pas accusé "
-                    + "réception, sans attendre la relance de nuit, même message et même règle : personne ne reçoit "
-                    + "deux fois la relance d'une même publication ; les personnes déjà relancées, déjà confirmées, "
-                    + "sans adresse, sans poste ou dont l'adresse a été refusée au dernier envoi (fiche non "
-                    + "modifiée depuis) sont rendues par id au lieu d'être écrites.",
+            description = "Publie le planning persisté : il est capturé comme instantané publié, puis chaque "
+                    + "animateur concerné reçoit son planning par courriel. ENVOIE DES COURRIELS à toute la liste. "
+                    + "Refusé hors de l'édition active (voir lister_editions), si une résolution est en cours, "
+                    + "s'il n'y a rien de résolu à publier, ou si personne n'est concerné — consulter_publication "
+                    + "d'abord. Les personnes sans adresse et les échecs d'envoi sont comptés ici et détaillés par "
+                    + "id par consulter_publication (vue destinataires). Tout le monde de la liste est prévenu : on "
+                    + "ne peut plus en exclure. Pour écrire à une seule personne, envoyer_planning_animateur ; pour "
+                    + "relancer les silencieux, envoyer_relance_animateurs.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = true))
-    PublicationEnvoiView publishPlanning(
-            @ToolArg(description = "publier (défaut), renvoyer ou relancer", required = false) String mode,
-            @ToolArg(
-                            description = "Modes renvoyer (un id) et relancer (au moins un) : les ids des animateurs ; "
-                                    + "absent en mode publier",
-                            required = false)
-                    List<String> animateurIds,
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        String choisi = McpArgs.choix(mode, "mode", PUBLIER, PUBLIER, RENVOYER, "relancer");
-        // The catalogue files the tool under the publication; each other gesture is its own line,
-        // stated before the checks so a refused call is journalled as the gesture it asked for.
-        if (!PUBLIER.equals(choisi)) {
-            currentAction.action(RENVOYER.equals(choisi) ? "PLANNING_ENVOYE" : "ANIMATEURS_RELANCES");
-        }
-        boolean sansIds = animateurIds == null || animateurIds.isEmpty();
-        if (PUBLIER.equals(choisi)) {
-            if (!sansIds) {
-                throw new BusinessError.Invalid(
-                        "animateurIds ne vaut qu'en mode renvoyer ou relancer : une publication prévient tout le monde");
-            }
-            RapportPublication rapport = publicationService.publier();
-            return new PublicationEnvoiView(
-                    choisi,
-                    rapport.snapshotId(),
-                    rapport.publieLe(),
-                    rapport.envoyes(),
-                    rapport.sansEmail().size(),
-                    rapport.echecs().size(),
-                    rapport.differes().size(),
-                    null,
-                    null);
-        }
-        if (RENVOYER.equals(choisi)) {
-            if (sansIds || animateurIds.size() != 1) {
-                throw new BusinessError.Invalid("Le mode renvoyer prend un seul id dans animateurIds");
-            }
-            currentAction.entiteId(animateurIds.get(0));
-            return new PublicationEnvoiView(
-                    choisi,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    sendAnimateurPlanning(animateurIds.get(0), edition),
-                    null);
-        }
-        if (sansIds) {
-            throw new BusinessError.Invalid("Le mode relancer prend au moins un id dans animateurIds");
-        }
-        return new PublicationEnvoiView(
-                choisi, null, null, null, null, null, null, null, remindAnimateurs(animateurIds, edition));
+    RapportPublicationView publishPlanning(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        RapportPublication rapport = publicationService.publier();
+        return new RapportPublicationView(
+                rapport.snapshotId(),
+                rapport.publieLe(),
+                rapport.envoyes(),
+                rapport.sansEmail().size(),
+                rapport.echecs().size(),
+                rapport.differes().size());
     }
 
     @Deprecated
@@ -263,11 +204,9 @@ public class PublicationMcpTools {
         return derniere == null ? List.of() : toViews(traceRepository.bySnapshot(derniere.id()));
     }
 
-    @Deprecated
     @Tool(
             name = "envoyer_planning_animateur",
-            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser publier_planning (mode renvoyer). "
-                    + "Renvoie à un animateur son planning tel qu'il a été publié — pas le planning de "
+            description = "Renvoie à UN animateur son planning tel qu'il a été publié — pas le planning de "
                     + "travail en cours : après une réaffectation, seul publier_planning envoie le nouveau. ENVOIE UN "
                     + "COURRIEL. Refusé hors de l'édition active. Échoue si rien n'a jamais été publié, si l'id est inconnu "
                     + "ou si la fiche ne porte pas d'adresse.",
@@ -293,11 +232,9 @@ public class PublicationMcpTools {
                 compteRendu.echecs().isEmpty() ? null : "L'envoi à l'animateur " + animateurId + " a échoué");
     }
 
-    @Deprecated
     @Tool(
-            name = "relancer_animateurs",
-            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser publier_planning (mode relancer). "
-                    + "Relance maintenant les animateurs désignés qui n'ont pas accusé réception de leur "
+            name = "envoyer_relance_animateurs",
+            description = "Relance maintenant les animateurs désignés qui n'ont pas accusé réception de leur "
                     + "planning publié, sans attendre la relance automatique de nuit, qui ne part que de l'édition "
                     + "active — tout comme celle-ci, refusée sur une autre édition. ENVOIE UN COURRIEL à chacun "
                     + "d'eux. Même message que la nuit, même règle : personne ne reçoit deux fois la relance d'une "
@@ -305,15 +242,15 @@ public class PublicationMcpTools {
                     + "sans adresse ou sans poste sont rendues par id dans le compte rendu au lieu d'être écrites, "
                     + "comme celles dont l'adresse a été refusée par le serveur de messagerie au dernier envoi tant "
                     + "que leur fiche n'a pas été modifiée depuis (adresseRefusee). "
-                    + "Refusé si rien n'a jamais été publié ou si un id est inconnu. Consulter synthese_confirmations "
-                    + "ou lister_animateurs d'abord.",
+                    + "Refusé si rien n'a jamais été publié ou si un id est inconnu. Voir consulter_publication (vue "
+                    + "confirmations) ou lister_animateurs d'abord.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = true))
-    RapportRelanceView remindAnimateurs(
+    RapportRelanceView sendReminders(
             @ToolArg(description = "Ids des animateurs à relancer") List<String> animateurIds,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         RapportRelance rapport = relanceService.relancer(animateurIds);
@@ -325,6 +262,32 @@ public class PublicationMcpTools {
                 rapport.echecs(),
                 rapport.sansPoste(),
                 rapport.adresseRefusee());
+    }
+
+    @Deprecated
+    @Tool(
+            name = "relancer_animateurs",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser envoyer_relance_animateurs. "
+                    + "Relance maintenant les animateurs désignés qui n'ont pas accusé réception de leur "
+                    + "planning publié, sans attendre la relance automatique de nuit, qui ne part que de l'édition "
+                    + "active — tout comme celle-ci, refusée sur une autre édition. ENVOIE UN COURRIEL à chacun "
+                    + "d'eux. Même message que la nuit, même règle : personne ne reçoit deux fois la relance d'une "
+                    + "même publication, par la nuit ou à la main — les personnes déjà relancées, déjà confirmées, "
+                    + "sans adresse ou sans poste sont rendues par id dans le compte rendu au lieu d'être écrites, "
+                    + "comme celles dont l'adresse a été refusée par le serveur de messagerie au dernier envoi tant "
+                    + "que leur fiche n'a pas été modifiée depuis (adresseRefusee). "
+                    + "Refusé si rien n'a jamais été publié ou si un id est inconnu. Voir consulter_publication (vue "
+                    + "confirmations) ou lister_animateurs d'abord.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = false,
+                            openWorldHint = true))
+    RapportRelanceView remindAnimateurs(
+            @ToolArg(description = "Ids des animateurs à relancer") List<String> animateurIds,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return sendReminders(animateurIds, edition);
     }
 
     @Deprecated
@@ -430,27 +393,14 @@ public class PublicationMcpTools {
             @JsonInclude(JsonInclude.Include.NON_NULL) SyntheseConfirmationsView confirmations) {}
 
     /**
-     * What {@code publier_planning} answers. A publication keeps the flat keys
-     * it had in 3.x, so a script reading {@code envoyes} goes on reading it; a
-     * resend or a reminder answers under its own key, the others left out.
-     *
      * @param sansAdresse how many concerned people have no address on their
      *                    fiche; {@code consulter_publication} (vue destinataires)
      *                    names them by id
      * @param differes    how many were deliberately left out of this send;
      *                    the same view names them by id, with the statut EXCLU
      */
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record PublicationEnvoiView(
-            String mode,
-            Long snapshotId,
-            Instant publieLe,
-            Integer envoyes,
-            Integer sansAdresse,
-            Integer echecs,
-            Integer differes,
-            EnvoiView envoi,
-            RapportRelanceView relance) {}
+    public record RapportPublicationView(
+            long snapshotId, Instant publieLe, int envoyes, int sansAdresse, int echecs, int differes) {}
 
     public record EnvoiView(boolean envoye, String echec) {}
 
