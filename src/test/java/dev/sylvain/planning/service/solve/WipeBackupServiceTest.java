@@ -857,6 +857,50 @@ class WipeBackupServiceTest {
         });
     }
 
+    /**
+     * Between the backup and its restore, a code moved off the row of its id
+     * onto another one: a location, a stand and a game category each left
+     * without a code while their code went to a neighbour. The restore finds
+     * each by its code, never writes a code another row still holds, and
+     * goes through.
+     */
+    @Test
+    void aCodeThatMovedToAnotherRowStillRestores() {
+        inANewEdition(() -> {
+            scenarioImportService.importBundled(SCENARIO);
+            // A second import backs the first up, under the ids the edition holds now.
+            scenarioImportService.importBundled(SCENARIO);
+            long backup = wipeBackup.list().getFirst().id();
+            List<String> stands = standNames();
+            String edition = editionContext.editionIdCourant();
+            String where = " WHERE edition_id = '" + edition + "' AND code = ";
+            sql("UPDATE emplacement SET code = NULL" + where + "'CENTRE-VILLE'");
+            Emplacement voisin = new Emplacement(null, "Centre-ville bis", null, null);
+            voisin.setCode("CENTRE-VILLE");
+            referenceDataService.createEmplacement(voisin);
+            sql("UPDATE stand SET code = NULL" + where + "'STAND-STRAT'");
+            sql("UPDATE stand SET code = 'STAND-STRAT'" + where + "'HOMME-JEU'");
+            sql("UPDATE typologie SET code = NULL" + where + "'STRATEGIE'");
+            sql("UPDATE typologie SET code = 'STRATEGIE'" + where + "'HOMME_JEU'");
+
+            Restoration restoration = wipeBackup.restore(backup);
+
+            assertThat(restoration.referentielNonRestaure()).isEmpty();
+            assertThat(standNames()).isEqualTo(stands);
+            assertThat(referenceDataService.listStands())
+                    .extracting(Stand::getCode)
+                    .containsExactlyInAnyOrder("STAND-STRAT", "HOMME-JEU");
+            assertThat(referenceDataService.listEmplacements())
+                    .filteredOn(emplacement -> "CENTRE-VILLE".equals(emplacement.getCode()))
+                    .singleElement()
+                    .extracting(Emplacement::getId)
+                    .isEqualTo(voisin.getId());
+            assertThat(referenceDataService.listTypologies())
+                    .extracting(TypologieItem::code)
+                    .contains("STRATEGIE", "HOMME_JEU");
+        });
+    }
+
     /** A frozen edition refuses the re-import and the restore, and neither writes a backup. */
     @Test
     void aFrozenEditionRefusesTheReimportAndTheRestoreWithoutABackup() {
