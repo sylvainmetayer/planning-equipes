@@ -312,7 +312,7 @@ public class EditionMcpTools {
         }
         // The catalogue files the tool under the creation; a copy is its own line.
         currentAction.action("EDITION_DUPLIQUEE");
-        return duplicateEdition(source, nom, avecAnimateurs);
+        return duplicate(source, nom, avecAnimateurs);
     }
 
     @Deprecated
@@ -344,6 +344,12 @@ public class EditionMcpTools {
                             required = false,
                             name = "avec_animateurs")
                     Boolean avecAnimateurs) {
+        return duplicate(source, nom, avecAnimateurs);
+    }
+
+    // The four private methods below are shared with the former names: never another @Tool,
+    // whose interceptor would journal the action a second time.
+    private EditionView duplicate(String source, String nom, Boolean avecAnimateurs) {
         String sourceId = requireEdition(source, "source");
         return view(editionService.duplicate(
                 sourceId, new Edition(null, nom, false, null), avecAnimateurs == null || avecAnimateurs));
@@ -421,11 +427,11 @@ public class EditionMcpTools {
         // renaming used to name its edition, and the activations never did.
         currentAction.entiteId(requireEdition(edition, ARG_EDITION));
         if (nom != null) {
-            return renameEdition(edition, nom);
+            return rename(edition, nom);
         }
         // The catalogue files the tool under the renaming; an activation is its own line.
         currentAction.action(active ? "EDITION_ACTIVEE" : "EDITION_DESACTIVEE");
-        return active ? activateEdition(edition) : deactivateEdition(edition);
+        return active ? activate(edition) : deactivate(edition);
     }
 
     @Deprecated
@@ -444,6 +450,10 @@ public class EditionMcpTools {
     EditionView renameEdition(
             @ToolArg(description = "Édition à renommer : son id ou son nom") String edition,
             @ToolArg(description = "Nouveau nom affiché") String nom) {
+        return rename(edition, nom);
+    }
+
+    private EditionView rename(String edition, String nom) {
         String id = requireEdition(edition, ARG_EDITION);
         return view(editionService.renommer(id, new Edition(id, nom, false, null)));
     }
@@ -465,6 +475,10 @@ public class EditionMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     EditionView activateEdition(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return activate(edition);
+    }
+
+    private EditionView activate(String edition) {
         String id = requireEdition(edition, ARG_EDITION);
         return view(activationService.activate(id));
     }
@@ -485,6 +499,10 @@ public class EditionMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     EditionView deactivateEdition(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return deactivate(edition);
+    }
+
+    private EditionView deactivate(String edition) {
         String id = requireEdition(edition, ARG_EDITION);
         activationService.deactivate(id);
         return view(find(id));

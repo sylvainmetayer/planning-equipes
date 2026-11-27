@@ -253,6 +253,11 @@ public class PublicationMcpTools {
     RapportRelanceView sendReminders(
             @ToolArg(description = "Ids des animateurs à relancer") List<String> animateurIds,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return remind(animateurIds);
+    }
+
+    /** Shared by the tool and its former name: never another @Tool, whose interceptor would journal twice. */
+    private RapportRelanceView remind(List<String> animateurIds) {
         RapportRelance rapport = relanceService.relancer(animateurIds);
         return new RapportRelanceView(
                 rapport.envoyes(),
@@ -287,7 +292,7 @@ public class PublicationMcpTools {
     RapportRelanceView remindAnimateurs(
             @ToolArg(description = "Ids des animateurs à relancer") List<String> animateurIds,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return sendReminders(animateurIds, edition);
+        return remind(animateurIds);
     }
 
     @Deprecated
