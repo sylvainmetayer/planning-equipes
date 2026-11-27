@@ -40,6 +40,7 @@ docs:
   - demarrer
   - tests
   - tests-de-scenarios
+  - tests-de-charge
   - regler-le-solveur
   - ci-et-livraison
   - renovate-et-dependances
@@ -99,6 +100,7 @@ Si vous découvrez le code, lisez dans l'ordre [la vue d'ensemble](vue-d-ensembl
 
 - [Installer l'environnement et lancer](demarrer.md)
 - [Les tests](tests.md) et [les scénarios de charge](tests-de-scenarios.md)
+- [Tester la charge d'une démo publique](tests-de-charge.md)
 - [Régler le solveur](regler-le-solveur.md)
 - [Intégration continue et livraison](ci-et-livraison.md), [Renovate et licences](renovate-et-dependances.md)
 - [Conventions du dépôt](conventions-du-depot.md)

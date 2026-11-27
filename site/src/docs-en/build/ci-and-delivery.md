@@ -19,6 +19,7 @@ PRs to a maintenance branch `release/X.Y` replay CI like those to `main` (no wor
 | `securite.yml`, `scorecard.yml` | Security analyses, detailed in [automated checks](../installer/securite-analyses-automatiques.md) |
 | `docker-ghcr.yml`, `image-pr.yml` | Image publication; dry-run build of a PR's image |
 | `restauration.yml` | Replays `scripts/restaurer.sh` on a real stack |
+| `charge.yml` | On demand: the k6 scenarios against a demo started in the runner ([load testing a public demo](tests-de-charge.md)) |
 | `release.yml` | Body of a published release |
 | `licences-renovate.yml`, `artefacts-renovate.yml`, `angular-renovate.yml` | Catch-up commits on Renovate PRs, see [Renovate](renovate-et-dependances.md#renovate) |
 | `numeros-reserves.yml` | Collision of migration or ADR numbers between open PRs |
