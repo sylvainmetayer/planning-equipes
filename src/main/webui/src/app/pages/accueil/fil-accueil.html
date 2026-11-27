@@ -18,8 +18,14 @@
     <p class="accueil-erreur" role="alert">{{ coherenceErreur() }}</p>
   }
   <p class="empty-hint" i18n="@@fil.description">Du plus grave au plus récent. Une alerte ou une anomalie se referme en traitant ce qu'elle signale ; seuls les messages de l'application, gardés par ce navigateur, se marquent comme lus ou s'effacent.</p>
-  @if (type() === null || type() === 'messages') {
   <div class="card-actions">
+    @if (type() === null && messagesCount() > 0) {
+      <button matButton type="button" aria-controls="fil-liste" [attr.aria-expanded]="messagesOpen()" (click)="toggleMessages()">
+        <mat-icon>{{ messagesOpen() ? 'expand_less' : 'expand_more' }}</mat-icon>
+        <ng-container i18n="@@fil.messages.bascule">Messages ({{ messagesCount() }})</ng-container>
+      </button>
+    }
+    @if (messagesShown()) {
     <button matButton type="button" [disabled]="notifications.unreadCount() === 0" (click)="notifications.markAllRead()">
       <mat-icon>done_all</mat-icon>
       <ng-container i18n="@@notifications.markAllRead">Tout marquer comme lu</ng-container>
@@ -28,12 +34,12 @@
       <mat-icon>delete_sweep</mat-icon>
       <ng-container i18n="@@notifications.clear">Effacer l'historique</ng-container>
     </button>
+    }
   </div>
-  }
   @if (items().length === 0) {
     <p class="empty-hint" i18n="@@fil.aucun">Rien à signaler.</p>
   } @else {
-    <ul class="notification-list fil-liste">
+    <ul id="fil-liste" class="notification-list fil-liste">
       @for (item of items(); track item.id) {
         <li class="notification-item notification-item-{{ item.variante }}" [attr.data-type]="item.type" [attr.data-gravite]="item.gravite"
             [class.notification-item-unread]="item.message && !item.message.read">

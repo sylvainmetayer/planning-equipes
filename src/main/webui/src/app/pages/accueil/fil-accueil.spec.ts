@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { NotificationService } from '../../core/notification.service';
-import { FilAccueil } from './fil-accueil';
+import { FilAccueil, MESSAGES_OPEN_STORAGE_KEY } from './fil-accueil';
 
 const rapport = {
   bloquants: 1,
@@ -71,6 +71,7 @@ describe('FilAccueil', () => {
   }
 
   it('gathers the alerts by name, the anomalies and the local history in one list', async () => {
+    localStorage.setItem(MESSAGES_OPEN_STORAGE_KEY, 'true');
     TestBed.inject(NotificationService).push('info', 'Import terminé');
     const element = create();
     await fixture.whenStable();
@@ -110,6 +111,7 @@ describe('FilAccueil', () => {
   });
 
   it('marks a message as read from its own line', async () => {
+    localStorage.setItem(MESSAGES_OPEN_STORAGE_KEY, 'true');
     const notifications = TestBed.inject(NotificationService);
     notifications.push('info', 'Import terminé');
     const element = create();
@@ -121,6 +123,43 @@ describe('FilAccueil', () => {
     )!;
     bouton.click();
     expect(notifications.unreadCount()).toBe(0);
+  });
+
+  it('folds the messages by default behind a button that counts them, and remembers the choice', async () => {
+    TestBed.inject(NotificationService).push('info', 'Import terminé');
+    const element = create();
+    await fixture.whenStable();
+    await vi.waitFor(() => expect(text()).toContain('Camille Dupont'));
+
+    expect(text()).not.toContain('Import terminé');
+    expect(text()).not.toContain("Effacer l'historique");
+    const bouton = element.querySelector<HTMLButtonElement>('button[aria-controls="fil-liste"]')!;
+    expect(bouton.textContent).toContain('Messages (1)');
+    expect(bouton.getAttribute('aria-expanded')).toBe('false');
+
+    bouton.click();
+    fixture.detectChanges();
+    expect(bouton.getAttribute('aria-expanded')).toBe('true');
+    expect(text()).toContain('Import terminé');
+    expect(localStorage.getItem(MESSAGES_OPEN_STORAGE_KEY)).toBe('true');
+    expect(element.querySelector('#fil-liste')).not.toBeNull();
+
+    bouton.click();
+    fixture.detectChanges();
+    expect(text()).not.toContain('Import terminé');
+    expect(localStorage.getItem(MESSAGES_OPEN_STORAGE_KEY)).toBe('false');
+  });
+
+  it('shows the messages under their own filter whatever the fold', async () => {
+    TestBed.inject(NotificationService).push('info', 'Import terminé');
+    await TestBed.inject(Router).navigateByUrl('/?type=messages');
+    const element = create();
+    await fixture.whenStable();
+    await vi.waitFor(() => expect(text()).toContain('Import terminé'));
+
+    expect(element.querySelector('button[aria-controls="fil-liste"]')).toBeNull();
+    expect(text()).toContain("Effacer l'historique");
+    await TestBed.inject(Router).navigateByUrl('/');
   });
 
   it('lists the hard rules the last solve broke, with a link to the Problèmes tab and no person', async () => {
