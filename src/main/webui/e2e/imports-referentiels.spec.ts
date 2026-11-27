@@ -72,10 +72,10 @@ test("un signet sur une carte d'import retirée tombe sur le scénario, et il ne
     await expect(page.locator('#contenu')).toContainText('Un fichier scénario');
   }
   await expect(page.locator('.imports-onglets mat-button-toggle')).toHaveCount(4);
-  // L'écran des stands ne propose plus d'importer la grille.
+  // L'écran des stands ne propose plus d'importer la grille, ni le menu « Plus » qui la portait.
   await page.goto('/stands');
-  await page.getByRole('button', { name: 'Plus' }).click();
-  await expect(page.getByRole('menuitem', { name: 'Importer la grille' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Édition groupée' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Plus', exact: true })).toHaveCount(0);
   await page.context().close();
 });
 

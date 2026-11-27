@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.diagnostic;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.TypeCauseInfaisabilite;
 import dev.sylvain.planning.service.diagnostic.BlockerPlaybook.ActionType;
@@ -296,7 +297,7 @@ class BlockerPlaybookTest {
                 .allSatisfy(action -> assertThat(action.parametres()).doesNotContainKeys("creneau", "stand", "ids"));
     }
 
-    /** Every gesture of a shortfall lands on its day, and on its stand when it names only one. */
+    /** Every gesture of a shortfall lands on its day; lowering the headcount opens the stand it names, when only one. */
     @Test
     void aShortfallOpensEachScreenOnItsDayAndStand() {
         List<ActionType> actions = BlockerPlaybook.forCause("CRENEAU_SOUS_EFFECTIF", SHORTFALL);
@@ -304,10 +305,10 @@ class BlockerPlaybookTest {
         assertThat(actions)
                 .filteredOn(action -> action.code().equals(BlockerPlaybook.CODE_LOWER_STAFFING))
                 .singleElement()
-                .satisfies(action -> assertThat(action.parametres())
-                        .containsEntry("vue", "saisie")
-                        .containsEntry("date", "2026-07-12")
-                        .containsEntry("stand", "S1"));
+                .satisfies(action -> {
+                    assertThat(action.route()).isEqualTo("/stands");
+                    assertThat(action.parametres()).containsOnly(entry("edit", "S1"));
+                });
         assertThat(actions)
                 .filteredOn(action -> action.code().equals(BlockerPlaybook.CODE_REVIEW_DAYS_OFF))
                 .singleElement()
@@ -316,18 +317,19 @@ class BlockerPlaybookTest {
                         .containsEntry("date", "2026-07-12"));
     }
 
-    /** A shortfall over several stands names no stand: the grid opens on the day, not on a guess. */
+    /** A shortfall over several stands names no stand: the list opens, not a guess. */
     @Test
-    void aShortfallOverSeveralStandsPreselectsTheDayOnly() {
+    void aShortfallOverSeveralStandsOpensTheListOfStands() {
         Context several = new Context(
                 42L, LocalDate.of(2026, 7, 12), List.of("S1", "S2"), List.of(), List.of(), List.of(), false);
 
         assertThat(BlockerPlaybook.forCause("CRENEAU_SOUS_EFFECTIF", several))
                 .filteredOn(action -> action.code().equals(BlockerPlaybook.CODE_LOWER_STAFFING))
                 .singleElement()
-                .satisfies(action -> assertThat(action.parametres())
-                        .containsEntry("date", "2026-07-12")
-                        .doesNotContainKey("stand"));
+                .satisfies(action -> {
+                    assertThat(action.route()).isEqualTo("/stands");
+                    assertThat(action.parametres()).isEmpty();
+                });
     }
 
     /** After a solve, a rule's actions open on the day and stand of its first breach. */

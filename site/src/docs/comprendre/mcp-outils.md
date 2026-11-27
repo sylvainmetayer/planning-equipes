@@ -112,6 +112,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `analyser_enchainements` | `consulter_repas_pauses` |
 | `analyser_faisabilite` | `consulter_besoin` |
 | `analyser_marge` | `consulter_besoin` |
+| `analyser_ouvertures_stands` | retiré |
 | `analyser_pauses` | `consulter_repas_pauses` |
 | `analyser_typologies` | `consulter_besoin` |
 | `arreter_solveur` | `arreter_calcul` |

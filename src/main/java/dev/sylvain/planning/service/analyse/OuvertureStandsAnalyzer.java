@@ -22,8 +22,8 @@ import java.util.TreeSet;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * Read-only, stand × jour view of when each stand is <b>actually</b> open, for an
- * administrator to eyeball before launching a solve.
+ * Read-only, stand × jour view of when each stand is <b>actually</b> open. Read by
+ * the stand fiche, the coherence checklist and the edition state, never alone on a screen of its own.
  *
  * <p>The point is validation, so nothing here re-derives the schedule its own
  * way: the cells are built from the very {@link PosteAffectation}s
@@ -37,10 +37,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * créneau, an open stretch too short to be a real working slot. Those are what
  * turn a pretty grid into something worth reading. Pure and static, so they are
  * unit-testable without a database.</p>
- *
- * <p>Three anomaly types of 3.x (merged recurring rules, a rule no day reads,
- * windows of one rule overlapping at different headcounts) are never raised any
- * more: there is no recurring rule left to write badly (ADR 0104).</p>
  */
 public final class OuvertureStandsAnalyzer {
 
@@ -64,33 +60,7 @@ public final class OuvertureStandsAnalyzer {
         /** A window that overlaps no créneau of its date, so it changes nothing — usually a typo. */
         FENETRE_SANS_EFFET,
         /** An open stretch too short to be a real working slot: a data-entry artefact. */
-        SEGMENT_TROP_COURT,
-        /**
-         * Two rules of one scope and one mode decide a same day and their windows
-         * overlap: the resolver merges them and keeps the highest headcount, so
-         * the lower one the operator may think they typed counts for nothing.
-         * For information — a background rule plus a peak rule is legitimate.
-         */
-        REGLES_CHEVAUCHANTES,
-        /**
-         * A rule covering days of the edition decides none of them: a more
-         * specific rule or a dated exception wins on every one. It serves no purpose.
-         */
-        REGLE_MASQUEE,
-        /**
-         * Two windows of one rule, or of one day's dated openings, overlap at
-         * different headcounts: the highest one is kept on the overlap.
-         */
-        FENETRES_CHEVAUCHANTES;
-
-        /**
-         * The anomalies that describe how the rules are written rather than a
-         * schedule the solver would misread: they are reported for information,
-         * and never hold the edition back on their own.
-         */
-        public boolean isInformational() {
-            return this == REGLES_CHEVAUCHANTES || this == REGLE_MASQUEE || this == FENETRES_CHEVAUCHANTES;
-        }
+        SEGMENT_TROP_COURT;
     }
 
     /**
@@ -210,10 +180,6 @@ public final class OuvertureStandsAnalyzer {
      * @param heureDebut with {@code heureFin}, the window a {@link AnomalyType#FENETRE_SANS_EFFET} names —
      *                   so the day timeline can draw it where it falls; {@code null} on the other types
      * @param heureFin   {@code null} on an open-ended window (« jusqu'à la fermeture »)
-     * @param horaireId  the rule a {@link AnomalyType#REGLE_MASQUEE}, {@link AnomalyType#REGLES_CHEVAUCHANTES}
-     *                   (the later of the two) or {@link AnomalyType#FENETRES_CHEVAUCHANTES} is about, so a
-     *                   screen can point at its line; {@code null} on the other types, on dated openings
-     *                   and on a rule not saved yet
      */
     public record Anomaly(
             AnomalyType type,
@@ -222,22 +188,10 @@ public final class OuvertureStandsAnalyzer {
             LocalDate date,
             LocalTime heureDebut,
             LocalTime heureFin,
-            String message,
-            Long horaireId) {
+            String message) {
 
         public Anomaly(AnomalyType type, String standId, String standNom, LocalDate date, String message) {
-            this(type, standId, standNom, date, null, null, message, null);
-        }
-
-        public Anomaly(
-                AnomalyType type,
-                String standId,
-                String standNom,
-                LocalDate date,
-                LocalTime heureDebut,
-                LocalTime heureFin,
-                String message) {
-            this(type, standId, standNom, date, heureDebut, heureFin, message, null);
+            this(type, standId, standNom, date, null, null, message);
         }
     }
 

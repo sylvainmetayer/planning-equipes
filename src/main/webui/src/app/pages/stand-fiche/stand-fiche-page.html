@@ -55,14 +55,6 @@
         <mat-icon>edit</mat-icon>
         <ng-container i18n="@@standFiche.modifierIdentite">Modifier l'identité</ng-container>
       </button>
-      <mat-form-field appearance="outline" class="stand-fiche-comparer" subscriptSizing="dynamic">
-        <mat-label i18n="@@stands.comparerAvec">Comparer avec…</mat-label>
-        <mat-select [value]="null" (valueChange)="compareWith($event)">
-          @for (autre of others(); track autre.id) {
-            <mat-option [value]="autre.id">{{ autre.nom || autre.id }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
       <a matButton routerLink="/parametres" [queryParams]="{ onglet: 'historique', entite: 'STAND', q: standId() }">
         <mat-icon>history</mat-icon>
         <ng-container i18n="@@standFiche.historique">Historique de ses modifications</ng-container>
@@ -96,24 +88,7 @@
                                  (changed)="onScheduleChanged()" />
       </details>
 
-      <!-- 3. What the openings analysis says of this stand -->
-      <details class="fiche-section" id="stand-section-anomalies" open>
-        <summary><h2 i18n="@@standFiche.section.anomalies">Anomalies d'ouverture</h2></summary>
-        <app-status-message [text]="openingsError()" tone="error" />
-        @if (anomalies().length === 0) {
-          <p class="empty-hint" i18n="@@detail.stand.aucuneAnomalie">Aucune : les fenêtres tombent toutes dans une vacation</p>
-        } @else {
-          <ul class="fiche-liste">
-            @for (anomalie of anomalies(); track $index) {
-              <li [class.fiche-alerte]="!isInformationalAnomaly(anomalie.type)">
-                <strong>{{ anomalyLabel(anomalie) }}</strong> — {{ anomalie.message }}
-              </li>
-            }
-          </ul>
-        }
-      </details>
-
-      <!-- 4. Once a plan is computed: its seats, the empty ones in the Siège panel -->
+      <!-- 3. Once a plan is computed: its seats, the empty ones in the Siège panel -->
       <details class="fiche-section" id="stand-section-plan" open>
         <summary><h2 i18n="@@standFiche.section.plan">Après calcul</h2></summary>
         @if (cause(); as probleme) {

@@ -10,7 +10,7 @@ import { compareCodeUnits } from '../../core/string-order';
 /**
  * What stops a vacations line from being sent. A day template's vacation
  * always has an end — it is the vacation itself — and carries no headcount:
- * that is each stand's business, on the openings grid.
+ * that is each stand's business, on its fiche.
  */
 export type ErreurVacations = 'VIDE' | 'FORME' | 'HEURE' | 'DOUBLON';
 

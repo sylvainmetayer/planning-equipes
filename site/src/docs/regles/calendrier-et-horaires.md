@@ -2,11 +2,9 @@
 
 Vous posez les créneaux de l'édition (les vacations que le calcul remplira) et vous réglez quand chaque stand est ouvert.
 
-Le calendrier et les horaires des stands se tiennent sur la même page, *Calendrier* (groupe *Préparer*). Une **vacation** est une tranche de travail réelle : il n'y a pas d'autre sorte de créneau.
+Le calendrier se tient sur la page *Calendrier* (groupe *Préparer*), les horaires d'un stand sur sa fiche. Une **vacation** est une tranche de travail réelle : il n'y a pas d'autre sorte de créneau.
 
 ## Poser les créneaux avec des journées types
-
-![La grille des horaires des stands](/images/fr/horaires.webp "Les horaires des stands")
 
 La façon la plus courte est de nommer des **journées types** : les vacations d'une sorte de journée (un « R » marque un relais repas), posées sur un calendrier de dates, qui sont celles de l'édition.
 
@@ -17,22 +15,16 @@ La façon la plus courte est de nommer des **journées types** : les vacations d
 
 Une journée type peut aussi s'appliquer sans être mémorisée, pour un besoin ponctuel. Les autres façons de construire la grille sont rangées dans un seul menu : un créneau isolé, la reconnaissance des journées types dans une grille existante, et la déduction depuis les horaires des stands (ajoutée à la grille ou à sa place).
 
-La page décrit la grille en place et en affiche le contrôle de cohérence en bandeau, relu seul à chaque visite et après chaque écriture. Chaque créneau compte les stands ouverts et les postes qu'il porte, avec un lien vers les horaires des stands ce jour-là. Les jours fériés sont marqués à la saisie, et le contrôle rappelle qu'un mineur n'y travaille pas quand l'édition en compte un ce jour-là.
+La page décrit la grille en place et en affiche le contrôle de cohérence en bandeau, relu seul à chaque visite et après chaque écriture. Chaque créneau compte les stands ouverts et les postes qu'il porte. Les jours fériés sont marqués à la saisie, et le contrôle rappelle qu'un mineur n'y travaille pas quand l'édition en compte un ce jour-là.
 
 ## Régler les horaires d'ouverture des stands
 
-L'onglet *Horaires des stands* est une grille stand × créneau, saisie et relue au même endroit comme dans un tableur.
+Les horaires d'un stand se règlent sur sa fiche (*Stands*, puis le nom du stand), et nulle part ailleurs : il n'y a plus de grille stand × créneau.
 
-- Collez un bloc, recopiez un jour, reprenez la ligne du dessus, appliquez une case à toute sa colonne.
-- Une case vide est fermée.
-- Derrière chaque effectif, des barres fines montrent l'ouverture retenue, les horaires du stand et la bande de la consigne du jour.
-- Un clic sur une case explique d'où vient son ouverture en une phrase, et mène à la fiche du stand, à la journée type ou à la consigne.
-- Un jour férié y est marqué par son nom, sans rien interdire.
-- La même grille se saisit par journée type.
-
-Au-dessus de la grille, la synthèse et les trois erreurs de saisie d'horaires habituelles sont à vérifier avant de lancer un calcul.
-
-Une dernière vue compare deux à huit stands à un stand de référence, jour par jour et case par case, puis ouvre la copie des horaires de la référence vers les autres.
+- Son **modèle récurrent**, en haut, dit son régime normal (« chaque samedi et dimanche de 10 h à 18 h, effectif 2 »).
+- Ses **plages datées**, en dessous, sont ce que le calcul lit : une ligne par ouverture ou fermeture, marquée *modèle* ou *saisie*. Vous en ajoutez une à la main, vous retirez une plage ou tout un jour.
+- Un jour sans plage, le stand est ouvert toute la journée.
+- La fiche dit combien de jours ouverts et de postes le stand porte, avant tout calcul. Un stand jamais ouvert ou une fenêtre hors de tout créneau se compte sur l'accueil et dans le contrôle du calendrier.
 
 La grille du classeur d'un organisateur ne s'importe plus en CSV : elle se réécrit dans le fichier YAML de l'édition, voir [Passer de la 3.x à la 4.0](../installer/passer-a-la-4-0.md#les-imports-csv-des-référentiels-et-de-la-grille-des-stands-sont-retirés).
 

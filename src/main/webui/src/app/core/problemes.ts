@@ -342,9 +342,9 @@ export function actionsOfBreaks(pauses: RapportPauses): ActionProbleme[] {
     .flatMap((sequence) => sequence.pausesDues)
     .find((pause) => !pause.relaisDisponible);
   // The stand by its exact id: a search on « S1 » would also bring S10, S11…
-  const reliefParams: Record<string, string> = { vue: 'saisie' };
+  const reliefParams: Record<string, string> = {};
   if (firstBreak?.standId) {
-    reliefParams['stand'] = firstBreak.standId;
+    reliefParams['edit'] = firstBreak.standId;
   }
   const shiftParams: Record<string, string> = {};
   if (firstBreak?.creneauId !== null && firstBreak?.creneauId !== undefined) {
@@ -355,8 +355,8 @@ export function actionsOfBreaks(pauses: RapportPauses): ActionProbleme[] {
       code: 'OUVRIR_RELAIS',
       libelle: $localize`:@@problemes.action.ouvrirRelais:Ouvrir une place de relais`,
       explication: $localize`:@@problemes.action.ouvrirRelais.explication:Une place de plus sur ce stand à l'heure de la pause : quelqu'un peut alors relayer la personne seule.`,
-      route: '/creneaux',
-      queryParams: { onglet: 'horaires', ...reliefParams },
+      route: '/stands',
+      queryParams: reliefParams,
       lang: null,
     },
     {
@@ -508,13 +508,6 @@ export function causeLinks(
       route: '/stands',
       queryParams: { edit: standId },
       libelle: $localize`:@@problemes.lien.stand:Voir le stand ${nom}:stand:`,
-    });
-  }
-  if (cause.standIds.length > 0) {
-    liens.push({
-      route: '/creneaux',
-      queryParams: { onglet: 'horaires' },
-      libelle: $localize`:@@problemes.lien.ouvertures:Vérifier les ouvertures`,
     });
   }
   if (cause.manque > 0) {

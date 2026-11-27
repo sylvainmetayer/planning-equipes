@@ -4,9 +4,7 @@ import { responsableGuard } from './core/responsable.guard';
 import { CanActivateFn, Params, RedirectFunction, Router, Routes } from '@angular/router';
 import { TODAY_ANCHOR } from './core/date-mock.service';
 import type { AnimateursPage } from './pages/animateurs/animateurs-page';
-import type { CreneauxPage } from './pages/creneaux/creneaux-page';
 import { IMPORT_CARDS } from './pages/imports/imports';
-import { retiredOpeningsViews } from './pages/ouvertures/vues-retirees';
 import type { ReglesPage } from './pages/regles/regles-page';
 import type { StandFichePage } from './pages/stand-fiche/stand-fiche-page';
 
@@ -183,6 +181,25 @@ export function standEditToFicheUrl(queryParams: Params): string | null {
   }
   return `/stands/${encodeURIComponent(edit.trim())}?modifier=1`;
 }
+
+/**
+ * The former opening hours screen (`/ouvertures`, then the « Horaires des
+ * stands » tab of `/creneaux`) is gone with its grid: an address of it lands on
+ * the fiche of the stand it names (`stand`, else the first of `stands`), or on
+ * the list of the stands.
+ */
+export function openingsToStandsUrl(queryParams: Params): string {
+  const named = [queryParams['stand'], String(queryParams['stands'] ?? '').split(',')[0]]
+    .map((value) => (typeof value === 'string' ? value.trim() : ''))
+    .find((value) => value !== '');
+  return named ? `/stands/${encodeURIComponent(named)}` : '/stands';
+}
+
+/** Guard of `/creneaux`: `?onglet=horaires`, the retired tab, is redirected. */
+export const retiredHorairesTab: CanActivateFn = (route) =>
+  route.queryParamMap.get('onglet') === 'horaires'
+    ? inject(Router).parseUrl(openingsToStandsUrl(route.queryParams))
+    : true;
 
 export const standEditToFiche: CanActivateFn = (route) => {
   const url = standEditToFicheUrl(route.queryParams);
@@ -688,17 +705,14 @@ const adminRoutes: Routes = [
   // The grid of competences became a tab of Animateurs.
   { path: 'competences', redirectTo: redirectToOnglet('animateurs', 'competences') },
   {
-    // « Calendrier »: the timeslots, and the stands' opening hours over them
-    // (`?onglet=horaires`, the former `/ouvertures`).
+    // « Calendrier »: the timeslots. The stands' opening hours are read and
+    // written on the fiche stand.
     path: 'creneaux',
     title: () => $localize`:@@route.calendrier:Calendrier`,
     data: { aide: 'creneaux-et-journees-types' },
-    // `?vue=journee` and `?vue=calendrier` of the openings were folded into
-    // the grid: their addresses land where the same question is now answered.
-    canActivate: [retiredOpeningsViews],
+    // The stands' hours tab is gone: a bookmark on it lands on the fiche stand.
+    canActivate: [retiredHorairesTab],
     loadComponent: () => import('./pages/creneaux/creneaux-page').then((m) => m.CreneauxPage),
-    // The opening grid carries links away (a stand's fiche, an anomaly's): unsaved cells ask first.
-    canDeactivate: [(page: CreneauxPage) => page.canLeave()],
   },
   {
     // Imports, Export and the end-of-event archive: the two halves of one
@@ -792,8 +806,8 @@ const adminRoutes: Routes = [
     canDeactivate: [(page: ReglesPage) => page.canLeave()],
   },
   { path: 'constraints', redirectTo: redirectConstraintsToRegles },
-  // The opening hours became the « Horaires des stands » tab of the Calendrier.
-  { path: 'ouvertures', redirectTo: redirectToOnglet('creneaux', 'horaires') },
+  // The opening screen is gone: a stand's hours are its fiche's plages.
+  { path: 'ouvertures', redirectTo: ({ queryParams }) => openingsToStandsUrl(queryParams) },
   // The timeline became the « Planning » section of the fiche animateur.
   { path: 'timeline', redirectTo: ({ queryParams }) => timelineToFiche(queryParams) },
   { path: '**', redirectTo: '' },

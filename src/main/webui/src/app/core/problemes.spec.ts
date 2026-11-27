@@ -237,14 +237,13 @@ describe('construireProblemes', () => {
     ]);
   });
 
-  it('opens the créneau a cause names, then each stand up to three, then the openings', () => {
+  it('opens the créneau a cause names, then each stand up to three', () => {
     const liens = causeLinks(cause({ creneauId: '12', standIds: ['a', 'b', 'c', 'd'] }));
     expect(liens.map((lien) => [lien.route, lien.queryParams?.['edit']])).toEqual([
       ['/creneaux', '12'],
       ['/stands', 'a'],
       ['/stands', 'b'],
       ['/stands', 'c'],
-      ['/creneaux', undefined],
       ['/diagnostic', undefined],
     ]);
   });

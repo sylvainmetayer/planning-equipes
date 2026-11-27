@@ -28,6 +28,7 @@ import {
   redirectEditionComparison,
   redirectFormerRealiseTab,
   redirectKpiToVersions,
+  openingsToStandsUrl,
   standEditToFicheUrl,
   routes,
   formerTabsToRisques,
@@ -231,6 +232,14 @@ describe('app.routes', () => {
     await harness.navigateByUrl('/essai');
 
     expect(TestBed.inject(Title).getTitle()).toBe('Titre résolu — Produit');
+  });
+
+  /** The opening hours screen is gone: its addresses land on the fiche stand or the stands list. */
+  it('sends the former opening hours addresses to the fiche stand or the stands', () => {
+    expect(redirectTarget('ouvertures', {})).toBe('/stands');
+    expect(redirectTarget('ouvertures', { vue: 'saisie', stand: 'S 1' })).toBe('/stands/S%201');
+    expect(redirectTarget('ouvertures', { vue: 'comparer', stands: 'S2,S3' })).toBe('/stands/S2');
+    expect(openingsToStandsUrl({ onglet: 'horaires', du: '2026-07-10' })).toBe('/stands');
   });
 
   /** « Mode jour J » became Aujourd'hui: its bookmarks land there, whatever they carried. */
@@ -715,12 +724,22 @@ describe('the screens that became tabs', () => {
     );
   });
 
+  it('sends the retired hours tab of the Calendrier to the fiche stand, and lets the timeslots through', () => {
+    const guard = allRoutes(routes).find((route) => route.path === 'creneaux')
+      ?.canActivate?.[0] as (route: unknown) => unknown;
+    const run = (params: Record<string, string>) =>
+      TestBed.runInInjectionContext(() =>
+        guard({ queryParams: params, queryParamMap: convertToParamMap(params) }),
+      );
+    expect(String(run({ onglet: 'horaires', stand: 'S1' }))).toBe('/stands/S1');
+    expect(String(run({ onglet: 'horaires' }))).toBe('/stands');
+    expect(run({})).toBe(true);
+  });
+
   // A hosted tab's unsaved cells must not leave silently with the route.
   it.each([
     ['animateurs', true],
     ['animateurs', false],
-    ['creneaux', true],
-    ['creneaux', false],
   ])('asks the %s page whether it can be left (%s)', async (path, answer) => {
     const guard = allRoutes(routes).find((route) => route.path === path)?.canDeactivate?.[0];
     const page: Leavable = { canLeave: () => Promise.resolve(answer) };

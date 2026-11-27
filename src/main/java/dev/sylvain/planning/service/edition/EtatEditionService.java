@@ -698,11 +698,7 @@ public class EtatEditionService {
 
     /**
      * Nothing to read without stands and timeslots; an anomaly is a schedule the
-     * solver would misread. The anomalies about how the rules are written —
-     * overlapping rules or windows, a rule no day reads — are counted with the
-     * others but only for information: the resolution settles them, and a line
-     * « à vérifier » nobody can clear without rewriting a deliberate peak rule
-     * would teach the reader to skip it.
+     * solver would misread.
      */
     private static EtatOuvertures ouvertures(Facts facts) {
         RapportOuvertures rapport = facts.ouvertures();
@@ -710,20 +706,15 @@ public class EtatEditionService {
         int fenetresSansEffet = (int) rapport.anomalies().stream()
                 .filter(anomalie -> anomalie.type() == OuvertureStandsAnalyzer.AnomalyType.FENETRE_SANS_EFFET)
                 .count();
-        int informations = (int) rapport.anomalies().stream()
-                .filter(anomalie -> anomalie.type().isInformational())
-                .count();
         Statut statut;
         if (facts.stands() == 0 || facts.creneaux() == 0) {
             statut = Statut.A_FAIRE;
-        } else if (anomalies > informations) {
+        } else if (anomalies > 0) {
             statut = Statut.ATTENTION;
-        } else if (informations > 0) {
-            statut = Statut.INFO;
         } else {
             statut = Statut.FAIT;
         }
-        return new EtatOuvertures(anomalies, fenetresSansEffet, rapport.standsJamaisOuverts(), informations, statut);
+        return new EtatOuvertures(anomalies, fenetresSansEffet, rapport.standsJamaisOuverts(), statut);
     }
 
     /** The roster against the bound the staffing screen retains — the same figure it shows as « Minimum retenu ». */

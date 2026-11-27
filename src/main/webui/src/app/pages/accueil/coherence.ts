@@ -227,8 +227,7 @@ function editionLink(famille: CoherenceFamily): LienEtat {
       };
     case 'STANDS':
       return {
-        route: '/creneaux',
-        queryParams: { onglet: 'horaires' },
+        route: '/stands',
         libelle: $localize`:@@accueil.coherence.lien.ouvertures:Horaires des stands`,
       };
     case 'ANIMATEURS':
