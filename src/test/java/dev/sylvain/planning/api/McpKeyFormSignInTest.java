@@ -98,6 +98,59 @@ class McpKeyFormSignInTest {
     }
 
     @Test
+    void signingInAgainWithAnOldSessionNotesAFreshOpening() {
+        String session = login().cookie("planning-session");
+        openings.record(session, Instant.now().minusSeconds(11 * 60));
+
+        String fresh = given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", session)
+                .contentType("application/x-www-form-urlencoded")
+                .formParam("j_username", "admin")
+                .formParam("j_password", "admin")
+                .redirects()
+                .follow(false)
+                .post("/j_security_check")
+                .cookie("planning-session");
+
+        assertThat(fresh).isNotBlank().isNotEqualTo(session);
+        await().atMost(Duration.ofSeconds(5))
+                .until(() -> openings.openedAt(fresh).isPresent());
+        assertThat(openings.openedAt(fresh))
+                .hasValueSatisfying(at -> assertThat(at).isAfter(Instant.now().minusSeconds(30)));
+    }
+
+    /**
+     * Only a form post logs in: a GET on the login path with an old session is
+     * answered a reissued cookie, which keeps the old opening, so the MCP key
+     * still asks for a password.
+     */
+    @Test
+    void aGetOnTheLoginPathKeepsTheOpeningOfAnOldSession() throws Exception {
+        String session = login().cookie("planning-session");
+        Instant old = Instant.now().minusSeconds(11 * 60);
+        openings.record(session, old);
+        Thread.sleep(1_500);
+
+        String renewed = given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", session)
+                .redirects()
+                .follow(false)
+                .get("/j_security_check")
+                .cookie("planning-session");
+
+        assertThat(renewed).isNotBlank().isNotEqualTo(session);
+        await().atMost(Duration.ofSeconds(5))
+                .until(() -> openings.openedAt(renewed).isPresent());
+        assertThat(openings.openedAt(renewed)).contains(old);
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", renewed)
+                .contentType("application/json")
+                .post("/api/mcp/cle")
+                .then()
+                .statusCode(409);
+    }
+
+    @Test
     void aWrongPasswordNotesNothing() {
         Response refused = given().header("X-Edition-Id", "E1")
                 .contentType("application/x-www-form-urlencoded")
