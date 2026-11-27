@@ -4,12 +4,12 @@ twin: installer/passer-a-la-4-0
 
 # Moving from 3.x to 4.0
 
-You run a 3.x instance and want to know what 4.0 will ask of you. This page is an **outline**: 4.0 is in preparation, every change that breaks something adds its paragraph here when it is merged, and no release date is promised. Do not upgrade based on this guide until 4.0.0 is published.
+You run a 3.x instance and want to move to 4.0. This page says, change by change, what 4.0.0 breaks compared with 3.5 and what you have to do.
 
 ## Where things stand
 
-- **3.5** is the latest version published from the development line. The `3.x` line now receives only fixes, on the `release/3.5` maintenance branch ([how it is run](publier-une-version.md#3-patcher-une-version-antérieure)).
-- The 4.0 breaking changes are tracked in tickets [#271](https://github.com/sylvainmetayer/planning-equipes/issues/271) (model), [#272](https://github.com/sylvainmetayer/planning-equipes/issues/272) (freeze, versions, settings), [#273](https://github.com/sylvainmetayer/planning-equipes/issues/273) (rules), [#274](https://github.com/sylvainmetayer/planning-equipes/issues/274) (MCP and screens) and [#281](https://github.com/sylvainmetayer/planning-equipes/issues/281) (constraint batches).
+- **4.0.0** is published. The `3.x` line now receives only fixes, on the `release/3.5` maintenance branch ([how it is run](publier-une-version.md#3-patcher-une-version-antérieure)).
+- The 4.0 breaking changes were tracked in tickets [#271](https://github.com/sylvainmetayer/planning-equipes/issues/271) (model), [#272](https://github.com/sylvainmetayer/planning-equipes/issues/272) (freeze, versions, settings), [#273](https://github.com/sylvainmetayer/planning-equipes/issues/273) (rules), [#274](https://github.com/sylvainmetayer/planning-equipes/issues/274) (MCP and screens) and [#281](https://github.com/sylvainmetayer/planning-equipes/issues/281) (constraint batches).
 - How long 3.x stays supported: see [the maintenance policy](versioning.md#combien-de-temps-une-ligne-est-corrigée).
 
 ## Before upgrading
@@ -20,4 +20,4 @@ You run a 3.x instance and want to know what 4.0 will ask of you. This page is a
 
 ## What changes
 
-Each paragraph says *before*, *after* and *what you do*. The paragraphs are written as merges land; those not yet written say "Coming".
+Each paragraph says *before*, *after* and *what you do*.
