@@ -48,6 +48,23 @@ class DuplicateConnectionGaugeFilterTest {
     }
 
     @Test
+    void letsFlywayNewerDatabaseWarningThroughAtStartupOnly() {
+        LogRecord warning = new LogRecord(
+                Level.WARNING,
+                "Using PostgreSQL 19.0 which is newer than the version Flyway has been verified with."
+                        + " The latest verified version of PostgreSQL is 18.");
+        warning.setLoggerName(DuplicateConnectionGaugeFilter.FLYWAY_LOGGER);
+        for (int i = 0; i < DuplicateConnectionGaugeFilter.FLYWAY_STARTUP_WARNINGS; i++) {
+            assertThat(filter.isLoggable(warning)).isTrue();
+        }
+        assertThat(filter.isLoggable(warning)).isFalse();
+        assertThat(filter.isLoggable(warning)).isFalse();
+        LogRecord other = new LogRecord(Level.WARNING, "Flyway something else");
+        other.setLoggerName(DuplicateConnectionGaugeFilter.FLYWAY_LOGGER);
+        assertThat(filter.isLoggable(other)).isTrue();
+    }
+
+    @Test
     void isWiredToTheConsoleUnderItsOwnName() throws IOException {
         String name = DuplicateConnectionGaugeFilter.class
                 .getAnnotation(LoggingFilter.class)
