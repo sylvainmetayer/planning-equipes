@@ -158,10 +158,10 @@ describe('buildDestinationsNavigation', () => {
   });
 
   it('names a tab « Page › Tab » and opens it through its query param', () => {
-    const tension = destinations.find((destination) => destination.id.endsWith('onglet=tension'));
-    expect(tension?.label).toBe('Diagnostic › Tension');
+    const tension = destinations.find((destination) => destination.id.endsWith('onglet=risques'));
+    expect(tension?.label).toBe('Diagnostic › Risques');
     expect(tension?.route).toBe('/diagnostic');
-    expect(tension?.queryParams).toEqual({ onglet: 'tension' });
+    expect(tension?.queryParams).toEqual({ onglet: 'risques' });
   });
 
   it('offers the Quarkus Dev UI in development only, as an external address', () => {

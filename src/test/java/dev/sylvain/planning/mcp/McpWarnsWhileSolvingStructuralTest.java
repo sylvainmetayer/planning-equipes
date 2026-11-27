@@ -70,6 +70,11 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("appliquer_generateur_creneaux", "GenerateurCreneaux.apply"),
             Map.entry("modifier_creneau", "CreneauService.update"),
             Map.entry("affecter_poste", "PlanningPersistenceService.reaffecterPoste"),
+            Map.entry("modifier_affectation", "PlanningPersistenceService.reaffecterPoste, DeplacementService.apply"),
+            Map.entry(
+                    "modifier_demande_echange",
+                    "DemandeEchangeService.accept, PlanningPersistenceService.applyEchange,"
+                            + " PlanningPersistenceService.applyDirectedEchange"),
             Map.entry(
                     "accepter_demande_echange",
                     "DemandeEchangeService.accept, PlanningPersistenceService.applyEchange,"
@@ -85,6 +90,11 @@ class McpWarnsWhileSolvingStructuralTest {
 
     /** Writes a solve never reads, each with the reason it has nothing to warn about. */
     private static final Map<String, String> UNRELATED = Map.ofEntries(
+            Map.entry("lancer_calcul", "le solveur lui-même : mis en file quand un calcul tient déjà le solveur"),
+            Map.entry("lancer_correction", "le solveur lui-même : mis en file quand un calcul tient déjà le solveur"),
+            Map.entry("arreter_calcul", "arrête le calcul en cours, il ne l'ignore pas"),
+            Map.entry("supprimer_calcul", "retire une résolution de la file ou de l'historique"),
+            Map.entry("modifier_foire_echanges", "la fenêtre de la foire n'est pas lue par le calcul"),
             Map.entry("lancer_solveur", "le solveur lui-même : mis en file quand un calcul tient déjà le solveur"),
             Map.entry(
                     "resoudre_incremental", "le solveur lui-même : mis en file quand un calcul tient déjà le solveur"),

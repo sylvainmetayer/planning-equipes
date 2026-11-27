@@ -31,7 +31,7 @@ Each trial is recorded in the history with its team, its duration and its result
 
 ## Know who to train
 
-The "To train" section closes the tab. It lists, game category by game category, those that the need says are short or that fragility shows are held by a single specialist. For each:
+The "To train" section is in the Diagnostic's *Risks* tab, with fragility and tension. It lists, game category by game category, those that the need says are short or that fragility shows are held by a single specialist. For each:
 
 - the figures of these two readings and the days under tension;
 - a link to the skills grid filtered on it;

@@ -98,7 +98,7 @@ The `score` events are **deltas**: `depuis` is the index of the first point sent
 
 ### The feasibility moment
 
-The first feasible plan (zero hard) often arrives well before the end, and it is what the organiser is waiting for: the schedule is then usable, the rest is quality. The job carries it in `feasibleAtSeconds` (`JobView`, `statut_solveur` in MCP), `null` as long as the plan is not feasible, and pushes a state event at that moment. "Stop and keep this plan" is only the ordinary stop, the solver always keeping the best plan reached. Timefold announcing a solution only when it changes, a solve that already starts from a zero-hard plan would say nothing: the complete starting plan is therefore scored once before the start (`SolveListener`).
+The first feasible plan (zero hard) often arrives well before the end, and it is what the organiser is waiting for: the schedule is then usable, the rest is quality. The job carries it in `feasibleAtSeconds` (`JobView`, `consulter_calcul` in MCP), `null` as long as the plan is not feasible, and pushes a state event at that moment. "Stop and keep this plan" is only the ordinary stop, the solver always keeping the best plan reached. Timefold announcing a solution only when it changes, a solve that already starts from a zero-hard plan would say nothing: the complete starting plan is therefore scored once before the start (`SolveListener`).
 
 ## Incremental replanning
 

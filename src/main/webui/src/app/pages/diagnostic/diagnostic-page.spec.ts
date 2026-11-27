@@ -1,4 +1,4 @@
-// The page over the four analyses: which tab the URL names, that switching
+// The page over the analyses: which tab the URL names, that switching
 // writes the tab back, and that a tab's own view state lives next to it.
 
 import { Location } from '@angular/common';
@@ -154,48 +154,52 @@ describe('DiagnosticPage', () => {
     expect(analysesApi.staffing).not.toHaveBeenCalled();
   });
 
-  it('opens the Tension tab from ?onglet=tension, under the page heading alone', async () => {
-    const page = await monter({ onglet: 'tension' });
+  it('opens Risques from ?onglet=risques: fragility, « À former » and tension, under the page heading alone', async () => {
+    const page = await monter({ onglet: 'risques' });
 
-    expect(page['onglet']()).toBe('tension');
-    expect(racine().querySelector('app-tension-tab')).not.toBeNull();
+    expect(page['onglet']()).toBe('risques');
+    const ids = [...racine().querySelectorAll('app-risques-tab > section')].map((s) => s.id);
+    expect(ids).toEqual(['risques-fragilite', 'risques-former', 'risques-tension']);
+    expect(racine().querySelector('#risques-fragilite app-fragilite-page')).not.toBeNull();
+    expect(racine().querySelector('#risques-former app-formation-page')).not.toBeNull();
+    expect(racine().querySelector('#risques-tension app-tension-tab')).not.toBeNull();
     expect(racine().querySelectorAll('h1')).toHaveLength(1);
+    expect(analysesApi.fragility).toHaveBeenCalled();
+    expect(analysesApi.trainingPlan).toHaveBeenCalled();
     expect(analysesApi.tension).toHaveBeenCalled();
   });
 
-  // « À former » is no tab any more: it is the foot of Besoin, with the
-  // « avant » margin a column of the same tab.
-  it('shows « À former » and the « avant » margin on the Besoin tab', async () => {
+  // « À former » left Besoin for Risques: the « avant » margin stays a column of Besoin.
+  it('shows the « avant » margin, the volumetry and the plan by typologie on the Besoin tab, no « À former »', async () => {
     await monter({ onglet: 'besoin' });
 
-    expect(racine().querySelector('app-staffing-page app-formation-page')).not.toBeNull();
-    // The volumetry and the plan by typologie sit between the need and « À former ».
+    expect(racine().querySelector('app-staffing-page app-formation-page')).toBeNull();
+    // The volumetry and the plan by typologie close the tab.
     expect(
       racine().querySelector('app-staffing-page #besoin-volumetrie app-solver-volumetry'),
     ).not.toBeNull();
     expect(racine().querySelector('app-staffing-page app-besoin-typologie')).not.toBeNull();
     expect(planningApi.typologiesReport).toHaveBeenCalled();
-    expect(analysesApi.trainingPlan).toHaveBeenCalled();
     expect(analysesApi.margin).toHaveBeenCalledWith('AVANT');
   });
 
-  it('offers four tabs, and neither « À former » nor the bench among them', async () => {
+  it('offers three tabs, and none of the former Fragilité, Tension, « À former » or bench', async () => {
     await monter();
 
     const onglets = [...racine().querySelectorAll('mat-button-toggle')].map((toggle) =>
       toggle.getAttribute('value'),
     );
-    expect(onglets).toEqual(['problemes', 'besoin', 'tension', 'fragilite']);
+    expect(onglets).toEqual(['problemes', 'besoin', 'risques']);
   });
 
   it("opens on the tab the URL names, and keeps that tab's own state next to it", async () => {
-    const page = await monter({ onglet: 'fragilite', q: 'Alice' });
+    const page = await monter({ onglet: 'risques', q: 'Alice' });
 
-    expect(page['onglet']()).toBe('fragilite');
-    expect(racine().querySelector('app-fragilite-page')).not.toBeNull();
+    expect(page['onglet']()).toBe('risques');
+    expect(racine().querySelector('app-risques-tab app-fragilite-page')).not.toBeNull();
     // The tab wrote its own key, the page its own: neither erased the other.
     const url = TestBed.inject(Location).path();
-    expect(url).toContain('onglet=fragilite');
+    expect(url).toContain('onglet=risques');
     expect(url).toContain('q=Alice');
   });
 
@@ -204,19 +208,19 @@ describe('DiagnosticPage', () => {
   // effect wrote them over the address bar: the filter typed a moment earlier
   // was gone from the screen and from the URL.
   it("keeps a tab's own state when it is left and opened again", async () => {
-    const page = await monter({ onglet: 'fragilite', q: 'Alice' });
+    const page = await monter({ onglet: 'risques', q: 'Alice' });
 
     page['changerOnglet']('besoin');
     TestBed.tick();
     await fixture.whenStable();
     expect(TestBed.inject(Location).path()).toContain('q=Alice');
 
-    page['changerOnglet']('fragilite');
+    page['changerOnglet']('risques');
     TestBed.tick();
     await fixture.whenStable();
 
     const url = TestBed.inject(Location).path();
-    expect(url).toContain('onglet=fragilite');
+    expect(url).toContain('onglet=risques');
     expect(url).toContain('q=Alice');
   });
 

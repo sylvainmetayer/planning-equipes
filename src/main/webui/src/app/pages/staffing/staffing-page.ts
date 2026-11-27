@@ -44,7 +44,6 @@ import { reglagesAvances } from '../../core/reglages-avances';
 import { consumeQueryParam } from '../../core/view-query-params';
 import { ReglagesAvancesToggle } from '../../shared/reglages-avances';
 import { StatusMessage } from '../../shared/status-message';
-import { FormationPage } from '../formation/formation-page';
 import { SolverVolumetry } from '../solver/solver-volumetry';
 import { BesoinTypologie } from './besoin-typologie';
 import { libelleTranche, NiveauMarge, niveauMarge, signe } from '../marge/marge';
@@ -72,7 +71,6 @@ export function margeJour(cellule: CelluleMarge | null | undefined): MargeJour |
 
 /** The `section` values of a landing, and the element each one scrolls to. */
 const SECTION_IDS = {
-  former: 'a-former',
   typologie: 'besoin-par-typologie',
   volumetrie: 'besoin-volumetrie',
 } as const;
@@ -103,11 +101,11 @@ const SECTION_IDS = {
  * Every figure leads to the screen that changes it: a bound to the opening
  * hours or the legal settings it is proved on, a day to its stands' hours. The
  * « avant » margin — who has not declared the date unavailable, minus the seats
- * — is a column of the per-day table, its grid one fold below; « À former »,
- * once a tab of its own, is the foot of this one, after the plan read by
+ * — is a column of the per-day table, its grid one fold below, followed by the plan read by
  * typologie (the « Par typologie » of the Planning page) and the problem's
- * volumetry (`section=former|typologie|volumetrie` scrolls to one once the
- * figures above it are on screen, then leaves the address).
+ * volumetry (`section=typologie|volumetrie` scrolls to one once the figures
+ * above it are on screen, then leaves the address). « À former » is a section
+ * of the Risques tab.
  */
 @Component({
   selector: 'app-staffing-page',
@@ -128,7 +126,6 @@ const SECTION_IDS = {
     MatTableModule,
     MatTooltipModule,
     DecimalPipe,
-    FormationPage,
     MarginBeforeGrid,
   ],
   templateUrl: './staffing-page.html',
@@ -204,7 +201,7 @@ export class StaffingPage implements OnInit {
   );
 
   private readonly injector = inject(Injector);
-  /** The plan by typologie sits above « À former » and the volumetry: its rows push them down while it loads. */
+  /** The plan by typologie sits above the volumetry: its rows push it down while it loads. */
   private readonly typologieSection = viewChild(BesoinTypologie);
   private readonly locale = inject(LOCALE_ID);
 
@@ -231,11 +228,11 @@ export class StaffingPage implements OnInit {
       clearTimeout(this.pollTimer);
     });
     // `?onglet=besoin&section=…` lands on a section below the figures:
-    // « À former », the plan by typologie or the volumetry. A landing, not a
+    // the plan by typologie or the volumetry. A landing, not a
     // view: obeyed once, then dropped from the address, so coming back to the
     // tab does not scroll again.
     consumeQueryParam('section', (section) =>
-      section === 'former' || section === 'typologie' || section === 'volumetrie'
+      section === 'typologie' || section === 'volumetrie'
         ? this.scrollToSectionOnceLoaded(SECTION_IDS[section])
         : undefined,
     );

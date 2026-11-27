@@ -1,6 +1,7 @@
 package dev.sylvain.planning.mcp;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.BusinessError;
@@ -93,8 +94,128 @@ public class SolveurMcpTools {
     }
 
     @Tool(
+            name = "lancer_calcul",
+            description = "Calculer : lance en tâche de fond le calcul complet de l'édition, depuis le plan en place "
+                    + "s'il en existe un — les verrous et le passé figé sont respectés, tout le reste peut bouger. "
+                    + "Renvoie l'id du calcul à suivre par consulter_calcul. deZero=true recommence de zéro et perd la "
+                    + "qualité déjà atteinte : ne le demander qu'explicitement. Avec enFile, le calcul attend son tour "
+                    + "au lieu d'être refusé quand le solveur est occupé. Pour ne reprendre que les sièges en écart, "
+                    + "lancer_correction.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = true,
+                            idempotentHint = false,
+                            openWorldHint = false))
+    JobMcpView startCalcul(
+            @ToolArg(
+                            description = "Durée max en secondes (défaut : le budget de l'instance, voir "
+                                    + "consulter_parametres, section calcul) ; refusée au-dessus du plafond de "
+                                    + "l'instance",
+                            required = false)
+                    Long secondes,
+            @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false)
+                    Boolean enFile,
+            @ToolArg(
+                            description = "Recommencer de zéro au lieu de repartir du plan en place (défaut false)",
+                            required = false)
+                    Boolean deZero,
+            @ToolArg(
+                            description =
+                                    "Où tourne le calcul quand l'instance a une machine de calcul : true sur elle, "
+                                            + "false sur place ; par défaut, le réglage de l'instance. Refusé à true sans "
+                                            + "machine de calcul configurée",
+                            required = false)
+                    Boolean distant,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        Reamorcage depart = Boolean.TRUE.equals(deZero) ? Reamorcage.AUCUN : Reamorcage.AUTO;
+        return submit(() ->
+                solverJobService.submitSolveFromReferenceData(secondes, Boolean.TRUE.equals(enFile), depart, distant));
+    }
+
+    @Tool(
+            name = "lancer_correction",
+            description =
+                    "Corriger : recalcule les seuls sièges en écart du plan en place — ceux qu'un changement "
+                            + "a invalidés (titulaire supprimé, devenu indisponible ce jour-là…) — et fige tout le reste pour "
+                            + "ce calcul, d'où un budget bien plus court qu'un calcul complet (60 s par défaut). animateurIds, "
+                            + "jours et standIds rouvrent en plus tous les sièges qu'ils désignent ; ce périmètre ne touche pas "
+                            + "les verrous et ne vaut que pour ce calcul. Renvoie l'id du calcul à suivre par consulter_calcul.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = true,
+                            idempotentHint = false,
+                            openWorldHint = false))
+    JobMcpView startCorrection(
+            @ToolArg(description = "Ids d'animateurs dont tous les sièges sont rouverts", required = false)
+                    List<String> animateurIds,
+            @ToolArg(description = "Jours (AAAA-MM-JJ) dont tous les sièges sont rouverts", required = false)
+                    List<String> jours,
+            @ToolArg(description = "Ids de stands dont tous les sièges sont rouverts", required = false)
+                    List<String> standIds,
+            @ToolArg(
+                            description = "Durée max en secondes (défaut 60) ; refusée au-dessus du plafond de "
+                                    + "l'instance. Aucun arrêt sur plateau",
+                            required = false)
+                    Long secondes,
+            @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false)
+                    Boolean enFile,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return solveIncremental(animateurIds, jours, standIds, secondes, enFile, edition);
+    }
+
+    @Tool(
+            name = "arreter_calcul",
+            description = "Arrête un calcul en cours : le solveur garde la meilleure solution trouvée jusqu'ici. "
+                    + "Sans id, arrête le calcul actif s'il y en a un.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    JobMcpView stopCalcul(@ToolArg(description = "Id du calcul à arrêter", required = false) String jobId) {
+        return stopSolver(jobId);
+    }
+
+    @Tool(
+            name = "consulter_calcul",
+            description = "Où en est un calcul : celui donné par son id, sinon le calcul actif — status IDLE quand "
+                    + "aucun ne tourne. Avec historique=true, rend aussi la liste des calculs de vos éditions, en cours "
+                    + "et terminés.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    CalculView consultCalcul(
+            @ToolArg(description = "Id du calcul à interroger", required = false) String jobId,
+            @ToolArg(description = "Rendre aussi la liste des calculs (défaut false)", required = false)
+                    Boolean historique) {
+        return new CalculView(solverStatus(jobId), Boolean.TRUE.equals(historique) ? listJobs() : null);
+    }
+
+    @Tool(
+            name = "supprimer_calcul",
+            description =
+                    "Supprime un calcul terminé de l'historique. Un calcul encore en cours doit d'abord être arrêté.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = true,
+                            idempotentHint = false,
+                            openWorldHint = false))
+    SuppressionResult deleteCalcul(@ToolArg(description = "Id du calcul") String jobId) {
+        return deleteJob(jobId);
+    }
+
+    @Deprecated
+    @Tool(
             name = "lancer_solveur",
-            description = "Lance une résolution en tâche de fond à partir des données de référence persistées "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser lancer_calcul (deZero pour reamorcage AUCUN). "
+                    + "Lance une résolution en tâche de fond à partir des données de référence persistées "
                     + "(stands, créneaux, animateurs). Renvoie l'id du job à interroger via statut_solveur. "
                     + "Avec enFile, la résolution attend son tour au lieu d'être refusée quand le solveur est occupé. "
                     + "Par défaut elle repart du plan enregistré s'il en existe un, sans rien figer : un calcul de zéro "
@@ -132,9 +253,11 @@ public class SolveurMcpTools {
                 solverJobService.submitSolveFromReferenceData(secondes, Boolean.TRUE.equals(enFile), depart, distant));
     }
 
+    @Deprecated
     @Tool(
             name = "resoudre_incremental",
-            description = "Relance une résolution partielle à partir du planning persisté : tout ce qu'un "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser lancer_correction. "
+                    + "Relance une résolution partielle à partir du planning persisté : tout ce qu'un "
                     + "changement tardif n'a pas invalidé reste figé, seul le périmètre rouvert est recalculé — d'où un "
                     + "budget bien plus court qu'une résolution complète (60 s par défaut). Sans périmètre, seul ce que "
                     + "les changements ont invalidé est rouvert. Le périmètre ne touche pas les verrouillages : il ne "
@@ -200,15 +323,19 @@ public class SolveurMcpTools {
             name = "diagnostiquer_plan",
             description = "Diagnostic du planning persisté : score global et score de chaque contrainte, nombre de "
                     + "correspondances, postes non pourvus, et la lecture du score en quelques phrases. Recalculé à la demande sur le plan en base, avec les "
-                    + "contraintes et pondérations actives du moment — aucune résolution n'est lancée. Pour le détail "
-                    + "des écarts durs, enchaîner avec expliquer_echec_contraintes_dures.",
+                    + "contraintes et pondérations actives du moment — aucune résolution n'est lancée. Avec "
+                    + "ecartsDurs=true, rend aussi le détail des règles dures non tenues : le message anonymisé de "
+                    + "chaque écart et les actions types qui le règlent.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    DiagnosticPlanView diagnosePlan(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+    DiagnosticPlanView diagnosePlan(
+            @ToolArg(description = "Rendre aussi le détail des écarts durs (défaut false)", required = false)
+                    Boolean ecartsDurs,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         StoredAnalysis analyse = analysisStore.refreshFromPersistedPlan();
         if (analyse == null) {
             throw new IllegalStateException("Aucun planning persisté : lancez d'abord une résolution.");
@@ -227,12 +354,15 @@ public class SolveurMcpTools {
                         .toList(),
                 diagnostic.lecture().stream()
                         .map(ScoreReading.ScoreSentence::texte)
-                        .toList());
+                        .toList(),
+                Boolean.TRUE.equals(ecartsDurs) ? hardViolations(diagnostic) : null);
     }
 
+    @Deprecated
     @Tool(
             name = "arreter_solveur",
-            description = "Arrête le job en cours (le solveur renvoie sa meilleure solution trouvée jusqu'ici). "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser arreter_calcul. "
+                    + "Arrête le job en cours (le solveur renvoie sa meilleure solution trouvée jusqu'ici). "
                     + "Sans id, arrête le job actif s'il y en a un.",
             annotations =
                     @Tool.Annotations(
@@ -255,10 +385,12 @@ public class SolveurMcpTools {
                 .orElseThrow(() -> new NoSuchElementException("Job introuvable : " + id));
     }
 
+    @Deprecated
     @Tool(
             name = "statut_solveur",
             description =
-                    "Statut du job en cours, ou d'un job donné par son id. Sans id et sans job actif, répond status IDLE : aucun solveur ne tourne.",
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_calcul. "
+                            + "Statut du job en cours, ou d'un job donné par son id. Sans id et sans job actif, répond status IDLE : aucun solveur ne tourne.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -317,9 +449,11 @@ public class SolveurMcpTools {
             null,
             null);
 
+    @Deprecated
     @Tool(
             name = "lister_jobs",
-            description = "Liste tous les jobs de résolution/analyse (en cours et terminés).",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_calcul (historique). "
+                    + "Liste tous les jobs de résolution/analyse (en cours et terminés).",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -333,10 +467,12 @@ public class SolveurMcpTools {
                 .toList();
     }
 
+    @Deprecated
     @Tool(
             name = "resultats_animateur",
             description =
-                    "Résultats de planification (postes affectés) pour un animateur donné, à partir du dernier "
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser consulter_planning (vue affectations, animateurId). "
+                            + "Résultats de planification (postes affectés) pour un animateur donné, à partir du dernier "
                             + "planning persisté en base. Ne renvoie que des ids de stand/créneau, jamais de données personnelles.",
             annotations =
                     @Tool.Annotations(
@@ -358,9 +494,11 @@ public class SolveurMcpTools {
                 .toList();
     }
 
+    @Deprecated
     @Tool(
             name = "supprimer_job",
-            description = "Supprime un job terminé de l'historique. Un job encore en cours doit d'abord être arrêté.",
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser supprimer_calcul. "
+                    + "Supprime un job terminé de l'historique. Un job encore en cours doit d'abord être arrêté.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -377,9 +515,11 @@ public class SolveurMcpTools {
         return new SuppressionResult(jobId, true);
     }
 
+    @Deprecated
     @Tool(
             name = "expliquer_echec_contraintes_dures",
-            description = "Détaille les contraintes de niveau HARD encore non tenues lors de la dernière analyse "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser diagnostiquer_plan (ecartsDurs). "
+                    + "Détaille les contraintes de niveau HARD encore non tenues lors de la dernière analyse "
                     + "(solve ou analyze), avec le message de chaque écart et les actions types qui la "
                     + "règlent (code, geste, explication). Liste vide si la dernière analyse est "
                     + "entièrement faisable, ou s'il n'y a jamais eu d'analyse.",
@@ -392,11 +532,13 @@ public class SolveurMcpTools {
     List<ViolationHardView> explainHardContraintesFailure(
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         StoredAnalysis analysis = analysisStore.latest();
-        if (analysis == null) {
-            return List.of();
-        }
+        return analysis == null ? List.of() : hardViolations(analysis.diagnostic());
+    }
+
+    /** The hard rules still matched on {@code diagnostic}, their lines anonymised. */
+    private List<ViolationHardView> hardViolations(PlanningDiagnostic planningDiagnostic) {
         AnonymisationViolations anonymisation = AnonymisationViolations.of(referenceDataService);
-        return analysis.diagnostic().contraintes().stream()
+        return planningDiagnostic.contraintes().stream()
                 .filter(diagnostic -> diagnostic.hard() && diagnostic.matchCount() > 0)
                 .map(diagnostic -> new ViolationHardView(
                         diagnostic.name(),
@@ -553,7 +695,18 @@ public class SolveurMcpTools {
             int hardScore,
             int postesNonPourvus,
             List<ContrainteScoreView> contraintes,
-            List<String> lecture) {}
+            List<String> lecture,
+            /** The hard rules still broken, only when asked (ecartsDurs); left out otherwise. */
+            @JsonInclude(JsonInclude.Include.NON_NULL) List<ViolationHardView> ecartsDurs) {}
+
+    /**
+     * A solve job and, when asked, the history of the caller's editions.
+     *
+     * @param historique {@code null} — left out — unless asked
+     */
+    public record CalculView(
+            JobMcpView calcul,
+            @JsonInclude(JsonInclude.Include.NON_NULL) List<JobMcpView> historique) {}
 
     /**
      * @param actions what to do about the rule, only when it matched on this

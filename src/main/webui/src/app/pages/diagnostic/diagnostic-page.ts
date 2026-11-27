@@ -18,20 +18,19 @@ import { EditionStore } from '../../core/edition.store';
 import { ROLE_ADMIN, ROLE_RH } from '../../core/session';
 import { SessionStore } from '../../core/session.store';
 import { keepViewInQueryParams } from '../../core/view-query-params';
-import { FragilitePage } from '../fragilite/fragilite-page';
 import { ConformiteRapport } from '../rh/conformite-rapport';
-import { TensionTab } from '../marge/tension-tab';
 import { ProblemesPage } from '../problemes/problemes-page';
 import { StaffingPage } from '../staffing/staffing-page';
 import { OngletDiagnostic, readOnglet } from './diagnostic';
+import { RisquesTab } from './risques-tab';
 
 /**
- * « Diagnostic » : what blocks, what is missing, where it is tight, what is
- * fragile — four tabs of one screen instead of the six screens they were.
- * The bench, once a tab, is the Siège panel's « Qui peut tenir ce siège ? »;
- * « À former » is the foot of Besoin, whose « avant » margin is a column; the
- * former Marge disponible screen's « après » and « tension » readings are
- * the Tension tab.
+ * « Diagnostic » : what blocks, what is missing, what is at risk — four tabs
+ * of one screen instead of the six screens they were. The bench, once a tab,
+ * is the Siège panel's « Qui peut tenir ce siège ? »; Besoin carries the
+ * « avant » margin as a column, and Risques gathers the fragility, « À former »
+ * and the tension (the former Marge disponible screen's « après » and
+ * « tension » readings).
  *
  * <p>Each tab is the screen it was, hosted without its heading; its own view
  * state (the fragility filters) still lives in
@@ -47,8 +46,7 @@ import { OngletDiagnostic, readOnglet } from './diagnostic';
     MatIconModule,
     ProblemesPage,
     StaffingPage,
-    TensionTab,
-    FragilitePage,
+    RisquesTab,
     ConformiteRapport,
   ],
   templateUrl: './diagnostic-page.html',

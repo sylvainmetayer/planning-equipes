@@ -28,7 +28,7 @@ Chaque essai est consigné dans l'historique avec son équipe, sa durée et son 
 
 ## Savoir qui former
 
-La section « À former » ferme l'onglet. Elle liste, typologie par typologie, celles que le besoin dit en manque ou que la fragilité montre tenues par un seul spécialiste. Pour chacune :
+La section « À former » est dans l'onglet *Risques* du Diagnostic, avec la fragilité et la tension. Elle liste, typologie par typologie, celles que le besoin dit en manque ou que la fragilité montre tenues par un seul spécialiste. Pour chacune :
 
 - les chiffres de ces deux lectures et les jours en tension ;
 - un lien vers la grille des compétences filtrée sur elle ;

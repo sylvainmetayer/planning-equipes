@@ -148,7 +148,7 @@ test('un filtre se tape d’une traite, sans reprendre le focus entre deux lettr
   // D'où le geste testé : un clic, puis la frappe caractère par caractère sans
   // jamais recliquer. `fill()` ne l'aurait pas vu, il pose la valeur d'un bloc.
   const page = await pageAdmin(browser, admin);
-  await page.goto('/diagnostic?onglet=fragilite');
+  await page.goto('/diagnostic?onglet=risques');
   const noms = page.locator('.fragilite-nom');
   await expect(noms.filter({ hasText: 'Bruno' })).toHaveCount(1);
 

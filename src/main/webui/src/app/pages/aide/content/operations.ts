@@ -318,11 +318,11 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.diagnostic:Diagnostic`,
-              text: $localize`:@@aide.views.def.diagnostic:Ce qui bloque, ce qui manque, ce qui est fragile, en quatre onglets : Problèmes, Besoin en animateurs, Tension et Fragilité. Sous Problèmes, chaque carte dit où la règle mord (les trois stands ou jours les plus touchés, chacun ouvrant la page Planning sur ce stand et ce créneau, panneau du siège ouvert), qui elle vise (chaque nom ouvre sa fiche), puis les gestes qui la corrigent, dans l'ordre utile : « Qui peut tenir ce siège ? » s'ouvre sur place, et son « Placer » remplit le siège sans quitter le Diagnostic ; « Saisir la compétence » ouvre la grille filtrée sur la typologie ; « Ouvrir la fiche du stand » mène à son effectif et à ses drapeaux ; « Régler le plafond » ouvre la ligne de la règle. « Baisser l'importance » vient toujours en dernier, et disparaît quand l'importance est déjà au plus bas : ce n'est pas un geste qui corrige. La lecture du score reste en tête, en phrases, et ses chiffres sont au survol. Sous les cartes, « Où se concentrent les écarts » croise les écarts avec les journées, les stands ou les personnes, filtré sur la règle choisie par « Où se concentrent ces écarts ».`,
+              text: $localize`:@@aide.views.def.diagnostic:Ce qui bloque, ce qui manque, ce qui est fragile, en trois onglets : Problèmes, Besoin en animateurs et Risques, qui empile la Fragilité, « À former » et la Tension. Sous Problèmes, chaque carte dit où la règle mord (les trois stands ou jours les plus touchés, chacun ouvrant la page Planning sur ce stand et ce créneau, panneau du siège ouvert), qui elle vise (chaque nom ouvre sa fiche), puis les gestes qui la corrigent, dans l'ordre utile : « Qui peut tenir ce siège ? » s'ouvre sur place, et son « Placer » remplit le siège sans quitter le Diagnostic ; « Saisir la compétence » ouvre la grille filtrée sur la typologie ; « Ouvrir la fiche du stand » mène à son effectif et à ses drapeaux ; « Régler le plafond » ouvre la ligne de la règle. « Baisser l'importance » vient toujours en dernier, et disparaît quand l'importance est déjà au plus bas : ce n'est pas un geste qui corrige. La lecture du score reste en tête, en phrases, et ses chiffres sont au survol. Sous les cartes, « Où se concentrent les écarts » croise les écarts avec les journées, les stands ou les personnes, filtré sur la règle choisie par « Où se concentrent ces écarts ».`,
             },
             {
               term: $localize`:@@aide.views.term.tension:Tension`,
-              text: $localize`:@@aide.views.def.tensionOnglet:Onglet du Diagnostic, quand un planning est enregistré : journée croisée avec la tranche horaire, et dans chaque case les personnes réellement libres moins les sièges restés vides, croisées avec la fragilité. Une colonne par heure de début de la grille : un soir qui finit à 22 h en semaine et à minuit le samedi reste une seule colonne. La couleur suit le signe de la marge (rouge en dessous de zéro, vert au-dessus) et le cadre dit la gravité : double pour critique (des sièges vides que personne ne peut tenir, un siège qu'aucun autre ne pourrait reprendre, un stand sans spécialiste), épais pour élevée, pointillé pour surveillée. Une case peut donc être verte et critique : du monde à revendre, mais une personne irremplaçable. Le badge « 2 ⚠ » compte les sièges fragiles ; une case ouvre le panneau du siège de sa tranche sur la page Planning, et la pire tranche de chaque journée donne ses raisons. Une tranche déjà commencée est grisée.`,
+              text: $localize`:@@aide.views.def.tensionOnglet:Section de l'onglet Risques du Diagnostic, quand un planning est enregistré : journée croisée avec la tranche horaire, et dans chaque case les personnes réellement libres moins les sièges restés vides, croisées avec la fragilité. Une colonne par heure de début de la grille : un soir qui finit à 22 h en semaine et à minuit le samedi reste une seule colonne. La couleur suit le signe de la marge (rouge en dessous de zéro, vert au-dessus) et le cadre dit la gravité : double pour critique (des sièges vides que personne ne peut tenir, un siège qu'aucun autre ne pourrait reprendre, un stand sans spécialiste), épais pour élevée, pointillé pour surveillée. Une case peut donc être verte et critique : du monde à revendre, mais une personne irremplaçable. Le badge « 2 ⚠ » compte les sièges fragiles ; une case ouvre le panneau du siège de sa tranche sur la page Planning, et la pire tranche de chaque journée donne ses raisons. Une tranche déjà commencée est grisée.`,
             },
             {
               term: $localize`:@@aide.views.term.fiche:Fiche animateur`,
@@ -334,7 +334,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.fragilite:Fragilité du planning`,
-              text: $localize`:@@aide.views.def.fragiliteGestes:Qui est irremplaçable. Pour chaque personne, l'écran donne les créneaux qui passeraient sous l'effectif minimum si elle se désiste et, dans la colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. Trois gestes suivent : « Verrouiller » garde tout son planning tel quel au prochain calcul, « Qui peut remplacer » ouvre le panneau du siège qu'elle laisserait le plus difficile à tenir, « Former » ouvre la grille des compétences sur les typologies de ses stands. Son nom mène à sa fiche. La seconde vue liste les stands tenus par une seule personne compétente, ce qui désigne où recruter ou former. Les polyvalents y sont comptés à part, en renforts.`,
+              text: $localize`:@@aide.views.def.fragiliteGestes:Première section de l'onglet Risques : qui est irremplaçable. Pour chaque personne, l'écran donne les créneaux qui passeraient sous l'effectif minimum si elle se désiste et, dans la colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. Trois gestes suivent : « Verrouiller » garde tout son planning tel quel au prochain calcul, « Qui peut remplacer » ouvre le panneau du siège qu'elle laisserait le plus difficile à tenir, « Former » ouvre la grille des compétences sur les typologies de ses stands. Son nom mène à sa fiche. La seconde vue liste les stands tenus par une seule personne compétente, ce qui désigne où recruter ou former. Les polyvalents y sont comptés à part, en renforts.`,
             },
             {
               term: $localize`:@@aide.views.term.besoinLectures:Planning par typologie et volumétrie`,
@@ -342,7 +342,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.former:À former`,
-              text: $localize`:@@aide.views.def.formerSection:La dernière section de l'onglet Besoin : qui former, typologie par typologie. Une typologie y figure quand le besoin la dit en manque, ou quand la Fragilité y trouve un stand tenu par un seul spécialiste ou aucun ; les chiffres sont ceux de ces deux lectures, jamais recalculés. Chaque typologie mène à la grille des compétences filtrée sur elle. Les candidats sont les débutants et les autonomes de la typologie, classés par jours en tension où ils sont disponibles, puis souhait, puis niveau ; un référent, un polyvalent ou quelqu'un sans la compétence n'y figure jamais. Une typologie sans candidat relève du recrutement. Sans planning persisté, seul le besoin parle. La section s'exporte en CSV.`,
+              text: $localize`:@@aide.views.def.formerSection:Section de l'onglet Risques, entre la Fragilité et la Tension : qui former, typologie par typologie. Une typologie y figure quand le besoin la dit en manque, ou quand la Fragilité y trouve un stand tenu par un seul spécialiste ou aucun ; les chiffres sont ceux de ces deux lectures, jamais recalculés. Chaque typologie mène à la grille des compétences filtrée sur elle. Les candidats sont les débutants et les autonomes de la typologie, classés par jours en tension où ils sont disponibles, puis souhait, puis niveau ; un référent, un polyvalent ou quelqu'un sans la compétence n'y figure jamais. Une typologie sans candidat relève du recrutement. Sans planning persisté, seul le besoin parle. La section s'exporte en CSV.`,
             },
             {
               term: $localize`:@@aide.views.term.banc:Panneau Siège`,
@@ -370,7 +370,7 @@ export function buildOperationsSections(): HelpSection[] {
         { route: '/diagnostic', label: $localize`:@@nav.link.diagnostic:Diagnostic` },
         {
           route: '/diagnostic',
-          queryParams: { onglet: 'tension' },
+          queryParams: { onglet: 'risques', section: 'tension' },
           label: $localize`:@@diagnostic.onglet.tension:Tension`,
         },
         {
@@ -388,7 +388,7 @@ export function buildOperationsSections(): HelpSection[] {
         { route: '/publication', label: $localize`:@@nav.link.diffuser:Diffuser` },
         {
           route: '/diagnostic',
-          queryParams: { onglet: 'besoin', section: 'former' },
+          queryParams: { onglet: 'risques', section: 'former' },
           label: $localize`:@@aide.link.former:À former`,
         },
         { route: '/journee', label: $localize`:@@aide.link.siege:Panneau Siège (Planning)` },

@@ -1,6 +1,6 @@
 # 0100 — Les outils MCP se nomment `<verbe>_<objet>`, et une table dit où est passé chaque ancien nom
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; § 5 révisé par [0127](0127-un-outil-mcp-par-objet-et-par-verbe.md) (les anciens noms restent publiés jusqu'en 5.0)
 - **Date** : novembre 2026
 - **Portée** : outils MCP, guide de migration 4.0
 - **Prolonge** : [0097](0097-mcp-par-oauth-et-rotation-de-la-cle.md) (le MCP par OAuth)
