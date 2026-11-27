@@ -257,7 +257,7 @@ export class DisponibilitesPage implements OnInit {
       declaration,
       'application',
       null,
-      $localize`:@@dispo.appliquee:Déclaration appliquée. Régénérez le planning depuis la page Solveur pour qu'il en tienne compte.`,
+      $localize`:@@dispo.appliquee:Déclaration appliquée. Régénérez le planning depuis Planning › Calculer pour qu'il en tienne compte.`,
     );
   }
 

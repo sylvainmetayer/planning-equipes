@@ -176,7 +176,7 @@
           @if (repairSent()) {
             <p>
               <ng-container i18n="@@siege.corriger.envoye">Résolution incrémentale lancée :</ng-container>
-              <a routerLink="/solveur" i18n="@@siege.corriger.suivre">la suivre sur le Solveur</a>
+              <a routerLink="/journee" [queryParams]="{ onglet: 'calculer' }" i18n="@@siege.corriger.suivre">la suivre dans Planning › Calculer</a>
             </p>
           } @else {
             <button matButton="tonal" type="button" [disabled]="editingLocked()" (click)="repairRest()">

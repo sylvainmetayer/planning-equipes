@@ -105,7 +105,27 @@ class McpWarnsWhileSolvingTest {
         solveHoldsTheEdition();
         String stand = null;
         try {
-            var cree = standTools.createStand("Stand", null, List.of(typologie), 1, 1, false, false, null, null, "E1");
+            var cree = standTools.createStand(
+                    "Stand",
+                    null,
+                    List.of(typologie),
+                    1,
+                    1,
+                    false,
+                    false,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "E1");
             stand = cree.stand().id();
             assertThat(cree.avertissements()).contains(CODE);
         } finally {

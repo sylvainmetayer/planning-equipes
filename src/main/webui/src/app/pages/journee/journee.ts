@@ -81,6 +81,18 @@ export function viewParams(view: JourneeView): { vue: string | null; mode: strin
   return view === 'calendrier' ? { vue: 'jour', mode: 'tableau' } : { vue: view, mode: null };
 }
 
+/**
+ * The tabs of the Planning page, read from `?onglet=`: the plan in its four
+ * views (the default, no `onglet`), « Calculer » (the former Solveur page)
+ * and « Versions du plan » (its former second tab).
+ */
+export type OngletPlanning = 'plan' | 'calculer' | 'versions';
+
+/** `calculer` and `versions` name their tab; anything else is the plan. */
+export function readOngletPlanning(value: string | null): OngletPlanning {
+  return value === 'calculer' || value === 'versions' ? value : 'plan';
+}
+
 /** The day's views: « Jour » gathers the rail and the table, two modes of one view. */
 export type JourneeTab = 'jour' | 'carte';
 

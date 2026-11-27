@@ -30,7 +30,7 @@ Le budget ci-dessus borne **un** calcul. Une instance ouverte à des inconnus, o
 | `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (aucune limite) | Calculs acceptés sur les 60 dernières minutes glissantes |
 | `SOLVER_MAX_QUEUED_JOBS` | `0` (aucune limite) | Tâches qui peuvent attendre derrière celle qui tourne (« Planifier »), celle-ci non comprise |
 
-Le quota compte chaque calcul **accepté au lancement**, quel que soit le chemin : résolution complète ou incrémentale, depuis l'écran *Solveur*, l'API (y compris `POST /api/solve`, synchrone) ou un assistant MCP, et la vérification du besoin par un calcul (*Diagnostic › Besoin en animateurs*, le défaut), qui est un vrai calcul ; la borne seule n'en consomme pas. Un lancement refusé pour une autre raison ne compte pas ; une tâche planifiée puis retirée de la file, si. Au-delà, le lancement est refusé (`409`) par une phrase que l'écran affiche telle quelle et que l'outil MCP rend en erreur :
+Le quota compte chaque calcul **accepté au lancement**, quel que soit le chemin : résolution complète ou incrémentale, depuis *Planning › Calculer*, l'API (y compris `POST /api/solve`, synchrone) ou un assistant MCP, et la vérification du besoin par un calcul (*Diagnostic › Besoin en animateurs*, le défaut), qui est un vrai calcul ; la borne seule n'en consomme pas. Un lancement refusé pour une autre raison ne compte pas ; une tâche planifiée puis retirée de la file, si. Au-delà, le lancement est refusé (`409`) par une phrase que l'écran affiche telle quelle et que l'outil MCP rend en erreur :
 
 > Cette instance limite le calcul à 12 résolutions par heure. Prochaine résolution possible à 14:32.
 

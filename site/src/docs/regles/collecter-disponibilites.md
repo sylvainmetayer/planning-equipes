@@ -33,7 +33,7 @@ Si vous l'avez allumée avec la collecte, chaque animateur qui a reçu l'invitat
 
 ## Appliquer les déclarations
 
-Une déclaration reste une **proposition** : elle n'est prise en compte qu'une fois appliquée par vous, en bloc, depuis la page *Disponibilités* (onglet de la page *Animateurs*). Tant qu'elle est en attente, le calcul ne la voit pas, et le Solveur vous le dit dans « ce que le calcul recevra ».
+Une déclaration reste une **proposition** : elle n'est prise en compte qu'une fois appliquée par vous, en bloc, depuis la page *Disponibilités* (onglet de la page *Animateurs*). Tant qu'elle est en attente, le calcul ne la voit pas, et l'onglet *Calculer* vous le dit dans « ce que le calcul recevra ».
 
 ## Traiter les demandes de covoiturage
 

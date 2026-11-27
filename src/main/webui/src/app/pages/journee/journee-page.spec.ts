@@ -3,7 +3,7 @@
 // switching the rendering fetches nothing again.
 
 import { Location } from '@angular/common';
-import { provideZonelessChangeDetection } from '@angular/core';
+import { Component, provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, ParamMap, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
@@ -26,7 +26,16 @@ import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
+import { SolverPage } from '../solver/solver-page';
+import { VersionsPage } from '../versions/versions-page';
 import { JourneePage } from './journee-page';
+
+/** « Calculer » and « Versions du plan » stand in: what they do is their own specs'. */
+@Component({ selector: 'app-solver-page', template: '' })
+class SolverPageStub {}
+
+@Component({ selector: 'app-versions-page', template: '' })
+class VersionsPageStub {}
 
 function stand(id: string): Stand {
   return {
@@ -193,6 +202,15 @@ describe('JourneePage', () => {
         },
       ],
     });
+    TestBed.overrideComponent(JourneePage, {
+      remove: { imports: [SolverPage, VersionsPage] },
+      add: { imports: [SolverPageStub, VersionsPageStub] },
+    });
+    await TestBed.compileComponents();
+    // The tabs are read from the address bar, as `ongletHote` reads them.
+    if (queryParams['onglet']) {
+      TestBed.inject(Location).replaceState('/journee', `onglet=${queryParams['onglet']}`);
+    }
     fixture = TestBed.createComponent(JourneePage);
     await fixture.whenStable();
     return fixture.componentInstance;
@@ -224,6 +242,42 @@ describe('JourneePage', () => {
     const rail = await mount({ vue: 'rail' }, { tableau: false });
     expect(rail['view']()).toBe('rail');
     expect(TestBed.inject(Location).path()).not.toMatch(/vue=|mode=/);
+  });
+
+  // Q49: the former Solveur page is the « Calculer » tab, its versions the tab beside it.
+  it('opens « Calculer » from the address without reading the plan, and reads it on the way back', async () => {
+    const page = await mount({ onglet: 'calculer' }, { tableau: false });
+
+    expect(racine().querySelector('app-solver-page')).not.toBeNull();
+    expect(racine().querySelector('.planning-barre')).toBeNull();
+    expect(loadForDisplay).not.toHaveBeenCalled();
+
+    await page['selectToggle']('stand');
+    TestBed.tick();
+    await fixture.whenStable();
+
+    expect(racine().querySelector('app-solver-page')).toBeNull();
+    expect(page['currentView']()).toBe('stand');
+    expect(loadForDisplay).toHaveBeenCalledOnce();
+    expect(TestBed.inject(Location).path()).not.toContain('onglet=');
+  });
+
+  it('writes the tab alone in the address, and the plan nothing, while « Calculer » or « Versions » is open', async () => {
+    const page = await mount({ date: '2026-08-02' }, { tableau: false });
+    expect(TestBed.inject(Location).path()).toContain('date=2026-08-02');
+
+    await page['selectToggle']('versions');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(racine().querySelector('app-versions-page')).not.toBeNull();
+    expect(page['toggleValue']()).toBe('versions');
+    expect(TestBed.inject(Location).path()).toMatch(/\?onglet=versions$/);
+
+    await page['selectToggle']('calculer');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(racine().querySelector('app-solver-page')).not.toBeNull();
+    expect(TestBed.inject(Location).path()).toMatch(/\?onglet=calculer$/);
   });
 
   it('comes back to « Jour » in the mode it was left in', async () => {

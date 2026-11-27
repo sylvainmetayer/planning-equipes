@@ -7,6 +7,7 @@ import {
   jourInconnu,
   planningDays,
   readAxe,
+  readOngletPlanning,
   readRendu,
   readView,
   JOURNEE_VIEWS,
@@ -68,6 +69,15 @@ describe('readView', () => {
     expect(viewParams('rail')).toEqual({ vue: null, mode: null });
     expect(viewParams('calendrier')).toEqual({ vue: 'jour', mode: 'tableau' });
     expect(JOURNEE_VIEWS.map(tabOf)).toEqual(['jour', 'jour', 'carte']);
+  });
+});
+
+describe('readOngletPlanning', () => {
+  it('names « Calculer » and « Versions du plan », and reads anything else as the plan', () => {
+    expect(readOngletPlanning('calculer')).toBe('calculer');
+    expect(readOngletPlanning('versions')).toBe('versions');
+    expect(readOngletPlanning(null)).toBe('plan');
+    expect(readOngletPlanning('calcul')).toBe('plan');
   });
 });
 

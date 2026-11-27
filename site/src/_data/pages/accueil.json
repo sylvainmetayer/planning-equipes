@@ -133,7 +133,7 @@
         "secondes": 31,
         "legende": "En une minute, il repart de zéro, annonce dès qu'un plan respecte les règles impératives, puis l'améliore. Le passage d'attente est accéléré.",
         "transcription": [
-          "L'écran Solveur résume ce dont le calcul tiendra compte : verrouillages, ajustements, consignes, déclarations de disponibilité non traitées et règles désactivées.",
+          "L'onglet Calculer du Planning résume ce dont le calcul tiendra compte : verrouillages, ajustements, consignes, déclarations de disponibilité non traitées et règles désactivées.",
           "On choisit « Recommencer de zéro » et on confirme : le plan enregistré ne servira pas de point de départ.",
           "La barre de progression avance. Un message annonce qu'un plan faisable existe et que le calcul améliore maintenant la qualité (équité, souhaits, continuité). Un bouton permet d'arrêter et de garder ce plan.",
           "Le résultat indique que le planning respecte toutes les règles impératives.",
@@ -387,7 +387,7 @@
           "secondes": 28,
           "legende": "In one minute it starts from nothing, says as soon as a plan meets the mandatory rules, then improves it. The wait is sped up.",
           "transcription": [
-            "The Solver screen sums up what the run will take into account: locks, manual adjustments, consignes, unprocessed availability declarations and disabled rules.",
+            "The Calculate tab of the Planning page sums up what the run will take into account: locks, manual adjustments, consignes, unprocessed availability declarations and disabled rules.",
             "We choose “Start over from scratch” and confirm: the saved plan will not be used as a starting point.",
             "The progress bar moves. A message says a feasible plan exists and the solver is now improving its quality. A button stops the run and keeps this plan.",
             "The result says the schedule meets every mandatory rule.",

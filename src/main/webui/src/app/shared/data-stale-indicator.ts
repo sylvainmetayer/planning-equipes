@@ -22,7 +22,7 @@ import { PlanningResolutionStore } from '../core/planning-resolution.store';
     @if (resolution.dataStale()) {
       <a
         class="data-stale-indicator"
-        routerLink="/solveur"
+        routerLink="/journee" [queryParams]="{ onglet: 'calculer' }"
         [matTooltip]="tooltip()"
         matTooltipPosition="below"
         [attr.aria-label]="tooltip()"
@@ -46,6 +46,6 @@ export class DataStaleIndicator {
 
   protected readonly tooltip = computed(
     () =>
-      $localize`:@@dataStale.tooltip:Des données de référence ont changé depuis le dernier calcul : le planning affiché peut ne plus être à jour. Cliquez pour ouvrir le Solveur.`,
+      $localize`:@@dataStale.tooltip:Des données de référence ont changé depuis le dernier calcul : le planning affiché peut ne plus être à jour. Cliquez pour ouvrir Planning › Calculer.`,
   );
 }

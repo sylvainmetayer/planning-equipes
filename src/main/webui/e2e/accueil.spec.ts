@@ -78,19 +78,21 @@ test('une édition amorcée lit ses référentiels et sa publication, et chaque 
   // Nothing was ever solved on this fixture — the seats were written straight in.
   await expect(page.locator('li[data-ligne="resolution"]')).toContainText('Aucune résolution');
 
-  // The links land where they say: the staffing tab of the Diagnostic, then the solver.
+  // The links land where they say: the staffing tab of the Diagnostic, then « Calculer ».
   await page.locator('li[data-ligne="besoin"] a.accueil-lien').click();
   await expect(page).toHaveURL(/\/diagnostic\?onglet=besoin$/);
   await expect(page.locator('#contenu')).toContainText('Minimum retenu');
 
   await page.goto('/');
   await page.locator('li[data-ligne="resolution"] a.accueil-lien').click();
-  await expect(page).toHaveURL(/\/solveur$/);
+  await expect(page).toHaveURL(/\/journee\?onglet=calculer$/);
   await expect(page.getByRole('button', { name: 'Calculer le planning' })).toBeVisible();
 
-  // The old address of the solver still lands on it.
-  await page.goto('/solver');
-  await expect(page).toHaveURL(/\/solveur$/);
+  // The old addresses of the solver still land on it.
+  for (const ancienne of ['/solver', '/solveur']) {
+    await page.goto(ancienne);
+    await expect(page, ancienne).toHaveURL(/\/journee\?onglet=calculer$/);
+  }
   await page.context().close();
 });
 

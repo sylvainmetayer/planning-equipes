@@ -55,7 +55,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   button) lives in `app/shell/admin-shell.ts`, a layout route wrapping every
   admin page. The drawer is **one menu for everybody**, grouped by moment of
   the edition's cycle — Accueil / Préparer / Planifier / Diffuser /
-  Aujourd'hui / Administrer — in **thirteen entries**: a screen answering a
+  Aujourd'hui / Administrer — in **twelve entries**: a screen answering a
   variant of another's question is one of its tabs, hosted through
   `core/onglet-hote.ts` (the tab read from `?onglet=` and followed, written
   once when the reader moves, a hosted screen with unsaved entries asked
@@ -161,12 +161,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   sorted by gravity — blocking, to check, message — then newest first, and
   narrowed by `?type=alertes|coherence|messages` read from the address;
   only the messages are read and cleared. `/notifications` redirects to
-  `/?type=messages#a-traiter`), `/solveur` (the solver page,
-  the former home: feasibility first, then « Ce calcul tiendra compte de »
-  read from `GET /api/solve/entrees`, each counter a link and a zero muted,
-  the three ways to launch each with its sentence on the page, the result in
-  sentences with « Voir le planning », « Relire » and « Publier » under it,
-  the volumetry folded),
+  `/?type=messages#a-traiter`), `/solveur` (a redirect to
+  `/journee?onglet=calculer`, its `?onglet=versions` to
+  `/journee?onglet=versions`, every other param kept: the former solver page
+  is the Planning's « Calculer » tab, described there),
   `/debug` (« Débogage » — the raw and the technical only, served everywhere
   and reached by its address or Ctrl+K: two tabs chosen by
   `?onglet=resolution|verifications`, the raw analysis with the version, the
@@ -376,7 +374,22 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   through `PUT /api/etats-journee/{jour}`, never the `/api/validations`
   aliases); the consigne in one line (`consigne-ligne.ts`); « Imprimer cette
   journée » (`/impression/:date`) and « Afficher sur la TV » (Paramètres ›
-  Affichage mural). Four views chosen by
+  Affichage mural). Beside the four views, two tabs in `?onglet=` through
+  `ongletHote` (Q49, 4.0; the toggle carries both, and on either the plan is
+  neither read nor written to the address, coming back re-reads it):
+  `calculer`, « Calculer », `pages/solver/solver-page.ts`, the former
+  `/solveur` — feasibility first, then, as soon as a plan exists, the
+  relecture's progress (`shared/validation-banner`, whether or not this browser
+  solved it), « Ce calcul tiendra compte de » read from
+  `GET /api/solve/entrees`, each counter a link and a zero muted, the **two**
+  buttons each with its sentence on the page — « Calculer le planning », the
+  full solve from the plan in place, which asks first once a plan exists with
+  « Recommencer de zéro » as an unticked box of that question
+  (`ConfirmService.askWithOption`, the cold start then asking once more), and
+  « Corriger après un changement », the incremental repair with its perimeter
+  dialog —, the queue, the stop, the result in sentences with « Voir le
+  planning », « Relire » and « Publier » under it; and `versions`, « Versions du
+  plan » (below). Four views chosen by
   `?vue=jour|stand|personne|carte` (ADR 0018: written by the page's one
   `keepViewInQueryParams`, nothing for the default, the rail), « Jour » having
   two modes in `?mode=rail|tableau` (the rail, the default, is the absence of
@@ -400,7 +413,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/intendance`) to `/diagnostic?onglet=problemes` — a « Repas et pauses » screen
   will take the rotation and the intendance —, `?vue=changements` to
   `/publication?onglet=envoyer&jour=` — what moved since the publication is the
-  Envoyer table's, since the last solve the Solveur's result —, and
+  Envoyer table's, since the last solve the « Calculer » tab's result —, and
   « Comparer deux jours » (`?comparer=`, `?ecarts=`) is gone and ignored; the page
   clears those keys, `axe` and the removed views' own from the address. One
   day selector (`date`, and `jour` read as a date or as the number of the
@@ -509,8 +522,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   column per counted day, each cell coloured by its worst gap and opening its
   shifts under the grid — holders named, on this admin screen only — kept as
   `?jour=&stand=`, the totals per game category, and the CSV without any
-  person), `/versions` (a redirect to `/solveur?onglet=versions`, the
-  Solveur's second tab: « Versions du
+  person), `/versions` (a redirect to `/journee?onglet=versions`, the
+  Planning's tab: « Versions du
   plan » — the finished solves and the versions of the edition (each saying
   its `origine`: manual, before a solve, published; ADR 0108, read from
   `/api/planning/versions`, no longer the `/snapshots` alias) in one
@@ -544,7 +557,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   (`?nature=exports|donnees`) and the period (`?depuis=&jusqua=`, instants,
   `depuis` exclusive as the server counts) asked of the server, the other
   filters applied to the lines loaded, « Charger plus » asking the next page by
-  the cursor of the last line shown; the Solveur's « N modification(s) depuis
+  the cursor of the last line shown; « Calculer »'s « N modification(s) depuis
   la dernière résolution » lands on `?nature=donnees&depuis=<the solve>`;
   `?onglet=connexions`, « Connexions », the admin form login journal of the
   instance — logins, failures, lockouts, with time and address, the same
@@ -558,7 +571,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   four public legal pages `/mentions-legales`, `/conditions-utilisation`,
   `/politique-confidentialite` and `/declaration-accessibilite` (the
   accessibility statement, filled from `planning.legal.accessibilite.*` by the
-  deployment it describes), and `/aide` (`/solver` redirects to
+  deployment it describes), and `/aide` (`/solver` redirects like
   `/solveur`; `/imports` (its `onglet` becoming the Importer tab's `cible`),
   `/exports` (its `archive-evenement` fragment landing on the Archive tab),
   `/export-csv` and `/validateur-yaml` redirect to `/fichiers` with their
@@ -717,7 +730,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   scoped by edition, 24 h at most, sessionStorage for the fiche animateur and
   never localStorage — its bounds are `site/src/docs/installer/rgpd.md` §7. What is typed and not
   saved is asked of one place, `core/formulaires-modifies.ts`, which those
-  forms register with and the Solveur page reads before « Calculer ». The default of a control is
+  forms register with and the « Calculer » tab reads before a solve. The default of a control is
   the *absence* of its param, reading is tolerant (an unknown value falls back
   to the default rather than failing the page), writing replaces the history
   entry through `Location.replaceState` and **never navigates** — a router
@@ -743,7 +756,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   stream the loop paces itself as before: every 2 s while a job runs or one is
   queued, every 30 s otherwise. That same stream also carries the running
   solve's **score curve** (issue #304) as `score` events — deltas, sampled and
-  capped server-side by `SolverScoreTrace`, drawn on the Solveur page by
+  capped server-side by `SolverScoreTrace`, drawn on the « Calculer » tab by
   hand-written SVG polylines, one per score level and each on its own scale.
   **There is no charting dependency**, and adding one needs the same explicit
   sign-off as any other. Each event also carries `dureeMs`, and that is not a

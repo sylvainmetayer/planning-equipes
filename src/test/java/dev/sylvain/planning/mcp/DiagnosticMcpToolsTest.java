@@ -157,7 +157,7 @@ class DiagnosticMcpToolsTest {
     @Test
     void theImportPreviewCountsWhatWouldBeOverwritten() {
         loadScenario();
-        StandsView stands = standTools.listStands(null, "E1");
+        StandsView stands = standTools.listStands(null, null, "E1");
 
         assertThat(diagnosticTools.previewImport("E1").stands()).isEqualTo(stands.total());
 
