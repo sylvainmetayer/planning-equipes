@@ -14,11 +14,15 @@ import { ReglagesAvances } from '../core/reglages-avances';
  * The « Réglages avancés » button of a screen, and what it unfolds: the
  * `<ng-template>` given as content, created only once opened. Without one,
  * the button alone — a page then shows what the state opens itself (tabs).
+ * `utile` is the page saying there is something behind the button on the tab
+ * on screen: required, so a new screen has to answer, and a button that would
+ * open nothing is not drawn (`reglages-avances.spec.ts` holds every use to it).
  */
 @Component({
   selector: 'app-reglages-avances',
   imports: [MatButtonModule, MatIconModule, NgTemplateOutlet],
   template: `
+    @if (utile()) {
     <button
       matButton
       type="button"
@@ -33,10 +37,12 @@ import { ReglagesAvances } from '../core/reglages-avances';
         <ng-container [ngTemplateOutlet]="gabarit" />
       </div>
     }
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReglagesAvancesToggle {
   readonly etat = input.required<ReglagesAvances>();
+  readonly utile = input.required<boolean>();
   protected readonly contenu = contentChild(TemplateRef);
 }

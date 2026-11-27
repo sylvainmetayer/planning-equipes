@@ -78,7 +78,7 @@
         <ng-container *ngTemplateOutlet="tableau; context: { rows: organisationRows(), bloc: 'organisation' }" />
       </section>
 
-      <app-reglages-avances [etat]="avance">
+      <app-reglages-avances [etat]="avance" [utile]="avanceRows().length > 0">
         <ng-template>
           <section class="regles-bloc" aria-labelledby="regles-bloc-avance">
             <h2 id="regles-bloc-avance" i18n="@@regles.bloc.avance">Avancé</h2>
