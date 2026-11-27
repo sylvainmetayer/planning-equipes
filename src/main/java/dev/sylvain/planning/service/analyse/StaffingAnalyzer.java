@@ -54,9 +54,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * </ul>
  *
  * <p>Working from the generated postes removes both errors by construction:
- * poste generation already resolved the horaires and already halved the
- * headcount of a meal-pause
- * coverage vacation. Whatever the seats are, they are what has to be staffed.</p>
+ * poste generation already resolved the horaires. Whatever the seats are, they are what has to be staffed.</p>
  *
  * <p>The hour-based bounds divide by <b>planned amplitude</b> and never deduct
  * a break taken on the post, where {@code dureeHebdomadaireMax} does. That

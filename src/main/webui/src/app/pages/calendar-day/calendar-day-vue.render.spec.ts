@@ -327,40 +327,6 @@ describe('CalendarDayView rendering', () => {
     expect(lignes(fixture)[0].icones).not.toContain('warning');
   });
 
-  it('marks a meal-pause line as an indication, and its filled seat as full coverage', async () => {
-    // EFFECTIF_REDUIT: the découpage generates a *single* seat on the pause
-    // vacation, so filling it is full coverage, not a shortfall. The halving
-    // happens upstream, at seat generation — the flag only drives the icon.
-    const pause = creneau({ id: 9, couverturePause: true });
-    const { fixture } = mount({
-      planning: planning([poste('p1', AMBIANCE, pause, animateur('a1', 'Camille'))]),
-    });
-    await fixture.whenStable();
-
-    const ligne = lignes(fixture)[0];
-    expect(ligne.icones).toContain('restaurant');
-    expect(ligne.sousEffectif).toBe(false);
-    expect(ligne.icones).not.toContain('warning');
-  });
-
-  it('still flags a meal-pause line short of the seats it did generate', async () => {
-    const pause = creneau({ id: 9, couverturePause: true });
-    const { fixture } = mount({
-      planning: planning([
-        poste('p1', AMBIANCE, pause, animateur('a1', 'Camille')),
-        poste('p2', AMBIANCE, pause, null),
-      ]),
-    });
-    await fixture.whenStable();
-
-    // Two seats generated for the pause, one filled: the reduced headcount was
-    // already taken into account when generating them, so this is a real gap.
-    const ligne = lignes(fixture)[0];
-    expect(ligne.icones).toContain('restaurant');
-    expect(ligne.sousEffectif).toBe(true);
-    expect(ligne.icones).toContain('warning');
-  });
-
   it('flags a seat held by someone with no appreciation for the stand', async () => {
     const { fixture } = mount({
       planning: planning([
@@ -516,17 +482,17 @@ describe('CalendarDayView rendering', () => {
     expect(text(fixture)).not.toContain('enregistrées en base');
   });
 
-  it('explains the free seat and its four markers in a legend', async () => {
+  it('explains the free seat and its three markers in a legend', async () => {
     const { fixture } = mount({
       planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]),
     });
     await fixture.whenStable();
 
     const legende = Array.from(root(fixture).querySelectorAll('.calendar-legende li'));
-    expect(legende).toHaveLength(5);
+    expect(legende).toHaveLength(4);
     expect(legende[0].textContent).toContain('siège libre');
     expect(
       legende.slice(1).map((each) => each.querySelector('mat-icon')!.textContent!.trim()),
-    ).toEqual(['warning', 'restaurant', 'psychology', 'lock']);
+    ).toEqual(['warning', 'psychology', 'lock']);
   });
 });

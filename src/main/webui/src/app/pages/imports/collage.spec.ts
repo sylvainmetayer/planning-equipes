@@ -8,9 +8,9 @@ describe('pasteToCsv', () => {
 
   /** A cell full of commas must not make the server take the comma for the separator. */
   it('keeps the commas of a cell inside its quotes', () => {
-    const csv = pasteToCsv('nom\tvacations\nSemaine\t09:00-12:00, 12:00-13:00 R, 14:00-20:00');
+    const csv = pasteToCsv('nom\tvacations\nSemaine\t09:00-12:00, 12:00-13:00, 14:00-20:00');
 
-    expect(csv).toBe('"nom";"vacations"\n"Semaine";"09:00-12:00, 12:00-13:00 R, 14:00-20:00"\n');
+    expect(csv).toBe('"nom";"vacations"\n"Semaine";"09:00-12:00, 12:00-13:00, 14:00-20:00"\n');
   });
 
   it('doubles the quotes a cell holds', () => {

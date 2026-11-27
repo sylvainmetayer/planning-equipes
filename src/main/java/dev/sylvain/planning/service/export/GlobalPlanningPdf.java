@@ -183,9 +183,7 @@ public class GlobalPlanningPdf {
     /**
      * One stand × vacation line of the global export.
      *
-     * @param sieges seats generated for that line — never the stand's
-     *               {@code effectifMin}, which a meal-pause coverage vacation
-     *               deliberately halves
+     * @param sieges seats generated for that line
      * @param places the seats of the line counted as places: all of them but
      *               the origins of seats split on the day (ADR 0066)
      * @param placesTenues those places somebody holds

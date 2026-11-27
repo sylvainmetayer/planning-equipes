@@ -53,6 +53,39 @@ class ScenarioMigrationsTest {
     }
 
     @Test
+    void v6ToV7DropsTheBreakCoverageFlagOfShiftsAndTemplatesAndSaysSoOnce() {
+        Map<String, Object> document = document();
+        document.put(
+                "creneaux",
+                List.of(
+                        Map.of("id", "C1", "heureDebut", "12:00", "couverturePause", true),
+                        Map.of("id", "C2", "heureDebut", "14:00", "couverturePause", false),
+                        Map.of("id", "C3", "heureDebut", "16:00")));
+        document.put(
+                "gabarits",
+                List.of(Map.of(
+                        "nom", "Jour", "vacations", List.of(Map.of("heureDebut", "12:00", "couverturePause", true)))));
+        List<String> warnings = new java.util.ArrayList<>();
+
+        Map<String, Object> converted = ScenarioMigrations.v6ToV7(document, warnings);
+
+        assertThat(converted.toString()).doesNotContain("couverturePause");
+        assertThat(warnings)
+                .singleElement()
+                .asString()
+                .contains("couverturePause")
+                .contains("2 créneau");
+    }
+
+    @Test
+    void v6ToV7LeavesADocumentWithoutTheFlagUntouchedAndSilent() {
+        List<String> warnings = new java.util.ArrayList<>();
+
+        assertThat(ScenarioMigrations.v6ToV7(document(), warnings)).isEqualTo(document());
+        assertThat(warnings).isEmpty();
+    }
+
+    @Test
     void v1ToV2LeavesADocumentWithoutTypologiesAlone() {
         List<String> warnings = new java.util.ArrayList<>();
         Map<String, Object> converted = ScenarioMigrations.v1ToV2(document(), warnings);

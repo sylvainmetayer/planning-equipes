@@ -2,9 +2,7 @@
 schemaVersion: 2
 # Barreau 8 : une journée d'ouverture 10 h-19 h, exprimée en vacations jointives.
 # Quatre vacations par jour, identiques sur les trois jours : 10 h-12 h, le
-# relais de midi 12 h-13 h, 13 h-14 h puis 14 h-19 h. Le relais porte
-# couverturePause, donc chaque stand y tient à la moitié de son effectif
-# (arrondie au supérieur) pendant que l'autre moitié déjeune, dans la fenêtre
+# relais de midi 12 h-13 h, 13 h-14 h puis 14 h-19 h, dans la fenêtre
 # repas 12 h-14 h. Les vacations se touchent.
 
 festival:
@@ -21,7 +19,6 @@ creneaux:
     date: 2027-08-18
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J1-V3
     jour: 1
     date: 2027-08-18
@@ -42,7 +39,6 @@ creneaux:
     date: 2027-08-19
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J2-V3
     jour: 2
     date: 2027-08-19
@@ -63,7 +59,6 @@ creneaux:
     date: 2027-08-20
     heureDebut: "12:00"
     heureFin: "13:00"
-    couverturePause: true
   - id: J3-V3
     jour: 3
     date: 2027-08-20

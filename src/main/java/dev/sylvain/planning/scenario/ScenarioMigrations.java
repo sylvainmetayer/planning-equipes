@@ -45,7 +45,8 @@ public final class ScenarioMigrations {
             new Link(2, ScenarioParametresLink::convert),
             new Link(3, ScenarioMigrations::v3ToV4),
             new Link(4, ScenarioPlagesLink::convert),
-            new Link(5, ScenarioMigrations::v5ToV6));
+            new Link(5, ScenarioMigrations::v5ToV6),
+            new Link(6, ScenarioMigrations::v6ToV7));
 
     private ScenarioMigrations() {}
 
@@ -294,6 +295,63 @@ public final class ScenarioMigrations {
             }
         });
         return result;
+    }
+
+    /**
+     * 6 → 7: {@code couverturePause}, the flag that halved the seats of a meal
+     * relay, leaves the model — no rule ever read it. It is dropped from every
+     * {@code creneaux} entry and every {@code gabarits[].vacations} entry that
+     * carries it, and said once with the number of entries: the file is read, the
+     * stand is then staffed at its full headcount on those shifts. Kept through
+     * 4.x, retired in 5.0.
+     */
+    @SuppressWarnings("unchecked")
+    static Map<String, Object> v6ToV7(Map<String, Object> document, List<String> warnings) {
+        Map<String, Object> result = new LinkedHashMap<>(document);
+        int[] dropped = {0};
+        result.computeIfPresent("creneaux", (key, list) -> withoutFlag(list, dropped));
+        result.computeIfPresent("gabarits", (key, list) -> {
+            if (!(list instanceof List<?> gabarits)) {
+                return list;
+            }
+            List<Object> converted = new ArrayList<>();
+            for (Object gabarit : gabarits) {
+                if (gabarit instanceof Map<?, ?> map && map.get("vacations") != null) {
+                    Map<String, Object> copy = new LinkedHashMap<>((Map<String, Object>) map);
+                    copy.put("vacations", withoutFlag(map.get("vacations"), dropped));
+                    converted.add(copy);
+                } else {
+                    converted.add(gabarit);
+                }
+            }
+            return converted;
+        });
+        if (dropped[0] > 0) {
+            warnings.add("La clé « couverturePause » est ignorée sur " + dropped[0] + " créneau(x) ou vacation(s) : le"
+                    + " relais repas à effectif réduit n'existe plus depuis la 4.0, le stand y est servi à son effectif"
+                    + " plein.");
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object withoutFlag(Object list, int[] dropped) {
+        if (!(list instanceof List<?> entries)) {
+            return list;
+        }
+        List<Object> converted = new ArrayList<>();
+        for (Object entry : entries) {
+            if (entry instanceof Map<?, ?> map && map.containsKey("couverturePause")) {
+                Map<String, Object> copy = new LinkedHashMap<>((Map<String, Object>) map);
+                if (Boolean.TRUE.equals(copy.remove("couverturePause"))) {
+                    dropped[0]++;
+                }
+                converted.add(copy);
+            } else {
+                converted.add(entry);
+            }
+        }
+        return converted;
     }
 
     /**

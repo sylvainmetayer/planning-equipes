@@ -344,7 +344,6 @@ domain.ContrainteAdHoc.modifieLe
 domain.ContrainteAdHoc.raison
 domain.ContrainteAdHoc.stand
 domain.ContrainteAdHoc.type
-domain.Creneau.couverturePause
 domain.Creneau.date
 domain.Creneau.dureeMinutes
 domain.Creneau.heureDebut
@@ -485,7 +484,6 @@ domain.Stand.plages
 domain.Stand.premium
 domain.Stand.reserveMajeurs
 domain.Stand.typologiesProposees
-domain.VacationType.couverturePause
 domain.VacationType.heureDebut
 domain.VacationType.heureFin
 domain.ValidationJournee.commentaire
@@ -617,7 +615,6 @@ service.analyse.FragiliteAnalyzer$CompetenceRare.specialistes
 service.analyse.FragiliteAnalyzer$CompetenceRare.standId
 service.analyse.FragiliteAnalyzer$CompetenceRare.standNom
 service.analyse.FragiliteAnalyzer$CompetenceRare.typologies
-service.analyse.FragiliteAnalyzer$PosteFragile.couverturePause
 service.analyse.FragiliteAnalyzer$PosteFragile.creneauId
 service.analyse.FragiliteAnalyzer$PosteFragile.date
 service.analyse.FragiliteAnalyzer$PosteFragile.effectifMin
@@ -724,7 +721,6 @@ service.analyse.OuvertureStandsAnalyzer$CelluleJour.minutesAmplitude
 service.analyse.OuvertureStandsAnalyzer$CelluleJour.minutesOuvertes
 service.analyse.OuvertureStandsAnalyzer$CelluleJour.postes
 service.analyse.OuvertureStandsAnalyzer$CelluleJour.source
-service.analyse.OuvertureStandsAnalyzer$ColonneCreneau.couverturePause
 service.analyse.OuvertureStandsAnalyzer$ColonneCreneau.heureDebut
 service.analyse.OuvertureStandsAnalyzer$ColonneCreneau.heureFin
 service.analyse.OuvertureStandsAnalyzer$ColonneCreneau.id
@@ -1948,7 +1944,6 @@ service.referentiel.CoherenceReferentielService$FamilyCount.aVerifier
 service.referentiel.CoherenceReferentielService$FamilyCount.bloquants
 service.referentiel.CoherenceReferentielService$FamilyCount.famille
 service.referentiel.CoherenceReferentielService$FamilyCount.informations
-service.referentiel.CreneauGridService$DiagnosticGrille.contientCouverturePause
 service.referentiel.CreneauGridService$DiagnosticGrille.derniereDate
 service.referentiel.CreneauGridService$DiagnosticGrille.explication
 service.referentiel.CreneauGridService$DiagnosticGrille.joursFeries
@@ -1983,7 +1978,6 @@ service.referentiel.GenerateurCreneaux$RapportApplication.controle
 service.referentiel.GenerateurCreneaux$RapportApplication.crees
 service.referentiel.GenerateurCreneaux$RapportApplication.creneauxSupprimes
 service.referentiel.GenerateurCreneaux$RapportApplication.datesEnEcart
-service.referentiel.GenerateurCreneaux$RapportApplication.misAJour
 service.referentiel.GenerateurCreneaux$RapportApplication.postesSupprimes
 service.referentiel.GenerateurCreneaux$RapportApplication.supprimes
 service.referentiel.GenerateurCreneaux$RapportApplication.supprimesAvecPostes

@@ -13,7 +13,6 @@ import { GabaritsApplicationDialog } from './gabarits-application-dialog';
 
 const APERCU: RapportApplication = {
   conserves: 4,
-  misAJour: 1,
   crees: 2,
   supprimes: 1,
   creneauxSupprimes: [],
@@ -71,7 +70,7 @@ describe('GabaritsApplicationDialog', () => {
     const { fixture, racine } = monter(APERCU);
     await fixture.whenStable();
 
-    expect(racine.querySelectorAll('.gabarits-bilan li')).toHaveLength(4);
+    expect(racine.querySelectorAll('.gabarits-bilan li')).toHaveLength(3);
     expect(racine.querySelector('.gabarits-suppression')).not.toBeNull();
     expect(racine.querySelector('[role="alert"]')!.textContent).toContain('3');
     expect(racine.querySelectorAll('.gabarits-supprimes li')).toHaveLength(1);

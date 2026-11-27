@@ -17,7 +17,7 @@ The grid is produced by one **generator**, the *Generate timeslots* menu. It sta
 | *From the stands' opening hours* | a cut at every hour a stand opens or closes, a timeslot on every open stretch; added to the grid or in its place |
 | *From a recurring pattern* | windows repeated on chosen days, added to the grid |
 
-Whatever the source, the gesture is the same: a figures **preview** that writes nothing and says what the resulting grid would be worth, then the **application**. A **template** (« gabarit ») is what 3.x called a day template: the shifts of a kind of day (an "R" marks a meal relay), laid onto a calendar of dates, which are those of the edition.
+Whatever the source, the gesture is the same: a figures **preview** that writes nothing and says what the resulting grid would be worth, then the **application**. A **template** (« gabarit ») is what 3.x called a day template: the shifts of a kind of day, laid onto a calendar of dates, which are those of the edition.
 
 1. Open *Calendar* and define your templates ("weekday", "Saturday"...).
 2. Lay them onto the edition's dates.

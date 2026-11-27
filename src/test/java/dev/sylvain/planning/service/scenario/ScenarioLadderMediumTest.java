@@ -37,7 +37,7 @@ class ScenarioLadderMediumTest {
     private static final long CEILING_SECONDS = 120L;
 
     @Test
-    void rung08AmplitudesSlicedAroundTheMealWithAReducedCrew() {
+    void rung08VacationsAroundTheMeal() {
         Loaded loaded = load("gamme-08-3j-5stands-16animateurs-relais-midi-reduit");
         assertThat(loaded.creneaux()).hasSize(12);
         assertThat(loaded.creneaux())
@@ -46,15 +46,10 @@ class ScenarioLadderMediumTest {
                 loaded.creneaux().stream().collect(Collectors.groupingBy(Creneau::getDate));
         assertThat(parJour)
                 .hasSize(3)
-                .allSatisfy((jour, vacations) -> assertThat(vacations)
-                        .filteredOn(Creneau::isCouverturePause)
-                        .singleElement()
-                        .satisfies(pause -> assertThat(pause.getHeureDebut()).isEqualTo(LocalTime.NOON)));
-        // Seven seats a vacation, five on the meal relay: the two-person stands halve, the others keep one.
-        assertThat(loaded.problem().getPostes()).hasSize(78);
-        assertThat(loaded.problem().getPostes())
-                .filteredOn(poste -> poste.getCreneau().isCouverturePause())
-                .hasSize(15);
+                .allSatisfy((jour, vacations) ->
+                        assertThat(vacations).extracting(Creneau::getHeureDebut).contains(LocalTime.NOON));
+        // Seven seats a vacation, four vacations a day, three days.
+        assertThat(loaded.problem().getPostes()).hasSize(84);
 
         assertFeasible(solveUntilFeasible(loaded, CEILING_SECONDS));
     }
@@ -91,7 +86,7 @@ class ScenarioLadderMediumTest {
                 .extracting(template -> template.getNom())
                 .containsExactly("Montage", "Jour normal", "Nocturne");
         assertThat(loaded.sections().edition().orElseThrow().id()).isEqualTo("GAMME-10");
-        assertThat(loaded.problem().getPostes()).hasSize(127);
+        assertThat(loaded.problem().getPostes()).hasSize(157);
         // The nocturne is held by the three stands open past 18:00, on the last day only.
         assertThat(loaded.problem().getPostes())
                 .filteredOn(poste -> poste.getCreneau().getHeureDebut().equals(LocalTime.of(20, 0)))
@@ -247,7 +242,7 @@ class ScenarioLadderMediumTest {
     void rung15TwoWeeksOfWeekendsWithHollowDays() {
         Loaded loaded = load("gamme-15-10j-20stands-56animateurs-deux-week-ends");
         assertThat(loaded.dayTemplatesPlan().isEmpty()).isTrue();
-        assertThat(loaded.problem().getPostes()).hasSize(472);
+        assertThat(loaded.problem().getPostes()).hasSize(528);
         assertThat(loaded.problem().getPostes())
                 .filteredOn(poste -> Integer.parseInt(poste.getStand().getId().substring("STAND-".length())) > 12)
                 .allSatisfy(poste -> assertThat(poste.getCreneau().getDate().getDayOfWeek())

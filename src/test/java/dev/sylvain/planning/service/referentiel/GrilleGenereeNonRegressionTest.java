@@ -87,14 +87,12 @@ class GrilleGenereeNonRegressionTest {
                 .containsExactlyElementsOf(Files.readAllLines(REFERENCE, StandardCharsets.UTF_8));
     }
 
-    /** The grid after applying the calendar: what it keeps, updates and creates, plus what it leaves alone. */
+    /** The grid after applying the calendar: what it keeps and creates, plus what it leaves alone. */
     private static List<Creneau> materialised(
             List<Gabarit> gabarits, List<JourneesTypesMaterialisation.Affectation> calendrier, List<Creneau> grille) {
         JourneesTypesMaterialisation.Plan plan = JourneesTypesMaterialisation.planifier(gabarits, calendrier, grille);
         List<Creneau> resultante = new ArrayList<>(grille);
         resultante.removeAll(plan.aSupprimer());
-        resultante.removeAll(plan.misAJour());
-        resultante.addAll(plan.misAJour());
         resultante.addAll(plan.aCreer());
         return resultante;
     }
@@ -114,8 +112,7 @@ class GrilleGenereeNonRegressionTest {
                 .sorted(Comparator.comparing(Creneau::getDate)
                         .thenComparing(Creneau::getHeureDebut)
                         .thenComparing(Creneau::getHeureFin))
-                .map(c -> c.getDate() + " " + c.getHeureDebut() + "-" + c.getHeureFin()
-                        + (c.isCouverturePause() ? " R" : ""))
+                .map(c -> c.getDate() + " " + c.getHeureDebut() + "-" + c.getHeureFin())
                 .toList();
     }
 

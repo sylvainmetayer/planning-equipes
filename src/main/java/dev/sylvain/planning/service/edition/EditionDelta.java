@@ -209,7 +209,7 @@ public record EditionDelta(
      * @param start         start of the shift; {@code null} on a whole day present on one side only
      * @param referenceDate the date of that day in the reference, {@code null} when it has none
      * @param targetDate    same, in the target
-     * @param fields        the fields of the shift that differ ({@code heureFin}, {@code couverturePause})
+     * @param fields        the fields of the shift that differ ({@code heureFin})
      */
     @Schema(requiredProperties = {"change", "day", "fields"})
     public record DeltaTimeslotLine(
