@@ -5,8 +5,8 @@
 import { Route } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { routes } from '../../app.routes';
-import { CoherenceIssue, CoherenceReport, CoherenceSubject } from '../../core/models';
-import { coherenceGroups, coherenceLink, familyCounts, mergeIdentical } from './coherence';
+import { CoherenceIssue, CoherenceSubject } from '../../core/models';
+import { coherenceLines, coherenceLink, mergeIdentical } from './coherence';
 
 function allRoutes(list: Route[]): Route[] {
   return list.flatMap((route) => [route, ...allRoutes(route.children ?? [])]);
@@ -86,45 +86,6 @@ describe('coherenceLink', () => {
   });
 });
 
-describe('coherenceGroups', () => {
-  it('keeps the families holding a line, in the order the server gave, with their counts', () => {
-    const report: CoherenceReport = {
-      bloquants: 1,
-      aVerifier: 1,
-      informations: 1,
-      familles: [
-        { famille: 'STANDS', bloquants: 0, aVerifier: 1, informations: 1 },
-        { famille: 'CRENEAUX', bloquants: 0, aVerifier: 0, informations: 0 },
-        { famille: 'AJUSTEMENTS', bloquants: 1, aVerifier: 0, informations: 0 },
-      ],
-      anomalies: [
-        issue(),
-        issue({ gravite: 'INFORMATION', code: 'REGLE_MASQUEE' }),
-        issue({ famille: 'AJUSTEMENTS', gravite: 'BLOQUANT', objet: 'CONTRAINTE_AD_HOC' }),
-      ],
-    };
-
-    const groups = coherenceGroups(report);
-
-    expect(groups.map((group) => group.titre)).toEqual([
-      'Stands et ouvertures',
-      'Ajustements manuels',
-    ]);
-    expect(groups[0].comptage).toBe('1 à vérifier · 1 pour information');
-    expect(groups[0].lignes.map((line) => line.severityLabel)).toEqual([
-      'À vérifier',
-      'Pour information',
-    ]);
-    expect(groups[1].comptage).toBe('1 bloquant(s)');
-  });
-
-  it('says nothing for a family at zero', () => {
-    expect(familyCounts({ famille: 'STANDS', bloquants: 0, aVerifier: 0, informations: 0 })).toBe(
-      '',
-    );
-  });
-});
-
 describe('mergeIdentical', () => {
   const gap = (date: string, heures = '12:00 et 13:00') =>
     issue({
@@ -156,16 +117,9 @@ describe('mergeIdentical', () => {
   });
 
   it('writes the merged line with its count of days', () => {
-    const report: CoherenceReport = {
-      bloquants: 0,
-      aVerifier: 2,
-      informations: 0,
-      familles: [{ famille: 'CRENEAUX', bloquants: 0, aVerifier: 2, informations: 0 }],
-      anomalies: [gap('2026-09-01'), gap('2026-09-02')],
-    };
-    const [groupe] = coherenceGroups(report);
-    expect(groupe.lignes).toHaveLength(1);
-    expect(groupe.lignes[0].sentence).toBe('2 jours : rien entre 12:00 et 13:00.');
-    expect(groupe.lignes[0].count).toBe(2);
+    const lignes = coherenceLines([gap('2026-09-01'), gap('2026-09-02')]);
+    expect(lignes).toHaveLength(1);
+    expect(lignes[0].sentence).toBe('2 jours : rien entre 12:00 et 13:00.');
+    expect(lignes[0].count).toBe(2);
   });
 });

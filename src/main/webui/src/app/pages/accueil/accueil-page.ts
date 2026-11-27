@@ -35,15 +35,14 @@ import {
   statutLabel,
   summarizeLignes,
 } from './accueil';
-import { coherenceGroups } from './coherence';
 import { bandeLabel, libelleDate } from '../../core/consigne-wording';
 import { ScoreReadingPanel } from '../../shared/lecture-score';
 import { PhaseEditionControl } from '../../shared/phase-edition-control';
 import { VoirPlanningButton } from '../../shared/voir-planning-button';
-import { MessagesRecents } from './messages-recents';
+import { FilAccueil } from './fil-accueil';
 
-/** The two places of this page an address may name, the bell's and the night alerts'. */
-const ANCHORS = new Set(['a-traiter', 'alertes-nuit']);
+/** The place of this page the bell lands on. */
+const ANCHOR = 'a-traiter';
 
 /**
  * « État de l'édition », the home screen (issue #485): the cycle of the
@@ -58,7 +57,7 @@ const ANCHORS = new Set(['a-traiter', 'alertes-nuit']);
  * checklist folded; after it, the archive first. An edition with nothing
  * entered gets three ways to start instead of a checklist of empty steps.
  * « À traiter » is always drawn: the toolbar's bell lands on it (`/#a-traiter`),
- * and it carries the recent messages the Notifications page used to hold.
+ * and it carries the single feed of alerts, anomalies and messages.
  *
  * The screen only orders and words what it receives. Nothing is computed
  * here, and nothing is written: every action lives on the page each line
@@ -69,7 +68,7 @@ const ANCHORS = new Set(['a-traiter', 'alertes-nuit']);
   imports: [
     VoirPlanningButton,
     ScoreReadingPanel,
-    MessagesRecents,
+    FilAccueil,
     PhaseEditionControl,
     MatButtonModule,
     MatCardModule,
@@ -137,25 +136,14 @@ export class AccueilPage {
     return etat ? buildToday(etat) : [];
   });
 
-  /** Whether the coherence line is unfolded. */
-  protected readonly coherenceOpen = signal(false);
   /**
-   * Read once the line is unfolded, and not before: the counts are in the
-   * state already, and the whole checklist of the referential is not worth a
-   * second request on every visit of the home screen. Identical anomalies
-   * are then merged into one subject, the count of subjects said in the line.
+   * The checklist of the referential, read with the page: the feed lists its
+   * anomalies and the checklist line counts their subjects. Identical
+   * anomalies are merged into one subject.
    */
-  private readonly coherence = resource({
-    params: () => (this.coherenceOpen() ? true : undefined),
-    loader: () => this.editionsApi.coherence(),
-  });
+  private readonly coherence = resource({ loader: () => this.editionsApi.coherence() });
   protected readonly coherenceReport = retainedValue(this.coherence);
-  protected readonly coherenceLoading = this.coherence.isLoading;
   protected readonly coherenceError = errorText(this.coherence);
-  protected readonly coherenceGroups = computed(() => {
-    const rapport = this.coherenceReport();
-    return rapport ? coherenceGroups(rapport) : [];
-  });
 
   protected readonly statutLabel = statutLabel;
   protected readonly statutIcon = statutIcon;
@@ -163,17 +151,14 @@ export class AccueilPage {
   private readonly fragment = toSignal(inject(ActivatedRoute).fragment, { initialValue: null });
   private readonly document = inject(DOCUMENT);
   private readonly injector = inject(Injector);
-  private readonly messagesRecents = viewChild(MessagesRecents);
-  /** The lines of « À traiter » about the night's alerts unfold the recent messages. */
-  protected readonly alertesDemandees = computed(() => this.fragment() === 'alertes-nuit');
+  private readonly fil = viewChild(FilAccueil);
 
   constructor() {
-    // `/#a-traiter` from the bell, `/#alertes-nuit` from a line of « À
-    // traiter »: the router does not scroll to a fragment here, so the page
-    // does, once what it names is drawn.
+    // `/#a-traiter` from the bell: the router does not scroll to a fragment
+    // here, so the page does, once what it names is drawn.
     effect(() => {
       const anchor = this.fragment();
-      if (anchor && ANCHORS.has(anchor)) {
+      if (anchor === ANCHOR) {
         afterNextRender(() => this.scrollTo(anchor), { injector: this.injector });
       }
     });
@@ -205,12 +190,9 @@ export class AccueilPage {
       destroyRef.onDestroy(
         this.jobs.onResult(type, () => {
           this.etat.reload();
-          // The unfolded checklist of the referential reads the plan's
-          // staffing too: shown, it follows the solve; folded, it is read
-          // afresh the next time it opens.
-          if (this.coherenceOpen()) {
-            this.coherence.reload();
-          }
+          // The referential's checklist reads the plan's staffing too.
+          this.coherence.reload();
+          this.fil()?.reload();
         }),
       );
     }
@@ -219,34 +201,25 @@ export class AccueilPage {
 
   protected recharger(): void {
     this.etat.reload();
-    if (this.coherenceOpen()) {
-      this.coherence.reload();
-    }
+    this.coherence.reload();
+    this.fil()?.reload();
     void this.consignes.reload();
   }
 
   /**
-   * A line of « À traiter » pointing at this very page: when its fragment is
-   * already the address's, the router navigates nowhere and the effect above
-   * never runs — the page scrolls, and unfolds the alerts, itself.
+   * A line pointing at this very page: when its fragment is already the
+   * address's, the effect above never runs — the page scrolls itself.
    */
   protected followOnPage(lien: LienEtat): void {
     const anchor = lien.fragment;
     if (lien.route !== '/' || !anchor || anchor !== this.fragment()) {
       return;
     }
-    if (anchor === 'alertes-nuit') {
-      this.messagesRecents()?.unfold();
-    }
     afterNextRender(() => this.scrollTo(anchor), { injector: this.injector });
   }
 
   private scrollTo(anchor: string): void {
     this.document.getElementById(anchor)?.scrollIntoView?.({ block: 'start' });
-  }
-
-  protected toggleCoherence(): void {
-    this.coherenceOpen.update((open) => !open);
   }
 
   protected toggleChecklist(): void {

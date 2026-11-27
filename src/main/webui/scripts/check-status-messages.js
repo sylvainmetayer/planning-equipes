@@ -87,8 +87,6 @@ const EXCEPTIONS_ASSUMEES = {
     "une ligne de la liste d'anomalies de l'écran, du contenu et non le résultat d'une action",
   'app/pages/stand-fiche/stand-fiche-page.html {{ probleme.message }}':
     "la cause de faisabilité qui nomme ce stand, du contenu lu avec la fiche et non le résultat d'une action",
-  'app/pages/accueil/messages-recents.html {{ notification.message }}':
-    'une entrée du journal des messages récents, du contenu ; chacune a été annoncée par le snack-bar en arrivant',
   'app/shared/siege-panel/siege-panel.html {{ done.message }}':
     'la première ligne du compte rendu d\'un geste, annoncé en bloc par le role="status" de `.siege-panel-outcome`',
   'app/shared/confirm-dialog.ts {{ data.message }}':

@@ -30,7 +30,7 @@ L'accueil prend la forme du moment.
 - la dernière résolution se lit en phrases, jamais en score brut ;
 - la phase de l'édition (Préparation, Calcul, Publiée, Terminée), qui décide ce que le référentiel laisse modifier, s'y lit et s'y change, avec ses boutons « Débloquer la structure » et « Refiger » en Publiée ;
 - les accusés de réception disent si les relances automatiques sont actives et n'alertent qu'au-delà du délai de relance ;
-- la ligne « Cohérence du référentiel » rassemble toutes les anomalies détectées ailleurs. Les anomalies identiques sont réunies en une ligne avec leur compte (« 16 jours : rien entre 12:00 et 13:00 ») et chaque ligne mène à la fiche qui la corrige ;
+- la ligne « Cohérence du référentiel » rassemble toutes les anomalies détectées ailleurs. Les anomalies identiques sont réunies en une ligne avec leur compte (« 16 jours : rien entre 12:00 et 13:00 ») et chaque ligne mène à la fiche qui la corrige. Le détail de ces anomalies se lit dans le fil d'alertes et de messages, plus bas : « Voir dans le fil » l'ouvre sur ce type ;
 - deux lignes comptent sans lister : les fiches sans téléphone (dont celles affectées à une date à venir) et, sur une édition qui saisit des emplacements, les stands sans emplacement. Pour ces derniers, l'application indique ceux pour lesquels les stands voisins suggèrent un emplacement, avec sa raison. Chaque ligne ouvre la liste filtrée ; la suggestion apparaît aussi dans la colonne Lieu des stands et à l'enregistrement d'un stand laissé sans emplacement.
 
 **Pendant l'événement**, la première ligne est celle du jour : son numéro (J5 pour le cinquième jour), les stands ouverts, les places vides, les absents, les échanges à arbitrer. Elle ouvre l'écran Aujourd'hui, à côté du lien vers l'affichage mural, et la liste des étapes se déplie à la demande.
@@ -51,7 +51,7 @@ En haut de l'accueil, « À traiter aujourd'hui » rassemble ce qui attend une d
 - les personnes à prévenir ;
 - ce qui n'a pas pu partir, tant que la cause demeure : un rappel de la veille à une fiche toujours sans adresse, une relance (de la nuit ou à la main) à quelqu'un toujours silencieux, une sauvegarde de nuit en échec, un planning publié ou renvoyé dont l'envoi a échoué.
 
-Chaque ligne ouvre l'écran avec son filtre déjà posé. La cloche de la barre d'outils ouvre cette zone, suivie des messages récents : les alertes des envois de nuit, nommément, et l'historique des messages de l'application (résolutions terminées, règles en défaut, erreurs de saisie), que vous pouvez marquer comme lus ou effacer.
+Chaque ligne ouvre l'écran avec son filtre déjà posé. La cloche de la barre d'outils ouvre cette zone, qui se termine par un seul fil d'alertes et de messages. Il réunit les alertes du plan (celles des envois de nuit, nommément, l'alerte météo, les personnes à prévenir après une exclusion retirée), les anomalies de la cohérence du référentiel et l'historique des messages de l'application (résolutions terminées, règles en défaut, erreurs de saisie). Il est trié du plus grave au plus récent : les blocages, puis ce qui est à vérifier, puis les messages. Un filtre par type (alertes du plan, cohérence du référentiel, messages) le restreint et se garde dans l'adresse de la page. Une alerte ou une anomalie se referme en traitant ce qu'elle signale ; seuls les messages se marquent comme lus ou s'effacent, et ils ne sont gardés que par ce navigateur.
 
 ## Qui s'en sert
 
