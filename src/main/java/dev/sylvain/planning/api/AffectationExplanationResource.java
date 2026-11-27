@@ -106,6 +106,7 @@ public class AffectationExplanationResource {
             @PathParam("posteId") String posteId,
             @QueryParam("animateurId") String animateurId,
             PlanningEvenement planning) {
+        RequiredBody.require(planning);
         SwapSimulation simulation = planningService.simulateSwap(planning, posteId, animateurId);
         return Response.ok(simulation).build();
     }

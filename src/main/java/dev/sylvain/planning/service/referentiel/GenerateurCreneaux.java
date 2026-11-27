@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -600,6 +601,11 @@ public class GenerateurCreneaux {
             List<FenetreHoraire> fenetres) {
 
         public RegleRecurrence {
+            // Set.copyOf / List.copyOf throw a bare NPE on a null element: a request carrying one is a 400.
+            if (Stream.of(joursSemaine, dates, exclusions, fenetres)
+                    .anyMatch(values -> values != null && values.stream().anyMatch(Objects::isNull))) {
+                throw new BusinessError.Invalid("Un jour, une date ou une fenêtre de la règle est vide");
+            }
             jours = jours != null ? jours : TypeJoursHoraire.TOUS;
             joursSemaine = joursSemaine != null ? Set.copyOf(joursSemaine) : Set.of();
             dates = dates != null ? Set.copyOf(dates) : Set.of();

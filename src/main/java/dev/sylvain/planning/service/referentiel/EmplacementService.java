@@ -58,7 +58,7 @@ public class EmplacementService {
      */
     @RefusedWhileFrozen(ReferentialFamily.TYPOLOGIES_EMPLACEMENTS)
     Emplacement create(Connection connection, Emplacement emplacement) throws SQLException {
-        validateCoordinates(emplacement);
+        validate(emplacement);
         emplacement.setCode(Codes.normalise(emplacement.getCode(), IdGenerator.Kind.EMPLACEMENT));
         Codes.refuseTaken(
                 emplacement.getCode(), repository.idByCode(connection, emplacement.getCode()), null, "l'emplacement");
@@ -72,7 +72,7 @@ public class EmplacementService {
             throw new BusinessError.NotFound("Emplacement inconnu : " + id);
         }
         emplacement.setId(id);
-        validateCoordinates(emplacement);
+        validate(emplacement);
         emplacement.setCode(Codes.normalise(emplacement.getCode(), IdGenerator.Kind.EMPLACEMENT));
         Codes.refuseTaken(emplacement.getCode(), repository.idByCode(emplacement.getCode()), id, "l'emplacement");
         repository.saveEmplacement(emplacement, false);
@@ -91,7 +91,10 @@ public class EmplacementService {
         changeTracker.markModified();
     }
 
-    private void validateCoordinates(Emplacement emplacement) {
+    private void validate(Emplacement emplacement) {
+        if (emplacement.getNom() == null || emplacement.getNom().isBlank()) {
+            throw new BusinessError.Invalid("Le nom de l'emplacement est obligatoire.");
+        }
         Double latitude = emplacement.getLatitude();
         Double longitude = emplacement.getLongitude();
         if (latitude != null && (latitude < -90 || latitude > 90)) {

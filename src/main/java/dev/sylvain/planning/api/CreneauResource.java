@@ -94,6 +94,7 @@ public class CreneauResource {
     @Path("/recurrence/apercu")
     @Deprecated
     public RapportRecurrence previewRecurrence(RecurrenceRequest requete) {
+        RequiredBody.require(requete);
         return RapportRecurrence.of(generateur.preview(GenerateurCreneaux.Demande.recurrence(requete.regle())));
     }
 
@@ -106,6 +107,7 @@ public class CreneauResource {
     @Path("/recurrence")
     @Deprecated
     public RapportRecurrence createRecurrence(RecurrenceRequest requete) {
+        RequiredBody.require(requete);
         return RapportRecurrence.of(generateur.apply(GenerateurCreneaux.Demande.recurrence(requete.regle())));
     }
 
@@ -158,6 +160,7 @@ public class CreneauResource {
     @Path("/derivation/apercu")
     @Deprecated
     public RapportDerivation previewDerivation(DerivationRequest requete) {
+        RequiredBody.require(requete);
         return RapportDerivation.of(
                 generateur.preview(GenerateurCreneaux.Demande.stands(requete.parametres(), requete.remplacer())));
     }
@@ -172,6 +175,7 @@ public class CreneauResource {
     @Path("/derivation")
     @Deprecated
     public RapportDerivation applyDerivation(DerivationRequest requete) {
+        RequiredBody.require(requete);
         return RapportDerivation.of(
                 generateur.apply(GenerateurCreneaux.Demande.stands(requete.parametres(), requete.remplacer())));
     }

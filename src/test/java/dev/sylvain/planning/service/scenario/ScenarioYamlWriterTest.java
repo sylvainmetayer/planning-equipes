@@ -493,7 +493,7 @@ class ScenarioYamlWriterTest {
                 null,
                 ConfigProvider.getConfig());
 
-        assertThatThrownBy(planningService::exportScenarioYaml).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(planningService::exportScenarioYaml).isInstanceOf(BusinessError.Conflict.class);
     }
 
     @Test

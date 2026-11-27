@@ -61,11 +61,14 @@ public class ParametresResource {
      * lenient reading their clients were written against.
      */
     private <T> T section(JsonNode body, Class<T> type, String section) {
+        if (body == null || body.isNull()) {
+            throw new BusinessError.Invalid(RequiredBody.MESSAGE);
+        }
         try {
             return objectMapper
                     .readerFor(type)
                     .with(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                    .readValue(body == null ? objectMapper.nullNode() : body);
+                    .readValue(body);
         } catch (UnrecognizedPropertyException e) {
             throw new BusinessError.Invalid("Le champ « " + e.getPropertyName() + " » n'est pas de la section « "
                     + section + " » : passez par la section qui le porte.");
@@ -230,6 +233,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-legaux")
     public Response updateParametresLegaux(ParametresLegaux parametres) {
+        RequiredBody.require(parametres);
         parametres.setModifieLe(null);
         return writeLegaux(parametres);
     }
@@ -247,6 +251,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-qualite")
     public Response updateParametresQualite(ParametresQualite parametres) {
+        RequiredBody.require(parametres);
         return writeQualite(parametres.withStamp(null));
     }
 
@@ -263,6 +268,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-solveur")
     public SolverSettingsView updateParametresSolveur(ParametresSolveur parametres) {
+        RequiredBody.require(parametres);
         return writeSolveur(parametres.withStamp(null));
     }
 
@@ -279,6 +285,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-notifications")
     public Response updateParametresNotifications(ParametresNotifications parametres) {
+        RequiredBody.require(parametres);
         return writeNotifications(parametres.withStamp(null));
     }
 
@@ -297,6 +304,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-contact")
     public ContactOrganisation updateContactOrganisation(ContactOrganisation contact) {
+        RequiredBody.require(contact);
         return referenceDataService.updateContactOrganisation(contact);
     }
 }

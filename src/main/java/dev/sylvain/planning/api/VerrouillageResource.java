@@ -51,6 +51,7 @@ public class VerrouillageResource {
      */
     @POST
     public WrittenVerrouillage create(VerrouillagePlanning verrouillage) {
+        RequiredBody.require(verrouillage);
         return referenceDataService.writeVerrouillage(verrouillage);
     }
 

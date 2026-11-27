@@ -1733,15 +1733,16 @@ public final class PlanningWhatIf {
     }
 
     private static PosteAffectation findPoste(PlanningEvenement solved, String posteId) {
-        return solved.getPostes().stream()
-                .filter(poste -> poste.getId().equals(posteId))
+        // A plan sent by the caller may carry no seat list, or a seat without an id: that names nothing.
+        return Objects.requireNonNullElse(solved.getPostes(), List.<PosteAffectation>of()).stream()
+                .filter(poste -> poste != null && Objects.equals(poste.getId(), posteId))
                 .findFirst()
                 .orElseThrow(() -> new BusinessError.NotFound("Poste inconnu: " + posteId));
     }
 
     private static Animateur findAnimateur(PlanningEvenement solved, String animateurId) {
-        return solved.getAnimateurs().stream()
-                .filter(animateur -> animateur.getId().equals(animateurId))
+        return Objects.requireNonNullElse(solved.getAnimateurs(), List.<Animateur>of()).stream()
+                .filter(animateur -> animateur != null && Objects.equals(animateur.getId(), animateurId))
                 .findFirst()
                 .orElseThrow(() -> new BusinessError.NotFound("Animateur inconnu: " + animateurId));
     }

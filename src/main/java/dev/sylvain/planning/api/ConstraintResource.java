@@ -138,6 +138,7 @@ public class ConstraintResource {
     @Path("/{name}")
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintToggleUpdate setActif(@PathParam("name") String name, ConstraintToggleUpdate update) {
+        RequiredBody.require(update);
         String rule = requireKnown(name);
         // The 3.x hard run form is a level, not a rule: the service reads it under its own name.
         referenceDataService.setContrainteActive(
@@ -161,6 +162,7 @@ public class ConstraintResource {
     @Path("/{name}/poids")
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintPoidsUpdate setPoids(@PathParam("name") String name, ConstraintPoidsUpdate update) {
+        RequiredBody.require(update);
         if (ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(name)) {
             throw new BusinessError.Invalid(ConstraintCatalog.POIDS_FORME_DURE_REFUSE);
         }

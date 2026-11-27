@@ -91,6 +91,7 @@ public class JourneeTypeResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Deprecated
     public Gabarit create(Gabarit journeeType) {
+        RequiredBody.require(journeeType);
         return generateur.create(journeeType);
     }
 
@@ -99,6 +100,7 @@ public class JourneeTypeResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Deprecated
     public Gabarit update(@PathParam("id") long id, Gabarit journeeType) {
+        RequiredBody.require(journeeType);
         return generateur.update(id, journeeType);
     }
 
@@ -117,6 +119,7 @@ public class JourneeTypeResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Deprecated
     public EtatJourneesTypes setCalendrier(List<AffectationJourneeType> calendrier) {
+        RequiredBody.require(calendrier);
         generateur.setCalendrier(calendrier.stream()
                 .map(affectation -> new Affectation(affectation.date(), affectation.journeeTypeId()))
                 .toList());
