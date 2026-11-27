@@ -46,6 +46,9 @@ on:
       - 'src/main/java/dev/sylvain/planning/service/referentiel/HoraireStandResolver.java'
       - 'src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java'
       - 'src/main/java/dev/sylvain/planning/scenario/**'
+      # La borne du besoin et le test qui la confronte à la gamme.
+      - 'src/main/java/dev/sylvain/planning/service/analyse/StaffingAnalyzer.java'
+      - 'src/test/java/dev/sylvain/planning/service/scenario/StaffingBoundEquivalenceTest.java'
       # Une montée de version Timefold est précisément le moment où l'on veut
       # savoir si les scénarios connus convergent toujours.
       - 'pom.xml'
@@ -71,6 +74,9 @@ on:
       - 'src/main/java/dev/sylvain/planning/service/referentiel/HoraireStandResolver.java'
       - 'src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java'
       - 'src/main/java/dev/sylvain/planning/scenario/**'
+      # La borne du besoin et le test qui la confronte à la gamme.
+      - 'src/main/java/dev/sylvain/planning/service/analyse/StaffingAnalyzer.java'
+      - 'src/test/java/dev/sylvain/planning/service/scenario/StaffingBoundEquivalenceTest.java'
       - 'pom.xml'
       - '.github/workflows/scenario-tests.yml'
   workflow_dispatch:
@@ -142,5 +148,46 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: scenario-test-reports
+          path: target/surefire-reports/
+          if-no-files-found: ignore
+
+  # La borne exacte du besoin (écran Besoin) contre le besoin d'une équipe
+  # fictive, sur toute la gamme (ADR 0098). Un job à part, en parallèle du
+  # précédent : il dure à lui seul une demi-heure (33 min mesurées sur 12 cœurs ; les résolutions sont bornées en temps), et rien ne le jouait — il a
+  # cassé sans bruit quand le relais repas a quitté le modèle (ADR 0129).
+  staffing-bound:
+    if: >-
+      (github.event_name != 'pull_request'
+        || github.event.pull_request.head.repo.full_name == github.repository)
+      && (github.event_name != 'pull_request'
+        || github.event.pull_request.user.login != 'renovate[bot]'
+        || contains(github.event.pull_request.labels.*.name, 'timefold')
+        || contains(github.event.pull_request.labels.*.name, 'quarkus'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Run the staffing bound equivalence test
+        run: >-
+          ./mvnw -B --no-transfer-progress test -Pscenario-tests
+          -Dtest='StaffingBoundEquivalenceTest'
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: staffing-bound-test-reports
           path: target/surefire-reports/
           if-no-files-found: ignore
