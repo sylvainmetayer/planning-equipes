@@ -750,13 +750,7 @@ class JourJResourceTest {
     }
 
     private static JsonPath persistedPlanning() {
-        return given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath();
+        return PersistedPlan.read("E1");
     }
 
     /** Poste id → occupant of the persisted plan; unstaffed seats are simply absent. */

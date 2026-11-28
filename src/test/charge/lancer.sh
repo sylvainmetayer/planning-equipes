@@ -22,7 +22,7 @@ resultats=$(mkdir -p "${RESULTATS:-resultats-charge}" && cd "${RESULTATS:-result
 # Passed by name: a value never appears on the command line, the password least of all.
 variables=()
 for nom in BASE_URL ADMIN_USER ADMIN_PASSWORD N DUREE MONTEE PAUSE P95_MAX_MS TAUX_ERREUR_MAX \
-  FILE_MAX SECONDES ESPACE_TOKEN TAUX_SESSIONS_MIN; do
+  FILE_MAX SECONDES ESPACE_TOKEN ESPACE_TOKENS TAUX_SESSIONS_MIN; do
   [[ -n ${!nom:-} ]] && variables+=(-e "$nom")
 done
 

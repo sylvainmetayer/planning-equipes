@@ -139,14 +139,7 @@ class SolveIncrementalResourceTest {
     }
 
     private List<Map<String, Object>> affectationsPersistees() {
-        return given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath()
-                .getList("postes");
+        return PersistedPlan.read("E1").getList("postes");
     }
 
     @SuppressWarnings("unchecked")

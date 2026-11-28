@@ -1,6 +1,18 @@
 package dev.sylvain.planning.api;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConstraintToggle;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreRepas;
+import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.QuotaTypologie;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.analyse.GroupedArrivalAnalyzer;
 import dev.sylvain.planning.service.analyse.WalkSequenceAnalyzer;
@@ -24,9 +36,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Path("/")
@@ -189,14 +205,17 @@ public class PlanningResource {
     }
 
     /**
-     * Read-only view of the last solved planning stored in the database.
-     * Used by the calendar pages and the exports so that browsing the app
-     * never starts a solver run.
+     * Read-only view of the last solved planning stored in the database, each
+     * stand, timeslot and animateur written once and every seat naming them by
+     * id: the full form repeated them in every seat, 4.5 MB for a demo plan at
+     * each opening of the Planning screen. Used by the calendar pages and the
+     * exports, which rebuild the full form, so that browsing the app never
+     * starts a solver run.
      */
     @GET
     @Path("/planning/persisted")
-    public PlanningEvenement persistedPlanning() {
-        return persistenceService.loadPersistedPlanning();
+    public CompactPlanning persistedPlanning() {
+        return CompactPlanning.of(persistenceService.loadPersistedPlanning());
     }
 
     /**
@@ -244,6 +263,85 @@ public class PlanningResource {
 
     @Schema(requiredProperties = {"assignments"})
     public record PersistenceStatus(int assignments) {}
+
+    /**
+     * A seat of {@link CompactPlanning}: what {@link PosteAffectation} says,
+     * with its stand, timeslot and animateur by id.
+     */
+    @Schema(requiredProperties = {"id", "verrouille", "dureeEffectiveMinutes"})
+    public record CompactSeat(
+            String id,
+            String standId,
+            Long creneauId,
+            String animateurId,
+            boolean verrouille,
+            int dureeEffectiveMinutes,
+            LocalTime heureDebutEffective,
+            LocalTime heureFinEffective,
+            String suiteDe) {}
+
+    /**
+     * {@link PlanningEvenement} with its seats flattened: {@code stands} and
+     * {@code creneaux} are the ones the seats stand on, each once, and
+     * {@code animateurs} is the plan's own list, which every held seat names.
+     */
+    @Schema(requiredProperties = {"animateurs", "stands", "creneaux", "postes"})
+    public record CompactPlanning(
+            LocalDate dateDebutFestival,
+            HardMediumSoftScore score,
+            List<Animateur> animateurs,
+            List<Stand> stands,
+            List<Creneau> creneaux,
+            List<CompactSeat> postes,
+            List<ContrainteAdHoc> contraintesAdHoc,
+            List<ParametresLegaux> parametresLegaux,
+            List<ParametresQualite> parametresQualite,
+            List<ConstraintToggle> constraintsDesactivees,
+            List<QuotaTypologie> quotasTypologies,
+            List<FenetreRepas> fenetresRepas,
+            List<VerrouillagePlanning> verrouillages) {
+
+        static CompactPlanning of(PlanningEvenement plan) {
+            Map<String, Stand> stands = new LinkedHashMap<>();
+            Map<Long, Creneau> creneaux = new LinkedHashMap<>();
+            List<CompactSeat> seats = new ArrayList<>();
+            for (PosteAffectation poste : plan.getPostes()) {
+                Stand stand = poste.getStand();
+                Creneau creneau = poste.getCreneau();
+                Animateur animateur = poste.getAnimateur();
+                if (stand != null) {
+                    stands.putIfAbsent(stand.getId(), stand);
+                }
+                if (creneau != null) {
+                    creneaux.putIfAbsent(creneau.getId(), creneau);
+                }
+                seats.add(new CompactSeat(
+                        poste.getId(),
+                        stand == null ? null : stand.getId(),
+                        creneau == null ? null : creneau.getId(),
+                        animateur == null ? null : animateur.getId(),
+                        poste.isVerrouille(),
+                        poste.getDureeEffectiveMinutes(),
+                        poste.getHeureDebutEffective(),
+                        poste.getHeureFinEffective(),
+                        poste.getSuiteDe()));
+            }
+            return new CompactPlanning(
+                    plan.getDateDebutFestival(),
+                    plan.getScore(),
+                    plan.getAnimateurs(),
+                    List.copyOf(stands.values()),
+                    List.copyOf(creneaux.values()),
+                    seats,
+                    plan.getContraintesAdHoc(),
+                    plan.getParametresLegaux(),
+                    plan.getParametresQualite(),
+                    plan.getConstraintsDesactivees(),
+                    plan.getQuotasTypologies(),
+                    plan.getFenetresRepas(),
+                    plan.getVerrouillages());
+        }
+    }
 
     /**
      * Which groupe de créneaux the last persisted solve was computed for, and

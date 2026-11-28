@@ -9,8 +9,12 @@ import { Rate } from 'k6/metrics';
 import { get, post, seuils, N, DUREE } from './commun.js';
 
 // The token of the demo dump (scripts/demo/generer-dump.sh): public by design.
-const JETON = __ENV.ESPACE_TOKEN || '00000000-0000-4000-8000-0000000de305';
-const ESPACE = `/api/espace-animateur/${JETON}`;
+// ESPACE_TOKENS (comma-separated) gives each visitor an espace of its own, as
+// when a whole team opens the publication mail at once.
+const JETONS = (__ENV.ESPACE_TOKENS || __ENV.ESPACE_TOKEN || '00000000-0000-4000-8000-0000000de305')
+  .split(',')
+  .filter((jeton) => jeton);
+const espace = () => `/api/espace-animateur/${JETONS[(__VU - 1) % JETONS.length]}`;
 const sessionsOuvertes = new Rate('espace_sessions_ouvertes');
 
 // A replaced code (400) or a code asked too often (429) is the instance
@@ -42,12 +46,12 @@ let abonnement = null;
 /** Code then session, retried once: another visitor may have replaced the code. */
 function ouvrirSession() {
   for (let essai = 0; essai < 2; essai++) {
-    const code = post(`${ESPACE}/code`, null, {
+    const code = post(`${espace()}/code`, null, {
       tags: { name: 'POST espace/code' },
     });
     const valeur = code.status === 200 ? code.json('codeDemo') : null;
     if (valeur) {
-      const session = post(`${ESPACE}/session`, JSON.stringify({ code: valeur }), {
+      const session = post(`${espace()}/session`, JSON.stringify({ code: valeur }), {
         headers: { 'Content-Type': 'application/json' },
         tags: { name: 'POST espace/session' },
       });
@@ -71,10 +75,10 @@ export default function () {
     }
     abonnement = '';
   }
-  const espace = get(ESPACE, { tags: { name: 'GET espace' } });
-  check(espace, { 'espace lu (200)': (r) => r.status === 200 });
-  abonnement = espace.status === 200 ? espace.json('abonnementToken') || '' : abonnement;
-  const ics = get(`${ESPACE}/planning.ics`, {
+  const lu = get(espace(), { tags: { name: 'GET espace' } });
+  check(lu, { 'espace lu (200)': (r) => r.status === 200 });
+  abonnement = lu.status === 200 ? lu.json('abonnementToken') || '' : abonnement;
+  const ics = get(`${espace()}/planning.ics`, {
     tags: { name: 'GET espace/planning.ics' },
   });
   check(ics, {

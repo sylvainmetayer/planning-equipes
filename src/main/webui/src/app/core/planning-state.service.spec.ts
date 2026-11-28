@@ -2,7 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api.service';
 import { PlanningStateService } from './planning-state.service';
-import type { Animateur, Creneau, PlanningEvenement, Stand } from './models';
+import type {
+  Animateur,
+  CompactPlanning,
+  CompactSeat,
+  Creneau,
+  PlanningEvenement,
+  Stand,
+} from './models';
 
 function stand(id: string, effectifMax: number): Stand {
   return {
@@ -36,6 +43,21 @@ function animateur(id: string): Animateur {
     souhaits: [],
     joursIndisponibles: [],
   };
+}
+
+function seatFields(id: string) {
+  return {
+    id,
+    verrouille: false,
+    dureeEffectiveMinutes: 240,
+    heureDebutEffective: null,
+    heureFinEffective: null,
+    suiteDe: null,
+  };
+}
+
+function seat(id: string, animateurId: string | null): CompactSeat {
+  return { ...seatFields(id), standId: 'S1', creneauId: 1, animateurId };
 }
 
 /** Fake ApiService routing GETs by URL. */
@@ -78,21 +100,42 @@ describe('PlanningStateService', () => {
       expect(api.get).not.toHaveBeenCalled();
     });
 
-    it('loads the persisted planning when nothing was solved this session', async () => {
-      api.responses = { '/api/planning/persisted': solved };
+    it('loads the compact persisted planning and rebuilds every seat', async () => {
+      api.responses = {
+        '/api/planning/persisted': {
+          animateurs: [animateur('A1')],
+          stands: [stand('S1', 2)],
+          creneaux: [creneau(1)],
+          postes: [seat('p1', 'A1'), seat('p2', null)],
+          score: null,
+        } satisfies CompactPlanning,
+      };
       const result = await service.loadForDisplay();
 
       expect(api.get).toHaveBeenCalledWith('/api/planning/persisted');
-      expect(result).toBe(solved);
+      expect(result.postes).toEqual([
+        {
+          ...seatFields('p1'),
+          stand: stand('S1', 2),
+          creneau: creneau(1),
+          animateur: animateur('A1'),
+        },
+        { ...seatFields('p2'), stand: stand('S1', 2), creneau: creneau(1), animateur: null },
+      ]);
+      expect(result.postes[0].stand).toBe(result.postes[1].stand);
+      expect(result.animateurs).toEqual([animateur('A1')]);
+      expect('stands' in result).toBe(false);
     });
 
     it('require() throws when the loaded planning has no postes', async () => {
       api.responses = {
         '/api/planning/persisted': {
           animateurs: [],
+          stands: [],
+          creneaux: [],
           postes: [],
           score: null,
-        } satisfies PlanningEvenement,
+        } satisfies CompactPlanning,
       };
 
       await expect(service.require()).rejects.toThrow(/Aucun planning disponible/);

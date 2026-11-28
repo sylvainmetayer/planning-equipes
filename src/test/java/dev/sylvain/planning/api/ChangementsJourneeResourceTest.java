@@ -253,14 +253,7 @@ class ChangementsJourneeResourceTest {
 
     /** An animateur the persisted plan seats somewhere on the day. */
     private static String aSeatedAnimateur() {
-        String id = given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath()
-                .getString("postes.find { it.animateur != null }.animateur.id");
+        String id = PersistedPlan.read("E1").getString("postes.find { it.animateur != null }.animateur.id");
         assertThat(id).as("the sample plan should seat somebody").isNotBlank();
         return id;
     }

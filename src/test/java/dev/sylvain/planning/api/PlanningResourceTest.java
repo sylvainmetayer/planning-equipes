@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.notNullValue;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -301,6 +303,26 @@ class PlanningResourceTest {
                 .post("/api/planning/reset")
                 .then()
                 .statusCode(200);
+    }
+
+    @Test
+    void jsonTravelsCompressedWhenTheClientAsks() {
+        given().header("X-Edition-Id", "E1")
+                .header("Accept-Encoding", "gzip")
+                .when()
+                .get("/api/stands")
+                .then()
+                .statusCode(200)
+                .header("Content-Encoding", "gzip")
+                .header("Vary", containsString("Accept-Encoding"));
+    }
+
+    @Test
+    void theSolverStreamIsLeftOutOfTheCompressedTypes() {
+        // Compressed, the SSE stream would sit in the deflater's buffer instead of leaving event by event.
+        assertThat(ConfigProvider.getConfig().getValues("quarkus.http.compress-media-types", String.class))
+                .contains("application/json")
+                .doesNotContain("text/event-stream");
     }
 
     @Test

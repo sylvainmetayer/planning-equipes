@@ -221,7 +221,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | Sauvegardes avant vidage | chacune est un export de scénario. `supprimer_donnees_edition` et les imports en écrivent une, mais seul un administrateur la lit, la restaure ou la supprime, par l'API ([ADR 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) |
 | Dump SQL, exports PDF, ICS et CSV | toutes les données personnelles, ou des binaires destinés au téléchargement depuis l'interface |
 | Import CSV des bénévoles | le tableur porte nom, prénom, date de naissance et adresse : un outil qui l'accepterait ferait entrer par MCP ce qui n'en sort pas |
-| `/api/planning/sample`, `/persisted` | un `PlanningEvenement` entier, plusieurs dizaines de Mo avec les données personnelles ; `consulter_planning` (vue `affectations`) couvre le besoin en restant filtré |
+| `/api/planning/sample`, `/persisted` | un `PlanningEvenement` entier, ou tout le plan enregistré (plusieurs Mo, même compact), avec les données personnelles ; `consulter_planning` (vue `affectations`) couvre le besoin en restant filtré |
 | Espace animateur et abonnement ICS | le côté animateur, derrière un jeton personnel : MCP voit les demandes et déclarations côté admin, jamais l'espace de quelqu'un |
 | Rotation du jeton d'espace d'un animateur | elle invalide le lien déjà imprimé sur un PDF distribué, conséquence qu'on ne peut pas annuler depuis une conversation |
 | Webhooks sortants | une adresse Slack, Discord ou Matrix est un secret, et un webhook ouvre une sortie réseau depuis le serveur : le configurer depuis une conversation serait une voie d'exfiltration toute tracée. Ils se règlent dans Paramètres › Instance |

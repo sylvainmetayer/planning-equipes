@@ -62,7 +62,7 @@ Ce qu'il faut retenir de la mesure :
 - `lateAcceptanceSize` à 400 : en dessous, la qualité se dégrade ; au-dessus, elle ne change rien.
 - Le réglage de phase 1 a été remesuré à la montée en Timefold 2.5 (à réglage identique, un pas évalue environ dix fois plus de mouvements) et un fixture trop petit sous-estime le problème réel d'un tiers : `festival-realiste` sort de la construction à -110 hard quand le profil de production sort à -218. Arbitrez un réglage sur le problème réel, jamais sur le seul scénario versionné.
 
-À refaire si la taille du problème change nettement : rejouer le vrai problème (`GET /api/planning/persisted`, champ `score` retiré, animateurs remis à `null`) hors du serveur de dev, une configuration à la fois. Deux solveurs concurrents se partagent cache et bande passante mémoire, et la comparaison n'a plus de sens. Le banc `SolverBenchTest` est décrit avec [les tests](tests.md).
+À refaire si la taille du problème change nettement : rejouer le vrai problème (`GET /api/planning/persisted`, chaque siège rendu à son stand et à son créneau d'après `standId` et `creneauId`, champ `score` retiré, sans animateur) hors du serveur de dev, une configuration à la fois. Deux solveurs concurrents se partagent cache et bande passante mémoire, et la comparaison n'a plus de sens. Le banc `SolverBenchTest` est décrit avec [les tests](tests.md).
 
 ## La seconde phase échange des journées
 

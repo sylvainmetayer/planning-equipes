@@ -552,9 +552,38 @@ export interface PlanningPersiste {
 }
 
 export async function planningPersiste(admin: APIRequestContext): Promise<PlanningPersiste> {
-  const reponse = await admin.get('/api/planning/persisted');
+  return (await planEnregistre(admin)) as PlanningPersiste;
+}
+
+type Ligne = { id: string | number };
+
+/**
+ * `/api/planning/persisted` with every seat given its stand, créneau and
+ * animateur back, as the frontend rebuilds it: the route names them by id.
+ */
+export async function planEnregistre(
+  request: APIRequestContext,
+  options?: Parameters<APIRequestContext['get']>[1],
+): Promise<{ postes: Record<string, unknown>[] }> {
+  const reponse = await request.get('/api/planning/persisted', options);
   expect(reponse.ok()).toBe(true);
-  return (await reponse.json()) as PlanningPersiste;
+  const { stands, creneaux, postes, ...reste } = (await reponse.json()) as {
+    stands: Ligne[];
+    creneaux: Ligne[];
+    animateurs: Ligne[];
+    postes: { standId: string | null; creneauId: number | null; animateurId: string | null }[];
+  };
+  const parId = (lignes: Ligne[]) => new Map(lignes.map((ligne) => [ligne.id, ligne]));
+  const [s, c, a] = [parId(stands), parId(creneaux), parId(reste.animateurs)];
+  return {
+    ...reste,
+    postes: postes.map(({ standId, creneauId, animateurId, ...siege }) => ({
+      ...siege,
+      stand: (standId !== null && s.get(standId)) || null,
+      creneau: (creneauId !== null && c.get(creneauId)) || null,
+      animateur: (animateurId !== null && a.get(animateurId)) || null,
+    })),
+  };
 }
 
 /** Occupant of the single seat of (stand, créneau), `null` when empty/absent. */

@@ -8,8 +8,11 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import io.quarkus.test.junit.QuarkusTest;
@@ -35,6 +38,14 @@ class PlacementResourceTest {
 
     @Inject
     PlanningPersistenceService persistence;
+
+    @Inject
+    ObjectMapper objectMapper;
+
+    @Inject
+    EditionContext editionContext;
+
+    private static final TypeReference<Map<String, Object>> MAP = new TypeReference<>() {};
 
     @AfterEach
     void resetDatabase() {
@@ -76,13 +87,7 @@ class PlacementResourceTest {
     private record FreeSeat(String posteId, String libre, String creneauId, Map<String, String> occupants) {}
 
     private static JsonPath persisted() {
-        return given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath();
+        return PersistedPlan.read("E1");
     }
 
     private static Map<String, String> occupants(JsonPath plan) {
@@ -91,6 +96,26 @@ class PlacementResourceTest {
                 .filter(poste -> poste.get("animateur") != null)
                 .collect(Collectors.toMap(poste -> (String) poste.get("id"), poste ->
                         (String) ((Map<?, ?>) poste.get("animateur")).get("id")));
+    }
+
+    @Test
+    void thePersistedPlanNamesEachObjectOnceAndSaysWhatTheFullFormSaid() throws Exception {
+        freeSeat();
+        String compact = given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/persisted")
+                .then()
+                .statusCode(200)
+                .extract()
+                .asString();
+        // The full form, as the route sent it before every seat named its objects by id.
+        String full =
+                objectMapper.writeValueAsString(editionContext.executeIn("E1", persistence::loadPersistedPlanning));
+
+        Map<String, Object> plan = objectMapper.readValue(full, MAP);
+        assertThat((List<?>) plan.get("postes")).isNotEmpty();
+        assertThat(PersistedPlan.expand(objectMapper.readValue(compact, MAP))).isEqualTo(plan);
+        assertThat(compact.length()).isLessThan(full.length());
     }
 
     @Test

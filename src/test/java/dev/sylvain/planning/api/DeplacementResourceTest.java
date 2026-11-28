@@ -48,13 +48,7 @@ class DeplacementResourceTest {
                 .post("/api/solve?seconds=3")
                 .then()
                 .statusCode(200);
-        return given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath();
+        return PersistedPlan.read("E1");
     }
 
     private static Map<String, String> occupants(JsonPath plan) {
@@ -109,12 +103,7 @@ class DeplacementResourceTest {
                 .statusCode(200)
                 .body("posteCibleId", equalTo(sieges[1]))
                 .body("animateurCibleId", equalTo(avant.get(sieges[1])));
-        assertThat(occupants(given().header("X-Edition-Id", "E1")
-                        .when()
-                        .get("/api/planning/persisted")
-                        .then()
-                        .extract()
-                        .jsonPath()))
+        assertThat(occupants(PersistedPlan.read("E1")))
                 .as("a simulation writes nothing")
                 .isEqualTo(avant);
 
@@ -125,12 +114,7 @@ class DeplacementResourceTest {
                 .statusCode(200)
                 .body("casseContrainteDure", equalTo(false));
 
-        Map<String, String> apres = occupants(given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .extract()
-                .jsonPath());
+        Map<String, String> apres = occupants(PersistedPlan.read("E1"));
         assertThat(apres).containsEntry(sieges[0], avant.get(sieges[1])).containsEntry(sieges[1], avant.get(sieges[0]));
         // Nothing else moved: the rest of the plan is exactly what it was.
         avant.keySet().stream()
@@ -159,12 +143,7 @@ class DeplacementResourceTest {
                 .body("posteCibleId", nullValue())
                 .body("animateurCibleId", equalTo(libre));
 
-        Map<String, String> apres = occupants(given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .extract()
-                .jsonPath());
+        Map<String, String> apres = occupants(PersistedPlan.read("E1"));
         assertThat(apres).containsEntry(siege, libre);
     }
 
@@ -200,13 +179,7 @@ class DeplacementResourceTest {
                     .statusCode(400)
                     .body("message", containsString("Déplacement refusé"));
 
-            assertThat(occupants(given().header("X-Edition-Id", "E1")
-                            .when()
-                            .get("/api/planning/persisted")
-                            .then()
-                            .extract()
-                            .jsonPath()))
-                    .isEqualTo(avant);
+            assertThat(occupants(PersistedPlan.read("E1"))).isEqualTo(avant);
         } finally {
             putDaysOff(libre, joursAvant);
         }
@@ -229,13 +202,7 @@ class DeplacementResourceTest {
                 .body("plafond", equalTo(5))
                 .body("scoreAvant", notNullValue());
 
-        assertThat(occupants(given().header("X-Edition-Id", "E1")
-                        .when()
-                        .get("/api/planning/persisted")
-                        .then()
-                        .extract()
-                        .jsonPath()))
-                .isEqualTo(avant);
+        assertThat(occupants(PersistedPlan.read("E1"))).isEqualTo(avant);
     }
 
     /**
@@ -268,13 +235,7 @@ class DeplacementResourceTest {
                 .then()
                 .statusCode(409)
                 .body("message", containsString("n'est plus tenu par la personne affichée"));
-        assertThat(occupants(given().header("X-Edition-Id", "E1")
-                        .when()
-                        .get("/api/planning/persisted")
-                        .then()
-                        .extract()
-                        .jsonPath()))
-                .isEqualTo(avant);
+        assertThat(occupants(PersistedPlan.read("E1"))).isEqualTo(avant);
 
         // Naming the real occupant goes through, and so does naming nobody.
         given().header("X-Edition-Id", "E1")
@@ -317,13 +278,7 @@ class DeplacementResourceTest {
                     .then()
                     .statusCode(400)
                     .body("message", containsString("verrouillé"));
-            assertThat(occupants(given().header("X-Edition-Id", "E1")
-                            .when()
-                            .get("/api/planning/persisted")
-                            .then()
-                            .extract()
-                            .jsonPath()))
-                    .isEqualTo(avant);
+            assertThat(occupants(PersistedPlan.read("E1"))).isEqualTo(avant);
         } finally {
             given().header("X-Edition-Id", "E1").when().delete("/api/verrouillages/DEPL-VERROU");
         }

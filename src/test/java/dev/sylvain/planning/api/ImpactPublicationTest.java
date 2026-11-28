@@ -165,14 +165,8 @@ class ImpactPublicationTest {
                 .then()
                 .statusCode(200);
 
-        List<Map<String, Object>> postes = edition()
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath()
-                .getList("postes.findAll { it.animateur != null }");
+        List<Map<String, Object>> postes =
+                PersistedPlan.read(edition).getList("postes.findAll { it.animateur != null }");
         Map<String, Object> premier = postes.get(0);
         Map<String, Object> second = postes.stream()
                 .filter(poste -> !standId(poste).equals(standId(premier)))
@@ -247,14 +241,8 @@ class ImpactPublicationTest {
                 .statusCode(200);
         solve();
 
-        List<Map<String, Object>> postes = edition()
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath()
-                .getList("postes.findAll { it.animateur != null }");
+        List<Map<String, Object>> postes =
+                PersistedPlan.read(edition).getList("postes.findAll { it.animateur != null }");
         Map<String, Object> premier = postes.get(0);
         String standId = standId(premier);
         Object creneauId = creneauId(premier);

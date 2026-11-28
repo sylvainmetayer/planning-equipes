@@ -17,7 +17,14 @@
 // stands up the stack allowing it.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { awaitJob, calculerLePlanning, contexteAdmin, PAGE_CALCULER, pageAdmin } from './support';
+import {
+  awaitJob,
+  calculerLePlanning,
+  contexteAdmin,
+  PAGE_CALCULER,
+  pageAdmin,
+  planEnregistre,
+} from './support';
 import { repartirDeLaReference } from './reference';
 
 /**
@@ -108,9 +115,7 @@ async function calculerDepuisLEcran(page: Page): Promise<void> {
 }
 
 async function sieges(): Promise<Siege[]> {
-  const reponse = await admin.get('/api/planning/persisted');
-  expect(reponse.ok()).toBe(true);
-  return ((await reponse.json()) as { postes: Siege[] }).postes;
+  return (await planEnregistre(admin)).postes as unknown as Siege[];
 }
 
 /** « stand@début|fin|titulaire », as FrozenPastAcceptanceTest compares seats. */

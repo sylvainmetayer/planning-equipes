@@ -65,7 +65,7 @@ What to retain from the measurement:
 - `lateAcceptanceSize` at 400: below it, quality degrades; above it, it changes nothing.
 - The phase 1 setting was re-measured when moving up to Timefold 2.5 (with an identical setting, a step evaluates about ten times more moves) and a fixture that is too small underestimates the real problem by a third: `festival-realiste` comes out of construction at -110 hard when the production profile comes out at -218. Settle a setting on the real problem, never on the versioned scenario alone.
 
-To redo if the size of the problem changes significantly: replay the real problem (`GET /api/planning/persisted`, `score` field removed, staff members reset to `null`) outside the dev server, one configuration at a time. Two concurrent solvers share cache and memory bandwidth, and the comparison no longer means anything. The `SolverBenchTest` bench is described with [the tests](tests.md).
+To redo if the size of the problem changes significantly: replay the real problem (`GET /api/planning/persisted`, each seat given back its stand and timeslot from `standId` and `creneauId`, `score` field removed, no staff member) outside the dev server, one configuration at a time. Two concurrent solvers share cache and memory bandwidth, and the comparison no longer means anything. The `SolverBenchTest` bench is described with [the tests](tests.md).
 
 ## The second phase swaps days
 

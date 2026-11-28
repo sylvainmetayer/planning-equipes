@@ -140,6 +140,14 @@ These caps do not replace those of the reverse proxy, which must remain the
 first line (per-IP rate limiting, per-client connection cap,
 timeouts).
 
+The application **compresses** its JSON responses and the interface files
+itself (gzip), for any client that announces it: a 4.5 MB JSON plan weighs
+about a hundred kilobytes on the network. The solve
+progress stream is never compressed, as it must leave event by event. A proxy
+that also compresses does no harm: it lets an already compressed response
+through. This setting is fixed in the image, and no environment variable
+changes it.
+
 ## Going further
 
 | To… | Read |

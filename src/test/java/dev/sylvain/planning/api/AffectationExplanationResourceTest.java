@@ -507,13 +507,7 @@ class AffectationExplanationResourceTest {
 
     /** Poste id → occupant of the persisted plan; unstaffed seats are simply absent. */
     private static Map<String, String> occupantsPersistes() {
-        JsonPath persiste = given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath();
+        JsonPath persiste = PersistedPlan.read("E1");
         Map<String, String> occupants = new LinkedHashMap<>();
         List<String> ids = persiste.getList("postes.id", String.class);
         for (int i = 0; i < ids.size(); i++) {

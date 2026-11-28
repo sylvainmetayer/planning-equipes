@@ -137,6 +137,14 @@ Ces plafonds ne remplacent pas ceux du reverse proxy, qui doit rester la
 première ligne (limitation de débit par IP, plafond de connexions par client,
 délais d'attente).
 
+L'application **compresse elle-même** ses réponses JSON et les fichiers de
+l'interface (gzip), pour tout client qui l'annonce : un plan de 4,5 Mo de JSON
+n'en pèse plus qu'une centaine de kilo-octets sur le réseau.
+Le flux de progression du calcul n'est jamais compressé, il doit partir
+événement par événement. Un proxy qui compresse aussi ne gêne pas : il laisse
+passer une réponse déjà compressée. Ce réglage est fixé dans l'image, aucune
+variable d'environnement ne le change.
+
 ## Aller plus loin
 
 | Pour… | Lisez |

@@ -131,7 +131,7 @@ api GET /api/planning/persisted "${h[@]}" > "$travail/plan.json"
 api GET /api/animateurs "${h[@]}" > "$travail/animateurs.json"
 animateur=$(jq -n --slurpfile plan "$travail/plan.json" --slurpfile gens "$travail/animateurs.json" -r '
   ([$gens[0][] | select(.email != null and .email != "") | .id]) as $avec
-  | [$plan[0].postes[] | select(.animateur != null) | .animateur.id | select(IN($avec[]))]
+  | [$plan[0].postes[] | (.animateurId // .animateur.id) | select(. != null) | select(IN($avec[]))]
   | group_by(.) | max_by(length) | .[0] // empty')
 [[ -n $animateur ]] || { echo "aucun animateur avec une adresse et des postes" >&2; exit 1; }
 "${compose[@]}" exec -T postgres psql -q -U festival -d festival -v ON_ERROR_STOP=1 \
