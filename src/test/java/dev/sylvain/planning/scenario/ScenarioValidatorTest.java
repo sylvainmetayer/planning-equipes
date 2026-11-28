@@ -222,4 +222,22 @@ class ScenarioValidatorTest {
         assertThat(ScenarioValidator.validate(MINIMAL + prereglage))
                 .anySatisfy(erreur -> assertThat(erreur).startsWith("prereglagesConsigne[0].nom:"));
     }
+
+    /**
+     * The provider's messages are English (« must not be null ») and say
+     * nothing of what was expected: each kind of constraint gets its French
+     * sentence, with the value written when there is one.
+     */
+    @Test
+    void violationsAreSentencesInFrenchWithTheExpectedValue() {
+        assertThat(ScenarioValidator.validate(MINIMAL.replaceAll("(?s)animateurs:.*", "")))
+                .contains("animateurs: obligatoire, absent du fichier.")
+                .noneSatisfy(erreur -> assertThat(erreur).contains("must"));
+        assertThat(ScenarioValidator.validate(MINIMAL.replace("effectifMin: 1", "effectifMin: -1")))
+                .containsExactly("stands[0].effectifMin: doit être positif ou nul, et non « -1 ».");
+        assertThat(ScenarioValidator.validate(MINIMAL + "contraintes:\n  poids:\n    equilibrerCharge: 501\n"))
+                .containsExactly("contraintes.poids[equilibrerCharge]: doit valoir au plus 500, et non « 501 ».");
+        assertThat(ScenarioValidator.validate(MINIMAL.replace("nom: Stand 1", "nom: \"\"")))
+                .containsExactly("stands[0].nom: obligatoire, ne peut pas être vide.");
+    }
 }

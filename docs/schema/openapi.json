@@ -9359,6 +9359,12 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "avertissements" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },

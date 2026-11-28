@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.export;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
 
 import dev.sylvain.planning.domain.Animateur;
@@ -11,6 +12,7 @@ import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.edition.EtiquetteEdition;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import java.io.IOException;
@@ -79,6 +81,26 @@ class PlanningExportServiceTest {
         assertThat(new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII))
                 .isEqualTo("%PDF");
         writeSample("planning-sample-" + animateurId + ".pdf", pdf);
+    }
+
+    /**
+     * A plan sent in the body whose seat names an animateur without an id is
+     * the caller's error: refused at the door, before the break analysis met
+     * it as a NullPointerException and the route answered 500.
+     */
+    @Test
+    void aSeatHeldByAnAnimateurWithoutAnIdIsRefusedAtTheDoor() {
+        PlanningEvenement planning = fakePlanning();
+        PlanningExportService.requireExportable(planning);
+        planning.getPostes().stream()
+                .filter(poste -> poste.getAnimateur() != null)
+                .findFirst()
+                .orElseThrow()
+                .setAnimateur(new Animateur());
+
+        assertThatThrownBy(() -> PlanningExportService.requireExportable(planning))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("identifiant");
     }
 
     /** The note under a date is read for the person's seats and their rest days alike (issue #4). */

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import dev.sylvain.planning.observability.NulCharacterRefusal;
 import dev.sylvain.planning.service.BusinessError;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolCallException;
@@ -21,7 +22,10 @@ import jakarta.interceptor.InvocationContext;
  * in error ({@code isError}) carrying the sentence, which is the shape the
  * protocol has for « you asked for something I refuse ».</p>
  *
- * <p>Only {@link BusinessError} is translated. Anything else — a plain
+ * <p>Only {@link BusinessError} is translated, and one failure the database
+ * raises for the caller's input: a U+0000 in an argument, which PostgreSQL
+ * refuses in any text and the REST side answers with a 400
+ * ({@link NulCharacterRefusal}, recognised in one place for both). Anything else — a plain
  * {@code IllegalArgumentException}, an {@code NullPointerException}, a
  * database failure — keeps its « Internal error », exactly as the REST side
  * keeps its 500: telling a deliberate refusal apart from a bug is the whole
@@ -64,6 +68,11 @@ public class RefusMetierInterceptor {
         } catch (BusinessError refusal) {
             String message = refusal.getMessage();
             throw new ToolCallException(message == null || message.isBlank() ? SANS_MESSAGE : message, refusal);
+        } catch (RuntimeException failure) {
+            if (NulCharacterRefusal.causedBy(failure)) {
+                throw new ToolCallException(NulCharacterRefusal.MESSAGE, failure);
+            }
+            throw failure;
         }
     }
 }

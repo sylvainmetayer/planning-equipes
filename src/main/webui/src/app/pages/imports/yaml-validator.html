@@ -2,8 +2,8 @@
   <mat-card-header>
     <h2 mat-card-title i18n="@@yamlValidator.title.verifier">Vérifier un fichier sans l'importer</h2>
     <mat-card-subtitle i18n="@@yamlValidator.description">
-      Vérifie la structure d'un fichier de scénario (types, champs requis, plages de valeurs) sans rien
-      importer ; les références croisées ne sont contrôlées qu'à l'import réel.
+      Vérifie un fichier de scénario (types, champs requis, plages de valeurs, références entre sections)
+      sans rien importer, et signale un fichier qui semble tronqué.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
@@ -38,6 +38,14 @@
         <ul class="yaml-validator-errors">
           @for (erreur of validationResult.erreurs; track erreur) {
             <li>{{ erreur }}</li>
+          }
+        </ul>
+      }
+      @if (validationResult.avertissements.length) {
+        <p class="yaml-validator-result" i18n="@@yamlValidator.warnings">Avertissements :</p>
+        <ul class="yaml-validator-errors">
+          @for (avertissement of validationResult.avertissements; track avertissement) {
+            <li>{{ avertissement }}</li>
           }
         </ul>
       }

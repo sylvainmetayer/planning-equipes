@@ -1,10 +1,9 @@
 package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.scenario.ScenarioFormatException;
-import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.scenario.ScenarioCheck;
 import dev.sylvain.planning.service.scenario.ScenarioImportService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
@@ -160,15 +159,8 @@ public class ScenarioMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     ValidationResult validateScenarioYaml(@ToolArg(description = "Contenu YAML du scénario") String yaml) {
-        if (yaml == null || yaml.isBlank()) {
-            return new ValidationResult(false, List.of("Le fichier est vide."));
-        }
-        try {
-            List<String> erreurs = ScenarioValidator.validate(yaml);
-            return new ValidationResult(erreurs.isEmpty(), erreurs);
-        } catch (ScenarioFormatException e) {
-            return new ValidationResult(false, List.of(e.getMessage()));
-        }
+        ScenarioCheck.Report report = ScenarioCheck.check(yaml);
+        return new ValidationResult(report.erreurs().isEmpty(), report.erreurs(), report.avertissements());
     }
 
     @Tool(
@@ -244,7 +236,7 @@ public class ScenarioMcpTools {
     public record ImportResult(
             boolean importe, String editionId, String editionNom, boolean editionCreee, List<String> avertissements) {}
 
-    public record ValidationResult(boolean valide, List<String> erreurs) {}
+    public record ValidationResult(boolean valide, List<String> erreurs, List<String> avertissements) {}
 
     public record ResetResult(boolean reinitialise, String message) {}
 }

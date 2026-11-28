@@ -1,12 +1,11 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.scenario.ScenarioFormatException;
-import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.referentiel.ImportImpact;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferentielCsvExportService;
+import dev.sylvain.planning.service.scenario.ScenarioCheck;
 import dev.sylvain.planning.service.scenario.ScenarioImportService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import jakarta.inject.Inject;
@@ -173,40 +172,24 @@ public class ReferenceDataResource {
             String editionId, String editionNom, Boolean editionCreee, List<String> avertissements) {}
 
     /**
-     * Validates a scenario YAML file's structure (types, required fields,
-     * value ranges — see docs/schema/scenario-schema.json) without importing
-     * anything: the "Validateur YAML" tool page. Always 200 — a malformed or
-     * structurally invalid file surfaces as entries in {@code erreurs}
-     * rather than an HTTP error, since this is a diagnostic report, not a
-     * mutation. Delegates to the standalone {@link ScenarioValidator}, so it
-     * only checks the same shape the JSON Schema describes: it does not
-     * replicate the cross-reference checks (e.g. a poste's standId actually
-     * matching a declared stand) that {@link #importScenarioFile} performs
-     * on a real import.
+     * Checks a scenario YAML file without importing anything: the "Validateur
+     * YAML" tool page. Always 200 — a malformed or invalid file surfaces as
+     * entries in {@code erreurs} rather than an HTTP error, since this is a
+     * diagnostic report, not a mutation. {@link ScenarioCheck} runs the
+     * stages of an import that write nothing, cross-references included, and
+     * lists in {@code avertissements} what the import would accept but say —
+     * a file that looks cut short above all.
      */
     @POST
     @Path("/valider-scenario-fichier")
     @Consumes(MediaType.WILDCARD)
     public ScenarioValidationResult validateScenarioFile(String yamlContent) {
-        List<String> erreurs = validateScenario(yamlContent);
-        return new ScenarioValidationResult(erreurs.isEmpty(), erreurs);
-    }
-
-    private static List<String> validateScenario(String yamlContent) {
-        if (yamlContent == null || yamlContent.isBlank()) {
-            return List.of("Le fichier est vide.");
-        }
-        try {
-            return ScenarioValidator.validate(yamlContent);
-        } catch (ScenarioFormatException e) {
-            // Reported as-is: the binder writes its message for the person who
-            // wrote the file, and prefixing it again would only bury it.
-            return List.of(e.getMessage());
-        }
+        ScenarioCheck.Report report = ScenarioCheck.check(yamlContent);
+        return new ScenarioValidationResult(report.erreurs().isEmpty(), report.erreurs(), report.avertissements());
     }
 
     @Schema(requiredProperties = {"valide"})
-    public record ScenarioValidationResult(boolean valide, List<String> erreurs) {}
+    public record ScenarioValidationResult(boolean valide, List<String> erreurs, List<String> avertissements) {}
 
     /* ---------------------------- Export CSV ---------------------------- */
 

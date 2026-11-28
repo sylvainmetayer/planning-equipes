@@ -222,6 +222,6 @@ After modifying a DTO, regenerate the schema:
 ./mvnw process-classes -Pgenerate-schema
 ```
 
-The schema cannot express that a day never carries both an opening and a closure, checked by `StandValidator`, nor the cross-references, checked at the real import.
+The schema cannot express that a day never carries both an opening and a closure, checked by `StandValidator`, nor the cross-references, checked by the validator as by the import.
 
 The file is read in a single pass, by `ScenarioYamlReader.buildFromScenarioText` ([`ScenarioYamlReader`](repo:src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java)), which returns the schedule and all the optional sections together (`ScenarioImporte`, `ScenarioSections`). Adding an optional section means a field in `ScenarioSections` and its filling in `ScenarioDomainMapper.sections`, not one more public method: one method per section would reread the whole file at each call, that is as many full parses as there are sections for a single click.

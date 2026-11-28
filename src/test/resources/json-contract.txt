@@ -245,6 +245,7 @@ api.ReferenceDataResource$ImportTargetView.editionId
 api.ReferenceDataResource$ImportTargetView.editionNomExistant
 api.ReferenceDataResource$ImportTargetView.editionNomFichier
 api.ReferenceDataResource$ImportTargetView.existe
+api.ReferenceDataResource$ScenarioValidationResult.avertissements
 api.ReferenceDataResource$ScenarioValidationResult.erreurs
 api.ReferenceDataResource$ScenarioValidationResult.valide
 api.SolverJobResource$Heartbeat.at

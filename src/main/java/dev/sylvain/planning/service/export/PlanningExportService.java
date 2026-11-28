@@ -107,6 +107,12 @@ public class PlanningExportService {
             throw new BusinessError.Invalid(
                     "Chaque poste du planning à exporter doit porter son stand et un créneau daté.");
         }
+        if (planning.getPostes().stream()
+                .anyMatch(poste ->
+                        poste.getAnimateur() != null && poste.getAnimateur().getId() == null)) {
+            throw new BusinessError.Invalid(
+                    "Chaque animateur affecté à un poste du planning à exporter doit porter son identifiant.");
+        }
     }
 
     /**
