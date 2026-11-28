@@ -91,7 +91,9 @@ renseigne donc sur rien), et **la limitation par IP du reverse proxy reste la
 première ligne**, comme pour les exports et le reste de l'API.
 
 Ce qui **reste ouvert** : rien ne borne le coût d'un client mal réglé qui
-appellerait toutes les minutes. Chaque appel reconstruit le plan publié, comme
+appellerait toutes les minutes. Chaque appel recompose le plan publié sur le
+référentiel du jour (la publication elle-même n'est lue qu'une fois, puis gardée
+en mémoire jusqu'à la suivante), comme
 le fait déjà le téléchargement de l'espace, donc ce n'est pas une classe de
 charge nouvelle, mais c'est la première qui soit déclenchée par une machine
 plutôt que par un humain.
