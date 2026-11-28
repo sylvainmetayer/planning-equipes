@@ -90,7 +90,9 @@ reveals nothing), and **the reverse proxy's per-IP limiting remains the
 first line**, as for the exports and the rest of the API.
 
 What **stays open**: nothing bounds the cost of a misconfigured client that
-would call every minute. Each call rebuilds the published plan, as
+would call every minute. Each call resolves the published plan against
+today's referential (the publication itself is read once, then kept in
+memory until the next one), as
 the espace's download already does, so this is not a new class of
 load, but it is the first one triggered by a machine
 rather than by a human.

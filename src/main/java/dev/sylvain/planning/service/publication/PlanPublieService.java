@@ -8,6 +8,7 @@ import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -17,8 +18,11 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * The plan the animateurs were sent (issue #245), as opposed to the plan being
@@ -41,6 +45,15 @@ import java.util.Set;
  * this feature removes — an espace showing a version nobody announced. The
  * espace says so in as many words instead of showing a planning that is not
  * yet a promise.</p>
+ *
+ * <p>The seats of the publication in force are kept in memory, one entry per
+ * edition, keyed on the snapshot itself: a snapshot's content is written once
+ * and never updated, so a new publication, a deleted edition or a wiped one is
+ * a different key — or none — on the very next read, with nothing to
+ * invalidate. The referential is <b>not</b> kept: it changes without any
+ * republication, and every read still resolves the seats against today's.
+ * Without that, each espace read parsed the whole snapshot again, which is what
+ * saturated the processor in the minute after a publication mail.</p>
  */
 @ApplicationScoped
 public class PlanPublieService {
@@ -50,6 +63,24 @@ public class PlanPublieService {
     private final PlanningPersistenceService persistenceService;
 
     private final ReferenceDataService referenceDataService;
+
+    /**
+     * The seats of each edition's publication in force, as last read.
+     * shortcut: an entry outlives its edition's deletion until a restart — one
+     * seat list per edition ever read, harmless at a handful of editions.
+     */
+    private final ConcurrentMap<String, PublishedSeats> seatsInForce = new ConcurrentHashMap<>();
+
+    /** A snapshot's seats and what identifies the snapshot: its id, then its two dates against a reused id. */
+    private record PublishedSeats(
+            long id, Instant creeLe, Instant publieLe, List<PlanningPersistenceService.Siege> seats) {
+
+        boolean of(PlanSnapshotService.SnapshotMeta meta) {
+            return id == meta.id()
+                    && Objects.equals(creeLe, meta.creeLe())
+                    && Objects.equals(publieLe, meta.publieLe());
+        }
+    }
 
     @Inject
     public PlanPublieService(
@@ -84,23 +115,43 @@ public class PlanPublieService {
     }
 
     /**
-     * The publication in force and the plan it holds, read from <b>one</b>
-     * load of the snapshot — where {@link #lastPublication()} followed by
-     * {@link #planPublie()} could date one publication and read the next, were
-     * an admin to publish between the two. Empty when nothing has ever been
+     * The publication in force and the plan it holds, both of <b>one</b>
+     * snapshot — the seats are those of the id the metadata names — where
+     * {@link #lastPublication()} followed by {@link #planPublie()} could date
+     * one publication and read the next, were an admin to publish between the
+     * two. Empty when nothing has ever been
      * published: unlike {@link #planPublie()}, a caller that must say which
      * plan it read has nothing to read then, not an empty plan.
      */
     public Optional<PublishedPlan> publicationInForce() {
+        PlanSnapshotService.SnapshotMeta meta = snapshotService.lastPublication();
+        if (meta == null) {
+            return Optional.empty();
+        }
+        PublishedSeats cached = seatsInForce.get(meta.editionId());
+        if (cached == null || !cached.of(meta)) {
+            // The seats of exactly the snapshot the meta dates, so the two cannot belong to two publications.
+            PlanSnapshotService.SnapshotDetail detail = snapshotService.load(meta.id());
+            if (detail == null) {
+                // Replaced and deleted between the two reads: read the one now in force, uncached.
+                return publicationInForceUncached();
+            }
+            cached = new PublishedSeats(meta.id(), meta.creeLe(), meta.publieLe(), seats(detail));
+            seatsInForce.put(meta.editionId(), cached);
+        }
+        return Optional.of(new PublishedPlan(meta, persistenceService.assemblerPlanning(cached.seats())));
+    }
+
+    private Optional<PublishedPlan> publicationInForceUncached() {
         PlanSnapshotService.SnapshotDetail detail = snapshotService.loadLastPublication();
         if (detail == null) {
             return Optional.empty();
         }
-        return Optional.of(new PublishedPlan(
-                detail.meta(),
-                persistenceService.assemblerPlanning(detail.affectations().stream()
-                        .map(PlanSnapshotService::seat)
-                        .toList())));
+        return Optional.of(new PublishedPlan(detail.meta(), persistenceService.assemblerPlanning(seats(detail))));
+    }
+
+    private static List<PlanningPersistenceService.Siege> seats(PlanSnapshotService.SnapshotDetail detail) {
+        return detail.affectations().stream().map(PlanSnapshotService::seat).toList();
     }
 
     /**
